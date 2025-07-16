@@ -18,7 +18,7 @@ This project was developed for UNIVERSITY OF PERPETUAL HELP SYSTEM DALTA (UPHSD)
 |----------------------------------|------------------------------------------------------|
 | Jerald V. Labalan                | Project Manager / Full-Stack Developer               |
 | Kurt Baron S. Macaranas          | UI/UX Designer                                       |
-| Neil Yvan S. Caliwan             | Main Frontend Developer                              |
+| Neil Yvan S. Caliwan             | Main Frontend Developer / UI/UX Designer             |
 | Alexander James Ian J. Fernandez | QA Tester / Frontend Developer                       |
 | Matthew Isaac L. Bides           | Main Backend Developer                               |
 | Donna Pauline F. Virtudez        | Database Manager / Backend Developer / Documentation |
