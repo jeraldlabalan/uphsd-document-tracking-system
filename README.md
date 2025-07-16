@@ -16,11 +16,13 @@ This project was developed for UNIVERSITY OF PERPETUAL HELP SYSTEM DALTA (UPHSD)
 
 | Name                             | Role(s)                                              |
 |----------------------------------|------------------------------------------------------|
-| Jerald V. Labalan                | Project Manager | Full-Stack Developer               |
+| Jerald V. Labalan                | Project Manager / Full-Stack Developer               |
+| Kurt Baron S. Macaranas          | UI/UX Designer                                       |
 | Neil Yvan S. Caliwan             | Main Frontend Developer                              |
 | Alexander James Ian J. Fernandez | Frontend Developer                                   |
 | Matthew Isaac L. Bides           | Main Backend Developer                               |
-| Donna Pauline F. Virtudez        | Database Manager | Backend Developer | Documentation |
+| Donna Pauline F. Virtudez        | Database Manager / Backend Developer / Documentation |
+ 
 
 ---
 
