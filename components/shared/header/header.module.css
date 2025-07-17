@@ -1,0 +1,50 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background-color: #7a0c1b;
+  color: white;
+}
+
+.logoWrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 16px; 
+}
+
+
+.searchWrapper {
+  display: flex;
+}
+
+.searchInput {
+  padding: 8px 12px;
+  color: black;
+  background-color: white;
+  border-radius: 6px;
+  border: none;
+  font-size: 14px;
+  width: 200px;
+  outline: none;
+}
+
+.authWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.authButton {
+  font-weight: bold;
+  padding: 0.25rem 0.75rem;
+}
+
+
+.divider {
+  height: 20px;
+  width: 1px;
+  background-color: currentColor;
+  opacity: 0.5;
+}

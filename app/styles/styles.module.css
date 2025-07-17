@@ -1,0 +1,50 @@
+
+
+.parallaxSection {
+    position: relative;
+    color: white;
+    padding: 100px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; 
+    justify-content: center;
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: center;
+    min-height: 80vh;
+    text-align: left; 
+}
+
+.parallax1 {
+    background-image: url('/bg-perps.jpg');
+}
+
+.parallax1 h1 {
+    color: white;
+    font-size: 2.5rem;
+    background-color: transparent;
+    margin: 0; 
+    margin-left: 50px;
+}
+
+.parallax1::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: rgba(127, 20, 22, 0.5);
+    z-index: 1;
+}
+
+.text1 {
+    color: #FCCB0A;
+    font-weight: 900;
+    font-size: 1.5rem;
+    z-index: 1;
+}
+
+.text2 {
+    color: white;
+    font-weight: 900;
+    font-size: 3rem;
+    z-index: 1;
+}
