@@ -1,0 +1,148 @@
+.background {
+  background: url("/bg-perps.jpg") no-repeat center center fixed;
+  background-size: cover;
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.background::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: rgba(128, 0, 0, 0.5); /* maroon overlay */
+  z-index: 0;
+}
+
+.card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 740px;
+  height: auto;
+  max-height: 70vh;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.4);
+}
+
+.leftPanel {
+  flex: 1;
+  background-color: #7a0c1b;
+  color: white;
+  padding: 40px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.logo {
+  margin: 10px auto 20px;
+}
+
+.leftPanel h2 {
+  margin-top: 10px;
+  font-size: 18px;
+}
+
+.leftPanel h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.leftPanel p {
+  margin: 10px 0;
+}
+
+.mottoBtn {
+  background-color: #a21629;
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  margin: 12px auto;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: default;
+}
+
+.rightPanel {
+  flex: 1;
+  background-color: #fef6f6;
+  padding: 50px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.loginTitle {
+  color: #7a0c1b;
+  font-size: 30px;
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 25px;
+}
+
+.input {
+  padding: 10px;
+  color: black;
+  margin-bottom: 16px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background-color: #e7e7e7;
+  font-size: 14px;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #7a0c1b;
+  box-shadow: 0 0 5px rgba(122, 12, 27, 0.5);
+}
+
+.signInBtn {
+  position: relative;
+  background-color: #7a0c1b;
+  color: white;
+  font-weight: bold;
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  margin-top: 10px;
+  overflow: hidden;
+  z-index: 0;
+  transition: color 0.3s ease;
+}
+
+.signInBtn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: #FCCB0A;
+  transition: left 0.4s ease;
+  z-index: -1;
+}
+
+.signInBtn:hover::before {
+  left: 0;
+}
+
+.signInBtn:hover {
+  color: black; 
+}
+
+
+.forgotLink {
+  color: #7a0c1b;
+  font-size: 13px;
+  margin-top: 10px;
+  text-align: center;
+  display: inline-block;
+  text-decoration: none;
+}
