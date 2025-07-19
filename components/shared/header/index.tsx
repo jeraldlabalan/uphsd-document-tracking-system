@@ -20,7 +20,7 @@ export default function Header() {
 
           <div className={styles.authWrapper}>
         <button className={styles.authButton}>
-          <a href="/sign-in">Log In</a>
+          <a href="/login">Log In</a>
         </button>
 
         <span className={styles.divider} />
