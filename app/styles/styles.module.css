@@ -188,3 +188,105 @@
   align-items: center;
   justify-content: center;
 }
+
+.logo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+  z-index: 2;
+}
+
+
+
+
+@media (max-width: 768px) {
+  .parallaxSection {
+    padding: 60px 15px;
+    align-items: center;
+    text-align: center;
+    min-height: 50vh;
+  }
+
+  .parallax1 h1 {
+    font-size: 2rem;
+    margin-left: 0;
+  }
+
+  .text1 {
+    font-size: 1rem;
+    text-align: center;
+  }
+
+  .text2 {
+    font-size: 2rem;
+    text-align: center;
+  }
+
+  .text3 {
+    font-size: 1rem;
+    padding: 0 5%;
+  }
+
+  .contentSection {
+    padding: 40px 25px 10px;
+  }
+
+  .contentSection h1 {
+    font-size: 1.25rem;
+  }
+
+  .features {
+    flex-direction: column;
+    padding: 30px 15px;
+    gap: 20px;
+  }
+
+  .card {
+    flex: 1 1 100%;
+    padding: 20px 15px;
+  }
+
+  .steps {
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px 10px;
+  }
+
+  .step {
+    flex: 1 1 100%;
+  }
+}
+
+
+.footerCopyright {
+    text-align: center;
+    color: #fff;
+    font-size: 1rem;
+    background-color: #7F1416;
+    padding: 10px 0;
+
+}
+
+.footerCopyright p {
+    background-color: transparent;
+}
+
+.footerCopyright span {
+    font-weight: bold;
+    background-color: transparent;
+}
+
+.footerCopyright .highlighted {
+    color: #FCCB0A; 
+}
+
+
+@media (max-width: 768px) {
+  .footerCopyright {
+
+      font-size: 10px;
+      background-color: #7F1416;
+      padding: 10px 0;
+  }
+}
