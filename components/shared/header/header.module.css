@@ -37,7 +37,6 @@
 }
 
 .authButton {
-  font-weight: bold;
   padding: 0.25rem 0.75rem;
 }
 
@@ -46,5 +45,4 @@
   height: 20px;
   width: 1px;
   background-color: currentColor;
-  opacity: 0.5;
 }

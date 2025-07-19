@@ -35,6 +35,22 @@
     z-index: 1;
 }
 
+.parallax2 {
+    background-image: url('/bg-perps2.jpg');
+    align-items: center;
+    min-height: 50vh;
+}
+
+.parallax2::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: rgba(127, 20, 22, 0.5);
+    z-index: 1;
+}
+
+
+
 .text1 {
     color: #FCCB0A;
     font-weight: 900;
@@ -47,4 +63,128 @@
     font-weight: 900;
     font-size: 3rem;
     z-index: 1;
+}
+
+.text3 {
+    color: white;
+    text-align: center;
+    font-weight: 300;
+    padding: 0 10%;
+    font-size: 1.25rem;
+    z-index: 1;
+}
+
+.contentSection {
+    padding: 60px 20px 10px 20px;
+    text-align: center;
+    font-weight: bold;
+    background-color: #f7f7f7;
+    color: black;
+
+}
+
+.contentSection h1 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #7F1416;
+    text-shadow: rgba(0, 0, 0, 0.6) 1px 1px 0.5px;
+}
+
+.features {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 30px;
+  padding: 50px;
+}
+
+.card {
+  background-color: #f8f8f8;
+  border: 2px solid transparent;
+  border-top-color: #FCCB0A;
+  border-bottom-color: #FCCB0A;
+  border-radius: 15px;
+  padding: 20px;
+  text-align: center;
+  flex: 1 1 22%;
+  box-shadow: 0 2px 10px rgba(0, 0.1, 0.1, 0.1);
+  transition: all 0.9s ease;
+}
+
+.card:hover {
+  border-color: #FCCB0A;
+  background-color: #7F1416;
+  color: white;
+}
+
+.iconWrapper {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #7F1416;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 15px;
+  transition: background-color 0.3s ease;
+}
+
+.icon {
+  color: white;
+  width: 25px;
+  height: 25px;
+  transition: color 0.3s ease;
+}
+
+.card:hover .title {
+  color: #FCCB0A;
+}
+
+.card:hover .description {
+  color: white;
+}
+
+.card:hover .icon {
+  color: #FCCB0A;
+}
+
+.title {
+  color: #7F1416;
+  margin-bottom: 10px;
+  font-size: 1.2rem;
+}
+
+.description {
+  font-size: 16px;
+  font-weight: 400;
+  color: gray;
+  line-height: 1.4;
+}
+
+.steps {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px;
+  text-align: center;
+  flex-wrap: wrap;
+}
+
+.step {
+  flex: 1 1 22%;
+  min-width: 200px;
+}
+
+.circle {
+  width: 50px;
+  height: 50px;
+  background-color: #FCCB0A;
+  color: black;
+  font-weight: bold;
+  font-size: 1.2rem;
+  border-radius: 50%;
+  margin: 0 auto 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
