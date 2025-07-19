@@ -99,6 +99,25 @@ const steps = [
         ))}
       </div>
     </section>
+    <div className={`${styles.parallaxSection} ${styles.parallax2}`}>
+          <div className={styles.logo}>
+        <Image src="/full-logo.png" alt="Logo Icon" width={500} height={500} />
+      </div>
+
+  
+        </div>
+        <footer
+          className={styles.footerCopyright}
+        >
+          <p>
+            © Copyright <span>UPHSD Document Tracking System</span>. All Rights
+            Reserved.
+          </p>
+          <p>
+            Created by{" "}
+            <span className={styles.highlighted}>PRINCESS BATUMBAKAL</span>
+          </p>
+        </footer>
     </div>
   );
 }
