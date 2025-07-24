@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import styles from "./loginStyles.module.css";
 import toast, { Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 type FormKeys = 'Email' | 'Password';
 
@@ -14,6 +16,14 @@ type FormData = {
 }
 
 export default function Login() {
+
+  useEffect(() => {
+      AOS.init({
+        duration: 1000,
+        once: true,
+      });
+    }, []);
+
   const router = useRouter();
 
   const [formData, setFormData] = useState<FormData>({ email: "", password: "" });
@@ -83,7 +93,7 @@ export default function Login() {
     <>
       <Toaster position="top-center" reverseOrder={false} />
       <div className={styles.background}>
-        <div className={styles.card}>
+        <div data-aos="fade-up" className={styles.card}>
           <div className={styles.leftPanel}>
             <Image
               src="/logo.png"

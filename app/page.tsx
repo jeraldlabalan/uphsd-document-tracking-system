@@ -1,13 +1,27 @@
+'use client';
+
 import Image from "next/image";
 import styles from "./styles/styles.module.css";
 import Header from "@/components/shared/Header";
 import { FileText, Eye, Settings, ClipboardList } from "lucide-react";
 import DelayedRender from "../components/DelayedRender";
+import { useEffect } from 'react';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 
 
 
 export default function Home() {
+
+
+useEffect(() => {
+    AOS.init({
+      duration: 1000,
+      once: true,
+    });
+  }, []);
+
 
   const cards = [
     {
@@ -61,14 +75,14 @@ export default function Home() {
     <div>
       <Header />
       <div className={`${styles.parallaxSection} ${styles.parallax1}`}>
-        <p className={styles.text1}>
+        <p data-aos="slide-left" className={styles.text1}>
           UNIVERSITY OF PERPETUAL HELP SYSTEM DALTA - LAS PIÑAS
         </p>
-        <p className={styles.text2}>Digital Document Management</p>
+        <p data-aos="slide-left" className={styles.text2}>Digital Document Management</p>
       </div>
-      <div data-aos="fade-up" className={styles.contentSection}>
-        <h1>SYSTEM FEATURES</h1>
-        <div className={styles.features}>
+      <div className={styles.contentSection}>
+        <h1 data-aos="fade-up">SYSTEM FEATURES</h1>
+        <div data-aos="slide-right" className={styles.features}>
           {cards.map((card, index) => (
             <div key={index} className={styles.card}>
               <div className={styles.iconWrapper}>{card.icon}</div>
@@ -80,7 +94,7 @@ export default function Home() {
       </div>
 
       <div className={`${styles.parallaxSection} ${styles.parallax2}`}>
-        <p className={styles.text2}>JOIN US NOW</p>
+        <p data-aos="fade-up" className={styles.text2}>JOIN US NOW</p>
         <p className={styles.text3}>
           Aims to improve efficiency and accountability in handling
           school-issued documents, providing visibility for both employees and
@@ -89,8 +103,8 @@ export default function Home() {
       </div>
 
       <section className={styles.contentSection}>
-        <h1>How It Works?</h1>
-        <div className={styles.steps}>
+        <h1 data-aos="fade-up">How It Works?</h1>
+        <div data-aos="slide-left" className={styles.steps}>
           {steps.map((step, index) => (
             <div key={index} className={styles.step}>
               <div className={styles.circle}>{step.number}</div>
@@ -101,7 +115,7 @@ export default function Home() {
         </div>
       </section>
       <div className={`${styles.parallaxSection} ${styles.parallax2}`}>
-        <div className={styles.logo}>
+        <div data-aos="fade-in" className={styles.logo}>
           <Image
             src="/full-logo.png"
             alt="Logo Icon"
