@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { sign } from "jsonwebtoken";
+import { compare } from "bcryptjs";
+
+const JWT_SECRET = process.env.JWT_SECRET!;
 
 interface UserWithRole {
+  id: number;             // ✅ Add UserID
   email: string;
   password: string;
   role: "Admin" | "Employee";
@@ -19,6 +24,7 @@ async function findUserByEmail(email: string): Promise<UserWithRole | null> {
     user.Role.RoleName.trim().toLowerCase() === "admin" ? "Admin" : "Employee";
 
   return {
+    id: user.UserID,     // ✅ Save ID
     email: user.Email,
     password: user.Password,
     role: roleName,
@@ -63,17 +69,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (user.password !== password) {
+    // ✅ Use bcrypt to compare password hashes
+    const isPasswordValid = await compare(password, user.password);
+    if (!isPasswordValid) {
       return NextResponse.json(
         { message: "Invalid email or password." },
         { status: 401 }
       );
     }
 
-    // session token (use JWT or secure ID in real app)
-    const sessionToken = `${user.email}:${Date.now()}: ${user.role}`;
+    // ✅ Create secure JWT with UserID
+    const token = sign(
+      { UserID: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
-    // Set the session cookie
+    // ✅ Set JWT in HttpOnly cookie
     const response = NextResponse.json(
       { role: user.role, message: "Login successful" },
       { status: 200 }
@@ -81,8 +93,8 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set({
       name: "session",
-      value: sessionToken,
-      httpOnly: true,  // more secure, not accessible from JS
+      value: token,
+      httpOnly: true,
       sameSite: "strict",
       secure: process.env.NODE_ENV === "production",
       path: "/",
