@@ -1,10 +1,20 @@
 "use client";
 
 import styles from './signupStyles.module.css';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 export default function Signup() {
+
+  useEffect(() => {
+      AOS.init({
+        duration: 1000,
+        once: true,
+      });
+    }, []);
+
   const DEPARTMENTS = [
     { id: 1, name: "College of Engineering" },
     { id: 2, name: "College of Business" },
@@ -200,7 +210,7 @@ export default function Signup() {
 
   return (
     <div className={styles.background}>
-      <form className={styles.card} onSubmit={handleSubmit}>
+      <form data-aos="fade-up" className={styles.card} onSubmit={handleSubmit}>
         <h2 className={styles.title}>Create an account</h2>
 
 
