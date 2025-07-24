@@ -4,9 +4,12 @@ import styles from './settings.module.css'
 import { useState } from 'react';
 import EmployeeSidebar from "@/components/shared/employeeSidebar/employeeSidebar";
 import EmployeeHeader from "@/components/shared/employeeHeader/employeeHeader";
+import UploadPhotoModal from "@/components/shared/modalSettings/modal";
 
 export default function Setting() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
 
   return (
     <>
@@ -43,7 +46,7 @@ export default function Setting() {
 
 <div className={styles.profileContainer}>
   <div className={styles.profileLeft}>
-    <img src="/profile.png" alt="Profile" className={styles.profilePic} />
+    <img src="/" alt="Profile" className={styles.profilePic} />
   </div>
 
   <div className={styles.profileRight}>
@@ -53,10 +56,12 @@ export default function Setting() {
     </div>
 
     <div className={styles.uploadSection}>
-      <button className={styles.uploadButton}>
+      <button className={styles.uploadButton} onClick={() => setIsModalOpen(true)}>
         <img src="/camera-icon.svg" alt="camera" className={styles.icon} />
         Upload Photo
       </button>
+      <UploadPhotoModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+
       <p className={styles.note}>
         Upload a professional photo to personalize your account.
       </p>

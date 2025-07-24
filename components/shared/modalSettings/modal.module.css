@@ -1,0 +1,104 @@
+
+          .modalOverlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+          }
+
+         .modalContent {
+  position: relative; /* 👈 Required for positioning .closeButton */
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 50%;
+  max-width: 600px;
+  text-align: center;
+}
+
+
+          .previewBox {
+            margin: 1rem 0;
+            height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #ccc;
+          }
+
+          .previewImage {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+          }
+
+          .buttonGroup {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+          }
+
+          .apply {
+            background-color: #7F1416;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 10%;
+          }
+
+          .change {
+            background-color: #acacac;
+            border: black 2px solid;
+            color: black;
+            padding: 0.5rem 1rem;
+            border-radius: 10%;
+          }
+      
+.closeButton {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  line-height: 30px;
+  text-align: center;
+  cursor: pointer;
+  color: black;
+}
+
+
+@media (max-width: 768px) {
+  .modalContent {
+    width: 80%;
+    padding: 1.5rem;
+  }
+
+  .closeButton {
+    width: 28px;
+    height: 28px;
+    font-size: 1.2rem;
+    top: 8px;
+    right: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modalContent {
+    width: 90%;
+    padding: 1rem;
+  }
+
+  .closeButton {
+    width: 24px;
+    height: 24px;
+    font-size: 1rem;
+    top: 6px;
+    right: 6px;
+  }
+}
