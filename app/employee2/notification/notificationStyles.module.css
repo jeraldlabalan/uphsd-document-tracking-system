@@ -32,118 +32,351 @@
   border-top: 1px solid #ccc;
 }
 
-.headerRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
+
+.wrapper {
+  max-width: 1000px;
+  margin: auto;
+  padding: 2rem;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #fff;
 }
 
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
+
+
+
+.main {
+  border: 2px solid #e0e0e0;
+}
+.title {
+  font-size: 2rem;
+  color: #7F1416;
   margin-bottom: 1.5rem;
 }
 
-.searchWrapper {
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+ 
+  padding: 1rem;
+  font-weight: bold;
+  background-color: #f9f9f9;
+}
+
+.subtitle {
+  font-size: 1.1rem;
+}
+
+.actionsHeader {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.deleteSelected {
+  padding: 5px 10px;
+  border: 1px solid #aaa;
+  background-color: #fff;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.notification {
+  display: flex;
+  align-items: flex-start;
+  border-top: 1px solid #000000;
+  padding: 1rem;
   position: relative;
-  width: 100%;
+}
+
+.notification:last-child {
+  border-radius: 0 0 10px 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.bar {
+  width: 5px;
+  height: 100%;
+  margin: 0 1rem;
+  border-radius: 4px;
+}
+
+.details {
   flex: 1;
 }
 
-.searchIcon {
-  position: absolute;
-  top: 50%;
-  left: 12px;
-  transform: translateY(-50%);
-  color: #999;
-  pointer-events: none;
-}
-
-.searchInput {
-  width: 100%;
-  padding: 0.5rem 1rem;
-  padding-left: 2.2rem; 
-  border: 1px solid #ccc;
-  border-radius: 6px;
+.notifTitle {
+  margin: 0;
   font-size: 1rem;
-  outline: none;
+  color: #000000;
 }
 
+.description {
+  margin: 0.5rem 0;
+  color: #000000;
+}
 
-.dropdown {
-  padding: 0.5rem;
-  border: 1px solid #ccc;
+.meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: #777;
+  margin-top: 0.5rem;
+}
+
+.tag {
+  background-color: #eee;
+  padding: 3px 6px;
   border-radius: 6px;
-  background-color: white;
-  font-size: 1rem;
 }
 
-.docTable {
-  width: 100%;
-  border-collapse: collapse;
-  background-color: white;
+.time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.docTable th {
-  background-color: #e5e5e5;
-  text-align: left;
-  padding: 0.75rem;
-  font-weight: 600;
+.sideActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  margin-left: 1rem;
+}
+.buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
-.docTable td {
-  padding: 0.75rem;
-  border-top: 1px solid #ddd;
-  font-size: 0.95rem;
-}
-
-.docTable tr:hover {
-  background-color: rgba(122, 12, 27, 0.1); 
-  transition: background-color 0.2s ease;
+.view,
+.markRead,
+.delete {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
 }
 
-
-
-.actions a {
-  color: var(--color-maroon);
-  font-weight: 500;
-  text-decoration: none;
-  margin: 0 0.25rem;
+.view {
+  background-color: #ccc;
+  color: #000;
 }
 
-.actions a:hover {
-  text-decoration: underline;
+.markRead {
+  background-color: #cce5ff;
+  color: #004085;
 }
 
-@media (max-width: 768px) {
-  .filters {
-    flex-direction: column;
-    align-items: stretch;
-  }
+.delete {
+  background-color: #f44336;
+  color: white;
+}
 
-  .searchInput,
-  .dropdown {
-    width: 100%;
-  }
+.status {
+  margin-left: auto;
+  font-weight: bold;
+  color: #888;
+}
 
-  .docTable th,
-  .docTable td {
-    padding: 0.5rem;
-    font-size: 0.9rem;
-  }
 
-  .docTable {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
+/* View Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
 
-  .actions a {
-    display: inline-block;
-    margin: 0.25rem 0;
-  }
+.modalContent {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 650px;
+  position: relative;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+
+}
+
+.closeButton {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 1.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.modalTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 0.5rem;
+}
+
+.documentHeader {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pdfTag {
+  background: #d32f2f;
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.headerInfo {
+  flex: 1;
+  padding: 0 1rem;
+}
+
+.status {
+  background: #fff3cd;
+  color: #856404;
+  padding: 0.4rem 0.8rem;
+  border-radius: 5px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border: 1px solid #ffeeba;
+}
+
+
+
+.timelineTitle {
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+.timelineSection {
+  padding-left: 1rem;
+  position: relative;
+}
+
+.timelineList {
+  position: relative;
+  margin-top: 1rem;
+  margin-left: 1.2rem;        
+  border-left: 2px solid #ccc; 
+}
+
+.timelineItem {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  padding-left: 1.5rem; 
+  margin-bottom: 1.5rem;
+}
+
+.timelineIcon {
+  position: absolute;
+  left: -0.8rem; 
+  top: 0.15rem;
+  font-size: 1rem;
+  z-index: 2;
+  background-color: #fff;
+}
+
+.timelineText {
+  font-size: 0.95rem;
+  margin-left: 0.5rem; 
+}
+
+.timelineText p {
+  margin: 0;
+}
+
+.timelineText .byline {
+  color: gray;
+  font-size: 0.85rem;
+}
+
+.timelineDate {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 0.25rem;
+}
+
+
+/* Delete Modal Styles */
+.deleteModalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.deleteModalContent {
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  max-width: 420px;
+  width: 90%;
+  position: relative;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.deleteModalClose {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.deleteModalTitle {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color:#7F1416;
+}
+
+.deleteModalButtons {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.cancelButton {
+  background-color: #ffffff;
+  color: #7F1416;
+  padding: 0.5rem 1rem;
+  border: 2px solid #7F1416;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.confirmDeleteButton {
+  background-color: #7F1416;
+  color: #FCCB0A;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
 }
