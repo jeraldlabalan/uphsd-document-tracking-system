@@ -43,7 +43,7 @@ export async function POST(req: Request) {
         Position: decoded.Position,
         EmployeeID: decoded.EmployeeID,
         MobileNumber: decoded.MobileNumber,
-        RoleID: 1,
+        RoleID: 2,
       },
     });
 
