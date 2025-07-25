@@ -4,13 +4,15 @@ import { useState, useRef } from "react";
 import Image from "next/image";
 import styles from "../../forgotpass/forgotPassStyles.module.css";
 import toast, { Toaster } from "react-hot-toast";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function SignUpOtpPage() {
   const [otp, setOtp] = useState(Array(6).fill(""));
   const [isLoading, setIsLoading] = useState(false);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const email = searchParams.get("email");
 
   const handleChange = (index: number, value: string) => {
     if (/^\d?$/.test(value)) {
@@ -97,7 +99,7 @@ export default function SignUpOtpPage() {
           <div className={styles.rightPanel}>
             <h2 className={styles.Title}>Enter Verification Code</h2>
             <p className={styles.description}>
-              {"We've sent a 6-digit OTP to your email (lagay nyo dito yung meail na ininput nya sa signup)."}
+              {"We've sent a 6-digit OTP to your email (${email})."}
             </p>
 
             <form>
