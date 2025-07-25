@@ -2,47 +2,52 @@
 
 import Head from 'next/head';
 import styles from './history.module.css';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import EmployeeSidebar from "@/components/shared/employeeSidebar/employeeSidebar";
 import EmployeeHeader from "@/components/shared/employeeHeader/employeeHeader";
 import Modal from "@/components/shared/modalHistory/modal";
 
 interface DocumentType {
-  title: string;
-  Aprrove: string;
-  status: 'Pending' | 'Completed' | string;
-  created: string;
-  Completed: string;
+  id: number; // RequestID
+  title: string; // Document.Title
+  approve: string; // User.FullName
+  status: string; // Status.StatusName
+  created: string; // RequestedAt
+  completed: string | null; // CompletedAt
 }
 
 const initialDocuments: DocumentType[] = [
   {
+    id: 1,
     title: 'IT Equipment Purchase Request',
-    Aprrove: 'SD',
+    approve: 'SD',
     status: 'Pending',
     created: 'July 5, 2025',
-    Completed: 'July 5, 2025',
+    completed: 'July 5, 2025',
   },
   {
+    id: 2,
     title: 'Student Grades',
-    Aprrove: 'Antonio Orcales',
+    approve: 'Antonio Orcales',
     status: 'Completed',
     created: 'July 5, 2025',
-    Completed: 'July 10, 2025',
+    completed: 'July 10, 2025',
   },
   {
+    id: 3,
     title: 'Student Good Moral Request',
-    Aprrove: 'Antonio Orcales',
+    approve: 'Antonio Orcales',
     status: 'Pending',
     created: 'July 5, 2025',
-    Completed: 'July 10, 2025',
+    completed: 'July 10, 2025',
   },
   {
+    id: 4,
     title: 'Request Form',
-    Aprrove: 'Antonio Orcales',
+    approve: 'Antonio Orcales',
     status: 'Pending',
     created: 'July 5, 2025',
-    Completed: 'July 10, 2025',
+    completed: 'July 10, 2025',
   },
 ];
 
@@ -52,6 +57,16 @@ export default function History() {
   const [selectedDoc, setSelectedDoc] = useState<DocumentType | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      const res = await fetch("/api/employee/history");
+      const data = await res.json();
+      setDocuments(data);
+    };
+
+    fetchHistory();
+  }, []);
 
   const handleView = (doc: DocumentType) => {
     setSelectedDoc(doc);
@@ -63,13 +78,14 @@ export default function History() {
     setIsDeleteModalOpen(true);
   };
 
-  const confirmDelete = () => {
-    if (selectedDoc) {
-      setDocuments((docs) => docs.filter((doc) => doc !== selectedDoc));
-      setSelectedDoc(null);
-    }
-    setIsDeleteModalOpen(false);
-  };
+  const confirmDelete = async () => {
+  if (selectedDoc) {
+    await fetch(`/api/employee/history/${selectedDoc.id}`, { method: "DELETE" });
+    setDocuments((docs) => docs.filter((doc) => doc.id !== selectedDoc.id));
+    setSelectedDoc(null);
+  }
+  setIsDeleteModalOpen(false);
+};
 
   return (
     <>
@@ -132,7 +148,7 @@ export default function History() {
                       {documents.map((doc, index) => (
                         <tr key={index}>
                           <td>{doc.title}</td>
-                          <td>{doc.Aprrove}</td>
+                          <td>{doc.approve}</td>
                           <td>
                             <span
                               className={
@@ -145,7 +161,7 @@ export default function History() {
                             </span>
                           </td>
                           <td>{doc.created}</td>
-                          <td>{doc.Completed}</td>
+                          <td>{doc.completed}</td>
                           <td>
                             <a href="#" onClick={() => handleView(doc)}>View</a> |{" "}
                             <a href="#" onClick={() => handleDelete(doc)}>Delete</a>
@@ -164,10 +180,10 @@ export default function History() {
               {selectedDoc && (
                 <div>
                   <p><strong>Title:</strong> {selectedDoc.title}</p>
-                  <p><strong>Approved By:</strong> {selectedDoc.Aprrove}</p>
+                  <p><strong>Approved By:</strong> {selectedDoc.approve}</p>
                   <p><strong>Status:</strong> {selectedDoc.status}</p>
                   <p><strong>Created:</strong> {selectedDoc.created}</p>
-                  <p><strong>Completed:</strong> {selectedDoc.Completed}</p>
+                  <p><strong>Completed:</strong> {selectedDoc.completed}</p>
                 </div>
               )}
             </Modal>
