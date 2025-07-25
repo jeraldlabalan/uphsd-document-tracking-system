@@ -144,6 +144,7 @@
     flex: 1;
     padding: 22px 10px;
     min-height: max-content;
+    color: black;
 }
 
 .searchContainer .searchContainerIcon {
@@ -162,8 +163,6 @@
     flex: 1;
     width: 100%;
     margin-left: 30px;
-    
-
     
 }
 

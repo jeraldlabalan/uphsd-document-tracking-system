@@ -1,7 +1,7 @@
 // components/Sidebar.tsx
-import Link from 'next/link';
+import Link from "next/link";
 
-import styles from './employeeSidebar.module.css';
+import styles from "./employeeSidebar.module.css";
 
 type SidebarProps = {
   sidebarOpen: boolean;
@@ -9,14 +9,18 @@ type SidebarProps = {
 
 export default function Sidebar({ sidebarOpen }: SidebarProps) {
   return (
-    <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ''}`}>
+    <aside
+      className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ""}`}
+    >
       <p className={styles.role}>👤 IT COORDINATOR</p>
       <ul>
         <li>
           <Link href="/employee/dashboard">📂 Dashboard</Link>
         </li>
         <li>
-          <Link href="/employee/dashboard/employee/document">📄 My Documents</Link>
+          <Link href="/employee/dashboard/employee/document">
+            📄 My Documents
+          </Link>
         </li>
         <li>
           <Link href="/employee/dashboard/history">🕘 History</Link>

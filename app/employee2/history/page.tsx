@@ -1,53 +1,51 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import styles from './historyStyles.module.css'; // Reuse same styles
-import EmpHeader from '@/components/shared/empHeader';
-import { Search as SearchIcon } from 'lucide-react';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
+import { useState, useEffect } from "react";
+import styles from "./historyStyles.module.css"; // Reuse same styles
+import EmpHeader from "@/components/shared/empHeader";
+import { Search as SearchIcon } from "lucide-react";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 export default function History() {
-
-useEffect(() => {
+  useEffect(() => {
     AOS.init({
       duration: 1000,
       once: true,
     });
   }, []);
 
-
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
-  const [departmentFilter, setDepartmentFilter] = useState('');
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("");
 
   const historyData = [
     {
-      document: 'Final Budget FY2024',
-      type: 'Report',
-      sender: 'Matthew',
-      department: 'Finance',
-      date: 'June 12, 2025',
-      dueDate: 'June 20, 2025',
-      status: 'Completed',
+      document: "Final Budget FY2024",
+      type: "Report",
+      sender: "Matthew",
+      department: "Finance",
+      date: "June 12, 2025",
+      dueDate: "June 20, 2025",
+      status: "Completed",
     },
     {
-      document: 'Employee Feedback Form',
-      type: 'Evaluation',
-      sender: 'Donna',
-      department: 'HR',
-      date: 'May 28, 2025',
-      dueDate: 'June 5, 2025',
-      status: 'Completed',
+      document: "Employee Feedback Form",
+      type: "Evaluation",
+      sender: "Donna",
+      department: "HR",
+      date: "May 28, 2025",
+      dueDate: "June 5, 2025",
+      status: "Completed",
     },
     {
-      document: 'Training Request Memo',
-      type: 'Request',
-      sender: 'Alex',
-      department: 'Learning & Dev',
-      date: 'May 15, 2025',
-      dueDate: 'May 20, 2025',
-      status: 'Completed',
+      document: "Training Request Memo",
+      type: "Request",
+      sender: "Alex",
+      department: "Learning & Dev",
+      date: "May 15, 2025",
+      dueDate: "May 20, 2025",
+      status: "Completed",
     },
   ];
 
