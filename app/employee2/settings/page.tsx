@@ -1,24 +1,22 @@
 'use client';
-import React, { useState, useEffect } from 'react';
-import styles from './settingStyles.module.css'; // Ensure correct styling path
+import React, { useState, useEffect, useRef } from 'react';
+import styles from './settingStyles.module.css';
 import EmpHeader from '@/components/shared/empHeader';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 
 export default function ProfileSettings() {
-
-useEffect(() => {
-    AOS.init({
-      duration: 1000,
-      once: true,
-    });
+  useEffect(() => {
+    AOS.init({ duration: 1000, once: true });
   }, []);
-
 
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [tempPreview, setTempPreview] = useState<string | null>(null);
+
   const [info, setInfo] = useState({
     firstName: 'Kai',
     lastName: 'Sotto',
@@ -30,11 +28,7 @@ useEffect(() => {
     bio: '',
   });
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      setProfilePhoto(e.target.files[0]);
-    }
-  };
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleInfoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -45,6 +39,20 @@ useEffect(() => {
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setTempPreview(URL.createObjectURL(file));
+      setProfilePhoto(file);
+    }
+  };
+
+  const applyPhoto = () => {
+    if (tempPreview) {
+      setIsModalOpen(false);
+    }
   };
 
   return (
@@ -74,10 +82,9 @@ useEffect(() => {
 
               {/* Upload Photo Section */}
               <div className={styles.uploadSection}>
-                <label className={styles.uploadBtn}>
-                  <input type="file" accept="image/*" onChange={handlePhotoChange} hidden />
+                <button className={styles.uploadBtn} onClick={() => setIsModalOpen(true)}>
                   Upload Photo
-                </label>
+                </button>
                 <p className={styles.photoNote}>Upload a professional photo to personalize your account.</p>
               </div>
 
@@ -214,6 +221,41 @@ useEffect(() => {
             </div>
           </div>
         </div>
+
+        {/* ✅ Modal */}
+        {isModalOpen && (
+          <div className={styles.modalOverlay} onClick={() => setIsModalOpen(false)}>
+            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+              <h3>Upload Photo</h3>
+              <button className={styles.closeButton} onClick={() => setIsModalOpen(false)}>&times;</button>
+
+              <div className={styles.previewBox}>
+                {tempPreview ? (
+                  <img src={tempPreview} alt="Preview" className={styles.previewImage} />
+                ) : (
+                  <p>No image selected.</p>
+                )}
+              </div>
+
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+              />
+
+              <div className={styles.buttonGroup}>
+                <button className={styles.clearBtn} onClick={() => fileInputRef.current?.click()}>
+                  Change
+                </button>
+                <button className={styles.saveBtn} onClick={applyPhoto}>
+                  Apply
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
