@@ -2,9 +2,18 @@
 
 import Head from 'next/head'
 import styles from './document.module.css'
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import EmployeeSidebar from "@/components/shared/employeeSidebar/employeeSidebar";
 import EmployeeHeader from "@/components/shared/employeeHeader/employeeHeader";
+import Modal from "@/components/shared/modalHistory/modal";
+
+interface DocumentType {
+  id: number;          // DocumentRequest.RequestID
+  title: string;       // Document.Title
+  fileType: string;    // Document.Type or file extension
+  status: string;      // Status.StatusName
+  date: string;        // RequestedAt or CreatedAt
+}
 
 
 const documents = [
@@ -32,7 +41,26 @@ const documents = [
 export default function Document() {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [documents, setDocuments] = useState<DocumentType[]>([]);
+  const [selectedDoc, setSelectedDoc] = useState<DocumentType | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [summary, setSummary] = useState({ total: 0, inProcess: 0, completed: 0 });
 
+   useEffect(() => {
+    const fetchDocs = async () => {
+      const res = await fetch("/api/employee/documents");
+      const data = await res.json();
+      setDocuments(data.docs);
+      setSummary(data.summary);
+    };
+
+    fetchDocs();
+  }, []);
+
+  const handleDelete = async (id: number) => {
+  await fetch(`/api/documents/${id}/delete`, { method: "DELETE" });
+  setDocuments((docs) => docs.filter((doc) => doc.id !== id));
+};
 
   return (
    <>
@@ -55,23 +83,23 @@ export default function Document() {
      <div className={styles.Maincontainer}>
   <div className={styles.headerRow}>
     <h1 className={styles.heading}>My Documents</h1>
-    <button className={styles.createButton}>
+    <a className={styles.createButton} href="/employee/create-new-doc">
       <span>+</span> Create New Document
-    </button>
+    </a>
   </div>
 
 
   <div className={styles.cards}>
     <div className={`${styles.card} ${styles.red}`}>
-      <span className={styles.count}>6</span>
+      <span className={styles.count}>{summary.total}</span>
       <p>Total Documents</p>
     </div>
     <div className={`${styles.card} ${styles.blue}`}>
-      <span className={styles.count}>12</span>
+      <span className={styles.count}>{summary.inProcess}</span>
       <p>In Process</p>
     </div>
     <div className={`${styles.card} ${styles.green}`}>
-      <span className={styles.count}>23</span>
+      <span className={styles.count}>{summary.completed}</span>
       <p>Completed</p>
     </div>
   </div>
@@ -137,7 +165,7 @@ export default function Document() {
               </td>
               <td>{doc.date}</td>
               <td>
-                <a href="#">View</a> | <a href="#">Edit</a> | <a href="#">Delete</a>
+                <a href="#" onClick={() => { setSelectedDoc(doc); setIsViewModalOpen(true); }}>View</a> | <a href="#">Edit</a> | <a href="#" onClick={() => handleDelete(doc.id)}>Delete</a>
               </td>
             </tr>
           ))}
@@ -146,7 +174,15 @@ export default function Document() {
     </div>
     </div>
 
-
+{isViewModalOpen && selectedDoc && (
+  <Modal isOpen={isViewModalOpen} onClose={() => setIsViewModalOpen(false)}>
+    <h2>Document Details</h2>
+    <p><strong>Title:</strong> {selectedDoc.title}</p>
+    <p><strong>Type:</strong> {selectedDoc.fileType}</p>
+    <p><strong>Status:</strong> {selectedDoc.status}</p>
+    <p><strong>Date:</strong> {selectedDoc.date}</p>
+  </Modal>
+)}
 
 </main>
       </div>
@@ -156,4 +192,6 @@ export default function Document() {
       
     </>
   )
+  
 }
+
