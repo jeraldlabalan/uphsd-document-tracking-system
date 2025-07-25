@@ -30,29 +30,48 @@ export default function OtpPage() {
     }
   };
 
-  const handleSubmit = () => {
-  const trimmedOtp = otp.map((d) => d.trim());
-  const isValid = trimmedOtp.every((digit) => /^\d$/.test(digit));
+  const handleSubmit = async () => {
+    const trimmedOtp = otp.map((d) => d.trim());
+    const isValid = trimmedOtp.every((digit) => /^\d$/.test(digit));
 
-  if (!isValid || trimmedOtp.length !== 6) {
-    toast.error("Please enter all 6 valid digits.");
-    return;
-  }
-
-  const code = trimmedOtp.join("");
-
-  setIsLoading(true);
-  setTimeout(() => {
-    setIsLoading(false);
-
-    if (code === "123456") {
-      toast.success("OTP Verified!");
-      router.push("/forgotpass/newPass");
-    } else {
-      toast.error("Invalid OTP. Try again.");
+    if (!isValid || trimmedOtp.length !== 6) {
+      toast.error("Please enter all 6 valid digits.");
+      return;
     }
-  }, 1000);
-};
+
+    const code = trimmedOtp.join("");
+    const token = localStorage.getItem("forgotpassToken");
+
+    if (!token) {
+      toast.error("Session expired. Please request a new OTP.");
+      router.push("/forgotpass");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const res = await fetch("/api/user/forgotpass/OTP", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ otp: code, token }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success("OTP Verified!");
+        router.push("/forgotpass/newPass");
+      } else {
+        toast.error(data.error || "Invalid OTP. Try again.");
+      }
+
+    } catch (err) {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
 
   return (
