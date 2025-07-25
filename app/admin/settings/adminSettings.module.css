@@ -1,0 +1,552 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    background-color: #D9D9D9;
+    height: 100vh;
+    width: 100%;
+}
+
+.mainContanent {
+    flex: 1;
+    display: flex;
+    padding: 50px 30px;
+    gap: 10px;
+    background-color: #D9D9D9;
+    
+}
+
+.rightContent {
+    background-color: white;
+    box-shadow: 5px 8px 5px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    width: 100%;
+    padding: 30px 50px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.rightContent h1 {
+    font-size: 1.70rem;
+    text-transform: capitalize;
+    font-weight: 600;
+    color: var(--color-maroon);
+    text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.3);
+}
+
+.profileContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 50px;
+}
+
+.settingsContainer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.displayPictureContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.photoAndDescriptionContainer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 30px;
+    padding: 0 20px;
+}
+
+.photoAndDescriptionContainer > :first-child {
+    width: 75px;
+    object-fit: cover;
+    object-position: center center;
+    border-radius: 50%;
+    border: 2px solid var(--color-maroon);
+}
+
+.photoAndDescriptionContainer .description {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.photoAndDescriptionContainer .description p {
+    font-weight: 400;
+}
+
+.photoAndDescriptionContainer .description p:last-of-type {
+    font-weight: 100;
+    text-transform: uppercase;
+
+}
+
+.buttonAndNoteContainer {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 50px;
+}
+
+.buttonAndNoteContainer > :first-child {
+    background-color: var(--color-maroon);
+    color: white;
+    display: flex;
+    align-items: center;
+    text-transform: capitalize;
+    width: 130px;
+    justify-content: center;
+    gap: 10px;
+    height: 40px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    
+}
+
+.buttonAndNoteContainer > :first-child svg {
+    height: 20px;
+    width: 20px;
+}
+
+.buttonAndNoteContainer > p {
+    width: 40%;
+    text-align: center;
+    line-height: 0.8;
+    font-weight: 100;
+    font-size: 0.85rem;
+}
+
+.informationContainer {
+    border: 1px solid var(--color-grey);
+    border-radius: 12px;
+    padding: 20px 20px;
+    gap: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.informationContainer p {
+    color: var(--color-maroon);
+    text-transform: capitalize;
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+.informationForm {
+    display: flex;
+    flex-direction: column;
+    gap: 50px;
+}
+
+.formContainer {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.formContainer .formData {
+    display: flex;
+    flex-direction: column;
+}
+
+.formContainer .formData label {
+    text-transform: capitalize;
+    font-size: 1.05rem;
+}
+
+.formContainer .formData input[type="text"],
+.formContainer .formData textarea {
+    border: 1px solid var(--color-grey);
+    border-radius: 5px;
+    padding: 5px 5px;
+    font-size: 0.95rem;
+}
+
+.formContainer .formData input[type="text"]:focus,
+.formContainer .formData textarea:focus {
+    outline: 2px solid var(--color-maroon);
+}
+
+.formContainer .formData input[type="text"] {
+    text-transform: capitalize;
+}
+
+.formContainer .formData textarea {
+    resize: none;
+}
+
+.formContainer > :last-child {
+    grid-column: span 2;
+}
+
+.informationContainer .buttonsContainer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 20px;
+}
+
+.informationContainer .buttonsContainer > :first-child,
+.informationContainer .buttonsContainer > :last-child {
+    border: 2px solid var(--color-maroon);
+    vertical-align: middle;
+    padding: 0 10px;
+    border-radius: 50px;
+    text-transform: capitalize;
+}
+
+.informationContainer .buttonsContainer > :first-child {
+    background-color: var(--color-grey);
+    color: var(--color-maroon);
+}
+
+.informationContainer .buttonsContainer > :last-child {
+    background-color: var(--color-maroon);
+    color: var(--color-yellow);
+
+}
+
+.optionDropdownContainer {
+  position: relative;
+  display: inline-block;;
+  gap: 10px;
+}
+
+.optionDropdownContainer span {
+    text-transform: capitalize;
+}
+
+
+.optionDropdownContainer .optionBtn {
+    padding: 5px 10px;
+    border: 1px solid var(--color-grey);
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-transform: capitalize;
+    gap: 10px;
+    width: 100%;
+}
+
+.optionDropdownContainer .activeOptionBtn {
+    padding: 5px 10px;
+    border: 1px solid var(--color-maroon);
+    border-top-left-radius: 9px;
+    border-top-right-radius: 9px;
+    border-bottom: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-transform: capitalize;
+    gap: 10px;
+    width: 100%;
+    white-space: nowrap;
+}
+
+.optionDropdownContainer .tableDropdownMenu {
+    position: absolute;
+
+    border: 1px solid var(--color-maroon);
+    border-bottom-left-radius: 9px;
+    border-bottom-right-radius: 9px;
+    border-top: none;
+    gap: 10px;
+    width: 100%;
+    background-color: white;
+}
+
+.optionDropdownContainer .tableDropdownMenu li {
+    width: 100%;
+    padding: 10px 0;
+    transition: background-color ease-out 0.3s;
+    text-align: center;
+}
+
+.optionDropdownContainer .tableDropdownMenu li:last-of-type {
+    border-bottom-left-radius: 9px;
+    border-bottom-right-radius: 9px;
+}
+
+.optionDropdownContainer .tableDropdownMenu li:hover {
+    background-color: var(--color-maroon);
+    color: var(--color-yellow);
+}
+
+.documentContainer {
+    border: 1px solid var(--color-grey);
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    padding: 20px 20px;
+    gap: 20px;
+}
+
+.documentContainer .sectionTitle {
+    color: var(--color-maroon);
+    font-weight: 600;
+    font-size: 1rem;
+    text-transform: capitalize;
+}
+
+.documentManagementContainer,
+.departmentManagementContainer {
+    border-bottom: 1px solid black;
+    padding-bottom: 10px;
+}
+
+.documentManagementContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.parentSection {
+    margin-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.maximumFileSizeSection {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.maximumFileSizeSection > p,
+.allowedFileTypesSection > p {
+    text-transform: capitalize;
+}
+
+.maximumFileSizeSection > :last-child,
+.autoDeleteDocumentSection .inputAndButtonContainer > :first-child {
+    text-transform: capitalize;
+    border: 1px solid var(--color-grey);
+    border-radius: 6px;
+    padding: 0 5px;
+    width: 50%;
+}
+
+.maximumFileSizeSection > :last-child:focus,
+.autoDeleteDocumentSection .inputAndButtonContainer > :first-child:focus {
+    outline: 2px solid var(--color-maroon);
+}
+
+.allowedFileTypesSection .checkboxContainer {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.allowedFileTypesSection .checkboxContainer label {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    cursor: pointer;
+    width: fit-content;
+    gap: 5px;
+}
+
+ .checkboxContainer label input[type="checkbox"] {
+    height: 15px;
+    cursor: pointer;
+    border-radius: none;
+}
+
+.autoDeleteDocumentSection {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.autoDeleteDocumentSection .inputAndButtonContainer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.autoDeleteDocumentSection .inputAndButtonContainer > :last-child {
+    width: fit-content;
+    padding: 3px 10px;
+    text-transform: capitalize;
+    background-color: var(--color-maroon);
+    color: var(--color-yellow);
+    border-radius: 50px;
+    font-size: 0.85rem;
+}
+
+.departmentManagementContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.departmentContents {
+    margin-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.addNewDepartmentContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.addNewDepartmentContainer label {
+    text-transform: capitalize;
+}
+
+.addNewDepartmentContainer input[type="text"] {
+    border: 1px solid var(--color-grey);
+    border-radius: 5px;
+    padding: 5px 5px;
+    font-size: 0.95rem;
+    width: 50%;
+}
+
+.addNewDepartmentContainer input[type="text"]:focus {
+    outline: 2px solid var(--color-maroon);
+}
+
+.activeDepartmentContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.activeDepartmentContainer > :first-child {
+    text-transform: capitalize;
+}
+
+.departmentList {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 100%;
+}
+
+.departmentListScroll {
+    width: 50%;
+    border: 1px solid var(--color-grey);
+    border-radius: 12px;
+    padding: 10px;
+}
+
+.departmentListScroll ul {
+    height: 100px;
+    overflow-y: auto;
+}
+
+.departmentActionButtons {
+    align-self: flex-end;
+    display: flex;
+    justify-content: space-evenly;
+    width: 50%;
+    gap: 15px;
+    padding: 0 15px;
+}
+
+.departmentActionButtons > :first-child {
+    background-color: var(--color-maroon);
+    color: var(--color-yellow);
+}
+
+.departmentActionButtons > :last-child {
+    border: 2px solid var(--color-maroon);
+}
+
+.departmentActionButtons > :first-child,
+.departmentActionButtons > :last-child {
+    border-radius: 50px;
+    text-transform: capitalize;
+    padding: 2px 5px;
+    font-size: 0.85rem;
+    flex: 1;
+}
+
+.changePasswordContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.changePasswordDataForm input[type="text"] {
+    border: 1px solid var(--color-grey);
+    border-radius: 5px;
+    padding: 5px 5px;
+    font-size: 0.95rem;
+}
+
+.changePasswordContents {
+    margin-left: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    
+}
+
+.changePasswordDataForm {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+}
+
+.changePasswordDataForm .dataForm {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.changePasswordDataForm .dataForm label {
+    text-transform: capitalize;
+    color: var(--color-maroon);
+    font-size: 0.85rem;
+}
+
+.changePasswordDataForm .dataForm input[type="text"]:focus {
+    outline: 2px solid var(--color-maroon);
+}
+
+.changePasswordButtons {
+    align-self: flex-end;
+    width: 50%;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    justify-content: center;
+    gap: 20px;
+}
+
+.changePasswordButtons > :first-child,
+.changePasswordButtons > :last-child {
+    text-transform: capitalize;
+    font-size: 0.85rem;
+    flex: 1;
+    padding: 3px 0;
+    border-radius: 50px;
+    border: 2px solid var(--color-maroon);
+}
+
+.changePasswordButtons > :first-child {
+    background-color: var(--color-grey);
+    color: var(--color-maroon);
+
+}
+
+.changePasswordButtons > :last-child {
+    background-color: var(--color-maroon);
+    color: var(--color-yellow);
+}
