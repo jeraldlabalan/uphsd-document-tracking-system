@@ -1,13 +1,12 @@
 "use client";
 
-import Head from 'next/head'
-import { useState, useEffect } from 'react';
-import styles from './employee.module.css'
+import Head from "next/head";
+import { useState, useEffect } from "react";
+import styles from "./employee.module.css";
 import EmployeeSidebar from "@/components/shared/employeeSidebar/employeeSidebar";
 import EmployeeHeader from "@/components/shared/employeeHeader/employeeHeader";
 
 export default function Dashboard() {
-
   const [sidebarOpen, setSidebarOpen] = useState(false);
   type RecentDocument = {
     RequestID: number;
@@ -61,10 +60,7 @@ export default function Dashboard() {
         <title className={styles.title}>Dashboard</title>
       </Head>
 
-          <EmployeeHeader onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-
-
-     
+      <EmployeeHeader onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
       <div className={styles.container}>
         <EmployeeSidebar sidebarOpen={sidebarOpen} />
@@ -73,7 +69,9 @@ export default function Dashboard() {
 
           <div className={styles.cards}>
             <div className={`${styles.card} ${styles.red}`}>
-              <span className={styles.count}>{dashboardData.pendingSignatures}</span>
+              <span className={styles.count}>
+                {dashboardData.pendingSignatures}
+              </span>
               <p>Pending Signatures</p>
             </div>
             <div className={`${styles.card} ${styles.blue}`}>
@@ -93,22 +91,26 @@ export default function Dashboard() {
           <h3 className={styles.recentTitle}>Recent Documents</h3>
           <div className={styles.documentList}>
             {dashboardData.recentDocuments.map((req) => (
-            <div key={req.RequestID} className={styles.documentCard}>
-              <div>
-                <strong>{req.Document.Title}</strong>
-                <p>To: {req.User.FullName}</p>
-                <p>Department: {req.Document.Department?.Name}</p>
+              <div key={req.RequestID} className={styles.documentCard}>
+                <div>
+                  <strong>{req.Document.Title}</strong>
+                  <p>To: {req.User.FullName}</p>
+                  <p>Department: {req.Document.Department?.Name}</p>
+                </div>
+                <div>
+                  <p>
+                    Date Received: {new Date(req.RequestedAt).toDateString()}
+                  </p>
+                  <p>Priority: {req.Priority}</p>
+                  <span className={styles.pending}>
+                    {req.Status.StatusName}
+                  </span>
+                </div>
               </div>
-              <div>
-                <p>Date Received: {new Date(req.RequestedAt).toDateString()}</p>
-                <p>Priority: {req.Priority}</p>
-                <span className={styles.pending}>{req.Status.StatusName}</span>
-              </div>
-            </div>
-        ))}
-        </div>
+            ))}
+          </div>
         </main>
       </div>
     </>
-  )
+  );
 }

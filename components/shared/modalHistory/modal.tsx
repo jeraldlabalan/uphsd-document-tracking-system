@@ -1,7 +1,7 @@
 // components/shared/modalHistory/modal.tsx
 "use client";
-import styles from './Modal.module.css';
-import { ReactNode } from 'react';
+import styles from "./Modal.module.css";
+import { ReactNode } from "react";
 
 interface ModalProps {
   isOpen: boolean;
@@ -16,7 +16,9 @@ export default function Modal({ isOpen, onClose, children }: ModalProps) {
     <div className={styles.overlay}>
       <div className={styles.modal}>
         {children}
-        <button onClick={onClose} className={styles.closeButton}>Close</button>
+        <button onClick={onClose} className={styles.closeButton}>
+          Close
+        </button>
       </div>
     </div>
   );

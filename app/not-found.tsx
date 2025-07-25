@@ -14,13 +14,10 @@ export default function NotFound() {
             <p className={styles.text}>PAGE</p>
             <p className={styles.text}>NOT FOUND</p>
           </div>
-          
-
         </div>
         <Link href="/" className={styles.Btn}>
-  Back to Home
-</Link>
-      
+          Back to Home
+        </Link>
       </div>
     </div>
   );

@@ -26,7 +26,9 @@ export default function EmpDashboard() {
   return (
     <>
       {/* Sidebar */}
-      <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ""}`}>
+      <aside
+        className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ""}`}
+      >
         <div className={styles.sidebarHeader}>
           <Image
             src="/dms-logo.png"

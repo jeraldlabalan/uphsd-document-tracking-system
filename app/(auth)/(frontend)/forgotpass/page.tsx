@@ -30,22 +30,42 @@ export default function ForgotPass() {
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (!formData.email.toLowerCase().endsWith("@cvsu.edu.ph")) {
-      toast.error("Email must be a valid @cvsu.edu.ph address.");
-      return;
+  if (!formData.email.toLowerCase().endsWith("@cvsu.edu.ph")) {
+    toast.error("Email must be a valid @cvsu.edu.ph address.");
+    return;
+  }
+
+  setIsLoading(true);
+
+  try {
+    const res = await fetch("/api/user/forgotpass", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: formData.email }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      localStorage.setItem("forgotpassToken", data.token);
+      toast.success("OTP sent to your email!");
+      router.push("/forgotpass/OTP");
+    } else {
+      toast.error(data.error || "Failed to send OTP");
     }
 
-    setIsLoading(true);
-    toast.success("OTP sent to your email!");
-
-
-    setTimeout(() => {
-      router.push("/forgotpass/OTP"); 
-    }, 1500);
+  } catch (err) {
+    toast.error("Something went wrong. Please try again.");
+  } finally {
+    setIsLoading(false);
   }
+};
+
+
+ 
 
   return (
     <>

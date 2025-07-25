@@ -1,25 +1,34 @@
-'use client';
-import React, { useState } from 'react';
-import styles from './editDocStyles.module.css';
-import { FileUp } from 'lucide-react';
-import EmpHeader from '@/components/shared/empHeader';
-
+"use client";
+import React, { useState } from "react";
+import styles from "./editDocStyles.module.css";
+import { FileUp } from "lucide-react";
+import EmpHeader from "@/components/shared/empHeader";
 
 export default function CreateNewDocument() {
-  const [documentName, setDocumentName] = useState('');
-  const [classification, setClassification] = useState('Select Document Type');
-  const [description, setDescription] = useState('');
-  const [department, setDepartment] = useState('Select Department');
+  const [documentName, setDocumentName] = useState("");
+  const [classification, setClassification] = useState("Select Document Type");
+  const [description, setDescription] = useState("");
+  const [department, setDepartment] = useState("Select Department");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [approvers, setApprovers] = useState([{ id: Date.now() }]);
-  const [date, setDate] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [notes, setNotes] = useState('');
+  const [date, setDate] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [notes, setNotes] = useState("");
   const [sendEmail, setSendEmail] = useState(false);
   const [readReceipt, setReadReceipt] = useState(false);
 
-  const departmentOptions = ['Select Department', 'Information Technology', 'Business', 'Human Resource'];
-  const documentClassification = ['Select Document Type', 'Memo', 'Report', 'Notice'];
+  const departmentOptions = [
+    "Select Department",
+    "Information Technology",
+    "Business",
+    "Human Resource",
+  ];
+  const documentClassification = [
+    "Select Document Type",
+    "Memo",
+    "Report",
+    "Notice",
+  ];
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -36,15 +45,15 @@ export default function CreateNewDocument() {
   };
 
   const handleClear = () => {
-    setDocumentName('');
-    setClassification('Select Document Type');
-    setDescription('');
-    setDepartment('Select Department');
+    setDocumentName("");
+    setClassification("Select Document Type");
+    setDescription("");
+    setDepartment("Select Department");
     setSelectedFile(null);
     setApprovers([{ id: Date.now() }]);
-    setDate('');
-    setDueDate('');
-    setNotes('');
+    setDate("");
+    setDueDate("");
+    setNotes("");
     setSendEmail(false);
     setReadReceipt(false);
   };
@@ -119,7 +128,9 @@ export default function CreateNewDocument() {
               />
               <div className={styles.uploadContent}>
                 <FileUp size={32} />
-                <span>{selectedFile ? selectedFile.name : 'Click or drag to upload'}</span>
+                <span>
+                  {selectedFile ? selectedFile.name : "Click or drag to upload"}
+                </span>
               </div>
             </label>
           </div>
@@ -129,7 +140,10 @@ export default function CreateNewDocument() {
 
           <div className={styles.approvalContainer}>
             <div className={styles.approvalHeader}>
-              <p>Select the people who need to review and approve this document in order.</p>
+              <p>
+                Select the people who need to review and approve this document
+                in order.
+              </p>
               <div className={styles.toggleContainer}>
                 <span>Approval Required</span>
                 <label className={styles.switch}>
@@ -172,7 +186,9 @@ export default function CreateNewDocument() {
               />
             </div>
             <div className={styles.inputGroup}>
-              <label>Due Date <span className={styles.optional}>(optional)</span></label>
+              <label>
+                Due Date <span className={styles.optional}>(optional)</span>
+              </label>
               <input
                 type="date"
                 className={styles.inputField}
@@ -212,15 +228,16 @@ export default function CreateNewDocument() {
           </div>
 
           <div className={styles.buttonGroup}>
-  <div className={styles.leftButtons}>
-    <button className={styles.backBtn}>Back</button>
-  </div>
-  <div className={styles.rightButtons}>
-    <button className={styles.clearBtn} onClick={handleClear}>Clear</button>
-    <button className={styles.submitBtn}>Submit</button>
-  </div>
-</div>
-
+            <div className={styles.leftButtons}>
+              <button className={styles.backBtn}>Back</button>
+            </div>
+            <div className={styles.rightButtons}>
+              <button className={styles.clearBtn} onClick={handleClear}>
+                Clear
+              </button>
+              <button className={styles.submitBtn}>Submit</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

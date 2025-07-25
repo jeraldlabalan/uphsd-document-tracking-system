@@ -16,24 +16,49 @@ export default function NewPasswordPage() {
     e.preventDefault();
   };
 
-  const handleUpdate = () => {
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters.");
-      return;
-    }
+  const handleUpdate = async () => {
+  if (password.length < 6) {
+    toast.error("Password must be at least 6 characters.");
+    return;
+  }
 
-    if (password !== confirm) {
-      toast.error("Passwords do not match.");
-      return;
-    }
+  if (password !== confirm) {
+    toast.error("Passwords do not match.");
+    return;
+  }
 
-    setIsLoading(true);
-    setTimeout(() => {
+  const token = localStorage.getItem("forgotpassToken");
+  if (!token) {
+    toast.error("Invalid or expired session. Please try again.");
+    router.push("/forgotpass");
+    return;
+  }
+
+  setIsLoading(true);
+
+  try {
+    const res = await fetch("/api/user/forgotpass/newPass", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, newPassword: password }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
       toast.success("Password successfully updated!");
-      setIsLoading(false);
+      localStorage.removeItem("forgotpassToken");
       router.push("/login");
-    }, 1000);
-  };
+    } else {
+      toast.error(data.error || "Failed to update password.");
+    }
+
+  } catch (err) {
+    toast.error("Something went wrong. Try again.");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <>
