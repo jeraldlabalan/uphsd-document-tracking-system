@@ -1,0 +1,427 @@
+
+.container {
+  padding: 24px;
+  background-color: #D9D9D9; 
+  min-height: 100vh;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.contentSection {
+  background-color: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.pageTitle {
+  color: var(--color-maroon);
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.separator {
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+  border: 0;
+  border-top: 1px solid #ccc;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.createButton {
+  position: relative;
+  background-color: var(--color-maroon);
+  color: white;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  overflow: hidden;
+  z-index: 0;
+  transition: color 0.3s ease;
+}
+
+.createButton::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-yellow); 
+  transition: left 0.4s ease;
+  z-index: -1;
+  border-radius: 5px;
+}
+
+.createButton:hover::before {
+  left: 0;
+}
+
+.createButton:hover {
+  color: black;
+}
+
+
+.summary {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.card {
+  position: relative;
+  flex: 1;
+  border-radius: 10px;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  background: #f4f4f4;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  overflow: hidden;
+  z-index: 0;
+  transition: color 0.3s ease;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor; 
+  
+  z-index: -1;
+  transition: left 0.4s ease;
+}
+
+.card:hover::before {
+  left: 0;
+}
+
+.card:hover {
+  color: black;
+}
+
+
+.orange {
+  border-left: 5px solid orange;
+}
+.cyan {
+  border-left: 5px solid cyan;
+}
+.green {
+  border-left: 5px solid green;
+}
+
+.orange::before {
+  background-color: orange;
+}
+
+.cyan::before {
+  background-color: cyan;
+}
+
+.green::before {
+  background-color: green;
+}
+
+
+.count {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-maroon);
+  display: block;
+}
+
+
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.searchWrapper {
+  position: relative;
+  width: 100%;
+  flex: 1;
+}
+
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: #999;
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  padding-left: 2.2rem; 
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  outline: none;
+}
+
+
+.dropdown {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: white;
+  font-size: 1rem;
+}
+
+.docTable {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+}
+
+.docTable th {
+  background-color: #e5e5e5;
+  text-align: left;
+  padding: 0.75rem;
+  font-weight: 600;
+}
+
+.docTable tr:hover {
+  background-color: rgba(122, 12, 27, 0.1); 
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.docTable td {
+  padding: 0.75rem;
+  border-top: 1px solid #ddd;
+  font-size: 0.95rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.3rem 1rem;
+  margin-right: 20px;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.completed {
+  background-color: #d4f3ed;
+  color: #0f8b6f;
+}
+
+.pending {
+  background-color: #fdebc8;
+  color: #ad6200;
+}
+
+.actions a {
+  color: var(--color-maroon);
+  font-weight: 500;
+  text-decoration: none;
+  margin: 0 0.25rem;
+}
+
+.actions a:hover {
+  text-decoration: underline;
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  padding: 1rem;
+}
+
+.modalCard {
+  background: white;
+  width: 100%;
+  max-width: 700px;
+  height: 90vh;                     
+  border-radius: 10px;
+  padding: 1.5rem;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.closeButton {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-maroon);
+}
+
+.modalTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.modalTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-maroon);
+}
+
+.metaGrid {
+  margin-bottom: 1.5rem;
+}
+
+.metaLabelRow,
+.metaValueRow {
+  display: flex;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.metaLabelRow span {
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.metaValueRow p {
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-maroon);
+  margin: 0.2rem 0 0;
+}
+
+
+.previewContainer {
+  flex: 1;                          
+  overflow-y: auto;               
+  margin-bottom: 1rem;
+  border: 1px solid #eee;
+  padding: 0.5rem;
+  border-radius: 6px;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 1rem;
+  border-top: 1px solid #ddd;
+}
+
+.download,
+.print {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-maroon);
+  color: white;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 0;
+  transition: color 0.3s ease;
+}
+
+.download::before,
+.print::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: #FCCB0A;
+  z-index: -1;
+  transition: left 0.4s ease;
+}
+
+.download:hover::before,
+.print:hover::before {
+  left: 0;
+}
+
+.download:hover,
+.print:hover {
+  color: black;
+}
+
+
+
+
+
+@media (max-width: 768px) {
+  
+
+  .pageTitle {
+    font-size: 20px;
+    text-align: center;
+  }
+
+  .headerRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .createButton {
+    width: 100%;
+    text-align: center;
+  }
+
+  .summary {
+    flex-direction: column;
+  }
+
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchInput,
+  .dropdown {
+    width: 100%;
+  }
+
+  .docTable th,
+  .docTable td {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .docTable {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .actions a {
+    display: inline-block;
+    margin: 0.25rem 0;
+  }
+}

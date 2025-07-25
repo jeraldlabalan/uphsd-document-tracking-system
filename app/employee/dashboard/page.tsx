@@ -1,7 +1,7 @@
 "use client";
 
 import Head from 'next/head'
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './employee.module.css'
 import EmployeeSidebar from "@/components/shared/employeeSidebar/employeeSidebar";
 import EmployeeHeader from "@/components/shared/employeeHeader/employeeHeader";
@@ -9,6 +9,51 @@ import EmployeeHeader from "@/components/shared/employeeHeader/employeeHeader";
 export default function Dashboard() {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  type RecentDocument = {
+    RequestID: number;
+    Document: {
+      Title: string;
+      Department?: {
+        Name: string;
+      };
+    };
+    User: {
+      FullName: string;
+    };
+    RequestedAt: string;
+    Priority: string;
+    Status: {
+      StatusName: string;
+    };
+  };
+
+  const [dashboardData, setDashboardData] = useState<{
+    pendingSignatures: number;
+    inProcess: number;
+    completed: number;
+    newRequests: number;
+    recentDocuments: RecentDocument[];
+  }>({
+    pendingSignatures: 0,
+    inProcess: 0,
+    completed: 0,
+    newRequests: 0,
+    recentDocuments: [],
+  });
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const res = await fetch("/api/employee/dashboard");
+        const data = await res.json();
+        setDashboardData(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   return (
     <>
@@ -22,57 +67,46 @@ export default function Dashboard() {
      
 
       <div className={styles.container}>
-<EmployeeSidebar sidebarOpen={sidebarOpen} />
+        <EmployeeSidebar sidebarOpen={sidebarOpen} />
         <main className={styles.main}>
           <h2>Dashboard</h2>
 
           <div className={styles.cards}>
             <div className={`${styles.card} ${styles.red}`}>
-              <span className={styles.count}>6</span>
+              <span className={styles.count}>{dashboardData.pendingSignatures}</span>
               <p>Pending Signatures</p>
             </div>
             <div className={`${styles.card} ${styles.blue}`}>
-              <span className={styles.count}>12</span>
+              <span className={styles.count}>{dashboardData.inProcess}</span>
               <p>In Process</p>
             </div>
             <div className={`${styles.card} ${styles.green}`}>
-              <span className={styles.count}>23</span>
+              <span className={styles.count}>{dashboardData.completed}</span>
               <p>Completed</p>
             </div>
             <div className={`${styles.card} ${styles.orange}`}>
-              <span className={styles.count}>5</span>
+              <span className={styles.count}>{dashboardData.newRequests}</span>
               <p>New Request</p>
             </div>
           </div>
 
           <h3 className={styles.recentTitle}>Recent Documents</h3>
           <div className={styles.documentList}>
-            <div className={styles.documentCard}>
+            {dashboardData.recentDocuments.map((req) => (
+            <div key={req.RequestID} className={styles.documentCard}>
               <div>
-                <strong>Faculty Evaluation Form</strong>
-                <p>To: Mr. Remollo</p>
-                <p>Department: HR Department</p>
+                <strong>{req.Document.Title}</strong>
+                <p>To: {req.User.FullName}</p>
+                <p>Department: {req.Document.Department?.Name}</p>
               </div>
               <div>
-                <p>Date Received: July 1, 2025</p>
-                <p>Priority: High</p>
-                <span className={styles.pending}>Pending Signature</span>
-              </div>
-            </div>
-
-            <div className={styles.documentCard}>
-              <div>
-                <strong>Student Good Moral Certificate</strong>
-                <p>To: Mr. Talisay</p>
-                <p>Department: IT Department</p>
-              </div>
-              <div>
-                <p>Date Received: July 1, 2025</p>
-                <p>Priority: High</p>
-                <span className={styles.pending}>Pending Signature</span>
+                <p>Date Received: {new Date(req.RequestedAt).toDateString()}</p>
+                <p>Priority: {req.Priority}</p>
+                <span className={styles.pending}>{req.Status.StatusName}</span>
               </div>
             </div>
-          </div>
+        ))}
+        </div>
         </main>
       </div>
     </>

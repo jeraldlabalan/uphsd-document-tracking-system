@@ -1,0 +1,195 @@
+
+.container {
+  padding: 24px;
+  background-color: #D9D9D9; 
+  min-height: 100vh;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.contentSection {
+  background-color: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+
+
+.pageTitle {
+  color: var(--color-maroon);
+  font-size: 24px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.separator {
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+  border: 0;
+  border-top: 1px solid #ccc;
+}
+.profileContainer {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.leftColumn,
+.rightColumn {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 10px;
+  flex: 1;
+  min-width: 45vw;
+  max-width: 450px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Profile Info */
+.profileInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profileDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.role {
+  font-size: 0.95rem;
+  color: #666;
+}
+
+/* Upload Section */
+.uploadSection {
+  margin-top: 1rem;
+}
+
+.uploadBtn {
+  display: inline-block;
+  background-color: var(--color-maroon);
+  color: white;
+  font-weight: bold;
+  padding: 0.5rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.photoNote {
+  font-size: 0.8rem;
+  color: #555;
+}
+
+/* Password Form */
+.passwordSection h3 {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: var(--color-maroon);
+  margin-bottom: 1rem;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.inputField {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-maroon);
+  border-radius: 6px;
+  font-size: 1rem;
+  width: 100%;
+}
+
+.inputField:focus {
+  outline: none;
+  border-color: #a00000;
+  box-shadow: 0 0 4px rgba(128, 0, 0, 0.4);
+}
+
+.buttonGroup {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+}
+
+.clearBtn,
+.saveBtn {
+  padding: 0.5rem 1.2rem;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.clearBtn {
+  background: transparent;
+  color: var(--color-maroon);
+  border: 1px solid var(--color-maroon);
+}
+
+.saveBtn {
+  background: var(--color-maroon);
+  color: white;
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.saveBtn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  height: 100%;
+  width: 100%;
+  background: var(--color-yellow);
+  z-index: -1;
+  transition: left 0.3s ease;
+}
+
+.saveBtn:hover::before {
+  left: 0;
+}
+
+.saveBtn:hover {
+  color: black;
+}
+
+@media (max-width: 768px) {
+  .profileContainer {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .inputGroup {
+    flex-direction: column;
+  }
+
+  .buttonGroup {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+}
