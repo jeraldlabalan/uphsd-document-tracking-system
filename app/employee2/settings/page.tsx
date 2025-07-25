@@ -1,9 +1,9 @@
-'use client';
-import React, { useState, useEffect, useRef } from 'react';
-import styles from './settingStyles.module.css';
-import EmpHeader from '@/components/shared/empHeader';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
+"use client";
+import React, { useState, useEffect, useRef } from "react";
+import styles from "./settingStyles.module.css";
+import EmpHeader from "@/components/shared/empHeader";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 export default function ProfileSettings() {
   useEffect(() => {
@@ -11,34 +11,36 @@ export default function ProfileSettings() {
   }, []);
 
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tempPreview, setTempPreview] = useState<string | null>(null);
 
   const [info, setInfo] = useState({
-    firstName: 'Kai',
-    lastName: 'Sotto',
-    email: 'k.sottos@uphsd.edu.ph',
-    employeeId: '123456',
-    mobile: '',
-    role: 'Head Coordinator',
-    department: 'Information Technology',
-    bio: '',
+    firstName: "Kai",
+    lastName: "Sotto",
+    email: "k.sottos@uphsd.edu.ph",
+    employeeId: "123456",
+    mobile: "",
+    role: "Head Coordinator",
+    department: "Information Technology",
+    bio: "",
   });
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const handleInfoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInfoChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setInfo({ ...info, [name]: value });
   };
 
   const clearPasswordFields = () => {
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,7 +72,11 @@ export default function ProfileSettings() {
               {/* Profile Photo + Name */}
               <div className={styles.profileInfo}>
                 <img
-                  src={profilePhoto ? URL.createObjectURL(profilePhoto) : '/placeholder.png'}
+                  src={
+                    profilePhoto
+                      ? URL.createObjectURL(profilePhoto)
+                      : "/placeholder.png"
+                  }
                   alt="Profile"
                   className={styles.avatar}
                 />
@@ -82,10 +88,15 @@ export default function ProfileSettings() {
 
               {/* Upload Photo Section */}
               <div className={styles.uploadSection}>
-                <button className={styles.uploadBtn} onClick={() => setIsModalOpen(true)}>
+                <button
+                  className={styles.uploadBtn}
+                  onClick={() => setIsModalOpen(true)}
+                >
                   Upload Photo
                 </button>
-                <p className={styles.photoNote}>Upload a professional photo to personalize your account.</p>
+                <p className={styles.photoNote}>
+                  Upload a professional photo to personalize your account.
+                </p>
               </div>
 
               {/* Change Password Form */}
@@ -119,7 +130,12 @@ export default function ProfileSettings() {
                   />
                 </div>
                 <div className={styles.buttonGroup}>
-                  <button className={styles.clearBtn} onClick={clearPasswordFields}>Clear</button>
+                  <button
+                    className={styles.clearBtn}
+                    onClick={clearPasswordFields}
+                  >
+                    Clear
+                  </button>
                   <button className={styles.saveBtn}>Change Password</button>
                 </div>
               </div>
@@ -224,14 +240,29 @@ export default function ProfileSettings() {
 
         {/* ✅ Modal */}
         {isModalOpen && (
-          <div className={styles.modalOverlay} onClick={() => setIsModalOpen(false)}>
-            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+          <div
+            className={styles.modalOverlay}
+            onClick={() => setIsModalOpen(false)}
+          >
+            <div
+              className={styles.modalContent}
+              onClick={(e) => e.stopPropagation()}
+            >
               <h3>Upload Photo</h3>
-              <button className={styles.closeButton} onClick={() => setIsModalOpen(false)}>&times;</button>
+              <button
+                className={styles.closeButton}
+                onClick={() => setIsModalOpen(false)}
+              >
+                &times;
+              </button>
 
               <div className={styles.previewBox}>
                 {tempPreview ? (
-                  <img src={tempPreview} alt="Preview" className={styles.previewImage} />
+                  <img
+                    src={tempPreview}
+                    alt="Preview"
+                    className={styles.previewImage}
+                  />
                 ) : (
                   <p>No image selected.</p>
                 )}
@@ -241,12 +272,15 @@ export default function ProfileSettings() {
                 type="file"
                 accept="image/*"
                 ref={fileInputRef}
-                style={{ display: 'none' }}
+                style={{ display: "none" }}
                 onChange={handleFileChange}
               />
 
               <div className={styles.buttonGroup}>
-                <button className={styles.clearBtn} onClick={() => fileInputRef.current?.click()}>
+                <button
+                  className={styles.clearBtn}
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   Change
                 </button>
                 <button className={styles.saveBtn} onClick={applyPhoto}>

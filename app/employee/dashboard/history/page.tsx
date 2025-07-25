@@ -1,8 +1,8 @@
 "use client";
 
-import Head from 'next/head';
-import styles from './history.module.css';
-import { useState, useEffect } from 'react';
+import Head from "next/head";
+import styles from "./history.module.css";
+import { useState, useEffect } from "react";
 import EmployeeSidebar from "@/components/shared/employeeSidebar/employeeSidebar";
 import EmployeeHeader from "@/components/shared/employeeHeader/employeeHeader";
 import Modal from "@/components/shared/modalHistory/modal";
@@ -19,35 +19,35 @@ interface DocumentType {
 const initialDocuments: DocumentType[] = [
   {
     id: 1,
-    title: 'IT Equipment Purchase Request',
-    approve: 'SD',
-    status: 'Pending',
-    created: 'July 5, 2025',
-    completed: 'July 5, 2025',
+    title: "IT Equipment Purchase Request",
+    approve: "SD",
+    status: "Pending",
+    created: "July 5, 2025",
+    completed: "July 5, 2025",
   },
   {
     id: 2,
-    title: 'Student Grades',
-    approve: 'Antonio Orcales',
-    status: 'Completed',
-    created: 'July 5, 2025',
-    completed: 'July 10, 2025',
+    title: "Student Grades",
+    approve: "Antonio Orcales",
+    status: "Completed",
+    created: "July 5, 2025",
+    completed: "July 10, 2025",
   },
   {
     id: 3,
-    title: 'Student Good Moral Request',
-    approve: 'Antonio Orcales',
-    status: 'Pending',
-    created: 'July 5, 2025',
-    completed: 'July 10, 2025',
+    title: "Student Good Moral Request",
+    approve: "Antonio Orcales",
+    status: "Pending",
+    created: "July 5, 2025",
+    completed: "July 10, 2025",
   },
   {
     id: 4,
-    title: 'Request Form',
-    approve: 'Antonio Orcales',
-    status: 'Pending',
-    created: 'July 5, 2025',
-    completed: 'July 10, 2025',
+    title: "Request Form",
+    approve: "Antonio Orcales",
+    status: "Pending",
+    created: "July 5, 2025",
+    completed: "July 10, 2025",
   },
 ];
 
@@ -79,13 +79,15 @@ export default function History() {
   };
 
   const confirmDelete = async () => {
-  if (selectedDoc) {
-    await fetch(`/api/employee/history/${selectedDoc.id}`, { method: "DELETE" });
-    setDocuments((docs) => docs.filter((doc) => doc.id !== selectedDoc.id));
-    setSelectedDoc(null);
-  }
-  setIsDeleteModalOpen(false);
-};
+    if (selectedDoc) {
+      await fetch(`/api/employee/history/${selectedDoc.id}`, {
+        method: "DELETE",
+      });
+      setDocuments((docs) => docs.filter((doc) => doc.id !== selectedDoc.id));
+      setSelectedDoc(null);
+    }
+    setIsDeleteModalOpen(false);
+  };
 
   return (
     <>
@@ -152,7 +154,7 @@ export default function History() {
                           <td>
                             <span
                               className={
-                                doc.status === 'Completed'
+                                doc.status === "Completed"
                                   ? styles.statusCompleted
                                   : styles.statusPending
                               }
@@ -163,8 +165,13 @@ export default function History() {
                           <td>{doc.created}</td>
                           <td>{doc.completed}</td>
                           <td>
-                            <a href="#" onClick={() => handleView(doc)}>View</a> |{" "}
-                            <a href="#" onClick={() => handleDelete(doc)}>Delete</a>
+                            <a href="#" onClick={() => handleView(doc)}>
+                              View
+                            </a>{" "}
+                            |{" "}
+                            <a href="#" onClick={() => handleDelete(doc)}>
+                              Delete
+                            </a>
                           </td>
                         </tr>
                       ))}
@@ -175,26 +182,47 @@ export default function History() {
             </div>
 
             {/* View Modal */}
-            <Modal isOpen={isViewModalOpen} onClose={() => setIsViewModalOpen(false)}>
+            <Modal
+              isOpen={isViewModalOpen}
+              onClose={() => setIsViewModalOpen(false)}
+            >
               <h2>Document Details</h2>
               {selectedDoc && (
                 <div>
-                  <p><strong>Title:</strong> {selectedDoc.title}</p>
-                  <p><strong>Approved By:</strong> {selectedDoc.approve}</p>
-                  <p><strong>Status:</strong> {selectedDoc.status}</p>
-                  <p><strong>Created:</strong> {selectedDoc.created}</p>
-                  <p><strong>Completed:</strong> {selectedDoc.completed}</p>
+                  <p>
+                    <strong>Title:</strong> {selectedDoc.title}
+                  </p>
+                  <p>
+                    <strong>Approved By:</strong> {selectedDoc.approve}
+                  </p>
+                  <p>
+                    <strong>Status:</strong> {selectedDoc.status}
+                  </p>
+                  <p>
+                    <strong>Created:</strong> {selectedDoc.created}
+                  </p>
+                  <p>
+                    <strong>Completed:</strong> {selectedDoc.completed}
+                  </p>
                 </div>
               )}
             </Modal>
 
             {/* Delete Modal */}
-            <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)}>
+            <Modal
+              isOpen={isDeleteModalOpen}
+              onClose={() => setIsDeleteModalOpen(false)}
+            >
               <h2 className={styles.Confirm}>Confirm Deletion</h2>
               {selectedDoc && (
-                <p>Are you sure you want to delete <strong>{selectedDoc.title}</strong>?</p>
+                <p>
+                  Are you sure you want to delete{" "}
+                  <strong>{selectedDoc.title}</strong>?
+                </p>
               )}
-              <button onClick={confirmDelete} className={styles.DeleteButton}>Delete</button>
+              <button onClick={confirmDelete} className={styles.DeleteButton}>
+                Delete
+              </button>
             </Modal>
           </main>
         </div>

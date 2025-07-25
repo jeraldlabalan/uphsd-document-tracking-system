@@ -1,27 +1,21 @@
-'use client';
+"use client";
 
 import Image from "next/image";
 import styles from "./styles/styles.module.css";
 import Header from "@/components/shared/Header";
 import { FileText, Eye, Settings, ClipboardList } from "lucide-react";
 import DelayedRender from "../components/DelayedRender";
-import { useEffect } from 'react';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
-
-
-
+import { useEffect } from "react";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 export default function Home() {
-
-
-useEffect(() => {
+  useEffect(() => {
     AOS.init({
       duration: 1000,
       once: true,
     });
   }, []);
-
 
   const cards = [
     {
@@ -68,73 +62,76 @@ useEffect(() => {
       desc: "Authorized personnel can review, sign, and forward documents electronically.",
     },
   ];
-  
 
   return (
     <DelayedRender delay={2000}>
-    <div>
-      <Header />
-      <div className={`${styles.parallaxSection} ${styles.parallax1}`}>
-        <p data-aos="slide-left" className={styles.text1}>
-          UNIVERSITY OF PERPETUAL HELP SYSTEM DALTA - LAS PIÑAS
-        </p>
-        <p data-aos="slide-left" className={styles.text2}>Digital Document Management</p>
-      </div>
-      <div className={styles.contentSection}>
-        <h1 data-aos="fade-up">SYSTEM FEATURES</h1>
-        <div data-aos="slide-right" className={styles.features}>
-          {cards.map((card, index) => (
-            <div key={index} className={styles.card}>
-              <div className={styles.iconWrapper}>{card.icon}</div>
-              <h3 className={styles.title}>{card.title}</h3>
-              <p className={styles.description}>{card.desc}</p>
-            </div>
-          ))}
+      <div>
+        <Header />
+        <div className={`${styles.parallaxSection} ${styles.parallax1}`}>
+          <p data-aos="slide-left" className={styles.text1}>
+            UNIVERSITY OF PERPETUAL HELP SYSTEM DALTA - LAS PIÑAS
+          </p>
+          <p data-aos="slide-left" className={styles.text2}>
+            Digital Document Management
+          </p>
         </div>
-      </div>
+        <div className={styles.contentSection}>
+          <h1 data-aos="fade-up">SYSTEM FEATURES</h1>
+          <div data-aos="slide-right" className={styles.features}>
+            {cards.map((card, index) => (
+              <div key={index} className={styles.card}>
+                <div className={styles.iconWrapper}>{card.icon}</div>
+                <h3 className={styles.title}>{card.title}</h3>
+                <p className={styles.description}>{card.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
 
-      <div className={`${styles.parallaxSection} ${styles.parallax2}`}>
-        <p data-aos="fade-up" className={styles.text2}>JOIN US NOW</p>
-        <p className={styles.text3}>
-          Aims to improve efficiency and accountability in handling
-          school-issued documents, providing visibility for both employees and
-          administrators throughout the document life cycle.
-        </p>
-      </div>
+        <div className={`${styles.parallaxSection} ${styles.parallax2}`}>
+          <p data-aos="fade-up" className={styles.text2}>
+            JOIN US NOW
+          </p>
+          <p className={styles.text3}>
+            Aims to improve efficiency and accountability in handling
+            school-issued documents, providing visibility for both employees and
+            administrators throughout the document life cycle.
+          </p>
+        </div>
 
-      <section className={styles.contentSection}>
-        <h1 data-aos="fade-up">How It Works?</h1>
-        <div data-aos="slide-left" className={styles.steps}>
-          {steps.map((step, index) => (
-            <div key={index} className={styles.step}>
-              <div className={styles.circle}>{step.number}</div>
-              <h3 className={styles.title}>{step.title}</h3>
-              <p className={styles.description}>{step.desc}</p>
-            </div>
-          ))}
+        <section className={styles.contentSection}>
+          <h1 data-aos="fade-up">How It Works?</h1>
+          <div data-aos="slide-left" className={styles.steps}>
+            {steps.map((step, index) => (
+              <div key={index} className={styles.step}>
+                <div className={styles.circle}>{step.number}</div>
+                <h3 className={styles.title}>{step.title}</h3>
+                <p className={styles.description}>{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+        <div className={`${styles.parallaxSection} ${styles.parallax2}`}>
+          <div data-aos="fade-in" className={styles.logo}>
+            <Image
+              src="/full-logo.png"
+              alt="Logo Icon"
+              width={500}
+              height={500}
+            />
+          </div>
         </div>
-      </section>
-      <div className={`${styles.parallaxSection} ${styles.parallax2}`}>
-        <div data-aos="fade-in" className={styles.logo}>
-          <Image
-            src="/full-logo.png"
-            alt="Logo Icon"
-            width={500}
-            height={500}
-          />
-        </div>
+        <footer className={styles.footerCopyright}>
+          <p>
+            © Copyright <span>UPHSD Las Piñas</span>.{" "}
+            <span>Document Tracking System</span>. All Rights Reserved.
+          </p>
+          <p>
+            Created by{" "}
+            <span className={styles.highlighted}>PRINCESS BATUMBAKAL</span>
+          </p>
+        </footer>
       </div>
-      <footer className={styles.footerCopyright}>
-        <p>
-          © Copyright <span>UPHSD Las Piñas</span>.{" "}
-          <span>Document Tracking System</span>. All Rights Reserved.
-        </p>
-        <p>
-          Created by{" "}
-          <span className={styles.highlighted}>PRINCESS BATUMBAKAL</span>
-        </p>
-      </footer>
-    </div>
     </DelayedRender>
   );
 }

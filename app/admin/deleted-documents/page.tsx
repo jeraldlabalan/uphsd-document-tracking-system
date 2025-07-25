@@ -1,12 +1,12 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
-import styles from "./activityLogs.module.css";
+import styles from "./deletedDocuments.module.css";
 import HeaderDashboard from "@/components/shared/adminHeader/headerDashboard";
 import AdminSidebar from "@/components/shared/adminSidebar/adminSidebar";
 import dp from "../../../assets/profile-placeholder.jpg";
 
-export default function ActivityLogs() {
+export default function DeletedDocuments() {
   // const cookieStore = await cookies();
   // const session = cookieStore.get("session");
 
@@ -18,24 +18,24 @@ export default function ActivityLogs() {
 
   // DROPDOWN FUNCTIONS
 
-  // actions option
-  const actionOptions: string[] = [
-    "All Actions",
-    "Create",
-    "Pending",
-    "Edit",
-    "Delete",
-    "Approve",
-    "Log In",
+  // department option
+  const departmentOptions: string[] = [
+    "All Departments",
+    "Engineering",
+    "Business",
+    "Information Technology",
+    "Human Resource",
+    "Medicine",
   ];
-  const [isActionOptionOpen, setIsActionOptionOpen] = useState<boolean>(false);
-  const [selectedAction, setSelectedAction] = useState<string>(
-    actionOptions[0]
+  const [isDepartmentOptionsOpen, setIsDepartmentOptionsOpen] =
+    useState<boolean>(false);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>(
+    departmentOptions[0]
   );
 
-  const handleSelectedAction = (action: string) => {
-    setSelectedAction(action);
-    setIsActionOptionOpen(!isActionOptionOpen);
+  const handleSelectedDepartment = (department: string) => {
+    setSelectedDepartment(department);
+    setIsDepartmentOptionsOpen(!isDepartmentOptionsOpen);
   };
 
   // type option
@@ -77,24 +77,24 @@ export default function ActivityLogs() {
         <div className={styles.userManagementDashboard}>
           <div className={styles.userManagementDashboardSection}>
             <div className={styles.userManagementDashboardHeader}>
-              <h1>activity logs</h1>
+              <h1>deleted documents</h1>
             </div>
 
             <div className={styles.userManagementSectionContent}>
               <div className={styles.userManagementSectionContentContainer}>
                 <div className={styles.userManagementIconAndCount}>
-                  <p>1126</p>
+                  <p>83</p>
                 </div>
 
-                <h1>total activity today</h1>
+                <h1>total deleted</h1>
               </div>
 
               <div className={styles.userManagementSectionContentContainer}>
                 <div className={styles.userManagementIconAndCount}>
-                  <p>89</p>
+                  <p>26</p>
                 </div>
 
-                <h1>document action</h1>
+                <h1>this month</h1>
               </div>
 
               <div className={styles.userManagementSectionContentContainer}>
@@ -141,46 +141,6 @@ export default function ActivityLogs() {
               <div className={styles.optionDropdownContainer}>
                 <button
                   className={`${
-                    !isActionOptionOpen
-                      ? styles.optionBtn
-                      : styles.activeOptionBtn
-                  }`}
-                  onClick={() => setIsActionOptionOpen(!isActionOptionOpen)}
-                >
-                  {selectedAction}
-                  <span>
-                    <svg
-                      width="10"
-                      height="6"
-                      viewBox="0 0 10 6"
-                      className={styles.dropdownOptionIcon}
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M5 6.0006L0.757324 1.758L2.17154 0.34375L5 3.1722L7.8284 0.34375L9.2426 1.758L5 6.0006Z"
-                        className={styles.dropdownOptionFill}
-                      />
-                    </svg>
-                  </span>
-                </button>
-
-                {isActionOptionOpen && (
-                  <ul className={styles.tableDropdownMenu}>
-                    {actionOptions.map((option) => (
-                      <li
-                        key={option}
-                        onClick={() => handleSelectedAction(option)}
-                      >
-                        {option}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <div className={styles.optionDropdownContainer}>
-                <button
-                  className={`${
                     !isDocumentOptionOpen
                       ? styles.optionBtn
                       : styles.activeOptionBtn
@@ -210,6 +170,49 @@ export default function ActivityLogs() {
                       <li
                         key={option}
                         onClick={() => handleSelectedDocument(option)}
+                      >
+                        {option}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+
+              <div className={styles.optionDropdownContainer}>
+                <button
+                  className={`${
+                    !isDepartmentOptionsOpen
+                      ? styles.optionBtn
+                      : styles.activeOptionBtn
+                  }`}
+                  onClick={() =>
+                    setIsDepartmentOptionsOpen(!isDepartmentOptionsOpen)
+                  }
+                >
+                  {selectedDepartment}
+                  <span>
+                    <svg
+                      width="10"
+                      height="6"
+                      viewBox="0 0 10 6"
+                      className={styles.dropdownOptionIcon}
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M5 6.0006L0.757324 1.758L2.17154 0.34375L5 3.1722L7.8284 0.34375L9.2426 1.758L5 6.0006Z"
+                        className={styles.dropdownOptionFill}
+                      />
+                    </svg>
+                  </span>
+                </button>
+
+                {isDepartmentOptionsOpen && (
+                  <ul className={styles.tableDropdownMenu}>
+                    {departmentOptions.map((option) => (
+                      <li
+                        key={option}
+                        onClick={() => handleSelectedDepartment(option)}
                       >
                         {option}
                       </li>
@@ -265,16 +268,21 @@ export default function ActivityLogs() {
                   <th>document</th>
                   <th>creator</th>
                   <th>department</th>
-                  <th>status</th>
-                  <th>created</th>
+                  <th>deleted by</th>
+                  <th>delete on</th>
                   <th>action</th>
                 </thead>
                 <tbody>
+                  
+
+                  
+
                   <tr>
                     <td id={styles.columnId}>
                       <div className={styles.columnIdContainer}>
                         <div className={styles.cellProfile}>
-                          <svg
+                          <div>
+                            <svg
                             width="30"
                             height="30"
                             viewBox="0 0 30 30"
@@ -292,6 +300,7 @@ export default function ActivityLogs() {
                               fill="white"
                             />
                           </svg>
+                          </div>
                           <div className={styles.nameAndEmail}>
                             <p>IT Equipment Purchase Request</p>
                           </div>
@@ -299,18 +308,19 @@ export default function ActivityLogs() {
                       </div>
                     </td>
                     <td>Alexander James Ian J. Fernandez</td>
-                    <td>Department Head</td>
+                    <td>Information Technology</td>
                     <td>
-                      <p className={styles.completedApproved}>success</p>
+                      Jerald Labalan
                     </td>
                     <td id={styles.lastLoginDate}>
                       <p>July 5, 2025</p>
                       <span>10:30AM</span>
                     </td>
-                    <td id={styles.actionButtons}>
-                      <button>view</button>
-                      <button>edit</button>
-                      <button>delete</button>
+                    <td>
+                      <div id={styles.actionButtons}>
+                        <button>restore</button>
+                        <button>permanently <br /> delete</button>
+                      </div>
                     </td>
                   </tr>
 
@@ -318,7 +328,8 @@ export default function ActivityLogs() {
                     <td id={styles.columnId}>
                       <div className={styles.columnIdContainer}>
                         <div className={styles.cellProfile}>
-                          <svg
+                          <div>
+                            <svg
                             width="30"
                             height="30"
                             viewBox="0 0 30 30"
@@ -336,6 +347,7 @@ export default function ActivityLogs() {
                               fill="white"
                             />
                           </svg>
+                          </div>
                           <div className={styles.nameAndEmail}>
                             <p>IT Equipment Purchase Request</p>
                           </div>
@@ -343,18 +355,19 @@ export default function ActivityLogs() {
                       </div>
                     </td>
                     <td>Alexander James Ian J. Fernandez</td>
-                    <td>Department Head</td>
+                    <td>Information Technology</td>
                     <td>
-                      <p className={styles.completedApproved}>approved</p>
+                      Jerald Labalan
                     </td>
                     <td id={styles.lastLoginDate}>
                       <p>July 5, 2025</p>
                       <span>10:30AM</span>
                     </td>
-                    <td id={styles.actionButtons}>
-                      <button>view</button>
-                      <button>edit</button>
-                      <button>delete</button>
+                    <td>
+                      <div id={styles.actionButtons}>
+                        <button>restore</button>
+                        <button>permanently <br /> delete</button>
+                      </div>
                     </td>
                   </tr>
 
@@ -362,7 +375,8 @@ export default function ActivityLogs() {
                     <td id={styles.columnId}>
                       <div className={styles.columnIdContainer}>
                         <div className={styles.cellProfile}>
-                          <svg
+                          <div>
+                            <svg
                             width="30"
                             height="30"
                             viewBox="0 0 30 30"
@@ -380,6 +394,7 @@ export default function ActivityLogs() {
                               fill="white"
                             />
                           </svg>
+                          </div>
                           <div className={styles.nameAndEmail}>
                             <p>IT Equipment Purchase Request</p>
                           </div>
@@ -387,18 +402,19 @@ export default function ActivityLogs() {
                       </div>
                     </td>
                     <td>Alexander James Ian J. Fernandez</td>
-                    <td>Department Head</td>
+                    <td>Information Technology</td>
                     <td>
-                      <p className={styles.completedApproved}>approved</p>
+                      Jerald Labalan
                     </td>
                     <td id={styles.lastLoginDate}>
                       <p>July 5, 2025</p>
                       <span>10:30AM</span>
                     </td>
-                    <td id={styles.actionButtons}>
-                      <button>view</button>
-                      <button>edit</button>
-                      <button>delete</button>
+                    <td>
+                      <div id={styles.actionButtons}>
+                        <button>restore</button>
+                        <button>permanently <br /> delete</button>
+                      </div>
                     </td>
                   </tr>
 
@@ -406,7 +422,8 @@ export default function ActivityLogs() {
                     <td id={styles.columnId}>
                       <div className={styles.columnIdContainer}>
                         <div className={styles.cellProfile}>
-                          <svg
+                          <div>
+                            <svg
                             width="30"
                             height="30"
                             viewBox="0 0 30 30"
@@ -424,6 +441,7 @@ export default function ActivityLogs() {
                               fill="white"
                             />
                           </svg>
+                          </div>
                           <div className={styles.nameAndEmail}>
                             <p>IT Equipment Purchase Request</p>
                           </div>
@@ -431,20 +449,24 @@ export default function ActivityLogs() {
                       </div>
                     </td>
                     <td>Alexander James Ian J. Fernandez</td>
-                    <td>Department Head</td>
+                    <td>Information Technology</td>
                     <td>
-                      <p className={styles.completedApproved}>approved</p>
+                      Jerald Labalan
                     </td>
                     <td id={styles.lastLoginDate}>
                       <p>July 5, 2025</p>
                       <span>10:30AM</span>
                     </td>
-                    <td id={styles.actionButtons}>
-                      <button>view</button>
-                      <button>edit</button>
-                      <button>delete</button>
+                    <td>
+                      <div id={styles.actionButtons}>
+                        <button>restore</button>
+                        <button>permanently <br /> delete</button>
+                      </div>
                     </td>
                   </tr>
+
+                  
+
                 </tbody>
               </table>
 

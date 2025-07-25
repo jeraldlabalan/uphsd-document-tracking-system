@@ -1,6 +1,6 @@
 "use client";
 
-import styles from './employeeHeader.module.css';
+import styles from "./employeeHeader.module.css";
 
 type HeaderProps = {
   onToggleSidebar: () => void;

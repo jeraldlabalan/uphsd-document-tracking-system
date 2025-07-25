@@ -1,4 +1,3 @@
-
 import styles from "./styles/loadingStyles.module.css";
 
 export default function Loading() {

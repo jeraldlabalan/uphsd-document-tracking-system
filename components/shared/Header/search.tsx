@@ -12,7 +12,7 @@ export default function SearchBar() {
 
   return (
     <>
-    {isVisible && (
+      {isVisible && (
         <div className={styles.searchBar}>
           <input
             type="text"
@@ -25,11 +25,8 @@ export default function SearchBar() {
         </div>
       )}
       <button onClick={toggleSearch} className={styles.toggleButton}>
-  {isVisible ? <X size={20} /> : <Search size={20} />}
-</button>
-
-
-      
+        {isVisible ? <X size={20} /> : <Search size={20} />}
+      </button>
     </>
   );
 }

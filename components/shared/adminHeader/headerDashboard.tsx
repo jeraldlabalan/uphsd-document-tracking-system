@@ -5,8 +5,6 @@ import styles from "../header.module.css";
 import Search from "../Header/search";
 
 export default function HeaderDashboard() {
-  
-
   const userName = "Neil Yvan";
   const firstInitial = userName.charAt(0).toUpperCase();
 
@@ -20,9 +18,8 @@ export default function HeaderDashboard() {
         <Search />
 
         <div className={styles.userInfo}>
-            <span className={styles.userName}>Welcome, {userName}</span>
+          <span className={styles.userName}>Welcome, {userName}</span>
           <div className={styles.userIcon}>{firstInitial}</div>
-          
         </div>
       </div>
     </header>
