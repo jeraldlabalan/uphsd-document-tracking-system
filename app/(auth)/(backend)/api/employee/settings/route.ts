@@ -33,7 +33,8 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json({
-      FullName: user.FullName,
+      FirstName: user.FirstName,
+      LastName: user.LastName,
       Email: user.Email,
       EmployeeID: user.EmployeeID,
       MobileNumber: user.MobileNumber,
@@ -65,12 +66,13 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { FullName, MobileNumber, Position, DepartmentID } = body;
+    const { FirstName, LastName, MobileNumber, Position, DepartmentID } = body;
 
     const updatedUser = await db.user.update({
       where: { UserID: decoded.UserID },
       data: {
-        FullName,
+        FirstName,
+        LastName,
         MobileNumber,
         Position,
         DepartmentID: DepartmentID ? parseInt(DepartmentID) : undefined,

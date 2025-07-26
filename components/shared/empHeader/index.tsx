@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import styles from "./empHeaderStyles.module.css";
-import Search from "../Header/search";
-import { useState } from "react";
+import Search from "../header/search";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   FileText,
@@ -17,7 +18,36 @@ export default function EmpDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeLink, setActiveLink] = useState("Dashboard");
   const userName = "Kai Sotto";
-  const firstInitial = userName.charAt(0).toUpperCase();
+
+  const router = useRouter();
+  const [user, setUser] = useState<{ FirstName: string; LastName: string; ProfilePicture?: string } | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("/api/user/me");
+        const data = await res.json();
+        if (res.ok) {
+          setUser(data);
+        } else {
+          console.error(data.error);
+          router.push("/login");
+        }
+      } catch (err) {
+        console.error("Failed to fetch user");
+        router.push("/login");
+      }
+    };
+    fetchUser();
+  }, [router]);
+
+
+  const handleLogout = () => {
+    document.cookie = "session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+    router.push("/login");
+  };
+
+  const firstInitial = user?.FirstName?.charAt(0).toUpperCase() || "U";
 
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
@@ -101,7 +131,7 @@ export default function EmpDashboard() {
         <a
           href="/login"
           className={styles.logoutLink}
-          onClick={() => setActiveLink("Logout")}
+          onClick={handleLogout}
         >
           <LogOut size={18} className={styles.icon} />
           Logout
@@ -124,7 +154,7 @@ export default function EmpDashboard() {
         <div className={styles.rightWrapper}>
           <Search />
           <div className={styles.userInfo}>
-            <span className={styles.userName}>Welcome, {userName}</span>
+            <span className={styles.userName}>Welcome, {user?.FirstName}</span>
             <div className={styles.userIcon}>{firstInitial}</div>
           </div>
         </div>
