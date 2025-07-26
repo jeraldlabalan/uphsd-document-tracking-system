@@ -9,84 +9,101 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// ROLE TABLE
 model Role {
   RoleID   Int    @id @default(autoincrement())
   RoleName String
-  Users    User[]
+  IsDeleted Boolean @default(false)
+
+  Users User[]
 }
 
+// DEPARTMENT TABLE
 model Department {
-  DepartmentID Int        @id @default(autoincrement())
+  DepartmentID Int     @id @default(autoincrement())
   Name         String
-  Description  String?
-  Documents    Document[]
-  Users        User[]
+  IsDeleted    Boolean @default(false)
+
+  Users     User[]
+  Documents Document[]
 }
 
+// USER TABLE
 model User {
-  UserID                Int               @id @default(autoincrement())
-  FullName              String
-  Email                 String            @unique
-  Password              String
-  MobileNumber          String?
-  Sex                   String?
-  RoleID                Int
-  DepartmentID          Int?
-  Position              String
-  EmployeeID            String?           @unique
-  ProfilePicture        String?
-  IsActive              Boolean           @default(true)
-  CreatedAt             DateTime          @default(now())
-  UpdatedAt             DateTime?         @updatedAt
-  ActivityLogs          ActivityLog[]
-  AdminActionsPerformed AdminAction[]     @relation("AdminPerformed")
-  AdminActionsTargeted  AdminAction[]     @relation("AdminTargeted")
-  Documents             Document[]
-  DocumentRequests      DocumentRequest[]
-  DocumentVersions      DocumentVersion[]
-  ESignatures           ESignature[]
-  Notifications         Notification[]
-  Department            Department?       @relation(fields: [DepartmentID], references: [DepartmentID])
-  Role                  Role              @relation(fields: [RoleID], references: [RoleID])
+  UserID         Int      @id @default(autoincrement())
+  FirstName      String
+  LastName       String
+  Email          String   @unique
+  Password       String
+  MobileNumber   String
+  Sex            String
+  RoleID         Int
+  DepartmentID   Int?
+  Position       String
+  EmployeeID     String   @unique
+  ProfilePicture String?
+  IsActive       Boolean  @default(true)
+  IsDeleted      Boolean  @default(false)
+  CreatedAt      DateTime @default(now())
+  UpdatedAt      DateTime @updatedAt
+
+  Role        Role         @relation(fields: [RoleID], references: [RoleID])
+  Department  Department?  @relation(fields: [DepartmentID], references: [DepartmentID])
+  Documents   Document[]   @relation("CreatedDocuments")
+  DocumentRequests DocumentRequest[]
+  ActivityLogs ActivityLog[]
+  ESignatures  ESignature[]
+  DocumentVersions DocumentVersion[]
+  Notifications Notification[]
 }
 
+// DOCUMENT TABLE
 model Document {
-  DocumentID   Int               @id @default(autoincrement())
+  DocumentID   Int      @id @default(autoincrement())
   Title        String
   Type         String
   Description  String
   CreatedBy    Int
   DepartmentID Int?
-  CreatedAt    DateTime          @default(now())
-  UpdatedAt    DateTime          @updatedAt
-  Status       String            @default("Active")
-  Creator      User              @relation(fields: [CreatedBy], references: [UserID])
-  Department   Department?       @relation(fields: [DepartmentID], references: [DepartmentID])
-  Requests     DocumentRequest[]
-  Versions     DocumentVersion[]
+  CreatedAt    DateTime @default(now())
+  UpdatedAt    DateTime @updatedAt
+  Status       String   @default("Active")
+  IsDeleted    Boolean  @default(false)
+
+  Creator    User       @relation("CreatedDocuments", fields: [CreatedBy], references: [UserID])
+  Department Department? @relation(fields: [DepartmentID], references: [DepartmentID])
+  Requests   DocumentRequest[]
+  Versions   DocumentVersion[]
 }
 
-model DocumentRequest {
-  RequestID   Int         @id @default(autoincrement())
-  UserID      Int
-  DocumentID  Int
-  StatusID    Int
-  RequestedAt DateTime    @default(now())
-  CompletedAt DateTime?
-  Priority    String      @default("Normal")
-  Remarks     String?
-  Document    Document    @relation(fields: [DocumentID], references: [DocumentID])
-  Status      Status      @relation(fields: [StatusID], references: [StatusID])
-  User        User        @relation(fields: [UserID], references: [UserID])
-  ESignature  ESignature?
-}
-
+// STATUS TABLE
 model Status {
-  StatusID         Int               @id @default(autoincrement())
-  StatusName       String
+  StatusID    Int    @id @default(autoincrement())
+  StatusName  String
+  IsDeleted   Boolean @default(false)
+
   DocumentRequests DocumentRequest[]
 }
 
+// DOCUMENT REQUEST TABLE
+model DocumentRequest {
+  RequestID    Int      @id @default(autoincrement())
+  UserID       Int
+  DocumentID   Int
+  StatusID     Int
+  RequestedAt  DateTime @default(now())
+  CompletedAt  DateTime?
+  Priority     String   @default("Normal")
+  Remarks      String?
+  IsDeleted    Boolean  @default(false)
+
+  User      User     @relation(fields: [UserID], references: [UserID])
+  Document  Document @relation(fields: [DocumentID], references: [DocumentID])
+  Status    Status   @relation(fields: [StatusID], references: [StatusID])
+  ESignature ESignature?
+}
+
+// ACTIVITY LOG TABLE
 model ActivityLog {
   LogID       Int      @id @default(autoincrement())
   PerformedBy Int
@@ -95,30 +112,25 @@ model ActivityLog {
   TargetID    Int
   Remarks     String?
   Timestamp   DateTime @default(now())
-  User        User     @relation(fields: [PerformedBy], references: [UserID])
+  IsDeleted   Boolean  @default(false)
+
+  User User @relation(fields: [PerformedBy], references: [UserID])
 }
 
+// E-SIGNATURE TABLE
 model ESignature {
-  ESignatureID  Int             @id @default(autoincrement())
-  RequestID     Int             @unique
+  ESignatureID  Int      @id @default(autoincrement())
+  RequestID     Int      @unique
   SignedBy      Int
   SignatureData String
-  SignedAt      DateTime        @default(now())
-  Request       DocumentRequest @relation(fields: [RequestID], references: [RequestID])
-  User          User            @relation(fields: [SignedBy], references: [UserID])
+  SignedAt      DateTime @default(now())
+  IsDeleted     Boolean  @default(false)
+
+  Request DocumentRequest @relation(fields: [RequestID], references: [RequestID])
+  User    User            @relation(fields: [SignedBy], references: [UserID])
 }
 
-model AdminAction {
-  AdminActionID Int      @id @default(autoincrement())
-  PerformedBy   Int
-  TargetID      Int
-  Action        String
-  Remarks       String?
-  Timestamp     DateTime @default(now())
-  Admin         User     @relation("AdminPerformed", fields: [PerformedBy], references: [UserID])
-  Target        User     @relation("AdminTargeted", fields: [TargetID], references: [UserID])
-}
-
+// DOCUMENT VERSION TABLE
 model DocumentVersion {
   VersionID         Int      @id @default(autoincrement())
   DocumentID        Int
@@ -127,17 +139,22 @@ model DocumentVersion {
   ChangeDescription String
   FilePath          String?
   CreatedAt         DateTime @default(now())
-  User              User     @relation(fields: [ChangedBy], references: [UserID])
-  Document          Document @relation(fields: [DocumentID], references: [DocumentID])
+  IsDeleted         Boolean  @default(false)
+
+  Document Document @relation(fields: [DocumentID], references: [DocumentID])
+  User     User     @relation(fields: [ChangedBy], references: [UserID])
 }
 
+// NOTIFICATION TABLE
 model Notification {
-  NotificationID Int       @id @default(autoincrement())
+  NotificationID Int      @id @default(autoincrement())
   UserID         Int
   Title          String
   Message        String
-  IsRead         Boolean   @default(false)
-  CreatedAt      DateTime  @default(now())
+  IsRead         Boolean  @default(false)
+  CreatedAt      DateTime @default(now())
   ReadAt         DateTime?
-  User           User      @relation(fields: [UserID], references: [UserID])
+  IsDeleted      Boolean  @default(false)
+
+  User User @relation(fields: [UserID], references: [UserID])
 }
