@@ -5,44 +5,45 @@ import Image from "next/image";
 import styles from "./loginStyles.module.css";
 import toast, { Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import AOS from 'aos';
-import 'aos/dist/aos.css';
+import AOS from "aos";
+import "aos/dist/aos.css";
 
-type FormKeys = 'Email' | 'Password';
+type FormKeys = "Email" | "Password";
 
 type FormData = {
   email: string;
   password: string;
-}
+};
 
 export default function Login() {
-
   useEffect(() => {
-      AOS.init({
-        duration: 1000,
-        once: true,
-      });
-    }, []);
+    AOS.init({
+      duration: 1000,
+      once: true,
+    });
+  }, []);
 
   const router = useRouter();
 
-  const [formData, setFormData] = useState<FormData>({ email: "", password: "" });
+  const [formData, setFormData] = useState<FormData>({
+    email: "",
+    password: "",
+  });
   const [isEmailNotValid, setIsEmailNotValid] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-  const { name, value } = e.target;
+    const { name, value } = e.target;
 
-  setFormData((prev) => ({
-    ...prev,
-    [name as FormKeys]: value,  
-  }));
+    setFormData((prev) => ({
+      ...prev,
+      [name as FormKeys]: value,
+    }));
 
-  if (name === "Email") {
-    setIsEmailNotValid(value.toLowerCase().endsWith("@cvsu.edu.ph"));
+    if (name === "Email") {
+      setIsEmailNotValid(value.toLowerCase().endsWith("@cvsu.edu.ph"));
+    }
   }
-}
-
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -102,14 +103,13 @@ export default function Login() {
               height={100}
               className={styles.logo}
             />
-            <p>Welcome Perpetualite</p>
-            <h2>University of Perpetual Help System DALTA</h2>
+            <p>Welcome, Perpetualites!</p>
+            <h1>University of Perpetual Help System DALTA</h1>
             <p>Las Piñas</p>
-            
+
             <button className={styles.mottoBtn}>
               Character Building is Nation Building
             </button>
-            
           </div>
 
           <div className={styles.rightPanel}>
@@ -124,7 +124,7 @@ export default function Login() {
                 className={styles.input}
                 required
               />
-              
+
               <input
                 name="password"
                 type="password"
@@ -134,35 +134,28 @@ export default function Login() {
                 className={styles.input}
                 required
               />
-              </form>
-              
+            </form>
 
-              
-
-              
-              <button
-  type="button"
-  disabled={isLoading}
-  onClick={handleSubmit}
-  className={styles.signInBtn}
->
-  {isLoading ? "Logging In..." : "Log In"}
-</button>
-
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={handleSubmit}
+              className={styles.signInBtn}
+            >
+              {isLoading ? "Logging In..." : "Log In"}
+            </button>
 
             <a href="/forgotpass" className={styles.forgotLink}>
               Forgot Password?
             </a>
 
             <p className={styles.signupPrompt}>
-  Don’t have an account?{" "}
-  <a href="/signup" className={styles.signupLink}>
-    Sign up
-  </a>
-</p>
-
+              Don’t have an account?{" "}
+              <a href="/signup" className={styles.signupLink}>
+                Sign up
+              </a>
+            </p>
           </div>
-          
         </div>
       </div>
     </>

@@ -33,47 +33,46 @@ export default function SignUpOtpPage() {
   };
 
   const handleSubmit = async () => {
-  const trimmedOtp = otp.map((d) => d.trim());
-  const code = trimmedOtp.join("");
-  const isValid = trimmedOtp.every((digit) => /^\d$/.test(digit));
+    const trimmedOtp = otp.map((d) => d.trim());
+    const code = trimmedOtp.join("");
+    const isValid = trimmedOtp.every((digit) => /^\d$/.test(digit));
 
-  if (!isValid || trimmedOtp.length !== 6) {
-    toast.error("Please enter all 6 valid digits.");
-    return;
-  }
-
-  // 🔑 Get the JWT you saved from sign up
-  const token = localStorage.getItem("signup_token");
-  if (!token) {
-    toast.error("Session expired. Please sign up again.");
-    return;
-  }
-
-  setIsLoading(true);
-  console.log("📦 OTP PAGE TOKEN:", token);
-
-  try {
-    const res = await fetch("/api/user/signup/verify-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, enteredOtp: code }),
-    });
-    const data = await res.json();
-
-    if (res.ok) {
-      toast.success("OTP Verified!");
-      router.push("/login"); 
-    } else {
-      toast.error(data.message || "Invalid OTP. Try again.");
+    if (!isValid || trimmedOtp.length !== 6) {
+      toast.error("Please enter all 6 valid digits.");
+      return;
     }
-  } catch (err) {
-    console.error(err);
-    toast.error("Something went wrong.");
-  } finally {
-    setIsLoading(false);
-  }
-};
 
+    // 🔑 Get the JWT you saved from sign up
+    const token = localStorage.getItem("signup_token");
+    if (!token) {
+      toast.error("Session expired. Please sign up again.");
+      return;
+    }
+
+    setIsLoading(true);
+    console.log("📦 OTP PAGE TOKEN:", token);
+
+    try {
+      const res = await fetch("/api/user/signup/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, enteredOtp: code }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success("OTP Verified!");
+        router.push("/login");
+      } else {
+        toast.error(data.message || "Invalid OTP. Try again.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <>
@@ -88,8 +87,8 @@ export default function SignUpOtpPage() {
               height={100}
               className={styles.logo}
             />
-            <p>Welcome Perpetualite</p>
-            <h2>University of Perpetual Help System DALTA</h2>
+            <p>Welcome, Perpetualites!</p>
+            <h1>University of Perpetual Help System DALTA</h1>
             <p>Las Piñas</p>
             <button className={styles.mottoBtn}>
               Character Building is Nation Building
@@ -107,7 +106,9 @@ export default function SignUpOtpPage() {
                 {otp.map((digit, i) => (
                   <input
                     key={i}
-                    ref={(el) => { inputRefs.current[i] = el; }}
+                    ref={(el) => {
+                      inputRefs.current[i] = el;
+                    }}
                     type="text"
                     inputMode="numeric"
                     maxLength={1}
@@ -121,7 +122,6 @@ export default function SignUpOtpPage() {
               </div>
             </form>
 
-    
             <button
               onClick={handleSubmit}
               disabled={isLoading}

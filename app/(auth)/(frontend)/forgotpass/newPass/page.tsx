@@ -17,55 +17,53 @@ export default function NewPasswordPage() {
   };
 
   const handleUpdate = async () => {
-  if (password.length < 6) {
-    toast.error("Password must be at least 6 characters.");
-    return;
-  }
-
-  if (password !== confirm) {
-    toast.error("Passwords do not match.");
-    return;
-  }
-
-  const token = localStorage.getItem("forgotpassToken");
-  if (!token) {
-    toast.error("Invalid or expired session. Please try again.");
-    router.push("/forgotpass");
-    return;
-  }
-
-  setIsLoading(true);
-
-  try {
-    const res = await fetch("/api/user/forgotpass/newPass", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, newPassword: password }),
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      toast.success("Password successfully updated!");
-      localStorage.removeItem("forgotpassToken");
-      router.push("/login");
-    } else {
-      toast.error(data.error || "Failed to update password.");
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters.");
+      return;
     }
 
-  } catch (err) {
-    toast.error("Something went wrong. Try again.");
-  } finally {
-    setIsLoading(false);
-  }
-};
+    if (password !== confirm) {
+      toast.error("Passwords do not match.");
+      return;
+    }
+
+    const token = localStorage.getItem("forgotpassToken");
+    if (!token) {
+      toast.error("Invalid or expired session. Please try again.");
+      router.push("/forgotpass");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const res = await fetch("/api/user/forgotpass/newPass", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, newPassword: password }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success("Password successfully updated!");
+        localStorage.removeItem("forgotpassToken");
+        router.push("/login");
+      } else {
+        toast.error(data.error || "Failed to update password.");
+      }
+    } catch (err) {
+      toast.error("Something went wrong. Try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />
       <div className={styles.background}>
         <div className={styles.card}>
-
           <div className={styles.leftPanel}>
             <Image
               src="/logo.png"
@@ -74,15 +72,14 @@ export default function NewPasswordPage() {
               height={100}
               className={styles.logo}
             />
-            <p>Welcome Perpetualite</p>
-            <h2>University of Perpetual Help System DALTA</h2>
+            <p>Welcome, Perpetualites!</p>
+            <h1>University of Perpetual Help System DALTA</h1>
             <p>Las Piñas</p>
             <button className={styles.mottoBtn}>
               Character Building is Nation Building
             </button>
           </div>
 
-       
           <div className={styles.rightPanel}>
             <h2 className={styles.Title}>Set New Password</h2>
             <p className={styles.description}>
