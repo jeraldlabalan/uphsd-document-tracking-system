@@ -136,14 +136,7 @@ export default function Login() {
               />
               </form>
               
-{formData.email && (
-    <div className={styles.errorBox}>
-      <p className={styles.errorText}>
-         ✖ Email must end with @cvsu.edu.ph
 
-      </p>
-    </div>
-  )}
               
 
               

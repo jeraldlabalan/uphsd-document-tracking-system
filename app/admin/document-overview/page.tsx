@@ -63,6 +63,32 @@ export default function DocumentOverview() {
     setIsDepartmentOptionsOpen(!isDepartmentOptionsOpen);
   };
 
+ const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+
+  const handleDeleteClick = (itemId: string) => {
+    setSelectedItem(itemId);
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setIsModalOpen(false);
+    setShowSuccessModal(true); // Show success modal
+    // Actual deletion logic (e.g., API call) goes here
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedItem(null);
+  };
+
+  const handleCloseSuccess = () => {
+    setShowSuccessModal(false);
+    setSelectedItem(null);
+  };
+
+
   return (
     <div className={styles.container}>
       <div>
@@ -309,8 +335,8 @@ export default function DocumentOverview() {
                     </td>
                     <td id={styles.actionButtons}>
                       <button>view</button>
-                      <button>edit</button>
-                      <button>delete</button>
+                     
+                      <button onClick={() => handleDeleteClick("item-1")}>delete</button>
                     </td>
                   </tr>
 
@@ -353,8 +379,9 @@ export default function DocumentOverview() {
                     </td>
                     <td id={styles.actionButtons}>
                       <button>view</button>
-                      <button>edit</button>
-                      <button>delete</button>
+                   
+                        <button onClick={() => handleDeleteClick("item-1")}>delete</button>
+
                     </td>
                   </tr>
 
@@ -397,12 +424,45 @@ export default function DocumentOverview() {
                     </td>
                     <td id={styles.actionButtons}>
                       <button>view</button>
-                      <button>edit</button>
-                      <button>delete</button>
+                   
+                        <button onClick={() => handleDeleteClick("item-1")}>delete</button>
                     </td>
                   </tr>
                 </tbody>
               </table>
+
+               {/* Modal */}
+      {isModalOpen && (
+        <div className={styles.deletemodalOverlay}>
+          <div className={styles.modal}>
+            <h3 className={styles.deletemodalTitle}>Confirm Deletion</h3>
+            <p>Are you sure you want to delete this document? This action cannot be undone.</p>
+            <div className={styles.modalActions}>
+              <button onClick={handleCloseModal} className={styles.cancelButton}>
+                Cancel
+              </button>
+              <button onClick={handleConfirmDelete} className={styles.confirmButton}>
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+       {/* Success Modal */}
+      {showSuccessModal && (
+        <div className={styles.successmodalOverlay}>
+          <div className={styles.modal}>
+            <h3 className={styles.successmodalTitle}>Success!</h3>
+            <p>Document has been  successfully deleted.</p>
+            <div className={styles.modalActions}>
+              <button onClick={handleCloseSuccess} className={styles.closeButton}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
               <div className={styles.tableNavigationContainer}>
                 <p>Showing 1 - 4 of 116 Users</p>

@@ -31,7 +31,7 @@ export default function MyDocuments() {
       status: "Pending",
       date: "July 5, 2025",
       creator: "Kai Sotto",
-      preview: "/example-doc.png",
+      preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
     },
     {
       name: "Student Grades",
@@ -52,6 +52,28 @@ export default function MyDocuments() {
       preview: "/example-doc.png",
     },
   ];
+
+  const handleDownload = () => {
+    if (selectedDoc?.preview) {
+      const link = document.createElement('a');
+      link.href = selectedDoc.preview;
+      link.download = selectedDoc.name || 'document'; 
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const handlePrint = () => {
+    if (selectedDoc?.preview) {
+      const printWindow = window.open(selectedDoc.preview, '_blank');
+      if (printWindow) {
+        printWindow.focus();
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+      }
+    }
+  };
 
   const filteredDocs = documents.filter((doc) => {
     const statusMatch = !statusFilter || doc.status === statusFilter;
@@ -207,20 +229,35 @@ export default function MyDocuments() {
 
               {/* Document Preview */}
               <div className={styles.previewContainer}>
-                <Image
-                  src={selectedDoc.preview}
-                  alt="Document preview"
-                  width={500}
-                  height={700}
-                  style={{ width: "100%", height: "auto" }}
-                />
-              </div>
+  {selectedDoc.preview?.match(/\.pdf$/i) ? (
+    <iframe
+      src={`${selectedDoc.preview}#toolbar=0&navpanes=0&scrollbar=0`}
+      title="PDF Preview"
+      width="100%"
+      height="600px"
+      style={{ border: 'none' }}
+    ></iframe>
+  ) : selectedDoc.preview ? (
+    <p>
+      <a href={selectedDoc.preview} target="_blank" rel="noopener noreferrer">
+        Download File
+      </a>
+    </p>
+  ) : (
+    <p>No file selected.</p>
+  )}
+</div>
+
 
               {/* Footer Buttons */}
-              <div className={styles.modalFooter}>
-                <button className={styles.download}>Download</button>
-                <button className={styles.print}>Print</button>
-              </div>
+               <div className={styles.modalFooter}>
+        <button className={styles.download} onClick={handleDownload}>
+          Download
+        </button>
+        <button className={styles.print} onClick={handlePrint}>
+          Print
+        </button>
+      </div>
             </div>
           </div>
         )}

@@ -75,6 +75,23 @@ export default function NotificationPage() {
     setSelected([]);
   };
 
+  const markRead = (id: number) => {
+  setNotifications((prev) =>
+    prev.map((n) =>
+      n.id === id ? { ...n, status: "Read" } : n
+    )
+  );
+};
+
+const markUnread = (id: number) => {
+  setNotifications((prev) =>
+    prev.map((n) =>
+      n.id === id ? { ...n, status: "Unread" } : n
+    )
+  );
+};
+
+
   return (
     <div>
       <EmpHeader />
@@ -108,19 +125,24 @@ export default function NotificationPage() {
             </div>
 
             {notifications.map((notification) => (
-              <div key={notification.id} className={styles.notification}>
-                <input
-                  type="checkbox"
-                  checked={selected.includes(notification.id)}
-                  onChange={() => toggleSelect(notification.id)}
-                />
-                <div
-                  className={styles.bar}
-                  style={{ backgroundColor: notification.color }}
-                ></div>
+              <div
+  key={notification.id}
+  className={styles.notification}
+  style={{
+    backgroundColor:
+      notification.status === "Unread" ? "#f8e0e6" : "transparent",
+  }}
+>
+
 
                 <div className={styles.details}>
-                  <h3 className={styles.notifTitle}>{notification.title}</h3>
+                  <h3
+  className={styles.notifTitle}
+  style={{ fontWeight: notification.status === "Unread" ? "bold" : "normal" }}
+>
+  {notification.title}
+</h3>
+
                   <p className={styles.description}>{notification.content}</p>
                   <div className={styles.meta}>
                     <span className={styles.time}>{notification.time}</span>
@@ -137,7 +159,17 @@ export default function NotificationPage() {
                     >
                       View
                     </button>
-                    <button className={styles.markRead}>Mark Read</button>
+                    <button
+  className={styles.markRead}
+  onClick={() =>
+    notification.status === "Unread"
+      ? markRead(notification.id)
+      : markUnread(notification.id)
+  }
+>
+  {notification.status === "Unread" ? "Mark Read" : "Mark Unread"}
+</button>
+
                     <button
                       className={styles.delete}
                       onClick={() => {

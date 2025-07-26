@@ -123,13 +123,10 @@ export default function Home() {
         </div>
         <footer className={styles.footerCopyright}>
           <p>
-            © Copyright <span>UPHSD Las Piñas</span>.{" "}
-            <span>Document Tracking System</span>. All Rights Reserved.
+            © Copyright <span className={styles.highlighted}>UPHSD Las Piñas</span>.{" "}
+            All Rights Reserved.
           </p>
-          <p>
-            Created by{" "}
-            <span className={styles.highlighted}>PRINCESS BATUMBAKAL</span>
-          </p>
+          
         </footer>
       </div>
     </DelayedRender>
