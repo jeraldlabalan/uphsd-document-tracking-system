@@ -1,11 +1,13 @@
 "use client";
 import React from "react";
 import { useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 import styles from "./adminSettings.module.css";
 import Image from "next/image";
 import HeaderDashboard from "@/components/shared/adminHeader/headerDashboard";
 import AdminSidebar from "@/components/shared/adminSidebar/adminSidebar";
 import samplePhoto from "../../../assets/profile-placeholder.jpg";
+import { Vault } from "lucide-react";
 
 export default function Settings() {
   // department option
@@ -19,6 +21,7 @@ export default function Settings() {
   ];
   const [isDepartmentOptionsOpen, setIsDepartmentOptionsOpen] =
     useState<boolean>(false);
+
   const [selectedDepartment, setSelectedDepartment] = useState<string>(
     departmentOptions[0]
   );
@@ -26,6 +29,31 @@ export default function Settings() {
   const handleSelectedDepartment = (department: string) => {
     setSelectedDepartment(department);
     setIsDepartmentOptionsOpen(!isDepartmentOptionsOpen);
+  };
+
+  // add position
+
+  type PositionRown = {
+    id: string;
+    value: string;
+  };
+
+  const [rows, setRows] = useState<PositionRown[]>([
+    { id: uuidv4(), value: "" },
+  ]);
+
+  const handleAddRow = () => {
+    setRows([...rows, { id: uuidv4(), value: "" }]);
+  };
+
+  const handleRemoveRow = (id: string) => {
+    setRows(rows.filter((row) => row.id !== id));
+  };
+
+  const handleInputChange = (id: string, newValue: string) => {
+    setRows((prevRows) =>
+      prevRows.map((row) => (row.id === id ? { ...row, value: newValue } : row))
+    );
   };
 
   return (
@@ -42,6 +70,7 @@ export default function Settings() {
         <div className={styles.rightContent}>
           <h1>settings</h1>
           <div className={styles.settingsContainer}>
+
             <div className={styles.profileContainer}>
               <div className={styles.displayPictureContainer}>
                 <div className={styles.photoAndDescriptionContainer}>
@@ -188,6 +217,226 @@ export default function Settings() {
                   </div>
                 </form>
               </div>
+
+              <div className={styles.positionManagementContainer}>
+
+                <p className={styles.sectionTitle}>position management</p>
+
+                <div className={styles.positionManagementSection}>
+
+                  <div className={styles.addPositionContainer}>
+                    <p>add position / role</p>
+
+                    <table className={styles.addPositionTable}>
+                      <tbody>
+                        {rows.map((row, index) => (
+                          <tr key={row.id}>
+                            <td>
+                              <input
+                                type="text"
+                                value={row.value}
+                                onChange={(e) =>
+                                  handleInputChange(row.id, e.target.value)
+                                }
+                                placeholder="Add position"
+                              />
+                            </td>
+                            <td>
+                              {index === 0 ? (
+                                <button
+                                  type="button"
+                                  className={styles.addRownButton}
+                                  onClick={handleAddRow}
+                                >
+                                  add position
+                                </button>
+                              ) : (
+                                <button onClick={() => handleRemoveRow(row.id)}>
+                                  <svg
+                                    width="10"
+                                    height="10"
+                                    viewBox="0 0 10 10"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M1 1L9 9M1 9L9 1"
+                                      stroke="black"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                    />
+                                  </svg>
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className={styles.positionTypeContainer}>
+
+                    <p>Type of Position</p>
+
+                    <div className={styles.positionTypeListContainer}>
+
+                      <div className={styles.positionTypeList}>
+
+                        <ul>
+                          <li className={styles.positionEntry}>
+                              <div className={styles.entryContentCheckbox}>
+                                <input type="checkbox" name="deans" id="deans" />
+                                <label htmlFor="deans">Deans</label>
+                              </div>
+
+                              <button>
+                                <svg
+                                  width="10"
+                                  height="10"
+                                  viewBox="0 0 10 10"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M1 1L9 9M1 9L9 1"
+                                    stroke="black"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                  />
+                                </svg>
+                              </button>
+                          </li>
+                          <li className={styles.positionEntry}>
+                              <div className={styles.entryContentCheckbox}>
+                                <input type="checkbox" name="deans" id="deans" />
+                                <label htmlFor="deans">Deans</label>
+                              </div>
+
+                              <button>
+                                <svg
+                                  width="10"
+                                  height="10"
+                                  viewBox="0 0 10 10"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M1 1L9 9M1 9L9 1"
+                                    stroke="black"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                  />
+                                </svg>
+                              </button>
+                          </li>
+                          <li className={styles.positionEntry}>
+                              <div className={styles.entryContentCheckbox}>
+                                <input type="checkbox" name="deans" id="deans" />
+                                <label htmlFor="deans">Deans</label>
+                              </div>
+
+                              <button>
+                                <svg
+                                  width="10"
+                                  height="10"
+                                  viewBox="0 0 10 10"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M1 1L9 9M1 9L9 1"
+                                    stroke="black"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                  />
+                                </svg>
+                              </button>
+                          </li>
+
+                          <li className={styles.positionEntry}>
+                              <div className={styles.entryContentCheckbox}>
+                                <input type="checkbox" name="deans" id="deans" />
+                                <label htmlFor="deans">Deans</label>
+                              </div>
+
+                              <button>
+                                <svg
+                                  width="10"
+                                  height="10"
+                                  viewBox="0 0 10 10"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M1 1L9 9M1 9L9 1"
+                                    stroke="black"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                  />
+                                </svg>
+                              </button>
+                          </li>
+                          <li className={styles.positionEntry}>
+                              <div className={styles.entryContentCheckbox}>
+                                <input type="checkbox" name="deans" id="deans" />
+                                <label htmlFor="deans">Deans</label>
+                              </div>
+
+                              <button>
+                                <svg
+                                  width="10"
+                                  height="10"
+                                  viewBox="0 0 10 10"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M1 1L9 9M1 9L9 1"
+                                    stroke="black"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                  />
+                                </svg>
+                              </button>
+                          </li><li className={styles.positionEntry}>
+                              <div className={styles.entryContentCheckbox}>
+                                <input type="checkbox" name="deans" id="deans" />
+                                <label htmlFor="deans">Deans</label>
+                              </div>
+
+                              <button>
+                                <svg
+                                  width="10"
+                                  height="10"
+                                  viewBox="0 0 10 10"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M1 1L9 9M1 9L9 1"
+                                    stroke="black"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                  />
+                                </svg>
+                              </button>
+                          </li>
+                        </ul>
+                        
+                      </div>
+
+                      <div className={styles.positionTypeActionButton}>
+                        <button>
+                          save
+                        </button>
+                      </div>
+
+                    </div>
+
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className={styles.documentContainer}>
@@ -249,13 +498,52 @@ export default function Settings() {
 
                 <div className={styles.departmentContents}>
                   <div className={styles.addNewDepartmentContainer}>
-                    <label htmlFor="department">add new department</label>
-                    <input
-                      placeholder="Enter department name"
-                      name="department"
-                      id="department"
-                      type="text"
-                    />
+                    <table className={styles.addPositionTable}>
+                      <tbody>
+                        {rows.map((row, index) => (
+                          <tr key={row.id}>
+                            <td>
+                              <input
+                                type="text"
+                                value={row.value}
+                                onChange={(e) =>
+                                  handleInputChange(row.id, e.target.value)
+                                }
+                                placeholder="Add position"
+                              />
+                            </td>
+                            <td>
+                              {index === 0 ? (
+                                <button
+                                  type="button"
+                                  className={styles.addRownButton}
+                                  onClick={handleAddRow}
+                                >
+                                  add position
+                                </button>
+                              ) : (
+                                <button onClick={() => handleRemoveRow(row.id)}>
+                                  <svg
+                                    width="10"
+                                    height="10"
+                                    viewBox="0 0 10 10"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M1 1L9 9M1 9L9 1"
+                                      stroke="black"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                    />
+                                  </svg>
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
 
                   <div className={styles.activeDepartmentContainer}>
