@@ -129,7 +129,7 @@ export default function History() {
                   <td>{entry.date}</td>
                   <td>{entry.dueDate}</td>
                   <td className={styles.actions}>
-                    <a href="#">View</a> | <a href="#">Edit</a>
+                    <a href="#">View</a> 
                   </td>
                 </tr>
               ))}

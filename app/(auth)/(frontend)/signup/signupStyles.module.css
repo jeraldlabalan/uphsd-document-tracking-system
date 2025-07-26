@@ -186,6 +186,71 @@
   margin-top: 30px; 
 }
 
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal {
+  background: #fff;
+  width: 80%;
+  max-width: 600px;
+  border-radius: 8px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  overflow-y: auto;
+  position: relative;
+  padding: 1.5rem;
+}
+
+.modalHeader {
+  display: flex;
+  color: var(--color-maroon);
+  font-weight: bold;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 0.5rem;
+}
+
+.popupTextTerms {
+  margin-top: 5px;
+  font-weight: 500;
+  color: var(--color-maroon);
+}
+
+.closeIcon {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+  color: #333;
+}
+
+.modalContent {
+  max-height: 90vh;
+  overflow-y: auto;
+  padding-right: 1rem; 
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.modalContent::-webkit-scrollbar {
+  width: 8px;
+}
+
+
 
 
 

@@ -25,7 +25,7 @@ export default function Signup() {
   const POSITIONS = [
     "Clerk", "Administrative Assistant", "Registrar Staff", "Instructor", "Faculty",
     "Department Secretary", "Department Head", "Program Chair", "Dean",
-    "Assistant Director", "Director", "Vice President", "President", "Other",
+    "Assistant Director", "Director", "Vice President", "President",
   ];
 
   const [formData, setFormData] = useState({
@@ -43,6 +43,11 @@ export default function Signup() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [mobileInput, setMobileInput] = useState("");
   const [customPosition, setCustomPosition] = useState("");
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+
+  const openTermsModal = () => setIsTermsModalOpen(true);
+  const closeTermsModal = () => setIsTermsModalOpen(false);
+
 
   const isEmailValid = /^[^\s@]+@cvsu\.edu\.ph$/i.test(formData.Email);
   const router = useRouter();
@@ -354,6 +359,29 @@ export default function Signup() {
               ))}
             </select>
           </div>
+
+          <div className={styles.form}>
+  <label className={styles.checkboxLabel}>
+    <input
+      type="checkbox"
+      className={styles.checkbox}
+      name="certify"
+      id="certify"
+      onChange={handleChange}
+      required
+    />
+    I agree to the{" "}
+    <span
+      className={styles.linkText}
+      onClick={openTermsModal}
+      style={{ cursor: "pointer", color: "#0056b3", textDecoration: "underline" }}
+    >
+      Terms and Conditions
+    </span>
+  </label>
+</div>
+
+
         </section>
 
         {Object.values(errors).filter(Boolean).length > 0 && (
@@ -369,6 +397,53 @@ export default function Signup() {
           <button type="submit" className={styles.Btn}>Create</button>
         </div>
       </form>
+
+      {isTermsModalOpen && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modal}>
+      {/* Modal Header with Title and X */}
+      <div className={styles.modalHeader}>
+  <h2>Terms and Conditions</h2>
+  <button className={styles.closeIcon} onClick={closeTermsModal}>×</button>
+</div>
+
+<div className={styles.modalContent}>
+  <p>
+    These Terms and Conditions govern your use of our services.
+    By accessing or using our website, you agree to comply with these terms.
+  </p>
+
+  <h3 className={styles.popupTextTerms}>1. Acceptance of Terms</h3>
+  <p>
+    By accessing or using our services, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions.
+  </p>
+
+  <h3 className={styles.popupTextTerms}>2. Eligibility and Use of Services</h3>
+  <p>
+    You must be at least 18 years old or have parental consent to use our services. You agree to use our services for lawful purposes only.
+  </p>
+
+  <h3 className={styles.popupTextTerms}>3. Intellectual Property Rights</h3>
+  <p>
+    All content is the intellectual property of University of Perpetual Help System Dalta - Las Piñas unless otherwise stated.
+  </p>
+
+  <h3 className={styles.popupTextTerms}>4. Privacy Policy</h3>
+  <p>
+    Your data will be handled in accordance with the Data Privacy Act of 2012 RA 10173.
+  </p>
+
+  <h3 className={styles.popupTextTerms}>5. Governing Law</h3>
+  <p>
+    These Terms and Conditions are governed by the laws of the Republic of the Philippines.
+  </p>
+</div>
+
+    </div>
+  </div>
+)}
+
+
     </div>
   );
 }

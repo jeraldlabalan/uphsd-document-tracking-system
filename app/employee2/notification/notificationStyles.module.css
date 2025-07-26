@@ -125,9 +125,11 @@
 }
 
 .tag {
-  background-color: #eee;
+  color: var(--color-maroon);
+  font-weight: bold;
+  border: var(--color-maroon) 2px solid;
   padding: 3px 6px;
-  border-radius: 6px;
+  border-radius: 20px;
 }
 
 .time {
@@ -379,4 +381,34 @@
   border: none;
   border-radius: 6px;
   cursor: pointer;
+}
+
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .sideActions {
+    align-items: flex-start;
+    margin-left: 0;
+  }
+
+  .buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .view,
+  .markRead,
+  .delete {
+    width: 100%;
+  }
+
+  .modalContent {
+    width: 95%;
+    padding: 1.5rem;
+  }
 }
