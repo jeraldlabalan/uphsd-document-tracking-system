@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import styles from "./myDocumentsStyles.module.css";
+import styles from "./documentsStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
 import { Search as SearchIcon } from "lucide-react";
 import Image from "next/image";
@@ -10,7 +10,7 @@ import Link from "next/link";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
-export default function MyDocuments() {
+export default function Documents() {
   useEffect(() => {
     AOS.init({
       duration: 1000,
@@ -88,7 +88,7 @@ export default function MyDocuments() {
       <div className={styles.container}>
         <div data-aos="fade-up" className={styles.contentSection}>
           <div className={styles.headerRow}>
-            <h2 className={styles.pageTitle}>My Documents</h2>
+            <h2 className={styles.pageTitle}>Documents</h2>
             <Link href="./create-new-doc">
               <button className={styles.createButton}>
                 + Create New Document
