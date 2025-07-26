@@ -37,7 +37,7 @@
 .profileContainer {
     display: flex;
     flex-direction: column;
-    gap: 50px;
+    gap: 20px;
 }
 
 .settingsContainer {
@@ -289,7 +289,7 @@
     gap: 20px;
 }
 
-.documentContainer .sectionTitle {
+.sectionTitle {
     color: var(--color-maroon);
     font-weight: 600;
     font-size: 1rem;
@@ -443,7 +443,8 @@
 }
 
 .departmentListScroll ul {
-    height: 100px;
+    height: 100%;
+    max-height: 100px;
     overflow-y: auto;
 }
 
@@ -549,4 +550,146 @@
 .changePasswordButtons > :last-child {
     background-color: var(--color-maroon);
     color: var(--color-yellow);
+}
+
+.positionManagementContainer {
+    border: 1px solid var(--color-grey);
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.positionManagementSection {
+    margin-left: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+
+.addPositionContainer {
+    display: flex;
+    flex-direction: column;
+
+}
+
+.addPositionContainer > :first-child {
+    text-transform: capitalize;
+}
+
+.addPositionContainer .addPositionTable {
+    border-collapse: separate;
+  border-spacing: 0 0.5rem;
+  width: 100%;
+}
+
+.addPositionContainer .addPositionTable tbody td {
+    text-align: center;
+    vertical-align: middle;
+
+}
+
+.addPositionTable tbody td .addRownButton {
+    background-color: var(--color-maroon);
+    color: var(--color-yellow);
+    padding: 3px 20px;
+    border-radius: 50px;
+    text-transform: capitalize;
+}
+
+.addPositionTable tbody td > input[type="text"] {
+    width: 100%;
+    padding: 5px 10px;
+    border: 1px solid var(--color-grey);
+    border-radius: 5px;
+}
+
+.addPositionTable tbody td > input[type="text"]:focus {
+    outline: 1px solid var(--color-maroon);
+}
+
+.positionTypeListContainer {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.positionTypeList {
+    border-radius: 12px;
+    border: 1px solid var(--color-grey);
+    padding: 10px;
+    width: 70%;
+}
+
+.positionTypeList ul {
+    height: 90%;
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+.positionTypeList .positionEntry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+}
+
+.positionTypeList .positionEntry > :last-child {
+    display: none;
+}
+
+.positionEntry:hover > :last-child {
+    display: block;
+}
+
+.positionTypeList .positionEntry:hover {
+    background-color: var(--color-grey);
+}
+
+.positionTypeList .positionEntry .entryContentCheckbox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+
+.positionEntry .entryContent > :first-child {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+}
+
+.positionEntry .entryContent button svg {
+    display: none;
+}
+
+
+
+
+.positionTypeActionButton {
+    align-self: flex-end;
+    width: 30%;
+    display: flex;
+    justify-content: flex-end;
+
+}
+
+.positionTypeActionButton > button {
+    text-transform: capitalize;
+    background-color: var(--color-maroon);
+    color: var(--color-yellow);
+    height: 30px;
+    max-width: 100px;
+    width: 90%;
+    border-radius: 50px;
+   
+}
+
+.positionTypeContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
