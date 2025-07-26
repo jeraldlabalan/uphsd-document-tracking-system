@@ -211,6 +211,8 @@
     gap: 10px;
 }
 
+
+
 .optionDropdownContainer .tableDropdownMenu {
     position: absolute;
     padding: 10px 0;
@@ -291,6 +293,7 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
+
 }
 
 #columnId .nameAndEmail p {
@@ -491,3 +494,4 @@
     color: white;
     
 }
+
