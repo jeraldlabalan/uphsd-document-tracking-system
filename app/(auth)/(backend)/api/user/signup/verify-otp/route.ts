@@ -27,7 +27,6 @@ export async function POST(req: Request) {
     // ✅ Hash password
     const hashedPassword = await hash(decoded.Password, 10);
 
-    const fullName = `${decoded.Firstname} ${decoded.Lastname}`;
     const adminTitles = ["President", "Vice President", "Director", "Assistant Director", "Dean"];
     const role = adminTitles.includes(decoded.Position) ? "Admin" : "Employee";
   
@@ -35,7 +34,8 @@ export async function POST(req: Request) {
     // ✅ Create user
     const user = await db.user.create({
       data: {
-        FullName: fullName,
+        FirstName: decoded.FirstName,
+        LastName: decoded.LastName,
         Email: decoded.Email,
         Password: hashedPassword,
         Sex: decoded.Sex,

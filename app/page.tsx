@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import styles from "./styles/styles.module.css";
-import Header from "@/components/shared/Header";
+import Header from "@/components/shared/header";
 import { FileText, Eye, Settings, ClipboardList } from "lucide-react";
 import DelayedRender from "../components/DelayedRender";
 import { useEffect } from "react";

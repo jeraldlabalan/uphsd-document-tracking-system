@@ -22,7 +22,8 @@ export default function Setting() {
   const [profilePhoto, setProfilePhoto] = useState("");
 
   interface ProfilePayload {
-    FullName: string;
+    firstName: string;
+    lastName: string;
     mobileNumber: string;
     position: string;
     department?: string;
@@ -37,7 +38,8 @@ export default function Setting() {
   ): Promise<void> => {
     e.preventDefault();
     const payload: ProfilePayload = {
-      FullName: `${firstName} ${lastName}`,
+      firstName,
+      lastName,
       mobileNumber,
       position,
       department, // optional
@@ -97,13 +99,9 @@ export default function Setting() {
       setMobileNumber(data.MobileNumber || "");
       setPosition(data.Position || "");
       setDepartment(data.Department || "");
+      setFirstName(data.FirstName || "")
+      setLastName(data.LastName)
 
-      // If FullName is a single string, split it:
-      if (data.FullName) {
-        const nameParts = data.FullName.split(" ");
-        setFirstName(nameParts[0]);
-        setLastName(nameParts.slice(1).join(" "));
-      }
     };
 
     fetchProfile();
