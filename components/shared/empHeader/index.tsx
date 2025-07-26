@@ -22,24 +22,24 @@ export default function EmpDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<{ FirstName: string; LastName: string; ProfilePicture?: string } | null>(null);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch("/api/user/me");
-        const data = await res.json();
-        if (res.ok) {
-          setUser(data);
-        } else {
-          console.error(data.error);
-          router.push("/login");
-        }
-      } catch (err) {
-        console.error("Failed to fetch user");
-        router.push("/login");
-      }
-    };
-    fetchUser();
-  }, [router]);
+  // useEffect(() => {
+  //   const fetchUser = async () => {
+  //     try {
+  //       const res = await fetch("/api/user/me");
+  //       const data = await res.json();
+  //       if (res.ok) {
+  //         setUser(data);
+  //       } else {
+  //         console.error(data.error);
+  //         router.push("/login");
+  //       }
+  //     } catch (err) {
+  //       console.error("Failed to fetch user");
+  //       router.push("/login");
+  //     }
+  //   };
+  //   fetchUser();
+  // }, [router]);
 
 
   const handleLogout = () => {
@@ -84,14 +84,14 @@ export default function EmpDashboard() {
           </a>
 
           <a
-            href="/employee2/my-documents"
+            href="/employee2/documents"
             className={`${styles.sidebarLink} ${
-              activeLink === "My Documents" ? styles.activeLink : ""
+              activeLink === "Documents" ? styles.activeLink : ""
             }`}
-            onClick={() => setActiveLink("My Documents")}
+            onClick={() => setActiveLink("Documents")}
           >
             <FileText size={18} className={styles.icon} />
-            My Documents
+            Documents
           </a>
 
           <a
