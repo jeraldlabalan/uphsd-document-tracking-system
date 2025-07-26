@@ -56,6 +56,11 @@ export default function Settings() {
     );
   };
 
+{/* Modal States */}
+const [showModal, setShowModal] = useState(false);
+const [rowToDelete, setRowToDelete] = useState<string | null>(null);
+
+
   return (
     <div className={styles.container}>
       <>
@@ -290,7 +295,7 @@ export default function Settings() {
                                 <label htmlFor="deans">Deans</label>
                               </div>
 
-                              <button>
+                              <button type="button" onClick={() => { setShowModal(true);}}>
                                 <svg
                                   width="10"
                                   height="10"
@@ -313,7 +318,7 @@ export default function Settings() {
                                 <label htmlFor="deans">Deans</label>
                               </div>
 
-                              <button>
+                              <button type="button" onClick={() => { setShowModal(true);}}>
                                 <svg
                                   width="10"
                                   height="10"
@@ -336,7 +341,7 @@ export default function Settings() {
                                 <label htmlFor="deans">Deans</label>
                               </div>
 
-                              <button>
+                              <button type="button" onClick={() => { setShowModal(true); }}>
                                 <svg
                                   width="10"
                                   height="10"
@@ -360,7 +365,7 @@ export default function Settings() {
                                 <label htmlFor="deans">Deans</label>
                               </div>
 
-                              <button>
+                              <button type="button" onClick={() => { setShowModal(true); }}>
                                 <svg
                                   width="10"
                                   height="10"
@@ -383,7 +388,7 @@ export default function Settings() {
                                 <label htmlFor="deans">Deans</label>
                               </div>
 
-                              <button>
+                              <button type="button" onClick={() => { setShowModal(true); }}>
                                 <svg
                                   width="10"
                                   height="10"
@@ -405,7 +410,7 @@ export default function Settings() {
                                 <label htmlFor="deans">Deans</label>
                               </div>
 
-                              <button>
+                              <button type="button" onClick={() => { setShowModal(true); }}>
                                 <svg
                                   width="10"
                                   height="10"
@@ -610,6 +615,43 @@ export default function Settings() {
               </form>
             </div>
           </div>
+
+
+{showModal && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalContent}>
+      <h3 className={styles.deletemodalTitle}>Confirm</h3>
+      <p>Are you sure you want to delete this position?</p>
+      <div className={styles.modalActions}>
+        <button
+          className={styles.cancelButton}
+          onClick={() => {
+            setShowModal(false);
+            setRowToDelete(null);
+          }}
+        >
+          Cancel
+        </button>
+
+        <button
+          className={styles.confirmButton}
+          onClick={() => {
+            if (rowToDelete !== null) {
+              handleRemoveRow(rowToDelete);
+              setRowToDelete(null);
+              setShowModal(false);
+
+             
+            }
+          }}
+        >
+          Continue
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
         </div>
       </div>
     </div>
