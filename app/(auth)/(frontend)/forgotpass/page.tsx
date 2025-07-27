@@ -30,49 +30,44 @@ export default function ForgotPass() {
     }
   }
 
- const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  if (!formData.email.toLowerCase().endsWith("@cvsu.edu.ph")) {
-    toast.error("Email must be a valid @cvsu.edu.ph address.");
-    return;
-  }
-
-  setIsLoading(true);
-
-  try {
-    const res = await fetch("/api/user/forgotpass", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: formData.email }),
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      localStorage.setItem("forgotpassToken", data.token);
-      toast.success("OTP sent to your email!");
-      router.push("/forgotpass/OTP");
-    } else {
-      toast.error(data.error || "Failed to send OTP");
+    if (!formData.email.toLowerCase().endsWith("@cvsu.edu.ph")) {
+      toast.error("Email must be a valid @cvsu.edu.ph address.");
+      return;
     }
 
-  } catch (err) {
-    toast.error("Something went wrong. Please try again.");
-  } finally {
-    setIsLoading(false);
-  }
-};
+    setIsLoading(true);
 
+    try {
+      const res = await fetch("/api/user/forgotpass", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email }),
+      });
 
- 
+      const data = await res.json();
+
+      if (res.ok) {
+        localStorage.setItem("forgotpassToken", data.token);
+        toast.success("OTP sent to your email!");
+        router.push("/forgotpass/OTP");
+      } else {
+        toast.error(data.error || "Failed to send OTP");
+      }
+    } catch (err) {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />
       <div className={styles.background}>
         <div className={styles.card}>
-          
           <div className={styles.leftPanel}>
             <Image
               src="/logo.png"
@@ -81,15 +76,14 @@ export default function ForgotPass() {
               height={100}
               className={styles.logo}
             />
-            <p>Welcome Perpetualite</p>
-            <h2>University of Perpetual Help System DALTA</h2>
+            <p>Welcome, Perpetualites!</p>
+            <h1>University of Perpetual Help System DALTA</h1>
             <p>Las Piñas</p>
             <button className={styles.mottoBtn}>
               Character Building is Nation Building
             </button>
           </div>
 
-       
           <div className={styles.rightPanel}>
             <h2 className={styles.Title}>Forgot Password</h2>
             <p className={styles.description}>

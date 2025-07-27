@@ -28,6 +28,15 @@ model Department {
   Documents Document[]
 }
 
+// POSITION TABLE
+model Position {
+  PositionID Int     @id @default(autoincrement())
+  Name String
+  IsDeleted   Boolean @default(false)
+
+  Users       User[]
+}
+
 // USER TABLE
 model User {
   UserID         Int      @id @default(autoincrement())
@@ -39,7 +48,7 @@ model User {
   Sex            String
   RoleID         Int
   DepartmentID   Int?
-  Position       String
+  PositionID    Int
   EmployeeID     String   @unique
   ProfilePicture String?
   IsActive       Boolean  @default(true)
@@ -49,6 +58,7 @@ model User {
 
   Role        Role         @relation(fields: [RoleID], references: [RoleID])
   Department  Department?  @relation(fields: [DepartmentID], references: [DepartmentID])
+  Position      Position     @relation(fields: [PositionID], references: [PositionID])
   Documents   Document[]   @relation("CreatedDocuments")
   DocumentRequests DocumentRequest[]
   ActivityLogs ActivityLog[]

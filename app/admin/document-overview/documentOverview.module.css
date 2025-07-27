@@ -460,7 +460,7 @@
 
 .cancelButton {
   background-color: #ffffff;
-  border: 2px solid #7F1416;
+  border: 2px solid #AD191B;
   padding: 0.5rem 1rem;
   border-radius: 8px;
   width: 50%;
@@ -468,7 +468,7 @@
 }
 
 .confirmButton {
-  background-color: #7F1416;
+  background-color: #AD191B;
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 8px;
