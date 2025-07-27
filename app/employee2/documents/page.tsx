@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import styles from "./myDocumentsStyles.module.css";
+import styles from "./documentsStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
 import { Search as SearchIcon } from "lucide-react";
 import Image from "next/image";
@@ -10,7 +10,7 @@ import Link from "next/link";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
-export default function MyDocuments() {
+export default function Documents() {
   useEffect(() => {
     AOS.init({
       duration: 1000,
@@ -31,7 +31,7 @@ export default function MyDocuments() {
       status: "Pending",
       date: "July 5, 2025",
       creator: "Kai Sotto",
-      preview: "/example-doc.png",
+      preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
     },
     {
       name: "Student Grades",
@@ -53,6 +53,28 @@ export default function MyDocuments() {
     },
   ];
 
+  const handleDownload = () => {
+    if (selectedDoc?.preview) {
+      const link = document.createElement('a');
+      link.href = selectedDoc.preview;
+      link.download = selectedDoc.name || 'document'; 
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const handlePrint = () => {
+    if (selectedDoc?.preview) {
+      const printWindow = window.open(selectedDoc.preview, '_blank');
+      if (printWindow) {
+        printWindow.focus();
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+      }
+    }
+  };
+
   const filteredDocs = documents.filter((doc) => {
     const statusMatch = !statusFilter || doc.status === statusFilter;
     const typeMatch = !typeFilter || doc.type === typeFilter;
@@ -66,7 +88,7 @@ export default function MyDocuments() {
       <div className={styles.container}>
         <div data-aos="fade-up" className={styles.contentSection}>
           <div className={styles.headerRow}>
-            <h2 className={styles.pageTitle}>My Documents</h2>
+            <h2 className={styles.pageTitle}>Documents</h2>
             <Link href="./create-new-doc">
               <button className={styles.createButton}>
                 + Create New Document
@@ -207,20 +229,35 @@ export default function MyDocuments() {
 
               {/* Document Preview */}
               <div className={styles.previewContainer}>
-                <Image
-                  src={selectedDoc.preview}
-                  alt="Document preview"
-                  width={500}
-                  height={700}
-                  style={{ width: "100%", height: "auto" }}
-                />
-              </div>
+  {selectedDoc.preview?.match(/\.pdf$/i) ? (
+    <iframe
+      src={`${selectedDoc.preview}#toolbar=0&navpanes=0&scrollbar=0`}
+      title="PDF Preview"
+      width="100%"
+      height="600px"
+      style={{ border: 'none' }}
+    ></iframe>
+  ) : selectedDoc.preview ? (
+    <p>
+      <a href={selectedDoc.preview} target="_blank" rel="noopener noreferrer">
+        Download File
+      </a>
+    </p>
+  ) : (
+    <p>No file selected.</p>
+  )}
+</div>
+
 
               {/* Footer Buttons */}
-              <div className={styles.modalFooter}>
-                <button className={styles.download}>Download</button>
-                <button className={styles.print}>Print</button>
-              </div>
+               <div className={styles.modalFooter}>
+        <button className={styles.download} onClick={handleDownload}>
+          Download
+        </button>
+        <button className={styles.print} onClick={handlePrint}>
+          Print
+        </button>
+      </div>
             </div>
           </div>
         )}

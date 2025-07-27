@@ -65,14 +65,12 @@ export default function OtpPage() {
       } else {
         toast.error(data.error || "Invalid OTP. Try again.");
       }
-
     } catch (err) {
       toast.error("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
-
 
   return (
     <>
@@ -87,8 +85,8 @@ export default function OtpPage() {
               height={100}
               className={styles.logo}
             />
-            <p>Welcome Perpetualite</p>
-            <h2>University of Perpetual Help System DALTA</h2>
+            <p>Welcome, Perpetualites!</p>
+            <h1>University of Perpetual Help System DALTA</h1>
             <p>Las Piñas</p>
             <button className={styles.mottoBtn}>
               Character Building is Nation Building
@@ -106,7 +104,9 @@ export default function OtpPage() {
                 {otp.map((digit, i) => (
                   <input
                     key={i}
-                    ref={(el) => { inputRefs.current[i] = el; }}
+                    ref={(el) => {
+                      inputRefs.current[i] = el;
+                    }}
                     type="text"
                     inputMode="numeric"
                     maxLength={1}

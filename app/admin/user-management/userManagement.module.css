@@ -398,4 +398,127 @@
 
 
 
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modalContent {
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+}
+
+.modal {
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* Reactivation Modal Styles */
+.editmodalTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #0F72B8;
+  margin-bottom: 1rem;
+}
+
+.confirmButton {
+  background-color: #0F72B8;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 50%;
+}
+
+.successmodalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.successmodalTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #177054;
+  margin-bottom: 1rem;
+}
+
+.closeButton {
+  background-color: #177054;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 50%;
+}
+
+/* Termination Modal Styles */
+.terminatemodalTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #AD191B;
+  margin-bottom: 1rem;
+}
+
+.terminateButton {
+  background-color: #AD191B;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 50%;
+}
+
+.terminatecancelButton {
+  background-color: #ffffff;
+  border: 2px solid #AD191B;
+  color: #AD191B;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 50%;
+}
+
+.reactivatecancelButton {
+    background-color: #ffffff;
+    border: 2px solid #0F72B8;
+    color: #0F72B8;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 50%;
+}
 

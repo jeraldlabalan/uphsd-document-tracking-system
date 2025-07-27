@@ -66,6 +66,19 @@ export default function UserManagement() {
     setIsDepartmentOptionsOpen(!isDepartmentOptionsOpen);
   };
 
+
+  // For Terminate
+const [showTerminateConfirm, setShowTerminateConfirm] = useState(false);
+const [showTerminateSuccess, setShowTerminateSuccess] = useState(false);
+
+// For Edit
+const [showEditConfirm, setShowEditConfirm] = useState(false);
+const [showEditSuccess, setShowEditSuccess] = useState(false);
+
+// Common selected user name
+const [selectedUser, setSelectedUser] = useState<string | null>(null);
+
+
   return (
     <div className={styles.container}>
       <div>
@@ -311,8 +324,23 @@ export default function UserManagement() {
                       <span>10:30AM</span>
                     </td>
                     <td id={styles.actionButtons}>
-                      <button>edit</button>
-                      <button>terminate</button>
+                     <button
+  onClick={() => {
+    setSelectedUser("Alexander Fernandez"); // change per row
+    setShowEditConfirm(true);
+  }}
+>
+  edit
+</button>
+
+<button
+  onClick={() => {
+    setSelectedUser("Alexander Fernandez"); // change per row
+    setShowTerminateConfirm(true);
+  }}
+>
+  terminate
+</button>
                     </td>
                   </tr>
 
@@ -343,8 +371,23 @@ export default function UserManagement() {
                       <span>10:30AM</span>
                     </td>
                     <td id={styles.actionButtons}>
-                      <button>edit</button>
-                      <button>terminate</button>
+                     <button
+  onClick={() => {
+    setSelectedUser("Alexander Fernandez"); // change per row
+    setShowEditConfirm(true);
+  }}
+>
+  edit
+</button>
+
+<button
+  onClick={() => {
+    setSelectedUser("Alexander Fernandez"); // change per row
+    setShowTerminateConfirm(true);
+  }}
+>
+  terminate
+</button>
                     </td>
                   </tr>
 
@@ -375,8 +418,23 @@ export default function UserManagement() {
                       <span>10:30AM</span>
                     </td>
                     <td id={styles.actionButtons}>
-                      <button>edit</button>
-                      <button>terminate</button>
+                     <button
+  onClick={() => {
+    setSelectedUser("Alexander Fernandez"); // change per row
+    setShowEditConfirm(true);
+  }}
+>
+  edit
+</button>
+
+<button
+  onClick={() => {
+    setSelectedUser("Alexander Fernandez"); // change per row
+    setShowTerminateConfirm(true);
+  }}
+>
+  terminate
+</button>
                     </td>
                   </tr>
                 </tbody>
@@ -397,6 +455,109 @@ export default function UserManagement() {
               </div>
             </div>
           </div>
+
+
+
+        {/* MODALS FOR REACTIVATION AND TERMINATE ACTIONS */}
+          {showEditConfirm && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalContent}>
+      <h3 className={styles.editmodalTitle}>Confirm Reactivation</h3>
+      <p>Are you sure you want to reactivate this account?</p>
+      <div className={styles.modalActions}>
+        <button
+          className={styles.reactivatecancelButton}
+          onClick={() => {
+            setShowEditConfirm(false);
+            setSelectedUser(null);
+          }}
+        >
+          Cancel
+        </button>
+        <button
+          className={styles.confirmButton}
+          onClick={() => {
+            setShowEditConfirm(false);
+            setShowEditSuccess(true);
+          }}
+        >
+          Continue
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{showEditSuccess && (
+  <div className={styles.successmodalOverlay}>
+    <div className={styles.modal}>
+      <h3 className={styles.successmodalTitle}>Success!</h3>
+      <p>{selectedUser} has been successfully edited.</p>
+      <div className={styles.modalActions}>
+        <button
+          onClick={() => {
+            setShowEditSuccess(false);
+            setSelectedUser(null);
+          }}
+          className={styles.closeButton}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
+{showTerminateConfirm && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalContent}>
+      <h3 className={styles.terminatemodalTitle}>Confirm Termination</h3>
+      <p>Are you sure you want to terminate this account?</p>
+      <div className={styles.modalActions}>
+        <button
+          className={styles.terminatecancelButton}
+          onClick={() => {
+            setShowTerminateConfirm(false);
+            setSelectedUser(null);
+          }}
+        >
+          Cancel
+        </button>
+        <button
+          className={styles.terminateButton}
+          onClick={() => {
+            setShowTerminateConfirm(false);
+            setShowTerminateSuccess(true);
+          }}
+        >
+          Continue
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{showTerminateSuccess && (
+  <div className={styles.successmodalOverlay}>
+    <div className={styles.modal}>
+      <h3 className={styles.successmodalTitle}>Terminated</h3>
+      <p>{selectedUser} has been successfully terminated.</p>
+      <div className={styles.modalActions}>
+        <button
+          onClick={() => {
+            setShowTerminateSuccess(false);
+            setSelectedUser(null);
+          }}
+          className={styles.closeButton}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
         </div>
       </div>
     </div>
