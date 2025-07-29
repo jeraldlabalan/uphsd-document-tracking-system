@@ -5,8 +5,6 @@ import EmpHeader from "@/components/shared/empHeader";
 import { Search as SearchIcon } from "lucide-react"; 
 import Link from "next/link";
 import { X } from "lucide-react";
-import Image from 'next/image';
-import Logo from '@/assets/b3cd79ac-0068-4716-9a20-c72aabc83ab9.png'; 
 
 export default function Documents() {
   const [search, setSearch] = useState("");
@@ -90,13 +88,14 @@ const handlePrint = () => {
 
        
           <div className={styles.foldersWrapper}>
-            <div className={styles.folderShape}>
-              <span className={styles.folderText}>MY DOCUMENTS</span>
-            </div>
-            <div className={styles.folderShape}>
-              <span className={styles.folderText}>RECEIVED DOCUMENTS</span>
-            </div>
-          </div>
+  <Link href="/employee2/documents/mydocs" className={styles.folderShape}>
+    <span className={styles.folderText}>MY DOCUMENTS</span>
+  </Link>
+  
+  <Link href="/employee2/documents/receivedocs" className={styles.folderShape}>
+    <span className={styles.folderText}>RECEIVED DOCUMENTS</span>
+  </Link>
+</div>
 
     
           <div className={styles.filters}>
