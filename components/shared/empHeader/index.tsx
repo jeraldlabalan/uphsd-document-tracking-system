@@ -3,8 +3,10 @@
 import Image from "next/image";
 import styles from "./empHeaderStyles.module.css";
 import Search from "../header/search";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+
+
 import {
   LayoutDashboard,
   FileText,
@@ -16,8 +18,9 @@ import {
 
 export default function EmpDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeLink, setActiveLink] = useState("Dashboard");
+  const pathname = usePathname();
   const userName = "Kai Sotto";
+  
 
   const router = useRouter();
   const [user, setUser] = useState<{ FirstName: string; LastName: string; ProfilePicture?: string } | null>(null);
@@ -73,59 +76,55 @@ export default function EmpDashboard() {
 
         <nav className={styles.sidebarNav}>
           <a
-            href="/employee2/dashboard"
-            className={`${styles.sidebarLink} ${
-              activeLink === "Dashboard" ? styles.activeLink : ""
-            }`}
-            onClick={() => setActiveLink("Dashboard")}
-          >
-            <LayoutDashboard size={18} className={styles.icon} />
-            Dashboard
-          </a>
+  href="/employee2/dashboard"
+  className={`${styles.sidebarLink} ${
+    pathname.includes("/employee2/dashboard") ? styles.activeLink : ""
+  }`}
+>
+  <LayoutDashboard size={18} className={styles.icon} />
+  Dashboard
+</a>
 
-          <a
-            href="/employee2/documents"
-            className={`${styles.sidebarLink} ${
-              activeLink === "Documents" ? styles.activeLink : ""
-            }`}
-            onClick={() => setActiveLink("Documents")}
-          >
-            <FileText size={18} className={styles.icon} />
-            Documents
-          </a>
+<a
+  href="/employee2/documents"
+  className={`${styles.sidebarLink} ${
+    pathname.includes("/employee2/documents") ? styles.activeLink : ""
+  }`}
+>
+  <FileText size={18} className={styles.icon} />
+  Documents
+</a>
 
-          <a
-            href="/employee2/notification"
-            className={`${styles.sidebarLink} ${
-              activeLink === "Notification" ? styles.activeLink : ""
-            }`}
-            onClick={() => setActiveLink("Notification")}
-          >
-            <Bell size={18} className={styles.icon} />
-            Notification
-          </a>
+<a
+  href="/employee2/notification"
+  className={`${styles.sidebarLink} ${
+    pathname.includes("/employee2/notification") ? styles.activeLink : ""
+  }`}
+>
+  <Bell size={18} className={styles.icon} />
+  Notification
+</a>
 
-          <a
-            href="/employee2/history"
-            className={`${styles.sidebarLink} ${
-              activeLink === "History" ? styles.activeLink : ""
-            }`}
-            onClick={() => setActiveLink("History")}
-          >
-            <History size={18} className={styles.icon} />
-            History
-          </a>
+<a
+  href="/employee2/history"
+  className={`${styles.sidebarLink} ${
+    pathname.includes("/employee2/history") ? styles.activeLink : ""
+  }`}
+>
+  <History size={18} className={styles.icon} />
+  History
+</a>
 
-          <a
-            href="/employee2/settings"
-            className={`${styles.sidebarLink} ${
-              activeLink === "Settings" ? styles.activeLink : ""
-            }`}
-            onClick={() => setActiveLink("Settings")}
-          >
-            <Settings size={18} className={styles.icon} />
-            Settings
-          </a>
+<a
+  href="/employee2/settings"
+  className={`${styles.sidebarLink} ${
+    pathname.includes("/employee2/settings") ? styles.activeLink : ""
+  }`}
+>
+  <Settings size={18} className={styles.icon} />
+  Settings
+</a>
+
         </nav>
 
         <a

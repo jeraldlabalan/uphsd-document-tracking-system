@@ -56,10 +56,11 @@ export default function Settings() {
     );
   };
 
-{/* Modal States */}
-const [showModal, setShowModal] = useState(false);
-const [rowToDelete, setRowToDelete] = useState<string | null>(null);
-
+  {
+    /* Modal States */
+  }
+  const [showModal, setShowModal] = useState(false);
+  const [rowToDelete, setRowToDelete] = useState<string | null>(null);
 
   return (
     <div className={styles.container}>
@@ -75,7 +76,6 @@ const [rowToDelete, setRowToDelete] = useState<string | null>(null);
         <div className={styles.rightContent}>
           <h1>settings</h1>
           <div className={styles.settingsContainer}>
-
             <div className={styles.profileContainer}>
               <div className={styles.displayPictureContainer}>
                 <div className={styles.photoAndDescriptionContainer}>
@@ -203,16 +203,6 @@ const [rowToDelete, setRowToDelete] = useState<string | null>(null);
                         </ul>
                       )}
                     </div>
-
-                    <div className={styles.formData}>
-                      <label htmlFor="bio">Bio</label>
-                      <textarea
-                        placeholder="Enter bio"
-                        rows={3}
-                        name="bio"
-                        id=""
-                      ></textarea>
-                    </div>
                   </div>
 
                   <div className={styles.buttonsContainer}>
@@ -224,8 +214,7 @@ const [rowToDelete, setRowToDelete] = useState<string | null>(null);
               </div>
 
               <div className={styles.positionManagementContainer}>
-
-                <p className={styles.sectionTitle}>position management</p>
+                {/**   <p className={styles.sectionTitle}>position management</p>
 
                 <div className={styles.positionManagementSection}>
 
@@ -336,6 +325,7 @@ const [rowToDelete, setRowToDelete] = useState<string | null>(null);
                               </button>
                           </li>
                           <li className={styles.positionEntry}>
+
                               <div className={styles.entryContentCheckbox}>
                                 <input type="checkbox" name="deans" id="deans" />
                                 <label htmlFor="deans">Deans</label>
@@ -357,6 +347,7 @@ const [rowToDelete, setRowToDelete] = useState<string | null>(null);
                                   />
                                 </svg>
                               </button>
+
                           </li>
 
                           <li className={styles.positionEntry}>
@@ -440,68 +431,285 @@ const [rowToDelete, setRowToDelete] = useState<string | null>(null);
                     </div>
 
                   </div>
-                </div>
+                </div>*/}
+
+                <form className={styles.changePasswordContainer}>
+                  <p className={styles.sectionTitle}>change password</p>
+
+                  <div className={styles.changePasswordContents}>
+                    <div className={styles.changePasswordDataForm}>
+                      <div className={styles.dataForm}>
+                        <label htmlFor="current">current password</label>
+                        <input
+                          name="current"
+                          placeholder="Enter current password"
+                          type="text"
+                        />
+                      </div>
+                      <div className={styles.dataForm}>
+                        <label htmlFor="new">new password</label>
+                        <input
+                          name="new"
+                          placeholder="Enter new password"
+                          type="text"
+                        />
+                      </div>
+                      <div className={styles.dataForm}>
+                        <label htmlFor="confirm">confirm password</label>
+                        <input
+                          name="confirm"
+                          placeholder="Confirm new password"
+                          type="text"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className={styles.changePasswordButtons}>
+                    <button type="button">clear</button>
+                    <button type="submit">change password</button>
+                  </div>
+                </form>
               </div>
             </div>
 
+            {/* Document Management */}
             <div className={styles.documentContainer}>
               <div className={styles.documentManagementContainer}>
                 <p className={styles.sectionTitle}>document management</p>
 
                 <div className={styles.parentSection}>
-                  <div className={styles.maximumFileSizeSection}>
-                    <p>maximum file size (MB)</p>
-                    <input placeholder="Enter a number" type="number" />
-                  </div>
+                  <div className={styles.departmentManagementContainer}>
+                    <p>Add Document type</p>
 
-                  <div className={styles.allowedFileTypesSection}>
-                    <p>allowed file types</p>
-                    <div className={styles.checkboxContainer}>
-                      <label htmlFor="pdf">
-                        <input name="pdf" id="pdf" type="checkbox" />
-                        PDF
-                      </label>
-                      <label htmlFor="document">
-                        <input name="document" id="document" type="checkbox" />
-                        DOC / DOCX
-                      </label>
-                      <label htmlFor="spreadsheet">
-                        <input
-                          name="spreadsheet"
-                          id="spreadsheet"
-                          type="checkbox"
-                        />
-                        XLS / XLSX
-                      </label>
-                      <label htmlFor="img">
-                        <input name="img" id="img" type="checkbox" />
-                        IMG
-                      </label>
-                      <label htmlFor="png">
-                        <input name="png" id="png" type="checkbox" />
-                        PNG
-                      </label>
-                      <label htmlFor="jpg">
-                        <input name="jpg" id="jpg" type="checkbox" />
-                        JPG
-                      </label>
-                    </div>
-                  </div>
+                    <div className={styles.departmentContents}>
+                      <div className={styles.addNewDepartmentContainer}>
+                        <table className={styles.addPositionTable}>
+                          <tbody>
+                            {rows.map((row, index) => (
+                              <tr key={row.id}>
+                                <td>
+                                  <input
+                                    type="text"
+                                    value={row.value}
+                                    onChange={(e) =>
+                                      handleInputChange(row.id, e.target.value)
+                                    }
+                                    placeholder="Add Document"
+                                  />
+                                </td>
+                                <td>
+                                  {index === 0 ? (
+                                    <button
+                                      type="button"
+                                      className={styles.addRownButton}
+                                      onClick={handleAddRow}
+                                    >
+                                      add document
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleRemoveRow(row.id)}
+                                    >
+                                      <svg
+                                        width="10"
+                                        height="10"
+                                        viewBox="0 0 10 10"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                      >
+                                        <path
+                                          d="M1 1L9 9M1 9L9 1"
+                                          stroke="black"
+                                          strokeWidth="2"
+                                          strokeLinecap="round"
+                                        />
+                                      </svg>
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
 
-                  <div className={styles.autoDeleteDocumentSection}>
-                    <p>Auto-delete documents after (days)</p>
-                    <div className={styles.inputAndButtonContainer}>
-                      <input placeholder="Enter a number" type="number" />
-                      <button>save document</button>
+                      <div className={styles.activeDepartmentContainer}>
+                        <p>Type of documents</p>
+                        <div className={styles.departmentList}>
+                          <div className={styles.departmentListScroll}>
+                            <ul>
+                              <li className={styles.Entryposition}>
+                                <div className={styles.entryContentCheckbox}>
+                                  <input
+                                    type="checkbox"
+                                    name="request"
+                                    id="request"
+                                  />
+                                  <label htmlFor="request">Request</label>
+                                </div>
+
+                                <button
+                                  className={styles.exbutton}
+                                  type="button"
+                                  onClick={() => setShowModal(true)}
+                                >
+                                  <svg
+                                    width="10"
+                                    height="10"
+                                    viewBox="0 0 10 10"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M1 1L9 9M1 9L9 1"
+                                      stroke="black"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                    />
+                                  </svg>
+                                </button>
+                              </li>
+
+                              <li className={styles.Entryposition}>
+                                <div className={styles.entryContentCheckbox}>
+                                  <input type="checkbox" name="moa" id="moa" />
+                                  <label htmlFor="moa">Moa</label>
+                                </div>
+                                <button
+                                  className={styles.exbutton}
+                                  type="button"
+                                  onClick={() => setShowModal(true)}
+                                >
+                                  <svg
+                                    width="10"
+                                    height="10"
+                                    viewBox="0 0 10 10"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M1 1L9 9M1 9L9 1"
+                                      stroke="black"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                    />
+                                  </svg>
+                                </button>
+                              </li>
+
+                              <li className={styles.Entryposition}>
+                                <div className={styles.entryContentCheckbox}>
+                                  <input
+                                    type="checkbox"
+                                    name="evaluation"
+                                    id="evaluation"
+                                  />
+                                  <label htmlFor="evaluation">Evaluation</label>
+                                </div>
+                                <button
+                                  className={styles.exbutton}
+                                  type="button"
+                                  onClick={() => setShowModal(true)}
+                                >
+                                  <svg
+                                    width="10"
+                                    height="10"
+                                    viewBox="0 0 10 10"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M1 1L9 9M1 9L9 1"
+                                      stroke="black"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                    />
+                                  </svg>
+                                </button>
+                              </li>
+
+                              <li className={styles.Entryposition}>
+                                <div className={styles.entryContentCheckbox}>
+                                  <input
+                                    type="checkbox"
+                                    name="budget"
+                                    id="budget"
+                                  />
+                                  <label htmlFor="budget">Budget</label>
+                                </div>
+                                <button
+                                  className={styles.exbutton}
+                                  type="button"
+                                  onClick={() => setShowModal(true)}
+                                >
+                                  <svg
+                                    width="10"
+                                    height="10"
+                                    viewBox="0 0 10 10"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M1 1L9 9M1 9L9 1"
+                                      stroke="black"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                    />
+                                  </svg>
+                                </button>
+                              </li>
+
+                              <li className={styles.Entryposition}>
+                                <div className={styles.entryContentCheckbox}>
+                                  <input
+                                    type="checkbox"
+                                    name="termination"
+                                    id="termination"
+                                  />
+                                  <label htmlFor="termination">
+                                    Termination
+                                  </label>
+                                </div>
+                                <button
+                                  className={styles.exbutton}
+                                  type="button"
+                                  onClick={() => setShowModal(true)}
+                                >
+                                  <svg
+                                    width="10"
+                                    height="10"
+                                    viewBox="0 0 10 10"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M1 1L9 9M1 9L9 1"
+                                      stroke="black"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                    />
+                                  </svg>
+                                </button>
+                              </li>
+                            </ul>
+                          </div>
+                          <div className={styles.departmentActionButtons}>
+                            <button>add document</button>
+                            <button>save</button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+              {/* Document Management ENDS HERE!!!! */}
 
+              {/* Department Management */}
               <div className={styles.departmentManagementContainer}>
                 <p className={styles.sectionTitle}>department management</p>
-
                 <div className={styles.departmentContents}>
+                  <p>Add New Department</p>
                   <div className={styles.addNewDepartmentContainer}>
                     <table className={styles.addPositionTable}>
                       <tbody>
@@ -514,7 +722,231 @@ const [rowToDelete, setRowToDelete] = useState<string | null>(null);
                                 onChange={(e) =>
                                   handleInputChange(row.id, e.target.value)
                                 }
-                                placeholder="Add position"
+                                placeholder="Add Department"
+                              />
+                            </td>
+                            <td>
+                              {index === 0 ? (
+                                <button
+                                  type="button"
+                                  className={styles.addRownButton}
+                                  onClick={handleAddRow}
+                                >
+                                  add department
+                                </button>
+                              ) : (
+                                <button onClick={() => handleRemoveRow(row.id)}>
+                                  <svg
+                                    width="10"
+                                    height="10"
+                                    viewBox="0 0 10 10"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M1 1L9 9M1 9L9 1"
+                                      stroke="black"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                    />
+                                  </svg>
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className={styles.activeDepartmentContainer}>
+                    <p>active departments</p>
+                    <div className={styles.departmentList}>
+                      <div className={styles.departmentListScroll}>
+                        <ul>
+                          <li className={styles.Entryposition}>
+                            <div className={styles.entryContentCheckbox}>
+                              <input
+                                type="checkbox"
+                                name="request"
+                                id="request"
+                              />
+                              <label htmlFor="request">Human Resources</label>
+                            </div>
+                            <button
+                              className={styles.exbutton}
+                              type="button"
+                              onClick={() => setShowModal(true)}
+                            >
+                              <svg
+                                width="10"
+                                height="10"
+                                viewBox="0 0 10 10"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M1 1L9 9M1 9L9 1"
+                                  stroke="black"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            </button>
+                          </li>
+
+                          <li className={styles.Entryposition}>
+                            <div className={styles.entryContentCheckbox}>
+                              <input type="checkbox" name="moa" id="moa" />
+                              <label htmlFor="moa">
+                                Information Technology
+                              </label>
+                            </div>
+                            <button
+                              className={styles.exbutton}
+                              type="button"
+                              onClick={() => setShowModal(true)}
+                            >
+                              <svg
+                                width="10"
+                                height="10"
+                                viewBox="0 0 10 10"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M1 1L9 9M1 9L9 1"
+                                  stroke="black"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            </button>
+                          </li>
+
+                          <li className={styles.Entryposition}>
+                            <div className={styles.entryContentCheckbox}>
+                              <input
+                                type="checkbox"
+                                name="evaluation"
+                                id="evaluation"
+                              />
+                              <label htmlFor="evaluation">Business</label>
+                            </div>
+                            <button
+                              className={styles.exbutton}
+                              type="button"
+                              onClick={() => setShowModal(true)}
+                            >
+                              <svg
+                                width="10"
+                                height="10"
+                                viewBox="0 0 10 10"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M1 1L9 9M1 9L9 1"
+                                  stroke="black"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            </button>
+                          </li>
+
+                          <li className={styles.Entryposition}>
+                            <div className={styles.entryContentCheckbox}>
+                              <input
+                                type="checkbox"
+                                name="budget"
+                                id="budget"
+                              />
+                              <label htmlFor="budget">Medicine</label>
+                            </div>
+                            <button
+                              className={styles.exbutton}
+                              type="button"
+                              onClick={() => setShowModal(true)}
+                            >
+                              <svg
+                                width="10"
+                                height="10"
+                                viewBox="0 0 10 10"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M1 1L9 9M1 9L9 1"
+                                  stroke="black"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            </button>
+                          </li>
+
+                          <li className={styles.Entryposition}>
+                            <div className={styles.entryContentCheckbox}>
+                              <input
+                                type="checkbox"
+                                name="termination"
+                                id="termination"
+                              />
+                              <label htmlFor="termination">Engineering</label>
+                            </div>
+                            <button
+                              className={styles.exbutton}
+                              type="button"
+                              onClick={() => setShowModal(true)}
+                            >
+                              <svg
+                                width="10"
+                                height="10"
+                                viewBox="0 0 10 10"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M1 1L9 9M1 9L9 1"
+                                  stroke="black"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            </button>
+                          </li>
+                        </ul>
+                      </div>
+
+                      <div className={styles.departmentActionButtons}>
+                        <button>add department</button>
+                        <button>save</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Department Management ENDS HERE!!!! */}
+
+              {/* Department Management */}
+              <div className={styles.departmentManagementContainer}>
+                <p className={styles.sectionTitle}>position management</p>
+                <div className={styles.departmentContents}>
+                  <p>Add Position/Role</p>
+                  <div className={styles.addNewDepartmentContainer}>
+                    <table className={styles.addPositionTable}>
+                      <tbody>
+                        {rows.map((row, index) => (
+                          <tr key={row.id}>
+                            <td>
+                              <input
+                                type="text"
+                                value={row.value}
+                                onChange={(e) =>
+                                  handleInputChange(row.id, e.target.value)
+                                }
+                                placeholder="Add Position"
                               />
                             </td>
                             <td>
@@ -552,106 +984,206 @@ const [rowToDelete, setRowToDelete] = useState<string | null>(null);
                   </div>
 
                   <div className={styles.activeDepartmentContainer}>
-                    <p>active departments</p>
+                    <p>Type of position</p>
                     <div className={styles.departmentList}>
                       <div className={styles.departmentListScroll}>
                         <ul>
-                          <li>Human Resource</li>
-                          <li>Information Technology</li>
-                          <li>Business</li>
-                          <li>Medicine</li>
-                          <li>Human Resource</li>
-                          <li>Information Technology</li>
-                          <li>Business</li>
-                          <li>Medicine</li>
+                          <li className={styles.Entryposition}>
+                            <div className={styles.entryContentCheckbox}>
+                              <input
+                                type="checkbox"
+                                name="request"
+                                id="request"
+                              />
+                              <label htmlFor="request">Dean</label>
+                            </div>
+                            <button
+                              className={styles.exbutton}
+                              type="button"
+                              onClick={() => setShowModal(true)}
+                            >
+                              <svg
+                                width="10"
+                                height="10"
+                                viewBox="0 0 10 10"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M1 1L9 9M1 9L9 1"
+                                  stroke="black"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            </button>
+                          </li>
+
+                          <li className={styles.Entryposition}>
+                            <div className={styles.entryContentCheckbox}>
+                              <input type="checkbox" name="moa" id="moa" />
+                              <label htmlFor="moa">Dean</label>
+                            </div>
+                            <button
+                              className={styles.exbutton}
+                              type="button"
+                              onClick={() => setShowModal(true)}
+                            >
+                              <svg
+                                width="10"
+                                height="10"
+                                viewBox="0 0 10 10"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M1 1L9 9M1 9L9 1"
+                                  stroke="black"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            </button>
+                          </li>
+
+                          <li className={styles.Entryposition}>
+                            <div className={styles.entryContentCheckbox}>
+                              <input
+                                type="checkbox"
+                                name="evaluation"
+                                id="evaluation"
+                              />
+                              <label htmlFor="evaluation">Dean</label>
+                            </div>
+                            <button
+                              className={styles.exbutton}
+                              type="button"
+                              onClick={() => setShowModal(true)}
+                            >
+                              <svg
+                                width="10"
+                                height="10"
+                                viewBox="0 0 10 10"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M1 1L9 9M1 9L9 1"
+                                  stroke="black"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            </button>
+                          </li>
+
+                          <li className={styles.Entryposition}>
+                            <div className={styles.entryContentCheckbox}>
+                              <input
+                                type="checkbox"
+                                name="budget"
+                                id="budget"
+                              />
+                              <label htmlFor="budget">Dean</label>
+                            </div>
+                            <button
+                              className={styles.exbutton}
+                              type="button"
+                              onClick={() => setShowModal(true)}
+                            >
+                              <svg
+                                width="10"
+                                height="10"
+                                viewBox="0 0 10 10"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M1 1L9 9M1 9L9 1"
+                                  stroke="black"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            </button>
+                          </li>
+
+                          <li className={styles.Entryposition}>
+                            <div className={styles.entryContentCheckbox}>
+                              <input
+                                type="checkbox"
+                                name="termination"
+                                id="termination"
+                              />
+                              <label htmlFor="termination">Dean</label>
+                            </div>
+                            <button
+                              className={styles.exbutton}
+                              type="button"
+                              onClick={() => setShowModal(true)}
+                            >
+                              <svg
+                                width="10"
+                                height="10"
+                                viewBox="0 0 10 10"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M1 1L9 9M1 9L9 1"
+                                  stroke="black"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            </button>
+                          </li>
                         </ul>
                       </div>
 
                       <div className={styles.departmentActionButtons}>
-                        <button>add department</button>
+                        <button>add position</button>
                         <button>save</button>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-
-              <form className={styles.changePasswordContainer}>
-                <p className={styles.sectionTitle}>change password</p>
-
-                <div className={styles.changePasswordContents}>
-                  <div className={styles.changePasswordDataForm}>
-                    <div className={styles.dataForm}>
-                      <label htmlFor="current">current password</label>
-                      <input
-                        name="current"
-                        placeholder="Enter current password"
-                        type="text"
-                      />
-                    </div>
-                    <div className={styles.dataForm}>
-                      <label htmlFor="new">new password</label>
-                      <input
-                        name="new"
-                        placeholder="Enter current password"
-                        type="text"
-                      />
-                    </div>
-                    <div className={styles.dataForm}>
-                      <label htmlFor="confirm">confirm password</label>
-                      <input
-                        name="confirm"
-                        placeholder="Enter current password"
-                        type="text"
-                      />
-                    </div>
-                  </div>
-
-                  <div className={styles.changePasswordButtons}>
-                    <button type="button">clear</button>
-                    <button type="submit">change password</button>
-                  </div>
-                </div>
-              </form>
             </div>
           </div>
 
+          {showModal && (
+            <div className={styles.modalOverlay}>
+              <div className={styles.modalContent}>
+                <h3 className={styles.deletemodalTitle}>Confirm</h3>
+                <p>Are you sure you want to delete this position?</p>
+                <div className={styles.modalActions}>
+                  <button
+                    className={styles.cancelButton}
+                    onClick={() => {
+                      setShowModal(false);
+                      setRowToDelete(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
 
-{showModal && (
-  <div className={styles.modalOverlay}>
-    <div className={styles.modalContent}>
-      <h3 className={styles.deletemodalTitle}>Confirm</h3>
-      <p>Are you sure you want to delete this position?</p>
-      <div className={styles.modalActions}>
-        <button
-          className={styles.cancelButton}
-          onClick={() => {
-            setShowModal(false);
-            setRowToDelete(null);
-          }}
-        >
-          Cancel
-        </button>
-
-        <button
-          className={styles.confirmButton}
-          onClick={() => {
-            if (rowToDelete !== null) {
-              handleRemoveRow(rowToDelete);
-              setRowToDelete(null);
-              setShowModal(false);
-
-             
-            }
-          }}
-        >
-          Continue
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
+                  <button
+                    className={styles.confirmButton}
+                    onClick={() => {
+                      if (rowToDelete !== null) {
+                        handleRemoveRow(rowToDelete);
+                        setRowToDelete(null);
+                        setShowModal(false);
+                      }
+                    }}
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

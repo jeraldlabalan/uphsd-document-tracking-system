@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { useState } from "react";
-import styles from "./createNewUser.module.css";
+import styles from "./EditUser.module.css";
 import HeaderDashboard from "@/components/shared/adminHeader/headerDashboard";
 import Link from "next/link";
 
@@ -45,7 +45,7 @@ export default function CreateNewUser() {
 
       <div className={styles.contentContainer}>
         <form action="#" className={styles.createAccountForm}>
-          <h1 className={styles.formTitle}>create new account</h1>
+          <h1 className={styles.formTitle}>Edit User Profile</h1>
 
           <div className={styles.formSection}>
             <h1 className={styles.sectionTitle}>personal information</h1>
@@ -202,7 +202,7 @@ export default function CreateNewUser() {
                 name="submit"
                 className={styles.submitButton}
               >
-                submit
+                save changes
               </button>
             </div>
           </div>
