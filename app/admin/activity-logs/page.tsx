@@ -267,7 +267,7 @@ export default function ActivityLogs() {
                   <th>department</th>
                   <th>status</th>
                   <th>created</th>
-                  <th>action</th>
+                  
                 </thead>
                 <tbody>
                   <tr>
@@ -307,11 +307,7 @@ export default function ActivityLogs() {
                       <p>July 5, 2025</p>
                       <span>10:30AM</span>
                     </td>
-                    <td id={styles.actionButtons}>
-                      <button>view</button>
-                      <button>edit</button>
-                      <button>delete</button>
-                    </td>
+                   
                   </tr>
 
                   <tr>
@@ -351,11 +347,7 @@ export default function ActivityLogs() {
                       <p>July 5, 2025</p>
                       <span>10:30AM</span>
                     </td>
-                    <td id={styles.actionButtons}>
-                      <button>view</button>
-                      <button>edit</button>
-                      <button>delete</button>
-                    </td>
+                    
                   </tr>
 
                   <tr>
@@ -395,11 +387,7 @@ export default function ActivityLogs() {
                       <p>July 5, 2025</p>
                       <span>10:30AM</span>
                     </td>
-                    <td id={styles.actionButtons}>
-                      <button>view</button>
-                      <button>edit</button>
-                      <button>delete</button>
-                    </td>
+                    
                   </tr>
 
                   <tr>
@@ -439,11 +427,7 @@ export default function ActivityLogs() {
                       <p>July 5, 2025</p>
                       <span>10:30AM</span>
                     </td>
-                    <td id={styles.actionButtons}>
-                      <button>view</button>
-                      <button>edit</button>
-                      <button>delete</button>
-                    </td>
+                    
                   </tr>
                 </tbody>
               </table>
