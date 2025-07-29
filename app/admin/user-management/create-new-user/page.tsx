@@ -3,6 +3,7 @@ import React from "react";
 import { useState } from "react";
 import styles from "./createNewUser.module.css";
 import HeaderDashboard from "@/components/shared/adminHeader/headerDashboard";
+import Link from "next/link";
 
 export default function CreateNewUser() {
   // Dropdown Buttons
@@ -191,7 +192,9 @@ export default function CreateNewUser() {
           </div>
 
           <div className={styles.buttonsContainer}>
-            <button className={styles.goBackButton}>back</button>
+            <Link href="/admin/user-management">
+  <button className={styles.goBackButton}>back</button>
+</Link>
             <div className={styles.formButtons}>
               <button className={styles.clearButton}>clear</button>
               <button

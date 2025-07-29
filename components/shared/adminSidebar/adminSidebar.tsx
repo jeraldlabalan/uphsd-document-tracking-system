@@ -8,7 +8,7 @@ export default function AdminSidebar() {
 
       <ul className={styles.sidebarMenu}>
         <li className={styles.sidebarOption}>
-          <a href="#">
+          <a href="/admin/dashboard">
             <span>
               <svg
                 width="29"
@@ -23,12 +23,32 @@ export default function AdminSidebar() {
                 />
               </svg>
             </span>
+            dashboard
+          </a>
+        </li>
+
+        <li className={styles.sidebarOption}>
+          <a href="/admin/user-management">
+            <span>
+              <svg
+                width="23"
+                height="26"
+                viewBox="0 0 23 26"
+                className={styles.sidebarMenuIcon}
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M18.2881 6.21149L20.0442 4.45533L21.7531 6.16416L19.9969 7.92033C21.4851 9.78078 22.375 12.1407 22.375 14.7084C22.375 20.7145 17.5061 25.5834 11.5 25.5834C5.49391 25.5834 0.625 20.7145 0.625 14.7084C0.625 8.70228 5.49391 3.83337 11.5 3.83337C14.0677 3.83337 16.4276 4.72328 18.2881 6.21149ZM11.5 23.1667C16.1714 23.1667 19.9583 19.3798 19.9583 14.7084C19.9583 10.037 16.1714 6.25004 11.5 6.25004C6.8286 6.25004 3.04167 10.037 3.04167 14.7084C3.04167 19.3798 6.8286 23.1667 11.5 23.1667ZM10.2917 8.66671H12.7083V15.9167H10.2917V8.66671ZM6.66667 0.208374H16.3333V2.62504H6.66667V0.208374Z"
+                  className={styles.sidebarIconFill}
+                />
+              </svg>
+            </span>
             user management
           </a>
         </li>
 
         <li className={styles.sidebarOption}>
-          <a href="#">
+          <a href="/admin/document-overview">
             <span>
               <svg
                 width="29"
@@ -47,28 +67,28 @@ export default function AdminSidebar() {
           </a>
         </li>
 
-        <li className={styles.sidebarOption}>
-          <a href="#">
+         <li className={styles.sidebarOption}>
+          <a href="/admin/deleted-documents">
             <span>
               <svg
-                width="23"
-                height="26"
-                viewBox="0 0 23 26"
-                className={styles.sidebarMenuIcon}
+                width="29"
+                height="29"
+                viewBox="0 0 29 29"
+                className={styles.sidebarMenuIcon} // This is your CSS module styling
                 xmlns="http://www.w3.org/2000/svg"
               >
                 <path
-                  d="M18.2881 6.21149L20.0442 4.45533L21.7531 6.16416L19.9969 7.92033C21.4851 9.78078 22.375 12.1407 22.375 14.7084C22.375 20.7145 17.5061 25.5834 11.5 25.5834C5.49391 25.5834 0.625 20.7145 0.625 14.7084C0.625 8.70228 5.49391 3.83337 11.5 3.83337C14.0677 3.83337 16.4276 4.72328 18.2881 6.21149ZM11.5 23.1667C16.1714 23.1667 19.9583 19.3798 19.9583 14.7084C19.9583 10.037 16.1714 6.25004 11.5 6.25004C6.8286 6.25004 3.04167 10.037 3.04167 14.7084C3.04167 19.3798 6.8286 23.1667 11.5 23.1667ZM10.2917 8.66671H12.7083V15.9167H10.2917V8.66671ZM6.66667 0.208374H16.3333V2.62504H6.66667V0.208374Z"
+                  d="M10.875 2.42047V2.41663H24.164C24.8328 2.41663 25.375 2.96679 25.375 3.61505V25.3849C25.375 26.0468 24.8374 26.5833 24.1746 26.5833H4.82536C4.16242 26.5833 3.625 26.0397 3.625 25.3667V9.66663L10.875 2.42047ZM7.04359 9.66663H10.875V5.83725L7.04359 9.66663ZM13.2917 4.83329V10.875C13.2917 11.5423 12.7507 12.0833 12.0833 12.0833H6.04167V24.1666H22.9583V4.83329H13.2917Z"
                   className={styles.sidebarIconFill}
                 />
               </svg>
             </span>
-            users account
+            deleted documents
           </a>
         </li>
 
         <li className={styles.sidebarOption}>
-          <a href="#">
+          <a href="/admin/activity-logs">
             <span>
               <svg
                 width="27"
@@ -88,7 +108,7 @@ export default function AdminSidebar() {
         </li>
 
         <li className={styles.sidebarOption}>
-          <a href="#">
+          <a href="/admin/settings">
             <span>
               <svg
                 width="25"

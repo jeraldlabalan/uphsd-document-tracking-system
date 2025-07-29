@@ -334,8 +334,10 @@
 
 #actionButtons {
     display: flex;
-    justify-content: space-evenly;
+    justify-content: space-around;
     width: 100%;
+    align-items: center;
+
 }
 
 #actionButtons button {
@@ -345,6 +347,8 @@
 #actionButtons button:hover {
     text-decoration: underline;
 }
+
+
 
 .tableNavigationContainer {
     display: flex;
