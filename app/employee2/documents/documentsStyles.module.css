@@ -54,7 +54,7 @@
 .folderShape::before {
   content: "";
   position: absolute;
-  top: -20px;
+  top: -10px;
   left: 0;
   width: 140px;
   height: 35px;
