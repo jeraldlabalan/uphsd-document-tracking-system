@@ -483,9 +483,11 @@
 
 .changePasswordDataForm input[type="text"] {
     border: 1px solid var(--color-grey);
+    
     border-radius: 5px;
     padding: 5px 5px;
     font-size: 0.95rem;
+   
 }
 
 .changePasswordContents {
@@ -497,7 +499,7 @@
 }
 
 .changePasswordDataForm {
-    width: 50%;
+    width: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -515,6 +517,7 @@
     text-transform: capitalize;
     color: var(--color-maroon);
     font-size: 0.85rem;
+   
 }
 
 .changePasswordDataForm .dataForm input[type="text"]:focus {
@@ -523,12 +526,13 @@
 
 .changePasswordButtons {
     align-self: flex-end;
-    width: 50%;
+    width: 80%;
     display: flex;
     align-items: center;
     padding: 0 20px;
     justify-content: center;
     gap: 20px;
+    
 }
 
 .changePasswordButtons > :first-child,
@@ -765,3 +769,34 @@
 
 
 
+.exbutton {
+    display: none;
+}
+
+.Entryposition {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+}
+
+.Entryposition:hover {
+    background-color: var(--color-grey);
+}
+
+.Entryposition:hover .exbutton {
+    display: block;
+}
+
+
+.entryContentCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.positionTypeListContainer {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}

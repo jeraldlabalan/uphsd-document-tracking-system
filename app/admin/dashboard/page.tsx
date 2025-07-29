@@ -20,6 +20,9 @@ export default async function AdminDashboard() {
   //   redirect("/employee/dashboard"); // or wherever you want
   // }
 
+
+
+  
   return (
     <div className={styles.container}>
       <div>
@@ -46,17 +49,8 @@ export default async function AdminDashboard() {
                   
                   <div className={styles.dashboardIconAndCount}>
 
-<svg
-  xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 40 40"
-  fill="none"
-  stroke="currentColor"
-  strokeWidth="4"
-  strokeLinecap="round"
-  strokeLinejoin="round"
-  className="w-6 h-6 text-gray-800" // You can change size/color with Tailwind
->
-  <path d="M28.3332 32V28.6667C28.3332 26.8986 27.6308 25.2029 26.3805 23.9526C25.1303 22.7024 23.4346 22 21.6665 22H8.33317C6.56506 22 4.86937 22.7024 3.61913 23.9526C2.36888 25.2029 1.6665 26.8986 1.6665 28.6667V32M38.3332 32V28.6667C38.3321 27.1895 37.8404 25.7546 36.9354 24.5872C36.0305 23.4198 34.7634 22.5859 33.3332 22.2167M26.6665 2.21667C28.1005 2.58384 29.3716 3.41784 30.2792 4.58718C31.1869 5.75653 31.6796 7.19472 31.6796 8.675C31.6796 10.1553 31.1869 11.5935 30.2792 12.7628C29.3716 13.9322 28.1005 14.7662 26.6665 15.1333M21.6665 8.66667C21.6665 12.3486 18.6817 15.3333 14.9998 15.3333C11.3179 15.3333 8.33317 12.3486 8.33317 8.66667C8.33317 4.98477 11.3179 2 14.9998 2C18.6817 2 21.6665 4.98477 21.6665 8.66667Z" />
+                    <svg width="40" height="34" viewBox="0 0 40 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M28.3332 32V28.6667C28.3332 26.8986 27.6308 25.2029 26.3805 23.9526C25.1303 22.7024 23.4346 22 21.6665 22H8.33317C6.56506 22 4.86937 22.7024 3.61913 23.9526C2.36888 25.2029 1.6665 26.8986 1.6665 28.6667V32M38.3332 32V28.6667C38.3321 27.1895 37.8404 25.7546 36.9354 24.5872C36.0305 23.4198 34.7634 22.5859 33.3332 22.2167M26.6665 2.21667C28.1005 2.58384 29.3716 3.41784 30.2792 4.58718C31.1869 5.75653 31.6796 7.19472 31.6796 8.675C31.6796 10.1553 31.1869 11.5935 30.2792 12.7628C29.3716 13.9322 28.1005 14.7662 26.6665 15.1333M21.6665 8.66667C21.6665 12.3486 18.6817 15.3333 14.9998 15.3333C11.3179 15.3333 8.33317 12.3486 8.33317 8.66667C8.33317 4.98477 11.3179 2 14.9998 2C18.6817 2 21.6665 4.98477 21.6665 8.66667Z" stroke="#1E1E1E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
                     <p>
                       500
@@ -180,7 +174,7 @@ export default async function AdminDashboard() {
                         10:30AM
                       </span>
                     </td>
-                    <td>View</td>
+                    <td><button>View</button></td>
                     </tr>
 
                     <tr>
@@ -217,7 +211,7 @@ export default async function AdminDashboard() {
                         10:30AM
                       </span>
                     </td>
-                    <td>View</td>
+                    <td><button>View</button></td>
                     </tr>
 
                     <tr>
@@ -254,7 +248,7 @@ export default async function AdminDashboard() {
                         10:30AM
                       </span>
                     </td>
-                    <td>View</td>
+                    <td><button>View</button></td>
                     </tr>
 
                     

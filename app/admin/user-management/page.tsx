@@ -5,6 +5,7 @@ import styles from "./userManagement.module.css";
 import HeaderDashboard from "@/components/shared/adminHeader/headerDashboard";
 import AdminSidebar from "@/components/shared/adminSidebar/adminSidebar";
 import dp from "../../../assets/profile-placeholder.jpg";
+import Link from "next/link";
 
 export default function UserManagement() {
   // const cookieStore = await cookies();
@@ -71,9 +72,6 @@ export default function UserManagement() {
 const [showTerminateConfirm, setShowTerminateConfirm] = useState(false);
 const [showTerminateSuccess, setShowTerminateSuccess] = useState(false);
 
-// For Edit
-const [showEditConfirm, setShowEditConfirm] = useState(false);
-const [showEditSuccess, setShowEditSuccess] = useState(false);
 
 // Common selected user name
 const [selectedUser, setSelectedUser] = useState<string | null>(null);
@@ -93,9 +91,11 @@ const [selectedUser, setSelectedUser] = useState<string | null>(null);
             <div className={styles.userManagementDashboardHeader}>
               <h1>user management</h1>
 
-              <button className={styles.createUserButton}>
-                + create new user
-              </button>
+              <Link href="/admin/user-management/create-new-user">
+  <button className={styles.createUserButton}>
+    + create new user
+  </button>
+</Link>
             </div>
 
             <div className={styles.userManagementSectionContent}>
@@ -324,14 +324,9 @@ const [selectedUser, setSelectedUser] = useState<string | null>(null);
                       <span>10:30AM</span>
                     </td>
                     <td id={styles.actionButtons}>
-                     <button
-  onClick={() => {
-    setSelectedUser("Alexander Fernandez"); // change per row
-    setShowEditConfirm(true);
-  }}
->
-  edit
-</button>
+                    <Link href="/admin/user-management/edit-user">
+  <button className={styles.editButton}>edit</button>
+</Link>
 
 <button
   onClick={() => {
@@ -371,14 +366,9 @@ const [selectedUser, setSelectedUser] = useState<string | null>(null);
                       <span>10:30AM</span>
                     </td>
                     <td id={styles.actionButtons}>
-                     <button
-  onClick={() => {
-    setSelectedUser("Alexander Fernandez"); // change per row
-    setShowEditConfirm(true);
-  }}
->
-  edit
-</button>
+                     <Link href="/admin/user-management/edit-user">
+  <button className={styles.editButton}>edit</button>
+</Link>
 
 <button
   onClick={() => {
@@ -418,14 +408,9 @@ const [selectedUser, setSelectedUser] = useState<string | null>(null);
                       <span>10:30AM</span>
                     </td>
                     <td id={styles.actionButtons}>
-                     <button
-  onClick={() => {
-    setSelectedUser("Alexander Fernandez"); // change per row
-    setShowEditConfirm(true);
-  }}
->
-  edit
-</button>
+                    <Link href="/admin/user-management/edit-user">
+  <button className={styles.editButton}>edit</button>
+</Link>
 
 <button
   onClick={() => {
@@ -458,7 +443,7 @@ const [selectedUser, setSelectedUser] = useState<string | null>(null);
 
 
 
-        {/* MODALS FOR REACTIVATION AND TERMINATE ACTIONS */}
+        {/* MODALS FOR REACTIVATION AND TERMINATE ACTIONS 
           {showEditConfirm && (
   <div className={styles.modalOverlay}>
     <div className={styles.modalContent}>
@@ -506,7 +491,7 @@ const [selectedUser, setSelectedUser] = useState<string | null>(null);
       </div>
     </div>
   </div>
-)}
+)}*/}
 
 
 
