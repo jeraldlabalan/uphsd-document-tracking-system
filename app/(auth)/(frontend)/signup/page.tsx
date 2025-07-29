@@ -385,7 +385,7 @@ export default function Signup() {
                 Select Department
               </option>
               {departments.map((d) => (
-                <option key={d.DepartmentID} value={d.Name}>
+                <option key={d.DepartmentID} value={d.DepartmentID}>
                   {d.Name}
                 </option>
               ))}
@@ -403,7 +403,7 @@ export default function Signup() {
                 Select Position
               </option>
               {positions.map((pos) => (
-                <option key={pos.PositionID} value={pos.Name}>
+                <option key={pos.PositionID} value={pos.PositionID}>
                   {pos.Name}
                 </option>
               ))}

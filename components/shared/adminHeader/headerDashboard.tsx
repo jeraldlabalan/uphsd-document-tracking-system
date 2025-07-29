@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import styles from "../header.module.css";
-import Search from "../Header/search";
+import Search from "../header/search";
 
 export default function HeaderDashboard() {
   const userName = "Neil Yvan";
