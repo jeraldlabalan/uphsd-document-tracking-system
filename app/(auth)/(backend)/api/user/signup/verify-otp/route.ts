@@ -40,7 +40,7 @@ export async function POST(req: Request) {
         Password: hashedPassword,
         Sex: decoded.Sex,
         DepartmentID: parseInt(decoded.Department),
-        PositionID: parseInt(decoded.Position),
+        Position: decoded.Position,
         EmployeeID: decoded.EmployeeID,
         MobileNumber: decoded.MobileNumber,
         RoleID: 2,
