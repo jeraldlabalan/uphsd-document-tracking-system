@@ -104,7 +104,7 @@ export default function ForgotPass() {
               {!isEmailValid && formData.email && (
                 <div className={styles.errorBox}>
                   <p className={styles.errorText}>
-                    ✖ Email must end with @cvsu.edu.ph
+                    Email must end with @cvsu.edu.ph
                   </p>
                 </div>
               )}
@@ -119,7 +119,7 @@ export default function ForgotPass() {
             </form>
 
             <a href="/login" className={styles.forgotLink}>
-              Back to Login
+              Back to Log In
             </a>
           </div>
         </div>

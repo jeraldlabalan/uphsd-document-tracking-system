@@ -108,13 +108,13 @@ export default function NewPasswordPage() {
             <button
               onClick={handleUpdate}
               disabled={isLoading}
-              className={styles.signInBtn}
+              className={styles.signInBtnNew}
             >
               {isLoading ? "Updating..." : "Update Password"}
             </button>
 
             <a href="/login" className={styles.forgotLink}>
-              Back to Login
+              Back to Log In
             </a>
           </div>
         </div>
