@@ -80,7 +80,7 @@ export default function Login() {
       if (data.role === "Admin") {
         router.push("/admin/dashboard");
       } else if (data.role === "Employee") {
-        router.push("/employee/dashboard");
+        router.push("/employee2/dashboard");
       } else {
         router.push("/");
       }
