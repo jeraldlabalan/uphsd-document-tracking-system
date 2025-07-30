@@ -200,7 +200,9 @@ const markUnread = (id: number) => {
               <h2 className={styles.modalTitle}>Document Details</h2>
 
               <div className={styles.documentHeader}>
-                <span className={styles.pdfTag}>PDF</span>
+                <span className={styles.pdfTag}> 
+                
+                </span>
                 <div className={styles.headerInfo}>
                   <h3>{selectedNotification.title}</h3>
                   <p>
@@ -220,40 +222,10 @@ const markUnread = (id: number) => {
                 <span className={styles.status}>Processing</span>
               </div>
 
-              <div className={styles.timelineSection}>
-                <div className={styles.timelineTitle}>Processing Timeline</div>
-                <div className={styles.timelineList}>
-                  <div className={styles.timelineItem}>
-                    <div className={styles.timelineIcon}>🟢</div>
-                    <div className={styles.timelineText}>
-                      <p>
-                        <strong>Document Submitted</strong>
-                      </p>
-                      <p className="byline">{selectedNotification.content}</p>
-                      <div className={styles.timelineDate}>
-                        {selectedNotification.time}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={styles.timelineItem}>
-                    <div className={styles.timelineIcon}>🟢</div>
-                    <div className={styles.timelineText}>
-                      <p>
-                        <strong>Budget Approval</strong>
-                      </p>
-                      <p className="byline">
-                        Budget allocation confirmed and purchase approved
-                        <br />
-                        By: Meryl Delacruz (Finance Director)
-                      </p>
-                      <div className={styles.timelineDate}>
-                        July 8, 2025 – 2:30 PM
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              
+             
+            
+           
             </div>
           </div>
         )}

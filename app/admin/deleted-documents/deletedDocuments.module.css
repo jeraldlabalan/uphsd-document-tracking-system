@@ -1,395 +1,300 @@
+
 .container {
-    height: 100vh;
-    width: 100%;
-    overflow-x: hidden;
-    display: flex;
-    flex-direction: column;
+  padding: 24px;
+  background-color: #D9D9D9; 
+  min-height: 100vh;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-.userManagement {
-    flex: 1;
-    display: flex;
-    padding: 20px;
-    gap: 50px;
-    background-color: #D9D9D9;
-    padding: 50px 30px;
+.contentSection {
+  background-color: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-.userManagementDashboard {
-    flex: 1;
-    border: 1px solid rgba(0, 0, 0, 0.125);
-    box-shadow: 5px 8px 5px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    background-color: white;
-    display: flex;
-    flex-direction: column;
-    padding: 30px;
-    gap: 50px;
+.pageTitle {
+  color: var(--color-maroon);
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
 }
 
-.userManagementDashboardSection {
-    display: flex;
-    flex-direction: column;
-    gap: 30px;
+.separator {
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+  border: 0;
+  border-top: 1px solid #ccc;
 }
 
-.userManagementDashboardHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 2px solid rgba(0, 0, 0, 0.2) ;
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.userManagementDashboardHeader h1 {
-    font-size: 1.70rem;
-    text-transform: capitalize;
-    font-weight: 600;
-    color: var(--color-maroon);
-    text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.3);
-
+.createButton {
+  position: relative;
+  background-color: var(--color-maroon);
+  color: white;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  overflow: hidden;
+  z-index: 0;
+  transition: color 0.3s ease;
 }
 
-.userManagementDashboardHeader .createUserButton {
-    background-color: var(--color-maroon);
-    color: var(--color-yellow);
-    vertical-align: middle;
-    padding: 0.75rem 1.15rem;
-    border-radius: 6px;
-    text-transform: capitalize;
-    margin-bottom: 10px;
-    font-size: 0.85rem;
-    cursor: pointer;
-
+.createButton::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-yellow); 
+  transition: left 0.4s ease;
+  z-index: -1;
+  border-radius: 5px;
 }
 
-.userManagementSectionContent {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
+.createButton:hover::before {
+  left: 0;
 }
 
-.userManagementSectionContentContainer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    border-radius: 16px;
-    min-height: 125px;
-    width: 275px;
-    padding: 0 20px;
+.createButton:hover {
+  color: black;
 }
 
-.userManagementSectionContentContainer:first-of-type {
-    border-left: 5px solid #2ACE9A;
+
+.summary {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.userManagementSectionContentContainer:nth-of-type(2) {
-    border-left: 5px solid #0AE4FC;
+.card {
+  position: relative;
+  flex: 1;
+  border-radius: 10px;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  background: #f4f4f4;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  overflow: hidden;
+  z-index: 0;
+  transition: color 0.3s ease;
 }
 
-.userManagementSectionContentContainer:nth-of-type(3) {
-    border-left: 5px solid var(--color-yellow);
-}
-
-.userManagementSectionContentContainer:last-of-type {
-    border-left: 5px solid var(--color-maroon);
-}
-
-.userManagementSectionContentContainer h1 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    text-transform: capitalize;
-}
-
-.userManagementIconAndCount {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-}
-
-.userManagementIconAndCount p {
-    font-size: 2.75rem;
-    font-weight: 600;
-    color: var(--color-maroon);
-    white-space: nowrap;
-}
-
-.accounContainer {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
-}
-
-.accountContainerSectionHeader {
-    display: flex;
-    align-items: center; /* Prevent stretching */
-    gap: 50px;
-    justify-content: flex-start;
-}
-
-.searchContainer {
-    display: flex;
-    align-items: center;
-    border: 2px solid black;
-    gap: 10px;
-    border-radius: 9px;
-    position: relative;
-    flex: 1;
-    padding: 22px 10px;
-    min-height: max-content;
-}
-
-.searchContainer .searchContainerIcon {
-    height: 23px;
-    width: 23px;
-    cursor: pointer;
-    position: absolute;
-    z-index: 2;
-
-}
-
-.searchContainer .searchField {
-    height: 50px;
-    overflow: hidden;
-    position: absolute;
-    flex: 1;
-    width: 100%;
-    margin-left: 30px;
-    
-
-    
-}
-
-.searchContainer .searchField:focus {
-    border: none;
-    outline: none;
-}
-
-.accounContainer .selectStatus {
-    padding: 10px;
-    border: 2px solid black;
-    border-radius: 9px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    text-align: center;
-}
-
-.optionDropdownContainer {
-
-    position: relative;
-  display: inline-block;
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor; 
   
-
+  z-index: -1;
+  transition: left 0.4s ease;
 }
 
-.optionDropdownContainer .optionBtn {
-    padding: 10px 20px;
-    border: 2px solid black;
-    border-radius: 9px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-transform: capitalize;
-    gap: 10px;
+.card:hover::before {
+  left: 0;
 }
 
-.optionDropdownContainer .activeOptionBtn {
-    padding: 10px 20px;
-    border: 2px solid black;
-    border-top-left-radius: 9px;
-    border-top-right-radius: 9px;
-    border-bottom: none;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-transform: capitalize;
-    gap: 10px;
+.card:hover {
+  color: black;
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 8px;
+  color: #000000; 
 }
 
 
 
-.optionDropdownContainer .tableDropdownMenu {
-    position: absolute;
-    padding: 10px 0;
-    border: 2px solid black;
-    border-bottom-left-radius: 9px;
-    border-bottom-right-radius: 9px;
-    border-top: none;
-    gap: 10px;
-    width: 100%;
-    background-color: white;
+.orange {
+  border-left: 10px solid #fac498;
 }
-
-.optionDropdownContainer .tableDropdownMenu li {
-    width: 100%;
-    padding: 10px 0;
-    transition: background-color ease-out 0.3s;
-    text-align: center;
-}
-
-.optionDropdownContainer .tableDropdownMenu li:hover {
-    background-color: #D9D9D9;
-}
-
-.userActivitySectionContent {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.userActivitySectionContent .userActivityTable {
-    width: 100%;
-    border: 1px solid #D9D9D9;
-
-}
-
-.userActivityTable thead {
-    background-color: #D9D9D9;
-    height: 50px;
-}
-
-.userActivityTable thead th {
-    text-transform: capitalize;
-    font-size: 1.15rem;
-    font-weight: 400;
-    text-align: center;
-    vertical-align: middle;
-    padding: 10px;
-    
-
+.cyan {
+  border-left: 10px solid #AFEEEE;
 }
 
 
-.userActivityTable tbody td {
-    height: 70px;
-    font-size: 1.15rem;
-    padding: 10px;
-    text-align: center;
-    vertical-align: middle;
+.orange::before {
+  background-color: #FAC898;
+}
+
+.cyan::before {
+  background-color: #AFEEEE;
+}
+
+.green::before {
+  background-color: #D0F0C0;
+}
+
+.yellow::before {
+  background-color: #fffd91;
+}
+
+.purple::before {
+  background-color: #e079fa;
 }
 
 
-#columnId {
-    height: 100%;
-    padding: 0;
-}
-
-#columnId .columnIdContainer {
-    height: 100%;
-    display: flex;
-    padding: 0 20px;
-    justify-content: center;
-    align-items: center;
-}
-
-#columnId .cellProfile {
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-
-}
-
-#columnId .nameAndEmail p {
-    text-transform: capitalize;
-    text-align: center;
-
+.count {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-maroon);
+  display: block;
 }
 
 
-#lastLoginDate p, #lastLoginDate span {
-    text-align: center;
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 3rem;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-#lastLoginDate span {
-    margin-top: -20px;
-    color: #403F3F;
-    font-weight: 100;
+.searchWrapper {
+  position: relative;
+  width: 100%;
+  flex: 1;
 }
 
-#actionButtons {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: #999;
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  padding-left: 2.2rem; 
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  outline: none;
 }
 
 
-#actionButtons button {
-    text-transform: capitalize;
-    font-size: 0.80rem;
-    height: 30px;
-    width: 100px;
-    border-radius: 50px;
+.dropdown {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: white;
+  font-size: 1rem;
 }
 
-#actionButtons > :first-child {
-    background-color: var(--color-light-blue);
-    border: none;
-    
+.dateFilterWrapper {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-#actionButtons > :last-child {
-    background-color: var(--color-maroon);
-    border: none;
-    line-height: 1;
-    color: white;
+.dateGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.tableNavigationContainer {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-
+.dateLabel {
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #444;
 }
 
-.tableNavigationContainer p {
-    color: #403F3F;
+.dateInput {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
 }
 
-.tableNavigationContainer .tableNavigation {
-    display: flex;
-    gap: 10px;
-    align-items: center;
 
+.docTable {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
 }
 
-.tableNavigation button {
-    text-transform: capitalize;
-    border: 2px solid var(--color-maroon);
-    min-width: 100px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 5px;
-    padding: 3px 0;
-    color: var(--color-maroon);
-    transition: background-color ease-out 0.3s;
-
+.docTable th {
+  background-color: #e5e5e5;
+  text-align: left;
+  padding: 0.75rem;
+  font-weight: 600;
 }
 
-.tableNavigation button:hover {
-    background-color: var(--color-maroon);
-    color: white;
+.docTable tr:hover {
+  background-color: rgba(122, 12, 27, 0.1); 
+  transition: background-color 0.2s ease;
+  cursor: pointer;
 }
 
-.tablePageContainer {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+.docTable td {
+  padding: 0.75rem;
+  border-top: 1px solid #ddd;
+  font-size: 0.95rem;
 }
 
-.tablePageContainer .tablePage {
-    border: 2px solid var(--color-maroon);
-    color: var(--color-maroon);
-    border-radius: 2px;
-    padding: 3px 10px
+.badge {
+  display: inline-block;
+  padding: 0.3rem 1rem;
+  margin-right: 20px;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.active {
+  background-color: #02bc43;
+  color: white;
+}
+
+.pending {
+  background-color: #fdebc8;
+  color: #ad6200;
+}
+
+.completed {
+  background-color: #02bc43;
+  color: white;
+}
+
+.onHold {
+background-color: #ff0000;
+  color: white;
+}
+
+.terminated {
+  background-color: #ff0000;
+  color: white;
+}
+
+.actions a {
+  color: var(--color-maroon);
+  font-weight: 500;
+  text-decoration: underline;
+  margin: 0 0.25rem;
+}
+
+.actions a:hover {
+  text-decoration: underline;
 }
 
 /* Modal styling */
@@ -575,6 +480,53 @@
   }
 }
 
+@media (max-width: 768px) {
+  
 
+  .pageTitle {
+    font-size: 20px;
+    text-align: center;
+  }
 
+  .headerRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
 
+  .createButton {
+    width: 100%;
+    text-align: center;
+  }
+
+  .summary {
+    flex-direction: column;
+  }
+
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchInput,
+  .dropdown {
+    width: 100%;
+  }
+
+  .docTable th,
+  .docTable td {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .docTable {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .actions a {
+    display: inline-block;
+    margin: 0.25rem 0;
+  }
+}
