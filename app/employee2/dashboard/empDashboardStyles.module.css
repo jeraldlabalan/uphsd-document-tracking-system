@@ -112,25 +112,25 @@
 
 
 .orange {
-  border-left: 5px solid orange;
+  border-left: 10px solid #FAC898;
 }
 .cyan {
-  border-left: 5px solid cyan;
+  border-left: 10px solid #AFEEEE;
 }
 .green {
-  border-left: 5px solid green;
+  border-left: 10px solid #D0F0C0;
 }
 
 .orange::before {
-  background-color: orange;
+  background-color: #FAC898;
 }
 
 .cyan::before {
-  background-color: cyan;
+  background-color: #AFEEEE;
 }
 
 .green::before {
-  background-color: green;
+  background-color: #D0F0C0;
 }
 
 

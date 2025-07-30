@@ -130,7 +130,7 @@ export default function OtpPage() {
             </button>
 
             <a href="/login" className={styles.forgotLink}>
-              Back to Login
+              Back to Log In
             </a>
           </div>
         </div>

@@ -2,7 +2,7 @@
 import React from "react";
 import { useState } from "react";
 import styles from "./createNewUser.module.css";
-import HeaderDashboard from "@/components/shared/adminHeader/headerDashboard";
+import AdminHeader from "@/components/shared/adminHeader";
 import Link from "next/link";
 
 export default function CreateNewUser() {
@@ -40,7 +40,7 @@ export default function CreateNewUser() {
   return (
     <div className={styles.container}>
       <div>
-        <HeaderDashboard />
+        <AdminHeader />
       </div>
 
       <div className={styles.contentContainer}>

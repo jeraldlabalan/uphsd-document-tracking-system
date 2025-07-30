@@ -12,7 +12,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background-color: rgba(128, 0, 0, 0.5); 
+  background-color: rgba(128, 0, 0, 0.5);
   z-index: 0;
 }
 
@@ -130,7 +130,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background-color: #FCCB0A;
+  background-color: #fccb0a;
   transition: left 0.4s ease;
   z-index: -1;
 }
@@ -140,9 +140,8 @@
 }
 
 .signInBtn:hover {
-  color: black; 
+  color: black;
 }
-
 
 .forgotLink {
   color: #7a0c1b;
@@ -154,14 +153,14 @@
 }
 
 .forgotLink:hover {
-  color: #FCCB0A;
+  color: #fccb0a;
 }
 
 .signupPrompt {
   margin-top: 1rem;
-  font-size: 0.875rem; 
+  font-size: 0.875rem;
   text-align: center;
-  color: black; 
+  color: black;
 }
 
 .signupLink {
@@ -172,8 +171,7 @@
 }
 
 .signupLink:hover {
-  text-decoration: underline;
-  color: #FCCB0A; 
+  color: #fccb0a;
 }
 
 .message {
@@ -203,14 +201,8 @@
   margin: 0.2rem 0;
 }
 
-
-
-
-
 /* mobile respo */
 @media (max-width: 768px) {
-
-  
   .card {
     flex-direction: column;
     max-width: 500px;
@@ -218,31 +210,20 @@
     border-radius: 20px;
   }
 
-
   .logo {
     align-items: flex-start;
   }
 
   .leftPanel h3 {
-  margin: 0;
-  font-size: 22px;
-}
-
-.leftPanel p {
-  display: none;
-}
-
-.mottoBtn {
-  display: none;
-}
+    margin: 0;
+    font-size: 22px;
+  }
 
   .title {
-  font-size: 24px;
+    font-size: 24px;
   }
 
   .formGroup {
     flex-direction: column;
   }
 }
-
-

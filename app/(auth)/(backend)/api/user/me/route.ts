@@ -5,7 +5,8 @@ import { db } from "@/lib/db";
 export async function GET(req: NextRequest) {
   try {
     const token = req.cookies.get("session")?.value;
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!token)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const decoded = verify(token, process.env.JWT_SECRET!) as { email: string };
 
@@ -18,7 +19,8 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+    if (!user)
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     return NextResponse.json(user);
   } catch (err) {

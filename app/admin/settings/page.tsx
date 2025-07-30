@@ -4,7 +4,7 @@ import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import styles from "./adminSettings.module.css";
 import Image from "next/image";
-import HeaderDashboard from "@/components/shared/adminHeader/headerDashboard";
+import AdminHeader from "@/components/shared/adminHeader";
 import AdminSidebar from "@/components/shared/adminSidebar/adminSidebar";
 import samplePhoto from "../../../assets/profile-placeholder.jpg";
 import { Vault } from "lucide-react";
@@ -63,16 +63,11 @@ export default function Settings() {
   const [rowToDelete, setRowToDelete] = useState<string | null>(null);
 
   return (
-    <div className={styles.container}>
-      <>
-        <HeaderDashboard />
-      </>
-
-      <div className={styles.mainContanent}>
-        <>
-          <AdminSidebar />
-        </>
-
+    <div>
+  
+        <AdminHeader />
+ 
+<div className={styles.container}>
         <div className={styles.rightContent}>
           <h1>settings</h1>
           <div className={styles.settingsContainer}>
@@ -1186,6 +1181,6 @@ export default function Settings() {
           )}
         </div>
       </div>
-    </div>
+</div>
   );
 }

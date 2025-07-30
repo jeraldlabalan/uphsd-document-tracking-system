@@ -4,14 +4,12 @@ import { useState, useEffect } from "react";
 import styles from "./empDashboardStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
 import { Search as SearchIcon } from "lucide-react";
-import Image from "next/image";
 import { X } from "lucide-react";
 import Link from "next/link";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
 export default function employeeDashboard() {
-
   useEffect(() => {
     AOS.init({
       duration: 1000,
@@ -118,9 +116,9 @@ export default function employeeDashboard() {
 
   const handleDownload = () => {
     if (selectedDoc?.preview) {
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = selectedDoc.preview;
-      link.download = selectedDoc.name || 'document'; 
+      link.download = selectedDoc.name || "document";
       link.click();
       document.body.removeChild(link);
     }
@@ -134,7 +132,7 @@ export default function employeeDashboard() {
 
   const handlePrint = () => {
     if (selectedDoc?.preview) {
-      const printWindow = window.open(selectedDoc.preview, '_blank');
+      const printWindow = window.open(selectedDoc.preview, "_blank");
       if (printWindow) {
         printWindow.focus();
         printWindow.onload = () => {
@@ -296,35 +294,38 @@ export default function employeeDashboard() {
 
               {/* Document Preview */}
               <div className={styles.previewContainer}>
-  {selectedDoc.preview?.match(/\.pdf$/i) ? (
-    <iframe
-      src={`${selectedDoc.preview}#toolbar=0&navpanes=0&scrollbar=0`}
-      title="PDF Preview"
-      width="100%"
-      height="600px"
-      style={{ border: 'none' }}
-    ></iframe>
-  ) : selectedDoc.preview ? (
-    <p>
-      <a href={selectedDoc.preview} target="_blank" rel="noopener noreferrer">
-        Download File
-      </a>
-    </p>
-  ) : (
-    <p>No file selected.</p>
-  )}
-</div>
-
+                {selectedDoc.preview?.match(/\.pdf$/i) ? (
+                  <iframe
+                    src={`${selectedDoc.preview}#toolbar=0&navpanes=0&scrollbar=0`}
+                    title="PDF Preview"
+                    width="100%"
+                    height="600px"
+                    style={{ border: "none" }}
+                  ></iframe>
+                ) : selectedDoc.preview ? (
+                  <p>
+                    <a
+                      href={selectedDoc.preview}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Download File
+                    </a>
+                  </p>
+                ) : (
+                  <p>No file selected.</p>
+                )}
+              </div>
 
               {/* Footer Buttons */}
-               <div className={styles.modalFooter}>
-        <button className={styles.download} onClick={handleDownload}>
-          Download
-        </button>
-        <button className={styles.print} onClick={handlePrint}>
-          Print
-        </button>
-      </div>
+              <div className={styles.modalFooter}>
+                <button className={styles.download} onClick={handleDownload}>
+                  Download
+                </button>
+                <button className={styles.print} onClick={handlePrint}>
+                  Print
+                </button>
+              </div>
             </div>
           </div>
         )}
