@@ -1,86 +1,80 @@
 "use client";
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import styles from "./documentsStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
-import { Search as SearchIcon } from "lucide-react";
-import Image from "next/image";
-import { X } from "lucide-react";
+import { Search as SearchIcon } from "lucide-react"; 
 import Link from "next/link";
-import AOS from "aos";
-import "aos/dist/aos.css";
+import { X } from "lucide-react";
 
 export default function Documents() {
-  useEffect(() => {
-    AOS.init({
-      duration: 1000,
-      once: true,
-    });
-  }, []);
-
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
-  const [search, setSearch] = useState("");
-  const [selectedDoc, setSelectedDoc] = useState(null); // modal state
+  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
-  const documents = [
-    {
-      name: "IT Equipment Purchase Request",
-      type: "Request",
-      file: "PDF File",
-      status: "Pending",
-      date: "July 5, 2025",
-      creator: "Kai Sotto",
-      preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
-    },
-    {
-      name: "Student Grades",
-      type: "Evaluation",
-      file: "PDF File",
-      status: "Completed",
-      date: "July 5, 2025",
-      creator: "Kobe Bryant",
-      preview: "/example-doc.png",
-    },
-    {
-      name: "Student Good Moral Request",
-      type: "Request",
-      file: "PDF File",
-      status: "Pending",
-      date: "July 5, 2025",
-      creator: "Kyrie Irving",
-      preview: "/example-doc.png",
-    },
-  ];
 
-  const handleDownload = () => {
-    if (selectedDoc?.preview) {
-      const link = document.createElement('a');
-      link.href = selectedDoc.preview;
-      link.download = selectedDoc.name || 'document'; 
-      link.click();
-      document.body.removeChild(link);
-    }
-  };
 
-  const handlePrint = () => {
-    if (selectedDoc?.preview) {
-      const printWindow = window.open(selectedDoc.preview, '_blank');
-      if (printWindow) {
-        printWindow.focus();
-        printWindow.onload = () => {
-          printWindow.print();
-        };
-      }
-    }
-  };
+const documents = [
+  {
+    id: 1,
+    name: "Budget Report",
+    file: "budget2025.pdf",
+    status: "Completed",
+    date: "2025-07-26",
+    type: "Budget",
+    creator: "John Doe",
+    preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
+  },
+ 
+  {
+    id: 2,
+    name: "IT Evaluation",
+    file: "eval-it.docx",
+    status: "Pending",
+    date: "2025-07-20",
+    type: "Evaluation",
+    creator: "John HAHA",
+    preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
+  },
+  
+];
+
 
   const filteredDocs = documents.filter((doc) => {
-    const statusMatch = !statusFilter || doc.status === statusFilter;
-    const typeMatch = !typeFilter || doc.type === typeFilter;
-    const searchMatch = doc.name.toLowerCase().includes(search.toLowerCase());
-    return statusMatch && typeMatch && searchMatch;
-  });
+  const matchesSearch =
+  doc.name.toLowerCase().includes(search.toLowerCase()) ||
+  doc.id.toString().includes(search);
+
+  const matchesStatus = !statusFilter || doc.status === statusFilter;
+  const matchesType = !typeFilter || doc.type === typeFilter;
+
+  const docDate = new Date(doc.date);
+  const fromDate = dateFrom ? new Date(dateFrom) : null;
+  const toDate = dateTo ? new Date(dateTo) : null;
+
+  const matchesDate =
+    (!fromDate || docDate >= fromDate) &&
+    (!toDate || docDate <= toDate);
+
+  return matchesSearch && matchesStatus && matchesType && matchesDate;
+});
+
+const handleDownload = () => {
+  if (!selectedDoc?.file) return;
+  const link = document.createElement("a");
+  link.href = `/path/to/files/${selectedDoc.file}`; // Adjust file path accordingly
+  link.download = selectedDoc.file;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+const handlePrint = () => {
+  window.print();
+};
+
 
   return (
     <div>
@@ -89,29 +83,21 @@ export default function Documents() {
         <div data-aos="fade-up" className={styles.contentSection}>
           <div className={styles.headerRow}>
             <h2 className={styles.pageTitle}>Documents</h2>
-            <Link href="./create-new-doc">
-              <button className={styles.createButton}>
-                + Create New Document
-              </button>
-            </Link>
-          </div>
-          <hr className={styles.separator} />
-
-          <div className={styles.summary}>
-            <div className={`${styles.card} ${styles.orange}`}>
-              <span className={styles.count}>30</span>
-              <span>Total Documents</span>
-            </div>
-            <div className={`${styles.card} ${styles.cyan}`}>
-              <span className={styles.count}>3</span>
-              <span>In Process</span>
-            </div>
-            <div className={`${styles.card} ${styles.green}`}>
-              <span className={styles.count}>5</span>
-              <span>Completed</span>
-            </div>
+            <hr className={styles.separator} />
           </div>
 
+       
+          <div className={styles.foldersWrapper}>
+  <Link href="/employee2/documents/mydocs" className={styles.folderShape}>
+    <span className={styles.folderText}>MY DOCUMENTS</span>
+  </Link>
+  
+  <Link href="/employee2/documents/receivedocs" className={styles.folderShape}>
+    <span className={styles.folderText}>RECEIVED DOCUMENTS</span>
+  </Link>
+</div>
+
+    
           <div className={styles.filters}>
             <div className={styles.searchWrapper}>
               <SearchIcon className={styles.searchIcon} size={18} />
@@ -147,48 +133,74 @@ export default function Documents() {
               <option>Evaluation</option>
               <option>Budget</option>
             </select>
+            <div className={styles.dateFilterWrapper}>
+  <div className={styles.dateGroup}>
+    <span className={styles.dateLabel}>From:</span>
+    <input
+      type="date"
+      value={dateFrom}
+      onChange={(e) => setDateFrom(e.target.value)}
+      className={styles.dateInput}
+    />
+  </div>
+
+  <div className={styles.dateGroup}>
+    <span className={styles.dateLabel}>To:</span>
+    <input
+      type="date"
+      value={dateTo}
+      onChange={(e) => setDateTo(e.target.value)}
+      className={styles.dateInput}
+    />
+  </div>
+</div>
+
+
           </div>
 
           <table className={styles.docTable}>
-            <thead>
-              <tr>
-                <th>Document</th>
-                <th>File</th>
-                <th>Status</th>
-                <th>Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredDocs.map((doc, i) => (
-                <tr key={i}>
-                  <td>{doc.name}</td>
-                  <td>{doc.file}</td>
-                  <td>
-                    <span
-                      className={`${styles.badge} ${
-                        doc.status === "Completed"
-                          ? styles.completed
-                          : styles.pending
-                      }`}
-                    >
-                      {doc.status}
-                    </span>
-                  </td>
-                  <td>{doc.date}</td>
-                  <td className={styles.actions}>
-                    <a href="#" onClick={() => setSelectedDoc(doc)}>
-                      View
-                    </a>{" "}
-                    | <Link href="./edit-doc">Edit</Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Document</th>
+      <th>File</th>
+      <th>Status</th>
+      <th>Date</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {filteredDocs.map((doc, i) => (
+      <tr key={i}>
+       <td>{doc.id}</td>
+        <td>{doc.name}</td>
+        <td>{doc.file}</td>
+        <td>
+          <span
+            className={`${styles.badge} ${
+              doc.status === "Completed"
+                ? styles.completed
+                : styles.pending
+            }`}
+          >
+            {doc.status}
+          </span>
+        </td>
+        <td>{doc.date}</td>
+        <td className={styles.actions}>
+          <a href="#" onClick={() => setSelectedDoc(doc)}>
+            View
+          </a>{" "}
+          | <Link href="./edit-doc">Edit</Link>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
 
-        {selectedDoc && (
+
+        </div>
+      {selectedDoc && (
           <div className={styles.modalOverlay}>
             <div className={styles.modalCard}>
               <button
@@ -199,7 +211,7 @@ export default function Documents() {
                 <X size={20} />
               </button>
 
-              {/* Header Row */}
+         
               <div className={styles.modalTop}>
                 <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
                 <span
@@ -213,7 +225,7 @@ export default function Documents() {
                 </span>
               </div>
 
-              {/* Metadata Row */}
+          
               <div className={styles.metaGrid}>
                 <div className={styles.metaLabelRow}>
                   <span>Creator:</span>
@@ -227,7 +239,7 @@ export default function Documents() {
                 </div>
               </div>
 
-              {/* Document Preview */}
+         
               <div className={styles.previewContainer}>
   {selectedDoc.preview?.match(/\.pdf$/i) ? (
     <iframe

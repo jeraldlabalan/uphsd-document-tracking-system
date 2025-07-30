@@ -20,6 +20,9 @@ export default async function AdminDashboard() {
   //   redirect("/employee/dashboard"); // or wherever you want
   // }
 
+
+
+  
   return (
     <div className={styles.container}>
       <div>
@@ -171,7 +174,7 @@ export default async function AdminDashboard() {
                         10:30AM
                       </span>
                     </td>
-                    <td>View</td>
+                    <td><button>View</button></td>
                     </tr>
 
                     <tr>
@@ -208,7 +211,7 @@ export default async function AdminDashboard() {
                         10:30AM
                       </span>
                     </td>
-                    <td>View</td>
+                    <td><button>View</button></td>
                     </tr>
 
                     <tr>
@@ -245,7 +248,7 @@ export default async function AdminDashboard() {
                         10:30AM
                       </span>
                     </td>
-                    <td>View</td>
+                    <td><button>View</button></td>
                     </tr>
 
                     

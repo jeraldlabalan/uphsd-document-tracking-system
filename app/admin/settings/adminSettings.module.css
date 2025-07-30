@@ -483,9 +483,11 @@
 
 .changePasswordDataForm input[type="text"] {
     border: 1px solid var(--color-grey);
+    
     border-radius: 5px;
     padding: 5px 5px;
     font-size: 0.95rem;
+   
 }
 
 .changePasswordContents {
@@ -497,7 +499,7 @@
 }
 
 .changePasswordDataForm {
-    width: 50%;
+    width: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -515,6 +517,7 @@
     text-transform: capitalize;
     color: var(--color-maroon);
     font-size: 0.85rem;
+   
 }
 
 .changePasswordDataForm .dataForm input[type="text"]:focus {
@@ -523,12 +526,13 @@
 
 .changePasswordButtons {
     align-self: flex-end;
-    width: 50%;
+    width: 80%;
     display: flex;
     align-items: center;
     padding: 0 20px;
     justify-content: center;
     gap: 20px;
+    
 }
 
 .changePasswordButtons > :first-child,
@@ -692,4 +696,107 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+}
+
+
+
+.modalOverlay {
+   position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+
+
+.deletemodalTitle {
+  font-size: 1.5rem;
+  color: #7F1416;
+  margin-bottom: 1rem;
+}
+
+.modalContent {
+ background-color: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+}
+
+.modalActions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: space-around;
+}
+
+.confirmButton {
+  background-color: #AD191B;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  width: 40%;
+}
+
+.cancelButton {
+  background-color: white;
+  color: #AD191B;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: solid 2px #AD191B;
+  cursor: pointer;
+  width: 40%;
+}
+
+
+.closeButton {
+  background-color: #177054;
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  width: 50%;
+}
+
+
+
+.exbutton {
+    display: none;
+}
+
+.Entryposition {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+}
+
+.Entryposition:hover {
+    background-color: var(--color-grey);
+}
+
+.Entryposition:hover .exbutton {
+    display: block;
+}
+
+
+.entryContentCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.positionTypeListContainer {
+    display: flex;
+    align-items: center;
+    width: 100%;
 }
