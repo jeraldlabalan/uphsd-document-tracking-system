@@ -18,41 +18,103 @@ export default function employeeDashboard() {
       once: true,
     });
   }, []);
-
+  
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [search, setSearch] = useState("");
-  const [selectedDoc, setSelectedDoc] = useState(null); // modal state
+  
+  const [summary, setSummary] = useState({
+    total: 0,
+    inProcess: 0,
+    completed: 0,
+    pending: 0,
+  });
+  type Document = {
+  id: number;
+  name: string;
+  type: string;
+  file: string;
+  status: string;
+  date: string;
+  creator: string;
+  preview?: string;
+};
 
-  const documents = [
-    {
-      name: "IT Equipment Purchase Request",
-      type: "Request",
-      file: "PDF File",
-      status: "Pending",
-      date: "July 5, 2025",
-      creator: "Kai Sotto",
-      preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
-    },
-    {
-      name: "Student Grades",
-      type: "Evaluation",
-      file: "PDF File",
-      status: "Completed",
-      date: "July 5, 2025",
-      creator: "Kobe Bryant",
-      preview: "/example-doc.png",
-    },
-    {
-      name: "Student Good Moral Request",
-      type: "Request",
-      file: "PDF File",
-      status: "Pending",
-      date: "July 5, 2025",
-      creator: "Kyrie Irving",
-      preview: "/example-doc.png",
-    },
-  ];
+   useEffect(() => {
+    AOS.init({ duration: 1000, once: true });
+
+    const fetchData = async () => {
+      try {
+        const res = await fetch("/api/documents");
+        const data = await res.json();
+
+        const formattedDocs: Document[] = data.recentDocuments.map((req: any) => ({
+          id: req.Document?.DocumentID, // <--- important!
+          name: req.Document?.DocumentName || "Untitled",
+          type: req.Document?.Type || "Unknown",
+          file: req.Document?.FileType || "PDF",
+          status: req.Status?.StatusName || "Pending",
+          date: new Date(req.RequestedAt).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+         }),
+          creator: `${req.User?.FirstName || "Unknown"} ${req.User?.LastName || ""}`,
+          preview: req.Document?.FilePath || "",
+        }));
+
+        setDocuments(formattedDocs);
+        setSummary({
+          total: formattedDocs.length,
+          inProcess: data.inProcess,
+          completed: data.completed,
+          pending: data.pendingSignatures,
+        });
+      } catch (err) {
+        console.error("Failed to fetch document data", err);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  
+
+
+
+  // const [selectedDoc, setSelectedDoc] = useState<Document | null>(null); // modal state
+
+  // const documents: Document[] = [
+  //   {
+  //     name: "IT Equipment Purchase Request",
+  //     type: "Request",
+  //     file: "PDF File",
+  //     status: "Pending",
+  //     date: "July 5, 2025",
+  //     creator: "Kai Sotto",
+  //     preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
+  //   },
+  //   {
+  //     name: "Student Grades",
+  //     type: "Evaluation",
+  //     file: "PDF File",
+  //     status: "Completed",
+  //     date: "July 5, 2025",
+  //     creator: "Kobe Bryant",
+  //     preview: "/example-doc.png",
+  //   },
+  //   {
+  //     name: "Student Good Moral Request",
+  //     type: "Request",
+  //     file: "PDF File",
+  //     status: "Pending",
+  //     date: "July 5, 2025",
+  //     creator: "Kyrie Irving",
+  //     preview: "/example-doc.png",
+  //   },
+  // ];
 
   const handleDownload = () => {
     if (selectedDoc?.preview) {
@@ -63,6 +125,12 @@ export default function employeeDashboard() {
       document.body.removeChild(link);
     }
   };
+
+  const handleView = async (id: number) => {
+  const res = await fetch(`/api/documents/${id}`);
+  const data = await res.json();
+  setSelectedDoc(data); // assuming it returns full doc details
+};
 
   const handlePrint = () => {
     if (selectedDoc?.preview) {
@@ -100,15 +168,15 @@ export default function employeeDashboard() {
 
           <div className={styles.summary}>
             <div className={`${styles.card} ${styles.orange}`}>
-              <span className={styles.count}>30</span>
+              <span className={styles.count}>{summary.total}</span>
               <span>Total Documents</span>
             </div>
             <div className={`${styles.card} ${styles.cyan}`}>
-              <span className={styles.count}>3</span>
+              <span className={styles.count}>{summary.inProcess}</span>
               <span>In Process</span>
             </div>
             <div className={`${styles.card} ${styles.green}`}>
-              <span className={styles.count}>5</span>
+              <span className={styles.count}>{summary.completed}</span>
               <span>Completed</span>
             </div>
           </div>
@@ -178,10 +246,8 @@ export default function employeeDashboard() {
                   </td>
                   <td>{doc.date}</td>
                   <td className={styles.actions}>
-                    <a href="#" onClick={() => setSelectedDoc(doc)}>
-                      View
-                    </a>{" "}
-                    | <Link href="./edit-doc">Edit</Link>
+                    <a href="#" onClick={() => handleView(doc.id)}>View</a>
+                    | <Link href={`./edit-doc/${doc.id}`}>Edit</Link>
                   </td>
                 </tr>
               ))}

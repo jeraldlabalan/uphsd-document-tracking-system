@@ -1,32 +1,19 @@
-import nodemailer from "nodemailer";
+import { Resend } from 'resend';
 
-export async function sendVerificationEmail({
-  to,
-  otp,
-}: {
-  to: string;
-  otp: string;
-}) {
-  // 1. Create a transporter (SMTP details)
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST, 
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export async function sendVerificationEmail({ to, otp }: { to: string; otp: string }) {
+  const { data, error } = await resend.emails.send({
+    from: 'Document Tracker <onboarding@resend.dev>',
+    to,
+    subject: 'Your OTP Verification Code',
+    html: `<p>Your OTP code is:</p><h2>${otp}</h2>`,
   });
 
-  // 2. Define email content
-  const mailOptions = {
-    from: `"Document Tracker" <${process.env.SMTP_USER}>`,
-    to,
-    subject: "Your OTP Verification Code",
-    text: `Your OTP code is: ${otp}`,
-    html: `<p>Your OTP code is:</p><h2>${otp}</h2>`,
-  };
+  if (error) {
+    console.error('❌ Resend error:', error);
+    throw error;
+  }
 
-  // 3. Send it
-  await transporter.sendMail(mailOptions);
+  console.log('✅ Email sent via Resend:', data);
 }

@@ -1,110 +1,97 @@
-// import { NextResponse } from "next/server";
-// import { db } from "@/lib/db";
-// import { writeFile } from "fs/promises";
-// import path from "path";
-// import { v4 as uuidv4 } from "uuid";
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { verify } from "jsonwebtoken";
+import { cookies } from "next/headers";
 
-// // Needed for file upload parsing
-// import formidable from "formidable";
-// import { connect } from "http2";
+export async function POST(req: NextRequest) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("session")?.value;
 
-// export const config = {
-//   api: {
-//     bodyParser: false,
-//   },
-// };
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-// export async function POST(req: Request) {
-//   try {
-//     // Parse the incoming form data
-//     const form = formidable({ multiples: false });
+    const decoded = verify(token, process.env.JWT_SECRET!) as {
+      UserID: number;
+      Role: string;
+    };
 
-//     const data = await new Promise<{ fields: any; files: any }>(
-//       (resolve, reject) => {
-//         form.parse(req as any, (err, fields, files) => {
-//           if (err) reject(err);
-//           resolve({ fields, files });
-//         });
-//       }
-//     );
+    const creatorID = decoded.UserID;
 
-//     const { fields, files } = data;
+    const {
+      Title,
+      Description,
+      Type,
+      FilePath,
+      FileType,
+      DepartmentID,
+      ApproverIDs, // array of UserIDs
+    } = await req.json();
 
-//     // Simulated user ID for now
-//     const userId = 1;
+    // 1. Create the main document
+    const newDocument = await db.document.create({
+      data: {
+        Title,
+        Description,
+        DocumentType: Type, // Add this line to include the required DocumentType property
+        Department: DepartmentID
+          ? { connect: { DepartmentID } }
+          : undefined,
+        Creator: { connect: { UserID: creatorID } },
+        CreatedAt: new Date(),
+      },
+    });
 
-//     // Save uploaded file
-//     let filePath = null;
-//     if (files.file) {
-//       const file = files.file[0];
-//       const fileExt = path.extname(file.originalFilename);
-//       const newFileName = `${uuidv4()}${fileExt}`;
-//       const newPath = path.join(process.cwd(), "public/uploads", newFileName);
-//       await writeFile(newPath, await file.toBuffer());
-//       filePath = `/uploads/${newFileName}`;
-//     }
+    // 2. Create initial document version
+    await db.documentVersion.create({
+      data: {
+        Document: { connect: { DocumentID: newDocument.DocumentID } },
+        VersionNumber: 1,
+        FilePath,
+        ChangeDescription: "Initial version",
+        User: { connect: { UserID: creatorID } },
+      },
+    });
 
-//     // Create the document and request in a transaction
-//     const created = await db.$transaction(async (prisma) => {
-//       const doc = await prisma.document.create({
-//         data: {
-//           Title: fields.documentName,
-//           Type: fields.classification,
-//           Description: fields.description,
-//           Department: {
-//             connect: {
-//               Name: fields.department,
-//             },
-//           },
-//           CreatedBy: userId,
-//           Status: "Active",
-//           Versions: filePath
-//             ? {
-//                 create: {
-//                   VersionNumber: 1,
-//                   ChangedBy: userId,
-//                   FilePath: filePath,
-//                   ChangeDescription: "Initial upload",
-//                 },
-//               }
-//             : undefined,
-//         },
-//       });
+    // 3. Create document requests + notifications for each approver
+    const status = await db.status.findFirst({
+      where: { StatusName: "Pending" },
+    });
 
-//       await prisma.documentRequest.create({
-//         data: {
-//           UserID: userId,
-//           DocumentID: doc.DocumentID,
-//           Status: {
-//             connect: {
-//               StatusName: "Pending",
-//             },
-//           },
-//           Remarks: fields.notes,
-//           Priority: "Normal",
-//         },
-//       });
+    if (!status) {
+      return NextResponse.json({ error: "Missing 'Pending' status in DB" }, { status: 500 });
+    }
 
-//       // Insert approvers (pseudo — you might use your ESignature model)
-//       if (fields.approvers) {
-//         const approverIds = JSON.parse(fields.approvers);
-//         for (const approverId of approverIds) {
-//           await prisma.eSignature.create({
-//             data: {
-//               RequestID: doc.DocumentID,
-//               SignedBy: approverId,
-//               SignatureData: "",
-//             },
-//           });
-//         }
-//       }
+    const notifications = ApproverIDs.map((approverID: number) =>
+      db.notification.create({
+        data: {
+          UserID: approverID,
+          Message: `A new document "${Title}" requires your review.`,
+          CreatedAt: new Date(),
+        },
+      })
+    );
 
-//       return doc;
-//     });
+    const documentRequests = ApproverIDs.map((approverID: number) =>
+      db.documentRequest.create({
+        data: {
+          UserID: approverID,
+          DocumentID: newDocument.DocumentID,
+          StatusID: status.StatusID,
+          Remarks: "Awaiting review",
+        },
+      })
+    );
 
-//     return NextResponse.json({ success: true, created });
-//   } catch (err) {
-//     console.error(err);
-//     return NextResponse.json({ error: "Failed to create document" }, { status: 500 });
-//   }
-// }
+    await Promise.all([...notifications, ...documentRequests]);
+
+    return NextResponse.json({
+      message: "Document successfully created",
+      documentID: newDocument.DocumentID,
+    });
+  } catch (error: any) {
+    console.error("Document creation error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}

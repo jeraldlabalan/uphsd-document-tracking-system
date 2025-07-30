@@ -1,12 +1,22 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import styles from "./activityLogs.module.css";
 import HeaderDashboard from "@/components/shared/adminHeader/headerDashboard";
 import AdminSidebar from "@/components/shared/adminSidebar/adminSidebar";
 import dp from "../../../assets/profile-placeholder.jpg";
 
+type Log = {
+  Timestamp: string;
+  Action: string;
+  TargetType: string;
+  // Add other properties as needed
+};
+
 export default function ActivityLogs() {
+  const [logs, setLogs] = useState<Log[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   // const cookieStore = await cookies();
   // const session = cookieStore.get("session");
 
@@ -28,6 +38,52 @@ export default function ActivityLogs() {
     "Approve",
     "Log In",
   ];
+
+useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        const res = await fetch("/api/admin/activity-logs");
+        if (!res.ok) {
+          const data = await res.json();
+          setError(data.message || "Failed to fetch activity logs.");
+        } else {
+          const data = await res.json();
+          setLogs(data.logs);
+        }
+      } catch (err) {
+        setError("Something went wrong.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLogs();
+  }, []);
+
+  const today = new Date().toDateString();
+
+  const logsToday = logs.filter(
+    (log) => new Date(log.Timestamp).toDateString() === today
+  );
+
+  const totalActivityToday = logsToday.length;
+
+  const documentActions = ["Create", "Upload", "Edit"];
+  const totalDocumentActivity = logsToday.filter(
+    (log) => log.TargetType === "Document" && documentActions.includes(log.Action)
+  ).length;
+
+  const userActions = ["View", "Update", "Add", "Delete"];
+  const totalUserManagement = logsToday.filter(
+    (log) => log.TargetType === "User" && userActions.includes(log.Action)
+  ).length;
+
+    const totalLoginLogoutAndSignatures = logsToday.filter(
+    (log) =>
+      (log.TargetType === "User" && ["Login", "Logout"].includes(log.Action)) ||
+      (log.TargetType === "Document" && log.Action === "Request Signature")
+  ).length;
+
   const [isActionOptionOpen, setIsActionOptionOpen] = useState<boolean>(false);
   const [selectedAction, setSelectedAction] = useState<string>(
     actionOptions[0]
@@ -83,7 +139,7 @@ export default function ActivityLogs() {
             <div className={styles.userManagementSectionContent}>
               <div className={styles.userManagementSectionContentContainer}>
                 <div className={styles.userManagementIconAndCount}>
-                  <p>1126</p>
+                  <p>{totalActivityToday}</p>
                 </div>
 
                 <h1>total activity today</h1>
@@ -91,7 +147,7 @@ export default function ActivityLogs() {
 
               <div className={styles.userManagementSectionContentContainer}>
                 <div className={styles.userManagementIconAndCount}>
-                  <p>89</p>
+                  <p>{totalDocumentActivity}</p>
                 </div>
 
                 <h1>document action</h1>
@@ -99,7 +155,7 @@ export default function ActivityLogs() {
 
               <div className={styles.userManagementSectionContentContainer}>
                 <div className={styles.userManagementIconAndCount}>
-                  <p>156</p>
+                  <p>{totalUserManagement}</p>
                 </div>
 
                 <h1>user action</h1>
@@ -107,7 +163,7 @@ export default function ActivityLogs() {
 
               <div className={styles.userManagementSectionContentContainer}>
                 <div className={styles.userManagementIconAndCount}>
-                  <p>23</p>
+                  <p>{totalLoginLogoutAndSignatures}</p>
                 </div>
 
                 <h1>system alert</h1>

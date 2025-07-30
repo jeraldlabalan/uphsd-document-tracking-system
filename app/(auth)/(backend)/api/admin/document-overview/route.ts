@@ -23,7 +23,7 @@ export async function fetchAdminDocumentOverview() {
     db.document.count(),
 
     db.document.groupBy({
-      by: ["Type"],
+      by: ["DocumentType"],
       _count: true,
       where: { IsDeleted: false },
     }),
@@ -70,7 +70,7 @@ export async function fetchAdminDocumentOverview() {
   return {
     totalDocuments,
     documentTypes: documentsByType.map((doc) => ({
-      type: doc.Type,
+      type: doc.DocumentType ?? "Unknown",
       count: doc._count,
     })),
     recentDocuments: recentDocuments.map((doc) => ({
