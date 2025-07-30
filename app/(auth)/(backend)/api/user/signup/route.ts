@@ -54,7 +54,7 @@ export async function POST(req: Request) {
   console.log(`📧 Sending OTP ${otp} to ${Email}`);
   console.log("✅ Reached SMTP call");
   console.log(`Sending email with OTP: ${otp} to: ${Email}`);
-  await sendVerificationEmail({ to: Email, otp });
+  await sendVerificationEmail({ to: "isaacbides03@gmail.com", otp });
   console.log(`✅ OTP email function called`);
   console.log("JWT_SECRET:", JWT_SECRET);
   console.log("✅ Signing JWT payload:", payload);

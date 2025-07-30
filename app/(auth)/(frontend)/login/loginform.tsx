@@ -29,7 +29,8 @@ export default function Login() {
     email: "",
     password: "",
   });
-  const [isEmailNotValid, setIsEmailNotValid] = useState(true);
+  const [isEmailValid, setIsEmailValid] = useState(true);
+
   const [isLoading, setIsLoading] = useState(false);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -40,8 +41,8 @@ export default function Login() {
       [name as FormKeys]: value,
     }));
 
-    if (name === "Email") {
-      setIsEmailNotValid(value.toLowerCase().endsWith("@cvsu.edu.ph"));
+    if (name === "email") {
+      setIsEmailValid(value.toLowerCase().endsWith("@cvsu.edu.ph"));
     }
   }
 
@@ -80,7 +81,7 @@ export default function Login() {
       if (data.role === "Admin") {
         router.push("/admin/dashboard");
       } else if (data.role === "Employee") {
-        router.push("/employee/dashboard");
+        router.push("/employee2/dashboard");
       } else {
         router.push("/");
       }
@@ -134,6 +135,14 @@ export default function Login() {
                 className={styles.input}
                 required
               />
+
+              {!isEmailValid && formData.email && (
+                <div className={styles.errorBox}>
+                  <p className={styles.errorText}>
+                    Email must end with @cvsu.edu.ph
+                  </p>
+                </div>
+              )}
             </form>
 
             <button

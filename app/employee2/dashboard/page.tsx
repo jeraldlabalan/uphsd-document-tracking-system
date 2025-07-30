@@ -4,69 +4,135 @@ import { useState, useEffect } from "react";
 import styles from "./empDashboardStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
 import { Search as SearchIcon } from "lucide-react";
-import Image from "next/image";
 import { X } from "lucide-react";
 import Link from "next/link";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
 export default function employeeDashboard() {
-
   useEffect(() => {
     AOS.init({
       duration: 1000,
       once: true,
     });
   }, []);
-
+  
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [search, setSearch] = useState("");
-  const [selectedDoc, setSelectedDoc] = useState(null); // modal state
+  
+  const [summary, setSummary] = useState({
+    total: 0,
+    inProcess: 0,
+    completed: 0,
+    pending: 0,
+  });
+  type Document = {
+  id: number;
+  name: string;
+  type: string;
+  file: string;
+  status: string;
+  date: string;
+  creator: string;
+  preview?: string;
+};
 
-  const documents = [
-    {
-      name: "IT Equipment Purchase Request",
-      type: "Request",
-      file: "PDF File",
-      status: "Pending",
-      date: "July 5, 2025",
-      creator: "Kai Sotto",
-      preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
-    },
-    {
-      name: "Student Grades",
-      type: "Evaluation",
-      file: "PDF File",
-      status: "Completed",
-      date: "July 5, 2025",
-      creator: "Kobe Bryant",
-      preview: "/example-doc.png",
-    },
-    {
-      name: "Student Good Moral Request",
-      type: "Request",
-      file: "PDF File",
-      status: "Pending",
-      date: "July 5, 2025",
-      creator: "Kyrie Irving",
-      preview: "/example-doc.png",
-    },
-  ];
+   useEffect(() => {
+    AOS.init({ duration: 1000, once: true });
+
+    const fetchData = async () => {
+      try {
+        const res = await fetch("/api/documents");
+        const data = await res.json();
+
+        const formattedDocs: Document[] = data.recentDocuments.map((req: any) => ({
+          id: req.Document?.DocumentID, // <--- important!
+          name: req.Document?.DocumentName || "Untitled",
+          type: req.Document?.Type || "Unknown",
+          file: req.Document?.FileType || "PDF",
+          status: req.Status?.StatusName || "Pending",
+          date: new Date(req.RequestedAt).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+         }),
+          creator: `${req.User?.FirstName || "Unknown"} ${req.User?.LastName || ""}`,
+          preview: req.Document?.FilePath || "",
+        }));
+
+        setDocuments(formattedDocs);
+        setSummary({
+          total: formattedDocs.length,
+          inProcess: data.inProcess,
+          completed: data.completed,
+          pending: data.pendingSignatures,
+        });
+      } catch (err) {
+        console.error("Failed to fetch document data", err);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  
+
+
+
+  // const [selectedDoc, setSelectedDoc] = useState<Document | null>(null); // modal state
+
+  // const documents: Document[] = [
+  //   {
+  //     name: "IT Equipment Purchase Request",
+  //     type: "Request",
+  //     file: "PDF File",
+  //     status: "Pending",
+  //     date: "July 5, 2025",
+  //     creator: "Kai Sotto",
+  //     preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
+  //   },
+  //   {
+  //     name: "Student Grades",
+  //     type: "Evaluation",
+  //     file: "PDF File",
+  //     status: "Completed",
+  //     date: "July 5, 2025",
+  //     creator: "Kobe Bryant",
+  //     preview: "/example-doc.png",
+  //   },
+  //   {
+  //     name: "Student Good Moral Request",
+  //     type: "Request",
+  //     file: "PDF File",
+  //     status: "Pending",
+  //     date: "July 5, 2025",
+  //     creator: "Kyrie Irving",
+  //     preview: "/example-doc.png",
+  //   },
+  // ];
 
   const handleDownload = () => {
     if (selectedDoc?.preview) {
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = selectedDoc.preview;
-      link.download = selectedDoc.name || 'document'; 
+      link.download = selectedDoc.name || "document";
       link.click();
       document.body.removeChild(link);
     }
   };
 
+  const handleView = async (id: number) => {
+  const res = await fetch(`/api/documents/${id}`);
+  const data = await res.json();
+  setSelectedDoc(data); // assuming it returns full doc details
+};
+
   const handlePrint = () => {
     if (selectedDoc?.preview) {
-      const printWindow = window.open(selectedDoc.preview, '_blank');
+      const printWindow = window.open(selectedDoc.preview, "_blank");
       if (printWindow) {
         printWindow.focus();
         printWindow.onload = () => {
@@ -100,15 +166,15 @@ export default function employeeDashboard() {
 
           <div className={styles.summary}>
             <div className={`${styles.card} ${styles.orange}`}>
-              <span className={styles.count}>30</span>
+              <span className={styles.count}>{summary.total}</span>
               <span>Total Documents</span>
             </div>
             <div className={`${styles.card} ${styles.cyan}`}>
-              <span className={styles.count}>3</span>
+              <span className={styles.count}>{summary.inProcess}</span>
               <span>In Process</span>
             </div>
             <div className={`${styles.card} ${styles.green}`}>
-              <span className={styles.count}>5</span>
+              <span className={styles.count}>{summary.completed}</span>
               <span>Completed</span>
             </div>
           </div>
@@ -178,10 +244,8 @@ export default function employeeDashboard() {
                   </td>
                   <td>{doc.date}</td>
                   <td className={styles.actions}>
-                    <a href="#" onClick={() => setSelectedDoc(doc)}>
-                      View
-                    </a>{" "}
-                    | <Link href="./edit-doc">Edit</Link>
+                    <a href="#" onClick={() => handleView(doc.id)}>View</a>
+                    | <Link href={`./edit-doc/${doc.id}`}>Edit</Link>
                   </td>
                 </tr>
               ))}
@@ -230,35 +294,38 @@ export default function employeeDashboard() {
 
               {/* Document Preview */}
               <div className={styles.previewContainer}>
-  {selectedDoc.preview?.match(/\.pdf$/i) ? (
-    <iframe
-      src={`${selectedDoc.preview}#toolbar=0&navpanes=0&scrollbar=0`}
-      title="PDF Preview"
-      width="100%"
-      height="600px"
-      style={{ border: 'none' }}
-    ></iframe>
-  ) : selectedDoc.preview ? (
-    <p>
-      <a href={selectedDoc.preview} target="_blank" rel="noopener noreferrer">
-        Download File
-      </a>
-    </p>
-  ) : (
-    <p>No file selected.</p>
-  )}
-</div>
-
+                {selectedDoc.preview?.match(/\.pdf$/i) ? (
+                  <iframe
+                    src={`${selectedDoc.preview}#toolbar=0&navpanes=0&scrollbar=0`}
+                    title="PDF Preview"
+                    width="100%"
+                    height="600px"
+                    style={{ border: "none" }}
+                  ></iframe>
+                ) : selectedDoc.preview ? (
+                  <p>
+                    <a
+                      href={selectedDoc.preview}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Download File
+                    </a>
+                  </p>
+                ) : (
+                  <p>No file selected.</p>
+                )}
+              </div>
 
               {/* Footer Buttons */}
-               <div className={styles.modalFooter}>
-        <button className={styles.download} onClick={handleDownload}>
-          Download
-        </button>
-        <button className={styles.print} onClick={handlePrint}>
-          Print
-        </button>
-      </div>
+              <div className={styles.modalFooter}>
+                <button className={styles.download} onClick={handleDownload}>
+                  Download
+                </button>
+                <button className={styles.print} onClick={handlePrint}>
+                  Print
+                </button>
+              </div>
             </div>
           </div>
         )}

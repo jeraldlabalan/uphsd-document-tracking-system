@@ -32,20 +32,20 @@ export async function POST(req: Request) {
   
 
     // ✅ Create user
-    const user = await db.user.create({
-      data: {
-        FirstName: decoded.FirstName,
-        LastName: decoded.LastName,
+      const user = await db.user.create({
+        data: {
+        FirstName: decoded.Firstname,      // Fix casing
+        LastName: decoded.Lastname,        // Fix casing
         Email: decoded.Email,
         Password: hashedPassword,
         Sex: decoded.Sex,
-        DepartmentID: parseInt(decoded.Department),
-        Position: decoded.Position,
+        DepartmentID: parseInt(decoded.DepartmentID),
+        PositionID: parseInt(decoded.PositionID),
         EmployeeID: decoded.EmployeeID,
         MobileNumber: decoded.MobileNumber,
         RoleID: 2,
-      },
-    });
+          },
+        });
 
     return NextResponse.json({ message: "Account verified & created!", userId: user.UserID }, { status: 201 });
 

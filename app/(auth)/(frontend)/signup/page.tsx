@@ -426,7 +426,7 @@ export default function Signup() {
                 onClick={openTermsModal}
                 style={{
                   cursor: "pointer",
-                  color: "#0056b3",
+                  color: "#7a0c1b",
                   textDecoration: "underline",
                 }}
               >

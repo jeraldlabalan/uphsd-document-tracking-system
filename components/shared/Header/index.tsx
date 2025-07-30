@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useState } from "react";
 import styles from "../header.module.css";
-import Search from "./search";
 import { Menu, X } from "lucide-react";
 
 export default function Header() {
@@ -18,10 +17,6 @@ export default function Header() {
       </div>
 
       <div className={styles.rightWrapper}>
-        <div className={styles.searchWrapper}>
-          <Search />
-        </div>
-
         <div className={styles.authWrapper}>
           <a href="/login" className={styles.authButton}>
             Log In
