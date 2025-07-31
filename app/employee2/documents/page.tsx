@@ -1,80 +1,110 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./documentsStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
-import { Search as SearchIcon } from "lucide-react"; 
+import { Search as SearchIcon } from "lucide-react";
 import Link from "next/link";
 import { X } from "lucide-react";
+
+type Document = {
+  id: number;
+  name: string;
+  file: string;
+  status: string;
+  date: string;
+  type: string;
+  creator: string;
+  preview?: string;
+};
 
 export default function Documents() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
-  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [documents, setDocuments] = useState<Document[]>([]);
+  // const documents = [
+  //   {
+  //     id: 1,
+  //     name: "Budget Report",
+  //     file: "budget2025.pdf",
+  //     status: "Completed",
+  //     date: "2025-07-26",
+  //     type: "Budget",
+  //     creator: "John Doe",
+  //     preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
+  //   },
 
+  //   {
+  //     id: 2,
+  //     name: "IT Evaluation",
+  //     file: "eval-it.docx",
+  //     status: "Pending",
+  //     date: "2025-07-20",
+  //     type: "Evaluation",
+  //     creator: "John HAHA",
+  //     preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
+  //   },
+  // ];
 
+  const formattedDocs: Document[] = documents.map((doc) => ({
+    id: doc.DocumentID,
+    name: doc.Title,
+    file: doc.FilePath,
+    status: doc.Status,
+    date: doc.CreatedAt.toISOString().split("T")[0],
+    type: doc.Type?.TypeName ?? "N/A",
+    creator: `${user.FirstName} ${user.LastName}`,
+    preview: `/uploads/${doc.FilePath}`,
+  }));
 
-const documents = [
-  {
-    id: 1,
-    name: "Budget Report",
-    file: "budget2025.pdf",
-    status: "Completed",
-    date: "2025-07-26",
-    type: "Budget",
-    creator: "John Doe",
-    preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
-  },
- 
-  {
-    id: 2,
-    name: "IT Evaluation",
-    file: "eval-it.docx",
-    status: "Pending",
-    date: "2025-07-20",
-    type: "Evaluation",
-    creator: "John HAHA",
-    preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
-  },
-  
-];
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        const res = await fetch("/api/employee/documents");
+        const data = await res.json();
+        setDocuments(data);
+      } catch (err) {
+        console.error("Failed to fetch documents", err);
+      }
+    };
 
+    fetchDocuments();
+  }, []);
 
   const filteredDocs = documents.filter((doc) => {
-  const matchesSearch =
-  doc.name.toLowerCase().includes(search.toLowerCase()) ||
-  doc.id.toString().includes(search);
+    const matchesSearch =
+      doc.name.toLowerCase().includes(search.toLowerCase()) ||
+      doc.id.toString().includes(search);
 
-  const matchesStatus = !statusFilter || doc.status === statusFilter;
-  const matchesType = !typeFilter || doc.type === typeFilter;
+    const matchesStatus = !statusFilter || doc.status === statusFilter;
+    const matchesType = !typeFilter || doc.type === typeFilter;
 
-  const docDate = new Date(doc.date);
-  const fromDate = dateFrom ? new Date(dateFrom) : null;
-  const toDate = dateTo ? new Date(dateTo) : null;
+    const docDate = new Date(doc.date);
+    const fromDate = dateFrom ? new Date(dateFrom) : null;
+    const toDate = dateTo ? new Date(dateTo) : null;
 
-  const matchesDate =
-    (!fromDate || docDate >= fromDate) &&
-    (!toDate || docDate <= toDate);
+    const matchesDate =
+      (!fromDate || docDate >= fromDate) && (!toDate || docDate <= toDate);
 
-  return matchesSearch && matchesStatus && matchesType && matchesDate;
-});
+    return matchesSearch && matchesStatus && matchesType && matchesDate;
+  });
 
-const handleDownload = () => {
-  if (!selectedDoc?.file) return;
-  const link = document.createElement("a");
-  link.href = `/path/to/files/${selectedDoc.file}`; // Adjust file path accordingly
-  link.download = selectedDoc.file;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
+  const handleDownload = () => {
+    if (!selectedDoc?.file) return;
+    const link = document.createElement("a");
+    link.href = `/path/to/files/${selectedDoc.file}`; // Adjust file path accordingly
+    link.download = selectedDoc.file;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
-const handlePrint = () => {
-  window.print();
-};
-
+  const handlePrint = () => {
+    window.print();
+  };
 
   return (
     <div>
@@ -86,18 +116,22 @@ const handlePrint = () => {
             <hr className={styles.separator} />
           </div>
 
-       
           <div className={styles.foldersWrapper}>
-  <Link href="/employee2/documents/mydocs" className={styles.folderShape}>
-    <span className={styles.folderText}>MY DOCUMENTS</span>
-  </Link>
-  
-  <Link href="/employee2/documents/receivedocs" className={styles.folderShape}>
-    <span className={styles.folderText}>RECEIVED DOCUMENTS</span>
-  </Link>
-</div>
+            <Link
+              href="/employee2/documents/mydocs"
+              className={styles.folderShape}
+            >
+              <span className={styles.folderText}>MY DOCUMENTS</span>
+            </Link>
 
-    
+            <Link
+              href="/employee2/documents/receivedocs"
+              className={styles.folderShape}
+            >
+              <span className={styles.folderText}>RECEIVED DOCUMENTS</span>
+            </Link>
+          </div>
+
           <div className={styles.filters}>
             <div className={styles.searchWrapper}>
               <SearchIcon className={styles.searchIcon} size={18} />
@@ -134,73 +168,69 @@ const handlePrint = () => {
               <option>Budget</option>
             </select>
             <div className={styles.dateFilterWrapper}>
-  <div className={styles.dateGroup}>
-    <span className={styles.dateLabel}>From:</span>
-    <input
-      type="date"
-      value={dateFrom}
-      onChange={(e) => setDateFrom(e.target.value)}
-      className={styles.dateInput}
-    />
-  </div>
+              <div className={styles.dateGroup}>
+                <span className={styles.dateLabel}>From:</span>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className={styles.dateInput}
+                />
+              </div>
 
-  <div className={styles.dateGroup}>
-    <span className={styles.dateLabel}>To:</span>
-    <input
-      type="date"
-      value={dateTo}
-      onChange={(e) => setDateTo(e.target.value)}
-      className={styles.dateInput}
-    />
-  </div>
-</div>
-
-
+              <div className={styles.dateGroup}>
+                <span className={styles.dateLabel}>To:</span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className={styles.dateInput}
+                />
+              </div>
+            </div>
           </div>
 
           <table className={styles.docTable}>
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Document</th>
-      <th>File</th>
-      <th>Status</th>
-      <th>Date</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    {filteredDocs.map((doc, i) => (
-      <tr key={i}>
-       <td>{doc.id}</td>
-        <td>{doc.name}</td>
-        <td>{doc.file}</td>
-        <td>
-          <span
-            className={`${styles.badge} ${
-              doc.status === "Completed"
-                ? styles.completed
-                : styles.pending
-            }`}
-          >
-            {doc.status}
-          </span>
-        </td>
-        <td>{doc.date}</td>
-        <td className={styles.actions}>
-          <a href="#" onClick={() => setSelectedDoc(doc)}>
-            View
-          </a>{" "}
-          | <Link href="./edit-doc">Edit</Link>
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</table>
-
-
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Document</th>
+                <th>File</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredDocs.map((doc, i) => (
+                <tr key={i}>
+                  <td>{doc.id}</td>
+                  <td>{doc.name}</td>
+                  <td>{doc.file}</td>
+                  <td>
+                    <span
+                      className={`${styles.badge} ${
+                        doc.status === "Completed"
+                          ? styles.completed
+                          : styles.pending
+                      }`}
+                    >
+                      {doc.status}
+                    </span>
+                  </td>
+                  <td>{doc.date}</td>
+                  <td className={styles.actions}>
+                    <a href="#" onClick={() => setSelectedDoc(doc)}>
+                      View
+                    </a>{" "}
+                    | <Link href="./edit-doc">Edit</Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      {selectedDoc && (
+        {selectedDoc && (
           <div className={styles.modalOverlay}>
             <div className={styles.modalCard}>
               <button
@@ -211,7 +241,6 @@ const handlePrint = () => {
                 <X size={20} />
               </button>
 
-         
               <div className={styles.modalTop}>
                 <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
                 <span
@@ -225,7 +254,6 @@ const handlePrint = () => {
                 </span>
               </div>
 
-          
               <div className={styles.metaGrid}>
                 <div className={styles.metaLabelRow}>
                   <span>Creator:</span>
@@ -239,37 +267,39 @@ const handlePrint = () => {
                 </div>
               </div>
 
-         
               <div className={styles.previewContainer}>
-  {selectedDoc.preview?.match(/\.pdf$/i) ? (
-    <iframe
-      src={`${selectedDoc.preview}#toolbar=0&navpanes=0&scrollbar=0`}
-      title="PDF Preview"
-      width="100%"
-      height="600px"
-      style={{ border: 'none' }}
-    ></iframe>
-  ) : selectedDoc.preview ? (
-    <p>
-      <a href={selectedDoc.preview} target="_blank" rel="noopener noreferrer">
-        Download File
-      </a>
-    </p>
-  ) : (
-    <p>No file selected.</p>
-  )}
-</div>
-
+                {selectedDoc.preview?.match(/\.pdf$/i) ? (
+                  <iframe
+                    src={`${selectedDoc.preview}#toolbar=0&navpanes=0&scrollbar=0`}
+                    title="PDF Preview"
+                    width="100%"
+                    height="600px"
+                    style={{ border: "none" }}
+                  ></iframe>
+                ) : selectedDoc.preview ? (
+                  <p>
+                    <a
+                      href={selectedDoc.preview}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Download File
+                    </a>
+                  </p>
+                ) : (
+                  <p>No file selected.</p>
+                )}
+              </div>
 
               {/* Footer Buttons */}
-               <div className={styles.modalFooter}>
-        <button className={styles.download} onClick={handleDownload}>
-          Download
-        </button>
-        <button className={styles.print} onClick={handlePrint}>
-          Print
-        </button>
-      </div>
+              <div className={styles.modalFooter}>
+                <button className={styles.download} onClick={handleDownload}>
+                  Download
+                </button>
+                <button className={styles.print} onClick={handlePrint}>
+                  Print
+                </button>
+              </div>
             </div>
           </div>
         )}

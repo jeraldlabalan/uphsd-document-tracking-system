@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
       Email: user.Email,
       EmployeeID: user.EmployeeID,
       MobileNumber: user.MobileNumber,
-      Position: user.Position,
+      PositionID: user.PositionID,
       Department: user.Department?.Name || null,
       ProfilePicture: user.ProfilePicture,
     });
@@ -78,7 +78,7 @@ export async function PUT(req: NextRequest) {
         DepartmentID: DepartmentID ? parseInt(DepartmentID) : undefined,
       },
     });
-
+    
     return NextResponse.json({ message: "Profile updated", updatedUser });
 
   } catch (error) {
