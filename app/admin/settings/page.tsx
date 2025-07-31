@@ -62,6 +62,59 @@ export default function Settings() {
   const [showModal, setShowModal] = useState(false);
   const [rowToDelete, setRowToDelete] = useState<string | null>(null);
 
+
+
+  type RowType = { id: string; value: string };
+
+// DOCUMENT rows
+const [documentRows, setDocumentRows] = useState<RowType[]>([
+  { id: uuidv4(), value: "" },
+]);
+const handleAddDocumentRow = () => {
+  setDocumentRows([...documentRows, { id: uuidv4(), value: "" }]);
+};
+const handleRemoveDocumentRow = (id: string) => {
+  setDocumentRows(documentRows.filter((row) => row.id !== id));
+};
+const handleDocumentInputChange = (id: string, newValue: string) => {
+  setDocumentRows((prev) =>
+    prev.map((row) => (row.id === id ? { ...row, value: newValue } : row))
+  );
+};
+
+// DEPARTMENT rows
+const [departmentRows, setDepartmentRows] = useState<RowType[]>([
+  { id: uuidv4(), value: "" },
+]);
+const handleAddDepartmentRow = () => {
+  setDepartmentRows([...departmentRows, { id: uuidv4(), value: "" }]);
+};
+const handleRemoveDepartmentRow = (id: string) => {
+  setDepartmentRows(departmentRows.filter((row) => row.id !== id));
+};
+const handleDepartmentInputChange = (id: string, newValue: string) => {
+  setDepartmentRows((prev) =>
+    prev.map((row) => (row.id === id ? { ...row, value: newValue } : row))
+  );
+};
+
+// POSITION rows
+const [positionRows, setPositionRows] = useState<RowType[]>([
+  { id: uuidv4(), value: "" },
+]);
+const handleAddPositionRow = () => {
+  setPositionRows([...positionRows, { id: uuidv4(), value: "" }]);
+};
+const handleRemovePositionRow = (id: string) => {
+  setPositionRows(positionRows.filter((row) => row.id !== id));
+};
+const handlePositionInputChange = (id: string, newValue: string) => {
+  setPositionRows((prev) =>
+    prev.map((row) => (row.id === id ? { ...row, value: newValue } : row))
+  );
+};
+
+
   return (
     <div>
   
@@ -480,51 +533,49 @@ export default function Settings() {
                       <div className={styles.addNewDepartmentContainer}>
                         <table className={styles.addPositionTable}>
                           <tbody>
-                            {rows.map((row, index) => (
-                              <tr key={row.id}>
-                                <td>
-                                  <input
-                                    type="text"
-                                    value={row.value}
-                                    onChange={(e) =>
-                                      handleInputChange(row.id, e.target.value)
-                                    }
-                                    placeholder="Add Document"
-                                  />
-                                </td>
-                                <td>
-                                  {index === 0 ? (
-                                    <button
-                                      type="button"
-                                      className={styles.addRownButton}
-                                      onClick={handleAddRow}
-                                    >
-                                      add document
-                                    </button>
-                                  ) : (
-                                    <button
-                                      onClick={() => handleRemoveRow(row.id)}
-                                    >
-                                      <svg
-                                        width="10"
-                                        height="10"
-                                        viewBox="0 0 10 10"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                      >
-                                        <path
-                                          d="M1 1L9 9M1 9L9 1"
-                                          stroke="black"
-                                          strokeWidth="2"
-                                          strokeLinecap="round"
-                                        />
-                                      </svg>
-                                    </button>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
+  {documentRows.map((row, index) => (
+    <tr key={row.id}>
+      <td>
+        <input
+          type="text"
+          value={row.value}
+          onChange={(e) =>
+            handleDocumentInputChange(row.id, e.target.value)
+          }
+          placeholder="Add Document"
+        />
+      </td>
+      <td>
+        {index === 0 ? (
+          <button
+            type="button"
+            className={styles.addRownButton}
+            onClick={handleAddDocumentRow}
+          >
+            add document
+          </button>
+        ) : (
+          <button onClick={() => handleRemoveDocumentRow(row.id)}>
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M1 1L9 9M1 9L9 1"
+                stroke="black"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        )}
+      </td>
+    </tr>
+  ))}
+</tbody>
                         </table>
                       </div>
 
@@ -689,7 +740,7 @@ export default function Settings() {
                             </ul>
                           </div>
                           <div className={styles.departmentActionButtons}>
-                            <button>add document</button>
+                          
                             <button>save</button>
                           </div>
                         </div>
@@ -707,50 +758,50 @@ export default function Settings() {
                   <p>Add New Department</p>
                   <div className={styles.addNewDepartmentContainer}>
                     <table className={styles.addPositionTable}>
-                      <tbody>
-                        {rows.map((row, index) => (
-                          <tr key={row.id}>
-                            <td>
-                              <input
-                                type="text"
-                                value={row.value}
-                                onChange={(e) =>
-                                  handleInputChange(row.id, e.target.value)
-                                }
-                                placeholder="Add Department"
-                              />
-                            </td>
-                            <td>
-                              {index === 0 ? (
-                                <button
-                                  type="button"
-                                  className={styles.addRownButton}
-                                  onClick={handleAddRow}
-                                >
-                                  add department
-                                </button>
-                              ) : (
-                                <button onClick={() => handleRemoveRow(row.id)}>
-                                  <svg
-                                    width="10"
-                                    height="10"
-                                    viewBox="0 0 10 10"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                  >
-                                    <path
-                                      d="M1 1L9 9M1 9L9 1"
-                                      stroke="black"
-                                      strokeWidth="2"
-                                      strokeLinecap="round"
-                                    />
-                                  </svg>
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
+                     <tbody>
+  {departmentRows.map((row, index) => (
+    <tr key={row.id}>
+      <td>
+        <input
+          type="text"
+          value={row.value}
+          onChange={(e) =>
+            handleDepartmentInputChange(row.id, e.target.value)
+          }
+          placeholder="Add Department"
+        />
+      </td>
+      <td>
+        {index === 0 ? (
+          <button
+            type="button"
+            className={styles.addRownButton}
+            onClick={handleAddDepartmentRow}
+          >
+            add department
+          </button>
+        ) : (
+          <button onClick={() => handleRemoveDepartmentRow(row.id)}>
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M1 1L9 9M1 9L9 1"
+                stroke="black"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        )}
+      </td>
+    </tr>
+  ))}
+</tbody>
                     </table>
                   </div>
 
@@ -915,7 +966,7 @@ export default function Settings() {
                       </div>
 
                       <div className={styles.departmentActionButtons}>
-                        <button>add department</button>
+                        
                         <button>save</button>
                       </div>
                     </div>
@@ -931,50 +982,51 @@ export default function Settings() {
                   <p>Add Position/Role</p>
                   <div className={styles.addNewDepartmentContainer}>
                     <table className={styles.addPositionTable}>
-                      <tbody>
-                        {rows.map((row, index) => (
-                          <tr key={row.id}>
-                            <td>
-                              <input
-                                type="text"
-                                value={row.value}
-                                onChange={(e) =>
-                                  handleInputChange(row.id, e.target.value)
-                                }
-                                placeholder="Add Position"
-                              />
-                            </td>
-                            <td>
-                              {index === 0 ? (
-                                <button
-                                  type="button"
-                                  className={styles.addRownButton}
-                                  onClick={handleAddRow}
-                                >
-                                  add position
-                                </button>
-                              ) : (
-                                <button onClick={() => handleRemoveRow(row.id)}>
-                                  <svg
-                                    width="10"
-                                    height="10"
-                                    viewBox="0 0 10 10"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                  >
-                                    <path
-                                      d="M1 1L9 9M1 9L9 1"
-                                      stroke="black"
-                                      strokeWidth="2"
-                                      strokeLinecap="round"
-                                    />
-                                  </svg>
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
+                     <tbody>
+  {positionRows.map((row, index) => (
+    <tr key={row.id}>
+      <td>
+        <input
+          type="text"
+          value={row.value}
+          onChange={(e) =>
+            handlePositionInputChange(row.id, e.target.value)
+          }
+          placeholder="Add Position"
+        />
+      </td>
+      <td>
+        {index === 0 ? (
+          <button
+            type="button"
+            className={styles.addRownButton}
+            onClick={handleAddPositionRow}
+          >
+            add position
+          </button>
+        ) : (
+          <button onClick={() => handleRemovePositionRow(row.id)}>
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M1 1L9 9M1 9L9 1"
+                stroke="black"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        )}
+      </td>
+    </tr>
+  ))}
+</tbody>
+
                     </table>
                   </div>
 
@@ -1137,7 +1189,7 @@ export default function Settings() {
                       </div>
 
                       <div className={styles.departmentActionButtons}>
-                        <button>add position</button>
+                        
                         <button>save</button>
                       </div>
                     </div>

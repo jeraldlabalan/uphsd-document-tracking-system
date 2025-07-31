@@ -473,7 +473,7 @@
     align-self: flex-end;
     display: flex;
     justify-content: space-evenly;
-    width: 50%;
+    width: 20%;
     gap: 15px;
     padding: 0 15px;
 }
@@ -621,6 +621,10 @@
     padding: 3px 20px;
     border-radius: 50px;
     text-transform: capitalize;
+}
+
+.addPositionTable tbody td:last-child {
+  padding-left: 10px;
 }
 
 .addPositionTable tbody td > input[type="text"] {

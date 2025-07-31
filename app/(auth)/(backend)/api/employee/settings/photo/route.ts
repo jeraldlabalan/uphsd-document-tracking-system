@@ -7,7 +7,7 @@ import jwt from "jsonwebtoken";
 
 export const POST = async (req: NextRequest) => {
     const cookieStore = await cookies();
-    const token = cookieStore.get("my_token")?.value;
+    const token = cookieStore.get("session")?.value;
 
     if (!token) {
       return NextResponse.json({ error: "No token provided." }, { status: 401 });
@@ -45,6 +45,9 @@ export const POST = async (req: NextRequest) => {
         ProfilePicture: `/uploads/${filename}`,
       },
     });
+    console.log("File uploaded successfully:", filename);
+    console.log("Received file:", file);
+    console.log("FormData keys:", [...formData.keys()]);
 
     return NextResponse.json({ success: true, url: `/uploads/${filename}` });
   } catch (error) {

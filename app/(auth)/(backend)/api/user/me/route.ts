@@ -4,7 +4,8 @@ import { db } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   try {
-    const token = req.cookies.get("session")?.value;
+    const token = req.cookies.get("session")?.value; // 🔧 match this with your other routes
+    console.log("Token from cookies:", token);
     if (!token)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
       select: {
         FirstName: true,
         LastName: true,
-        ProfilePicture: true, // or ProfilePicture depending on your schema
+        ProfilePicture: true,
       },
     });
 
@@ -23,7 +24,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     return NextResponse.json(user);
-  } catch (err) {
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  } catch (err: any) {
+    if (err.name === "TokenExpiredError") {
+      return NextResponse.json({ error: "Token expired" }, { status: 401 });
+    }
+    if (err.name === "JsonWebTokenError") {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

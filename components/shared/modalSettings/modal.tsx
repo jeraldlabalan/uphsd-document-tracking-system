@@ -4,6 +4,7 @@ import styles from "./modal.module.css"; // 👈 import the CSS module
 interface UploadPhotoModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onUploadSuccess: (filename: string) => void; // 👈 new callback
 }
 
 const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
@@ -43,13 +44,16 @@ const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
         body: formData,
       });
 
+      console.log("Selected file:", selectedFile);
+
       if (res.ok) {
+        const data = await res.json(); // assume this includes the filename
         alert("Profile photo updated!");
+        onUploadSuccess(data.filename); // 👈 notify parent
         onClose(); // Close modal
-        // Optionally: trigger a refresh or refetch of profile
       } else {
         const err = await res.json();
-        alert(`Upload failed: ${err.message}`);
+        alert(`Upload failed: ${err.error || "Unknown error"}`);
       }
     } catch (error) {
       console.error("Upload error:", error);

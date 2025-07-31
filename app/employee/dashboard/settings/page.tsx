@@ -2,8 +2,8 @@
 import Head from "next/head";
 import styles from "./settings.module.css";
 import { useState, useEffect } from "react";
-import EmployeeSidebar from "@/components/shared/employeeSidebar/employeeSidebar";
-import EmployeeHeader from "@/components/shared/employeeHeader/employeeHeader";
+// import EmployeeSidebar from "@/components/shared/employeeSidebar/employeeSidebar";
+// import EmployeeHeader from "@/components/shared/employeeHeader/employeeHeader";
 import UploadPhotoModal from "@/components/shared/modalSettings/modal";
 
 export default function Setting() {
@@ -114,10 +114,10 @@ export default function Setting() {
           <title>Setting</title>
         </Head>
 
-        <EmployeeHeader onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+        {/* <EmployeeHeader onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} /> */}
 
         <div className={styles.container}>
-          <EmployeeSidebar sidebarOpen={sidebarOpen} />
+          {/* <EmployeeSidebar sidebarOpen={sidebarOpen} /> */}
 
           <main className={styles.main}>
             <div className={styles.headerRow}>
