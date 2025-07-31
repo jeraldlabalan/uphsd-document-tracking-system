@@ -24,8 +24,7 @@ export default function Documents() {
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [documents, setDocuments] = useState([]);
-
+  const [documents, setDocuments] = useState<Document[]>([]);
   // const documents = [
   //   {
   //     id: 1,
@@ -50,10 +49,21 @@ export default function Documents() {
   //   },
   // ];
 
+  const formattedDocs: Document[] = documents.map((doc) => ({
+    id: doc.DocumentID,
+    name: doc.Title,
+    file: doc.FilePath,
+    status: doc.Status,
+    date: doc.CreatedAt.toISOString().split("T")[0],
+    type: doc.Type?.TypeName ?? "N/A",
+    creator: `${user.FirstName} ${user.LastName}`,
+    preview: `/uploads/${doc.FilePath}`,
+  }));
+
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
-        const res = await fetch("/api/documents");
+        const res = await fetch("/api/employee/documents");
         const data = await res.json();
         setDocuments(data);
       } catch (err) {
@@ -66,8 +76,8 @@ export default function Documents() {
 
   const filteredDocs = documents.filter((doc) => {
     const matchesSearch =
-      doc.Name.toLowerCase().includes(search.toLowerCase()) ||
-      doc.ID.toString().includes(search);
+      doc.name.toLowerCase().includes(search.toLowerCase()) ||
+      doc.id.toString().includes(search);
 
     const matchesStatus = !statusFilter || doc.status === statusFilter;
     const matchesType = !typeFilter || doc.type === typeFilter;
