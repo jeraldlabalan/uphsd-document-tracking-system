@@ -11,19 +11,27 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import { CheckCircle, Clock, PauseCircle } from "lucide-react";
 
-
 // const cookieStore = await cookies();
-  // const session = cookieStore.get("session");
+// const session = cookieStore.get("session");
 
-  // console.log("SESSION:", session); // ✅ prints to server logs
+// console.log("SESSION:", session); // ✅ prints to server logs
 
-  // if (!session) {
-  //   redirect("/login"); // or wherever you want
-  // }
-
+// if (!session) {
+//   redirect("/login"); // or wherever you want
+// }
+type Documents = {
+  id: string;
+  name: string;
+  file: string;
+  preview: string;
+  type: string;
+  creator: string;
+  department: string;
+  status: string;
+  dateCreated: string;
+};
 
 export default function DeletedDocuments() {
-
   useEffect(() => {
     AOS.init({
       duration: 1000,
@@ -34,106 +42,110 @@ export default function DeletedDocuments() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
-  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [selectedDoc, setSelectedDoc] = useState<Documents | null>();
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState<Documents | null>(null);
   const [showConfirmRestore, setShowConfirmRestore] = useState(false);
   const [showRestoreLoading, setShowRestoreLoading] = useState(false);
   const [showConfirmSuccess, setShowConfirmSuccess] = useState(false);
-  const [showConfirmPermanentDelete, setShowConfirmPermanentDelete] = useState(false);
-  const [showPermanentDeleteLoading, setShowPermanentDeleteLoading] = useState(false);
-  const [showSuccessPermanentDelete, setShowSuccessPermanentDelete] = useState(false);
+  const [showConfirmPermanentDelete, setShowConfirmPermanentDelete] =
+    useState(false);
+  const [showPermanentDeleteLoading, setShowPermanentDeleteLoading] =
+    useState(false);
+  const [showSuccessPermanentDelete, setShowSuccessPermanentDelete] =
+    useState(false);
 
+  const documents: Documents[] = [
+    {
+      id: "DOC001",
+      name: "Naruto Uzumaki",
+      file: "hr-policy.pdf",
+      preview: "/files/hr-policy.pdf", // Example PDF path
+      type: "Report",
+      creator: "John Doe",
+      department: "HR",
+      status: "Pending",
+      dateCreated: "2025-07-30",
+    },
+    {
+      id: "DOC002",
+      name: "Sasuke Uchiha",
+      file: "finance-q3-request.pdf",
+      preview: "/files/finance-q3-request.pdf",
+      type: "Request",
+      creator: "Jane Smith",
+      department: "Finance",
+      status: "Completed",
+      dateCreated: "2025-07-29",
+    },
+    {
+      id: "DOC003",
+      name: "Kakashi Hatake",
+      file: "finance-q3-request.pdf",
+      preview: "/files/finance-q3-request.pdf",
+      type: "Request",
+      creator: "Jane Smith",
+      department: "Finance",
+      status: "On Hold",
+      dateCreated: "2025-07-29",
+    },
+  ];
 
+  const filteredDocs = documents.filter((doc) => {
+    const statusMatch =
+      !statusFilter || doc.status.toLowerCase() === statusFilter.toLowerCase();
+    const typeMatch =
+      !typeFilter || doc.type.toLowerCase() === typeFilter.toLowerCase();
+    const searchMatch =
+      !search ||
+      doc.name?.toLowerCase().includes(search.toLowerCase()) ||
+      doc.id?.toLowerCase().includes(search.toLowerCase());
 
-const documents = [
-  {
-    id: "DOC001",
-    name: "Naruto Uzumaki",
-    file: "hr-policy.pdf",
-    preview: "/files/hr-policy.pdf", // Example PDF path
-    type: "Report",
-    creator: "John Doe",
-    department: "HR",
-    status: "Pending",
-    dateCreated: "2025-07-30",
-  },
-  {
-    id: "DOC002",
-    name: "Sasuke Uchiha",
-    file: "finance-q3-request.pdf",
-    preview: "/files/finance-q3-request.pdf",
-    type: "Request",
-    creator: "Jane Smith",
-    department: "Finance",
-    status: "Completed",
-    dateCreated: "2025-07-29",
-  },
-  {
-    id: "DOC003",
-    name: "Kakashi Hatake",
-    file: "finance-q3-request.pdf",
-    preview: "/files/finance-q3-request.pdf",
-    type: "Request",
-    creator: "Jane Smith",
-    department: "Finance",
-    status: "On Hold",
-    dateCreated: "2025-07-29",
-  },
-];
+    const docDate = new Date(doc.dateCreated);
+    const fromDate = dateFrom ? new Date(dateFrom) : null;
+    const toDate = dateTo ? new Date(dateTo) : null;
 
+    const dateMatch =
+      (!fromDate || docDate >= fromDate) && (!toDate || docDate <= toDate);
 
+    return statusMatch && typeMatch && searchMatch && dateMatch;
+  });
 
- const filteredDocs = documents.filter((doc) => {
-  const statusMatch =
-    !statusFilter || doc.status.toLowerCase() === statusFilter.toLowerCase();
-  const typeMatch =
-    !typeFilter || doc.type.toLowerCase() === typeFilter.toLowerCase();
-  const searchMatch =
-    !search || doc.name?.toLowerCase().includes(search.toLowerCase()) || d;
+  const handleCancelButtonClick = (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+    callback?: () => void
+  ) => {
+    e.stopPropagation();
+    if (callback) callback();
+  };
 
-  const docDate = new Date(doc.dateCreated);
-  const fromDate = dateFrom ? new Date(dateFrom) : null;
-  const toDate = dateTo ? new Date(dateTo) : null;
+  const handleBackdropClick = (
+    e: React.MouseEvent<HTMLDivElement, MouseEvent>,
+    callback?: () => void
+  ) => {
+    if (e.target === e.currentTarget && callback) callback();
+  };
 
-  const dateMatch =
-    (!fromDate || docDate >= fromDate) &&
-    (!toDate || docDate <= toDate);
+  const handleRestoreSuccess = () => {
+    setShowConfirmRestore(false);
+    setShowRestoreLoading(true);
 
-  return statusMatch && typeMatch && searchMatch && dateMatch;
-});
+    setTimeout(() => {
+      setShowRestoreLoading(false);
+      setShowConfirmSuccess(true);
+    }, 1000);
+  };
 
+  const handleSuccessPermanentDelete = () => {
+    setShowConfirmPermanentDelete(false);
+    setShowPermanentDeleteLoading(true);
 
-const handleCancelButtonClick = (e, callback) => {
-  e.stopPropagation();
-  if (callback) callback();
-};
-
-const handleBackdropClick = (e, callback) => {
-  if (e.target === e.currentTarget && callback) callback();
-};
-
-const handleRestoreSuccess = () => {
-  setShowConfirmRestore(false);
-  setShowRestoreLoading(true);
-
-  setTimeout(() => {
-    setShowRestoreLoading(false);
-    setShowConfirmSuccess(true);
-  }, 1000);
-};
-
-const handleSuccessPermanentDelete = () => {
-  setShowConfirmPermanentDelete(false);
-  setShowPermanentDeleteLoading(true);
-
-  setTimeout(() => {
-    setShowPermanentDeleteLoading(false);
-    setShowSuccessPermanentDelete(true);
-  }, 1000);
-};
-
+    setTimeout(() => {
+      setShowPermanentDeleteLoading(false);
+      setShowSuccessPermanentDelete(true);
+    }, 1000);
+  };
 
   return (
     <div>
@@ -142,13 +154,10 @@ const handleSuccessPermanentDelete = () => {
         <div data-aos="fade-up" className={styles.contentSection}>
           <div className={styles.headerRow}>
             <h2 className={styles.pageTitle}>Deleted Documents</h2>
-          
-            
           </div>
           <hr className={styles.separator} />
 
           <div className={styles.summary}>
-  
             <div className={`${styles.card} ${styles.orange}`}>
               <CheckCircle className={styles.icon} />
               <span className={styles.count}>116</span>
@@ -161,8 +170,6 @@ const handleSuccessPermanentDelete = () => {
               <span>Total Documents Restored</span>
             </div>
           </div>
-
-
 
           <div className={styles.filters}>
             <div className={styles.searchWrapper}>
@@ -200,219 +207,220 @@ const handleSuccessPermanentDelete = () => {
               <option>Budget</option>
             </select>
             <div className={styles.dateFilterWrapper}>
-  <div className={styles.dateGroup}>
-    <span className={styles.dateLabel}>From:</span>
-    <input
-      type="date"
-      value={dateFrom}
-      onChange={(e) => setDateFrom(e.target.value)}
-      className={styles.dateInput}
-    />
-  </div>
+              <div className={styles.dateGroup}>
+                <span className={styles.dateLabel}>From:</span>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className={styles.dateInput}
+                />
+              </div>
 
-  <div className={styles.dateGroup}>
-    <span className={styles.dateLabel}>To:</span>
-    <input
-      type="date"
-      value={dateTo}
-      onChange={(e) => setDateTo(e.target.value)}
-      className={styles.dateInput}
-    />
-  </div>
-</div>
-
-
+              <div className={styles.dateGroup}>
+                <span className={styles.dateLabel}>To:</span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className={styles.dateInput}
+                />
+              </div>
+            </div>
           </div>
           <table className={styles.docTable}>
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Activity</th>
-      <th>Creator</th>
-      <th>Department</th>
-      <th>Date of Activity</th>
-      <th>Action</th>
-    </tr>
-  </thead>
-  <tbody>
-  {filteredDocs.map((doc, i) => (
-    <tr key={i}>
-      <td>{doc.id}</td>
-      <td>
-        {doc.status === "Completed" ? "Document Restored" : "Document Deleted"}
-      </td>
-      <td>{doc.creator}</td>
-      <td>{doc.department}</td>
-      <td>{doc.dateCreated}</td>
-      <td>
-        <a href="#" onClick={() => {
-  setSelectedDoc(doc);
-  setShowConfirmRestore(true);
-}}>
-
-          Restore
-        </a>{" "}
-        <button
-          className={styles.actionBtn}
-          onClick={() => {
-            setSelectedUser(doc);
-            setShowConfirmPermanentDelete(true);
-          }}
-        >
-          Permanently Delete
-        </button>
-      </td>
-    </tr>
-  ))}
-</tbody>
-
-</table>
-
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Activity</th>
+                <th>Creator</th>
+                <th>Department</th>
+                <th>Date of Activity</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredDocs.map((doc, i) => (
+                <tr key={i}>
+                  <td>{doc.id}</td>
+                  <td>
+                    {doc.status === "Completed"
+                      ? "Document Restored"
+                      : "Document Deleted"}
+                  </td>
+                  <td>{doc.creator}</td>
+                  <td>{doc.department}</td>
+                  <td>{doc.dateCreated}</td>
+                  <td>
+                    <a
+                      href="#"
+                      onClick={() => {
+                        setSelectedDoc(doc);
+                        setShowConfirmRestore(true);
+                      }}
+                    >
+                      Restore
+                    </a>{" "}
+                    <button
+                      className={styles.actionBtn}
+                      onClick={() => {
+                        setSelectedUser(doc);
+                        setShowConfirmPermanentDelete(true);
+                      }}
+                    >
+                      Permanently Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
-   
+        {/* confirm restore modal */}
+        {showConfirmRestore && (
+          <div
+            className={styles.modal}
+            onClick={(e) =>
+              handleBackdropClick(e, () => setShowConfirmRestore(false))
+            }
+          >
+            <div className={styles.modalContent}>
+              <div className={styles.confirmRestoreContainer}>
+                <h1>document restore</h1>
 
-             {/* confirm restore modal */}
-              {showConfirmRestore && (
-                <div
-                  className={styles.modal}
+                <p>Are you sure to restore this document?</p>
+
+                <div className={styles.confirmRestoreActionButton}>
+                  <button
+                    onClick={(e) =>
+                      handleCancelButtonClick(e, () =>
+                        setShowConfirmRestore(false)
+                      )
+                    }
+                  >
+                    Cancel
+                  </button>
+                  <button onClick={handleRestoreSuccess}>Confirm</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* restore loading modal */}
+        {showRestoreLoading && (
+          <div className={styles.modal}>
+            <div className={styles.modalContent}>
+              <div className={styles.loadingContainer}>
+                <div className={styles.spinnerGreen}></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* success restore modal */}
+        {showConfirmSuccess && (
+          <div
+            className={styles.modal}
+            onClick={(e) =>
+              handleBackdropClick(e, () => setShowConfirmSuccess(false))
+            }
+          >
+            <div className={styles.modalContent}>
+              <div className={styles.confirmSuccessContainer}>
+                <h1>success!</h1>
+
+                <p>The document has been successfully restored!</p>
+
+                <button
                   onClick={(e) =>
-                    handleBackdropClick(e, () => setShowConfirmRestore(false))
+                    handleCancelButtonClick(e, () =>
+                      setShowConfirmSuccess(false)
+                    )
                   }
                 >
-                  <div className={styles.modalContent}>
-                    <div className={styles.confirmRestoreContainer}>
-                      <h1>document restore</h1>
+                  okay
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
-                      <p>Are you sure to restore this document?</p>
+        {/* confirm permanent delete modal */}
+        {showConfirmPermanentDelete && (
+          <div
+            className={styles.modal}
+            onClick={(e) =>
+              handleBackdropClick(e, () => setShowConfirmPermanentDelete(false))
+            }
+          >
+            <div className={styles.modalContent}>
+              <div className={styles.confirmPermanentDeleteContainer}>
+                <h1>permanently delete</h1>
 
-                      <div className={styles.confirmRestoreActionButton}>
-                        <button
-                          onClick={(e) =>
-                            handleCancelButtonClick(e, () =>
-                              setShowConfirmRestore(false)
-                            )
-                          }
-                        >
-                          Cancel
-                        </button>
-                        <button onClick={handleRestoreSuccess}>Confirm</button>
-                      </div>
-                    </div>
-                  </div>
+                <p>
+                  Are you sure to delete this document? This action cannot be
+                  undone.
+                </p>
+
+                <div className={styles.confirmPermanentDeleteActionButton}>
+                  <button
+                    onClick={(e) =>
+                      handleCancelButtonClick(e, () =>
+                        setShowConfirmPermanentDelete(false)
+                      )
+                    }
+                  >
+                    Cancel
+                  </button>
+                  <button onClick={handleSuccessPermanentDelete}>
+                    Confirm
+                  </button>
                 </div>
-              )}
+              </div>
+            </div>
+          </div>
+        )}
 
-              {/* restore loading modal */}
-              {showRestoreLoading && (
-                <div className={styles.modal}>
-                  <div className={styles.modalContent}>
-                    <div className={styles.loadingContainer}>
-                      <div className={styles.spinnerGreen}></div>
-                    </div>
-                  </div>
-                </div>
-              )}
+        {/* permanent delete loading modal */}
+        {showPermanentDeleteLoading && (
+          <div className={styles.modal}>
+            <div className={styles.modalContent}>
+              <div className={styles.loadingContainer}>
+                <div className={styles.spinnerMaroon}></div>
+              </div>
+            </div>
+          </div>
+        )}
 
-              {/* success restore modal */}
-              {showConfirmSuccess && (
-                <div
-                  className={styles.modal}
+        {/* success permanent delete modal */}
+        {showSuccessPermanentDelete && (
+          <div
+            className={styles.modal}
+            onClick={(e) =>
+              handleBackdropClick(e, () => setShowSuccessPermanentDelete(false))
+            }
+          >
+            <div className={styles.modalContent}>
+              <div className={styles.confirmSuccessContainer}>
+                <h1>success!</h1>
+
+                <p>The document has been permanently deleted!</p>
+
+                <button
                   onClick={(e) =>
-                    handleBackdropClick(e, () => setShowConfirmSuccess(false))
+                    handleCancelButtonClick(e, () =>
+                      setShowSuccessPermanentDelete(false)
+                    )
                   }
                 >
-                  <div className={styles.modalContent}>
-                    <div className={styles.confirmSuccessContainer}>
-                      <h1>success!</h1>
-
-                      <p>The document has been successfully restored!</p>
-
-                      <button
-                        onClick={(e) =>
-                          handleCancelButtonClick(e, () =>
-                            setShowConfirmSuccess(false)
-                          )
-                        }
-                      >
-                        okay
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* confirm permanent delete modal */}
-              {showConfirmPermanentDelete && (
-                <div
-                  className={styles.modal}
-                  onClick={(e) =>
-                    handleBackdropClick(e, () => setShowConfirmPermanentDelete(false))
-                  }
-                >
-                  <div className={styles.modalContent}>
-                    <div className={styles.confirmPermanentDeleteContainer}>
-                      <h1>permanently delete</h1>
-
-                      <p>Are you sure to delete this document? This action cannot be undone.</p>
-
-                      <div className={styles.confirmPermanentDeleteActionButton}>
-                        <button
-                          onClick={(e) =>
-                            handleCancelButtonClick(e, () =>
-                              setShowConfirmPermanentDelete(false)
-                            )
-                          }
-                        >
-                          Cancel
-                        </button>
-                        <button onClick={handleSuccessPermanentDelete}>Confirm</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* permanent delete loading modal */}
-              {showPermanentDeleteLoading && (
-                <div className={styles.modal}>
-                  <div className={styles.modalContent}>
-                    <div className={styles.loadingContainer}>
-                      <div className={styles.spinnerMaroon}></div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* success permanent delete modal */}
-              {showSuccessPermanentDelete && (
-                <div
-                  className={styles.modal}
-                  onClick={(e) =>
-                    handleBackdropClick(e, () => setShowSuccessPermanentDelete(false))
-                  }
-                >
-                  <div className={styles.modalContent}>
-                    <div className={styles.confirmSuccessContainer}>
-                      <h1>success!</h1>
-
-                      <p>The document has been permanently deleted!</p>
-
-                      <button
-                        onClick={(e) =>
-                          handleCancelButtonClick(e, () =>
-                            setShowSuccessPermanentDelete(false)
-                          )
-                        }
-                      >
-                        okay
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-
+                  okay
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
