@@ -11,9 +11,18 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import { Users, FileText, Clock, School } from "lucide-react";
 
+type DashboardDocuments = {
+  id: string;
+  name: string;
+  type: string;
+  file: string;
+  status: string;
+  date: string;
+  creator: string;
+  preview: string;
+};
 
 export default function AdminDashboard() {
-
   useEffect(() => {
     AOS.init({
       duration: 1000,
@@ -24,12 +33,15 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
-  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [selectedDoc, setSelectedDoc] = useState<DashboardDocuments | null>(
+    null
+  );
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
-  const documents = [
+  const documents: DashboardDocuments[] = [
     {
+      id: "DOC001",
       name: "IT Equipment Purchase Request",
       type: "Request",
       file: "PDF File",
@@ -39,6 +51,7 @@ export default function AdminDashboard() {
       preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
     },
     {
+      id: "DOC002",
       name: "Student Grades",
       type: "Evaluation",
       file: "PDF File",
@@ -48,6 +61,7 @@ export default function AdminDashboard() {
       preview: "/example-doc.png",
     },
     {
+      id: "DOC003",
       name: "Student Good Moral Request",
       type: "Request",
       file: "PDF File",
@@ -60,9 +74,9 @@ export default function AdminDashboard() {
 
   const handleDownload = () => {
     if (selectedDoc?.preview) {
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = selectedDoc.preview;
-      link.download = selectedDoc.name || 'document'; 
+      link.download = selectedDoc.name || "document";
       link.click();
       document.body.removeChild(link);
     }
@@ -70,7 +84,7 @@ export default function AdminDashboard() {
 
   const handlePrint = () => {
     if (selectedDoc?.preview) {
-      const printWindow = window.open(selectedDoc.preview, '_blank');
+      const printWindow = window.open(selectedDoc.preview, "_blank");
       if (printWindow) {
         printWindow.focus();
         printWindow.onload = () => {
@@ -94,33 +108,31 @@ export default function AdminDashboard() {
         <div data-aos="fade-up" className={styles.contentSection}>
           <div className={styles.headerRow}>
             <h2 className={styles.pageTitle}>Admin Dashboard</h2>
-            
           </div>
           <hr className={styles.separator} />
 
           <div className={styles.summary}>
-  <div className={`${styles.card} ${styles.orange}`}>
-    <Users className={styles.icon} />
-    <span className={styles.count}>30</span>
-    <span>Total Users</span>
-  </div>
-  <div className={`${styles.card} ${styles.cyan}`}>
-    <FileText className={styles.icon} />
-    <span className={styles.count}>3</span>
-    <span>Total Documents</span>
-  </div>
-  <div className={`${styles.card} ${styles.green}`}>
-    <Clock className={styles.icon} />
-    <span className={styles.count}>5</span>
-    <span>Pending Approvals</span>
-  </div>
-  <div className={`${styles.card} ${styles.yellow}`}>
-    <School className={styles.icon} />
-    <span className={styles.count}>5</span>
-    <span>Total Departments</span>
-  </div>
-</div>
-
+            <div className={`${styles.card} ${styles.orange}`}>
+              <Users className={styles.icon} />
+              <span className={styles.count}>30</span>
+              <span>Total Users</span>
+            </div>
+            <div className={`${styles.card} ${styles.cyan}`}>
+              <FileText className={styles.icon} />
+              <span className={styles.count}>3</span>
+              <span>Total Documents</span>
+            </div>
+            <div className={`${styles.card} ${styles.green}`}>
+              <Clock className={styles.icon} />
+              <span className={styles.count}>5</span>
+              <span>Pending Approvals</span>
+            </div>
+            <div className={`${styles.card} ${styles.yellow}`}>
+              <School className={styles.icon} />
+              <span className={styles.count}>5</span>
+              <span>Total Departments</span>
+            </div>
+          </div>
 
           <div className={styles.filters}>
             <div className={styles.searchWrapper}>
@@ -158,62 +170,57 @@ export default function AdminDashboard() {
               <option>Budget</option>
             </select>
             <div className={styles.dateFilterWrapper}>
-  <div className={styles.dateGroup}>
-    <span className={styles.dateLabel}>From:</span>
-    <input
-      type="date"
-      value={dateFrom}
-      onChange={(e) => setDateFrom(e.target.value)}
-      className={styles.dateInput}
-    />
-  </div>
+              <div className={styles.dateGroup}>
+                <span className={styles.dateLabel}>From:</span>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className={styles.dateInput}
+                />
+              </div>
 
-  <div className={styles.dateGroup}>
-    <span className={styles.dateLabel}>To:</span>
-    <input
-      type="date"
-      value={dateTo}
-      onChange={(e) => setDateTo(e.target.value)}
-      className={styles.dateInput}
-    />
-  </div>
-</div>
-
-
+              <div className={styles.dateGroup}>
+                <span className={styles.dateLabel}>To:</span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className={styles.dateInput}
+                />
+              </div>
+            </div>
           </div>
           <table className={styles.docTable}>
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Department</th>
-      <th>Position</th>
-      <th>Status</th>
-    
-    </tr>
-  </thead>
-  <tbody>
-    {filteredDocs.map((doc, i) => (
-      <tr key={i}>
-       <td>{doc.id}</td>
-        <td>{doc.name}</td>
-        <td>{doc.file}</td>
-        <td>
-          <span
-            className={`${styles.badge} ${
-              doc.status === "Completed"
-                ? styles.completed
-                : styles.pending
-            }`}
-          >
-            {doc.status}
-          </span>
-        </td>
-      
-        
-      </tr>
-    ))}
-  </tbody>
-</table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Department</th>
+                <th>Position</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredDocs.map((doc, i) => (
+                <tr key={i}>
+                  <td>{doc.id}</td>
+                  <td>{doc.name}</td>
+                  <td>{doc.file}</td>
+                  <td>
+                    <span
+                      className={`${styles.badge} ${
+                        doc.status === "Completed"
+                          ? styles.completed
+                          : styles.pending
+                      }`}
+                    >
+                      {doc.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
         {selectedDoc && (
@@ -257,35 +264,38 @@ export default function AdminDashboard() {
 
               {/* Document Preview */}
               <div className={styles.previewContainer}>
-  {selectedDoc.preview?.match(/\.pdf$/i) ? (
-    <iframe
-      src={`${selectedDoc.preview}#toolbar=0&navpanes=0&scrollbar=0`}
-      title="PDF Preview"
-      width="100%"
-      height="600px"
-      style={{ border: 'none' }}
-    ></iframe>
-  ) : selectedDoc.preview ? (
-    <p>
-      <a href={selectedDoc.preview} target="_blank" rel="noopener noreferrer">
-        Download File
-      </a>
-    </p>
-  ) : (
-    <p>No file selected.</p>
-  )}
-</div>
-
+                {selectedDoc.preview?.match(/\.pdf$/i) ? (
+                  <iframe
+                    src={`${selectedDoc.preview}#toolbar=0&navpanes=0&scrollbar=0`}
+                    title="PDF Preview"
+                    width="100%"
+                    height="600px"
+                    style={{ border: "none" }}
+                  ></iframe>
+                ) : selectedDoc.preview ? (
+                  <p>
+                    <a
+                      href={selectedDoc.preview}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Download File
+                    </a>
+                  </p>
+                ) : (
+                  <p>No file selected.</p>
+                )}
+              </div>
 
               {/* Footer Buttons */}
-               <div className={styles.modalFooter}>
-        <button className={styles.download} onClick={handleDownload}>
-          Download
-        </button>
-        <button className={styles.print} onClick={handlePrint}>
-          Print
-        </button>
-      </div>
+              <div className={styles.modalFooter}>
+                <button className={styles.download} onClick={handleDownload}>
+                  Download
+                </button>
+                <button className={styles.print} onClick={handlePrint}>
+                  Print
+                </button>
+              </div>
             </div>
           </div>
         )}
