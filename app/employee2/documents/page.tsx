@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import styles from "./documentsStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
-import { Search as SearchIcon } from "lucide-react";
+import { Search as SearchIcon, User } from "lucide-react";
 import Link from "next/link";
 import { X } from "lucide-react";
 
@@ -14,7 +14,7 @@ type Document = {
   date: string;
   type: string;
   creator: string;
-  preview?: string;
+  preview: string;
 };
 
 export default function Documents() {
@@ -25,6 +25,20 @@ export default function Documents() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [documents, setDocuments] = useState<Document[]>([]);
+
+
+useEffect(() => {
+  const fetchDocuments = async () => {
+    const res = await fetch("/api/employee/documents");
+    const data = await res.json();
+    console.log("Full response:", data);
+
+    console.log("Fetched documents:", data.documents); // ✅ log this
+    setDocuments(data.docs); // ✅ correct key
+  };
+
+  fetchDocuments();
+}, []);
   // const documents = [
   //   {
   //     id: 1,
@@ -49,34 +63,9 @@ export default function Documents() {
   //   },
   // ];
 
-  const formattedDocs: Document[] = documents.map((doc) => ({
-    id: doc.DocumentID,
-    name: doc.Title,
-    file: doc.FilePath,
-    status: doc.Status,
-    date: doc.CreatedAt.toISOString().split("T")[0],
-    type: doc.Type?.TypeName ?? "N/A",
-    creator: `${user.FirstName} ${user.LastName}`,
-    preview: `/uploads/${doc.FilePath}`,
-  }));
-
-  useEffect(() => {
-    const fetchDocuments = async () => {
-      try {
-        const res = await fetch("/api/employee/documents");
-        const data = await res.json();
-        setDocuments(data);
-      } catch (err) {
-        console.error("Failed to fetch documents", err);
-      }
-    };
-
-    fetchDocuments();
-  }, []);
-
   const filteredDocs = documents.filter((doc) => {
     const matchesSearch =
-      doc.name.toLowerCase().includes(search.toLowerCase()) ||
+      doc.creator.toLowerCase().includes(search.toLowerCase()) ||
       doc.id.toString().includes(search);
 
     const matchesStatus = !statusFilter || doc.status === statusFilter;
