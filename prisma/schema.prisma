@@ -26,7 +26,7 @@ model User {
   IsActive       Boolean    @default(true)
   IsDeleted      Boolean    @default(false)
   CreatedAt      DateTime   @default(now())
-  UpdatedAt      DateTime   @updatedAt
+  UpdatedAt      DateTime?   @updatedAt
 
   // Relations
   Role           Role       @relation(fields: [RoleID], references: [RoleID])

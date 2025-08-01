@@ -2,10 +2,8 @@
 
 import Image from "next/image";
 import styles from "./adminHeaderStyles.module.css";
-import Search from "../header/search";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-
 
 import {
   LayoutDashboard,
@@ -21,10 +19,13 @@ export default function AdminHeader() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const userName = "Kai Sotto";
-  
 
   const router = useRouter();
-  const [user, setUser] = useState<{ FirstName: string; LastName: string; ProfilePicture?: string } | null>(null);
+  const [user, setUser] = useState<{
+    FirstName: string;
+    LastName: string;
+    ProfilePicture?: string;
+  } | null>(null);
 
   // useEffect(() => {
   //   const fetchUser = async () => {
@@ -45,9 +46,9 @@ export default function AdminHeader() {
   //   fetchUser();
   // }, [router]);
 
-
   const handleLogout = () => {
-    document.cookie = "session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+    document.cookie =
+      "session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
     router.push("/login");
   };
 
@@ -64,7 +65,12 @@ export default function AdminHeader() {
         className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ""}`}
       >
         <div className={styles.sidebarHeader}>
-          <h1 className={styles.headerText}>ADMIN</h1>
+          <Image
+            src="/dms-logo.png"
+            alt="Sidebar Logo"
+            width={200}
+            height={100}
+          />
           <button className={styles.closeSidebar} onClick={toggleSidebar}>
             &times;
           </button>
@@ -72,72 +78,73 @@ export default function AdminHeader() {
 
         <nav className={styles.sidebarNav}>
           <a
-  href="/admin/dashboard"
-  className={`${styles.sidebarLink} ${
-    pathname.includes("/admin/dashboard") ? styles.activeLink : ""
-  }`}
->
-  <LayoutDashboard size={18} className={styles.icon} />
-  Dashboard
-</a>
+            href="/admin/dashboard"
+            className={`${styles.sidebarLink} ${
+              pathname.includes("/admin/dashboard") ? styles.activeLink : ""
+            }`}
+          >
+            <LayoutDashboard size={18} className={styles.icon} />
+            Dashboard
+          </a>
 
-<a
-  href="/admin/user-management"
-  className={`${styles.sidebarLink} ${
-    pathname.includes("/admin/user-management") ? styles.activeLink : ""
-  }`}
->
-  <User size={18} className={styles.icon} />
-  User Management
-</a>
+          <a
+            href="/admin/user-management"
+            className={`${styles.sidebarLink} ${
+              pathname.includes("/admin/user-management")
+                ? styles.activeLink
+                : ""
+            }`}
+          >
+            <User size={18} className={styles.icon} />
+            User Management
+          </a>
 
-<a
-  href="/admin/document-overview"
-  className={`${styles.sidebarLink} ${
-    pathname.includes("/admin/document-overview") ? styles.activeLink : ""
-  }`}
->
-  <File size={18} className={styles.icon} />
-  Documents Overview
-</a>
+          <a
+            href="/admin/document-overview"
+            className={`${styles.sidebarLink} ${
+              pathname.includes("/admin/document-overview")
+                ? styles.activeLink
+                : ""
+            }`}
+          >
+            <File size={18} className={styles.icon} />
+            Documents Overview
+          </a>
 
-<a
-  href="/admin/deleted-documents"
-  className={`${styles.sidebarLink} ${
-    pathname.includes("/admin/deleted-documents") ? styles.activeLink : ""
-  }`}
->
-  <Delete size={18} className={styles.icon} />
-  Deleted Documents
-</a>
+          <a
+            href="/admin/deleted-documents"
+            className={`${styles.sidebarLink} ${
+              pathname.includes("/admin/deleted-documents")
+                ? styles.activeLink
+                : ""
+            }`}
+          >
+            <Delete size={18} className={styles.icon} />
+            Deleted Documents
+          </a>
 
-<a
-  href="/admin/activity-logs"
-  className={`${styles.sidebarLink} ${
-    pathname.includes("/admin/activity-logs") ? styles.activeLink : ""
-  }`}
->
-  <Activity size={18} className={styles.icon} />
-  Activity Logs
-</a>
+          <a
+            href="/admin/activity-logs"
+            className={`${styles.sidebarLink} ${
+              pathname.includes("/admin/activity-logs") ? styles.activeLink : ""
+            }`}
+          >
+            <Activity size={18} className={styles.icon} />
+            Activity Logs
+          </a>
 
-<a
-  href="/admin/settings"
-  className={`${styles.sidebarLink} ${
-    pathname.includes("/admin/settings") ? styles.activeLink : ""
-  }`}
->
-  <Settings size={18} className={styles.icon} />
-  Settings
-</a>
-
+          <a
+            href="/admin/settings"
+            className={`${styles.sidebarLink} ${
+              pathname.includes("/admin/settings") ? styles.activeLink : ""
+            }`}
+          >
+            <Settings size={18} className={styles.icon} />
+            Settings
+          </a>
         </nav>
 
-        <a
-          href="/login"
-          className={styles.logoutLink}
-          onClick={handleLogout}
-        >
+        <a href="/login" className={styles.logoutLink} onClick={handleLogout}>
           <LogOut size={18} className={styles.icon} />
           Logout
         </a>
@@ -153,13 +160,14 @@ export default function AdminHeader() {
           >
             &#9776;
           </button>
-          <h1 className={styles.headerText}>ADMIN</h1>
+          <Image src="/dms-logo.png" alt="Logo" width={180} height={50} />
         </div>
 
         <div className={styles.rightWrapper}>
-          <Search />
           <div className={styles.userInfo}>
-            <span className={styles.userName}>Welcome, {user?.FirstName}</span>
+            <span className={styles.userName}>
+              Welcome, {user ? `${user.FirstName} ${user.LastName}!` : ""}
+            </span>
             <div className={styles.userIcon}>{firstInitial}</div>
           </div>
         </div>
