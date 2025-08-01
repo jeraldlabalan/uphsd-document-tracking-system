@@ -35,6 +35,7 @@ export default function UserManagement() {
 
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -50,9 +51,22 @@ export default function UserManagement() {
       try {
         const res = await fetch("/api/admin/user-management/users");
         const data = await res.json();
-        setUsers(data);
+
+        if (Array.isArray(data)) {
+          setUsers(data);
+          setError(null);
+        } else if (data && typeof data === "object" && "error" in data) {
+          setError(data.error || "Unknown API error");
+          setUsers([]);
+        } else {
+          setError("Unexpected API response");
+          setUsers([]);
+          console.error("API did not return an array:", data);
+        }
       } catch (err) {
         console.error("Failed to fetch users", err);
+        setError("Failed to fetch users");
+        setUsers([]);
       } finally {
         setLoading(false);
       }
@@ -62,13 +76,9 @@ export default function UserManagement() {
   }, []);
 
   const filteredUsers = users.filter((user) => {
-    // Filter by status if selected
     const statusMatch = !statusFilter || user.status === statusFilter;
-
-    // Lowercase search string for case-insensitive search
     const searchLower = search.toLowerCase();
 
-    // Check if any searchable field contains the search text
     const searchableFields = [
       user.id.toString(),
       user.name.toLowerCase(),
@@ -85,7 +95,6 @@ export default function UserManagement() {
       field.includes(searchLower)
     );
 
-    // Filter by date range if set
     const userDate = new Date(user.dateCreated);
     const from = dateFrom ? new Date(dateFrom) : null;
     const to = dateTo ? new Date(dateTo) : null;
@@ -184,6 +193,8 @@ export default function UserManagement() {
 
           {loading ? (
             <p>Loading users...</p>
+          ) : error ? (
+            <p style={{ color: "red" }}>Error: {error}</p>
           ) : (
             <table className={styles.docTable}>
               <thead>
@@ -229,39 +240,37 @@ export default function UserManagement() {
                     </td>
                     <td>{new Date(user.dateCreated).toLocaleDateString()}</td>
                     <td>
-                      {/* No action buttons if user is terminated */}
-                      {user.status !== "Terminated" && (
-                        <>
-                          <Link
-                            href="/admin/user-management/edit-user"
+                      <>
+                        <Link
+                          href="/admin/user-management/edit-user"
+                          className={styles.actionBtn}
+                        >
+                          Edit
+                        </Link>
+                        {user.status === "Active" && (
+                          <button
                             className={styles.actionBtn}
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowTerminateConfirm(true);
+                            }}
                           >
-                            Edit
-                          </Link>
-                          {user.status === "Active" && (
-                            <button
-                              className={styles.actionBtn}
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setShowTerminateConfirm(true);
-                              }}
-                            >
-                              Terminate
-                            </button>
-                          )}
-                          {user.status === "Inactive" && (
-                            <button
-                              className={styles.actionBtn}
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setShowEditConfirm(true);
-                              }}
-                            >
-                              Reactivate
-                            </button>
-                          )}
-                        </>
-                      )}
+                            Terminate
+                          </button>
+                        )}
+                        {(user.status === "Inactive" ||
+                          user.status === "Terminated") && (
+                          <button
+                            className={styles.actionBtn}
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowEditConfirm(true);
+                            }}
+                          >
+                            Reactivate
+                          </button>
+                        )}
+                      </>
                     </td>
                   </tr>
                 ))}
@@ -270,12 +279,15 @@ export default function UserManagement() {
           )}
         </div>
 
-        {/* Modals */}
+        {/* Reactivate Confirmation Modal */}
         {showEditConfirm && (
           <div className={styles.modalOverlay}>
             <div className={styles.modalContent}>
               <h3 className={styles.editmodalTitle}>Confirm Reactivation</h3>
-              <p>Are you sure you want to reactivate this account?</p>
+              <p>
+                Are you sure you want to reactivate the account for{" "}
+                <strong>{selectedUser?.name}</strong>?
+              </p>
               <div className={styles.modalActions}>
                 <button
                   className={styles.reactivatecancelButton}
@@ -320,13 +332,17 @@ export default function UserManagement() {
           </div>
         )}
 
+        {/* Terminate Confirmation Modal */}
         {showTerminateConfirm && (
           <div className={styles.modalOverlay}>
             <div className={styles.modalContent}>
               <h3 className={styles.terminatemodalTitle}>
                 Confirm Termination
               </h3>
-              <p>Are you sure you want to terminate this account?</p>
+              <p>
+                Are you sure you want to terminate the account for{" "}
+                <strong>{selectedUser?.name}</strong>?
+              </p>
               <div className={styles.modalActions}>
                 <button
                   className={styles.terminatecancelButton}

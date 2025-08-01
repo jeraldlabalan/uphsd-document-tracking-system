@@ -3,7 +3,6 @@ import { db } from "@/lib/db";
 
 export async function GET() {
   try {
-    // Fetch all users including terminated (IsDeleted = true)
     const users = await db.user.findMany({
       select: {
         UserID: true,
@@ -22,7 +21,6 @@ export async function GET() {
       },
     });
 
-    // Map users to frontend shape
     const formatted = users.map((user) => ({
       id: user.UserID,
       name: `${user.FirstName} ${user.LastName}`,
@@ -30,9 +28,9 @@ export async function GET() {
       mobile: user.MobileNumber,
       sex: user.Sex,
       employeeId: user.EmployeeID,
-      department: user.Department?.Name || "N/A",
-      position: user.Position.Name,
-      role: user.Role.RoleName,
+      department: user.Department?.Name ?? "N/A",
+      position: user.Position?.Name ?? "N/A",
+      role: user.Role?.RoleName ?? "N/A",
       status: user.IsDeleted
         ? "Terminated"
         : user.IsActive
@@ -43,7 +41,7 @@ export async function GET() {
 
     return NextResponse.json(formatted);
   } catch (error) {
-    console.error("Error fetching users:", error);
+    console.error("Error fetching users in API:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }
