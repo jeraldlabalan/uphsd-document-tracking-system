@@ -1,0 +1,853 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { Document, Page, pdfjs } from "react-pdf";
+import { PDFDocument, rgb } from "pdf-lib";
+import { Rnd } from "react-rnd";
+import { StandardFonts } from "pdf-lib";
+import { Placeholder } from "../../e-sign/types"
+import styles from "./PDFViewer.module.css"
+import SignatureModal from "../signatureModal/SignatureModal";
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+
+type Props = {
+  role: string;
+  pdfUrl: string | null;
+};
+
+export default function PDFViewer({ role, pdfUrl }: Props) {
+
+  const [signatureImage, setSignatureImage] = useState<string | null>(null);
+  const [placeholders, setPlaceholders] = useState<Placeholder[]>([]);
+  const [numPages, setNumPages] = useState<number>(0);
+
+
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const [imgDims, setImgDims] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!signatureImage) return;
+
+    const img = new window.Image(); // ✅ native DOM image
+    img.onload = () => {
+      setImgDims({ width: img.width, height: img.height });
+    };
+    img.src = signatureImage;
+  }, [signatureImage]);
+
+  // Only for testing purposes
+  const [testRole, setTestRole] = useState<string>("sender");
+
+  const activeRole = testRole || role; // prefer testRole if set, else fallback to real role
+
+  const MIN_WIDTH = 150;
+  const MAX_WIDTH = 300;
+  const MIN_HEIGHT = 40;
+  const MAX_HEIGHT = 150;
+
+  const [containerDims, setContainerDims] = useState<{
+    width: number;
+    height: number;
+  }>({ width: 800, height: 1000 });
+
+  const canSign = placeholders.some((p) => p.signee === role && !p.isSigned);
+  const [selectedPlaceholder, setSelectedPlaceholder] =
+    useState<Placeholder | null>(null);
+
+  const [draggingEnabled, setDraggingEnabled] = useState(false);
+
+  const [dragRect, setDragRect] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(
+    null
+  );
+
+  const [dragPage, setDragPage] = useState<number | null>(null);
+
+  const [assignModal, setAssignModal] = useState<{
+    visible: boolean;
+    page: number;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    editingId?: number;
+  } | null>(null);
+
+  const [search, setSearch] = useState("");
+
+  const signees = [
+    { id: "emp001", name: "Alice Mendoza" },
+    { id: "emp002", name: "Bob Santos" },
+    { id: "emp003", name: "Charlie Reyes" },
+    // etc.
+  ];
+
+  const filteredSignees = signees.filter((s) =>
+    s.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleMouseDown = (
+    e: React.MouseEvent<HTMLDivElement>,
+    page: number
+  ) => {
+    if (!draggingEnabled || role !== "sender") return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    setDragStart({ x, y });
+    setDragPage(page);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!dragStart || dragPage === null) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const width = Math.abs(x - dragStart.x);
+    const height = Math.abs(y - dragStart.y);
+    const originX = Math.min(x, dragStart.x);
+    const originY = Math.min(y, dragStart.y);
+
+    setDragRect({ x: originX, y: originY, width, height });
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (dragRect && dragPage !== null) {
+      setAssignModal({
+        visible: true,
+        page: dragPage,
+        x: dragRect.x,
+        y: dragRect.y,
+        width: dragRect.width,
+        height: dragRect.height,
+      });
+
+      setSelectedAssignee(null); // <-- add this line
+    }
+
+    setDragStart(null);
+    setDraggingEnabled(false);
+  };
+
+  const assignSignee = (
+    signee: string,
+    signeeName: string,
+    editingId?: number
+  ) => {
+    if (editingId) {
+      setPlaceholders((prev) =>
+        prev.map((ph) =>
+          ph.id === editingId
+            ? {
+                ...ph,
+                signee,
+                signeeName,
+                isSigned: false,
+                signedAt: null,
+                initials: null,
+              }
+            : ph
+        )
+      );
+    } else {
+      if (!dragRect || dragPage === null) return;
+
+      const newPlaceholder: Placeholder = {
+        id: Date.now(),
+        page: dragPage,
+        x: dragRect.x,
+        y: dragRect.y,
+        width: MIN_WIDTH,
+        height: MIN_HEIGHT,
+        signee,
+        signeeName,
+        isSigned: false,
+        signedAt: null,
+        initials: null,
+      };
+
+      setPlaceholders((prev) => [...prev, newPlaceholder]);
+      setDragRect(null);
+      setDragPage(null);
+    }
+
+    // ✅ Keep the selected signee state updated
+    setSelectedAssignee({ signee, signeeName });
+
+    setAssignModal(null);
+  };
+
+  const applySignature = async () => {
+    if (!signatureImage) return;
+
+    try {
+      if (!pdfUrl) {
+        console.error("No PDF URL provided");
+        return;
+      }
+
+      const existingPdfBytes = await fetch(pdfUrl).then((res) =>
+        res.arrayBuffer()
+      );
+      const pdfDoc = await PDFDocument.load(existingPdfBytes);
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const pages = pdfDoc.getPages();
+
+      // ✅ Determine image format and decode base64
+      const imageTypeMatch = signatureImage.match(
+        /^data:image\/(png|jpeg);base64,/
+      );
+      if (!imageTypeMatch) {
+        throw new Error("Unsupported image format");
+      }
+      const imageType = imageTypeMatch[1];
+      const base64 = signatureImage.replace(
+        /^data:image\/(png|jpeg);base64,/,
+        ""
+      );
+      const byteArray = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+
+      const embeddedImage =
+        imageType === "png"
+          ? await pdfDoc.embedPng(byteArray)
+          : await pdfDoc.embedJpg(byteArray);
+
+      const now = new Date();
+      const dateOnly = now.toLocaleDateString();
+      const timeOnly = now.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const timestamp = now.toLocaleString();
+
+      const signeeName =
+        signees.find((s) => s.id === role)?.name || role.toUpperCase();
+      const initials = signeeName
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase();
+
+      const updatedPlaceholders: Placeholder[] = placeholders.map((ph) => {
+        if (ph.signee === role && !ph.isSigned) {
+          const page = pages[ph.page];
+          const { width, height } = page.getSize();
+
+          const scaleX = width / containerDims.width;
+          const scaleY = height / containerDims.height;
+
+          const pdfX = ph.x * scaleX;
+          const pdfY = (containerDims.height - ph.y - ph.height) * scaleY;
+          const pdfWidth = ph.width * scaleX;
+          const pdfHeight = ph.height * scaleY;
+          const padding = 6;
+
+          // Draw dashed border
+          page.drawRectangle({
+            x: pdfX,
+            y: pdfY,
+            width: pdfWidth,
+            height: pdfHeight,
+            borderColor: rgb(0, 0, 0),
+            borderWidth: 1,
+            borderDashArray: [3, 3],
+          });
+
+          const halfWidth = pdfWidth / 2;
+          const imgBoxWidth = halfWidth - padding * 2;
+          const imgBoxHeight = pdfHeight - padding * 2;
+
+          // 🖼 Scale image to fit left box
+          const scaled = embeddedImage.scale(1);
+          const originalWidth = scaled.width;
+          const originalHeight = scaled.height;
+
+          const scale = Math.min(
+            imgBoxWidth / originalWidth,
+            imgBoxHeight / originalHeight
+          );
+          const scaledWidth = originalWidth * scale;
+          const scaledHeight = originalHeight * scale;
+
+          const imgX = pdfX + padding + (imgBoxWidth - scaledWidth) / 2;
+          const imgY = pdfY + padding + (imgBoxHeight - scaledHeight) / 2;
+
+          page.drawImage(embeddedImage, {
+            x: imgX,
+            y: imgY,
+            width: scaledWidth,
+            height: scaledHeight,
+          });
+
+          // 📝 Text on the right half
+          const textBlockX = pdfX + halfWidth + padding;
+          const textLines = [
+            { text: "Digitally signed by", size: 8 },
+            { text: signeeName, size: 10 },
+            { text: `Date: ${dateOnly}`, size: 7 },
+            { text: `Time: ${timeOnly}`, size: 7 },
+          ];
+          const lineHeight = 12;
+          const totalTextHeight = textLines.length * lineHeight;
+          const textStartY =
+            pdfY + (pdfHeight + totalTextHeight) / 2 - lineHeight;
+
+          textLines.forEach((line, i) => {
+            const textWidth = font.widthOfTextAtSize(line.text, line.size);
+            const textX =
+              textBlockX + (halfWidth - padding * 2 - textWidth) / 2;
+            page.drawText(line.text, {
+              x: textX,
+              y: textStartY - i * lineHeight,
+              size: line.size,
+              font,
+              color: rgb(0, 0, 0),
+            });
+          });
+
+          return {
+            ...ph,
+            isSigned: true,
+            signedAt: timestamp,
+            initials,
+          };
+        }
+        return ph;
+      });
+
+      setPlaceholders(updatedPlaceholders);
+
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      window.open(url);
+    } catch (err) {
+      console.error("Error applying signature:", err);
+      alert("Failed to apply signature. See console for details.");
+    }
+  };
+
+  const placeholderRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+
+  const [nextScrollIndex, setNextScrollIndex] = useState(0);
+
+  const jumpToNextSignature = () => {
+    const unsignedPlaceholders = placeholders.filter(
+      (ph) => ph.signee === role && !ph.isSigned
+    );
+
+    if (unsignedPlaceholders.length === 0) {
+      alert("No unsigned placeholders for you.");
+      return;
+    }
+
+    const current =
+      unsignedPlaceholders[nextScrollIndex % unsignedPlaceholders.length];
+    const ref = placeholderRefs.current[current.id];
+
+    if (ref) {
+      ref.scrollIntoView({ behavior: "smooth", block: "center" });
+      setNextScrollIndex((prev) => (prev + 1) % unsignedPlaceholders.length);
+    }
+  };
+
+  const [selectedAssignee, setSelectedAssignee] = useState<{
+    signee: string;
+    signeeName: string;
+  } | null>(null);
+
+  const [resizingEnabled, setResizingEnabled] = useState(true);
+
+  if (!pdfUrl) return <p>Please upload a PDF document.</p>;
+
+  return (
+    <div>
+      {/* Drag and Drop */}
+      {activeRole === "sender" && (
+        <button
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.setData("text/plain", "add-signature");
+          }}
+          className={styles.dragAndDropButton}
+        >
+         Add Signature
+        </button>
+      )}
+
+      {/* Jump to Signature */}
+      {activeRole !== "sender" && (
+        <button className={styles.jumpToSignature}
+          onClick={jumpToNextSignature}
+        >
+          Jump to Signature
+        </button>
+      )}
+
+      {activeRole !== "sender" && (
+        <p className="text-sm mb-2">
+          You have{" "}
+          <strong>
+            {
+              placeholders.filter(
+                (ph) => ph.signee === activeRole && !ph.isSigned
+              ).length
+            }
+          </strong>{" "}
+          signature placeholder
+          {placeholders.filter((ph) => ph.signee === activeRole && !ph.isSigned)
+            .length === 1
+            ? ""
+            : "s"}{" "}
+          remaining.
+        </p>
+      )}
+
+      {/* Document Container */}
+      <div
+        onMouseUp={handleMouseUp}
+        style={{
+          height: "100vh",
+          overflowY: "auto",
+          border: "1px solid #ccc",
+          padding: "10px",
+        }}
+      >
+        <Document
+          file={pdfUrl}
+          onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+          onLoadError={console.error}
+        >
+          {Array.from(new Array(numPages), (_, i) => (
+            <div
+              key={`page_${i + 1}`}
+              style={{ position: "relative", marginBottom: 20, border: "2px solid black" }}
+              onMouseDown={(e) => handleMouseDown(e, i)}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onDragOver={(e) => e.preventDefault()} // ✅ Required to allow dropping
+              onDrop={(e) => {
+                e.preventDefault();
+                const data = e.dataTransfer.getData("text/plain");
+                if (data === "add-signature") {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const dropX = e.clientX - rect.left;
+                  const dropY = e.clientY - rect.top;
+
+                  setDragPage(i);
+                  setDragRect({
+                    x: dropX,
+                    y: dropY,
+                    width: 80,
+                    height: 30,
+                  });
+
+                  setAssignModal({
+                    visible: true,
+                    page: i,
+                    x: dropX,
+                    y: dropY,
+                    width: 80,
+                    height: 30,
+                  });
+
+                  setSelectedAssignee(null);
+                  setResizingEnabled(false); // ✅ disable resizing
+                }
+              }}
+            >
+              <Page
+                scale={1} 
+                pageNumber={i + 1}
+                width={containerDims.width}
+                onRenderSuccess={({ width, height }) =>
+                  setContainerDims({ width, height })
+                }
+              />
+
+              {placeholders
+                .filter((ph) => {
+                  if (ph.page !== i) return false;
+                  if (
+                    role === "signee" &&
+                    selectedAssignee?.signee !== ph.signee
+                  )
+                    return false;
+                  return true;
+                })
+                .map((ph) => (
+                  <Rnd
+                    size={{ width: ph.width, height: ph.height }}
+                    position={{ x: ph.x, y: ph.y }}
+                    minWidth={MIN_WIDTH}
+                    maxWidth={MAX_WIDTH}
+                    minHeight={MIN_HEIGHT}
+                    maxHeight={MAX_HEIGHT}
+                    enableResizing={
+                      role === "sender"
+                        ? {
+                            top: true,
+                            right: true,
+                            bottom: true,
+                            left: true,
+                            topRight: true,
+                            bottomRight: true,
+                            bottomLeft: true,
+                            topLeft: true,
+                          }
+                        : false
+                    }
+                    key={ph.id}
+                    onDragStop={(e, d) => {
+                      setPlaceholders((prev) =>
+                        prev.map((p) =>
+                          p.id === ph.id ? { ...p, x: d.x, y: d.y } : p
+                        )
+                      );
+                    }}
+                    onResizeStop={(e, direction, ref, delta, position) => {
+                      setPlaceholders((prev) =>
+                        prev.map((p) =>
+                          p.id === ph.id
+                            ? {
+                                ...p,
+                                width: parseInt(ref.style.width),
+                                height: parseInt(ref.style.height),
+                                x: position.x,
+                                y: position.y,
+                              }
+                            : p
+                        )
+                      );
+                    }}
+                    disableDragging={role !== "sender"}
+                    bounds="parent"
+                    style={{ zIndex: 10 }}
+                  >
+                    <div
+                      ref={(el) => {
+                        placeholderRefs.current[ph.id] = el;
+                      }}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        background: "#f0f0f0",
+                        border: "2px dashed #555",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexDirection: "column",
+                        fontSize: 10,
+                        padding: 4,
+                        position: "relative",
+                        cursor: role === "sender" ? "move" : "default",
+                        userSelect: "none",
+                      }}
+                      onMouseDown={(e) => {
+                        if (role !== "sender") return;
+
+                        const clickTime = Date.now();
+
+                        const handleMouseUp = (upEvent: MouseEvent) => {
+                          const dragDuration = Date.now() - clickTime;
+
+                          // 🛑 Prevent modal if the click was on the remove button
+                          if (
+                            (e.target as HTMLElement)?.closest(
+                              "[data-ignore-click]"
+                            ) ||
+                            (upEvent.target as HTMLElement)?.closest(
+                              "[data-ignore-click]"
+                            )
+                          ) {
+                            window.removeEventListener(
+                              "mouseup",
+                              handleMouseUp
+                            );
+                            return;
+                          }
+
+                          // ✅ Only show modal if it's a quick click (not a drag)
+                          if (dragDuration < 200) {
+                            setAssignModal({
+                              x: ph.x + 50,
+                              y: ph.y,
+                              page: ph.page,
+                              existingId: ph.id,
+                              width: ph.width,
+                              height: ph.height,
+                              visible: true,
+                            });
+                            setSelectedAssignee({
+                              signee: ph.signee ?? "",
+                              signeeName: ph.signeeName ?? "",
+                            });
+                          }
+
+                          window.removeEventListener("mouseup", handleMouseUp);
+                        };
+
+                        window.addEventListener("mouseup", handleMouseUp);
+                      }}
+                    >
+                      {role === "sender" && (
+                        <div
+                          data-ignore-click
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent modal from opening
+                            setPlaceholders((prev) =>
+                              prev.filter((p) => p.id !== ph.id)
+                            );
+                          }}
+                          style={{
+                            position: "absolute",
+                            top: -8,
+                            right: -8,
+                            background: "#fff",
+                            border: "1px solid #ccc",
+                            borderRadius: "50%",
+                            width: 16,
+                            height: 16,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 10,
+                            fontWeight: "bold",
+                            color: "#f00",
+                            cursor: "pointer",
+                            zIndex: 20,
+                          }}
+                          title="Remove placeholder"
+                        >
+                          ×
+                        </div>
+                      )}
+
+                      <div style={{ color: "black" }}>
+                        <strong>{ph.signeeName || ph.signee}</strong>
+                      </div>
+
+                      {ph.isSigned ? (
+                        <div className="text-center">
+                          <div>
+                            <strong>{ph.initials}</strong>
+                          </div>
+                          <div className="text-[8px] text-gray-600">
+                            {ph.signedAt}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-red-500">
+                          Needs to sign
+                        </div>
+                      )}
+                    </div>
+                  </Rnd>
+                ))}
+
+              {/* Drag Rectangle */}
+              {dragRect && dragPage === i && (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: dragRect.x,
+                    top: dragRect.y,
+                    width: dragRect.width,
+                    height: dragRect.height,
+                    backgroundColor: "rgba(255, 0, 0, 0.2)",
+                    border: "2px dashed red",
+                    zIndex: 20,
+                    pointerEvents: "none",
+                  }}
+                />
+              )}
+
+              {/* Assign Modal (now inside the loop!) */}
+              {assignModal?.visible && assignModal.page === i && (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: Math.min(
+                      assignModal.x + assignModal.width + 10,
+                      containerDims.width - 200
+                    ),
+                    top: Math.min(assignModal.y, containerDims.height - 180), // adjusted height
+                    background: "#fff",
+                    color: "#000",
+                    border: "1px solid #333",
+                    padding: "10px",
+                    zIndex: 999,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    borderRadius: "4px",
+                    width: "200px",
+                  }}
+                >
+                  <h4 style={{ marginBottom: "8px" }}>Assign Signee</h4>
+
+                  <input
+                    type="text"
+                    placeholder="Search signee..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "6px",
+                      marginBottom: "8px",
+                      border: "1px solid #ccc",
+                      borderRadius: "4px",
+                      fontSize: "14px",
+                    }}
+                  />
+
+                  <div
+                    style={{
+                      maxHeight: "100px",
+                      overflowY: "auto",
+                      marginBottom: "8px",
+                      border: "1px solid #eee",
+                      borderRadius: "4px",
+                    }}
+                  >
+                    {filteredSignees.length === 0 && (
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          padding: "4px",
+                          color: "#888",
+                        }}
+                      >
+                        No matches found.
+                      </div>
+                    )}
+
+                    {filteredSignees.map((sig) => (
+                      <div
+                        key={sig.id}
+                        onClick={() => {
+                          assignSignee(
+                            sig.id,
+                            sig.name,
+                            assignModal?.existingId
+                          );
+                        }}
+                        style={{
+                          padding: "6px",
+                          cursor: "pointer",
+                          fontSize: "14px",
+                          borderBottom: "1px solid #f0f0f0",
+                          backgroundColor: "#f9f9f9",
+                        }}
+                      >
+                        {sig.name}
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setAssignModal(null)}
+                    style={{
+                      marginTop: 4,
+                      width: "100%",
+                      padding: "6px",
+                      fontSize: "14px",
+                      background: "#eee",
+                      border: "1px solid #ccc",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {selectedPlaceholder && (
+            <div
+              style={{
+                position: "fixed",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                background: "#fff",
+                padding: 20,
+                border: "1px solid #ccc",
+                borderRadius: 8,
+                zIndex: 9999,
+              }}
+            >
+              <h4>Edit Placeholder</h4>
+              <button
+                onClick={() => {
+                  setAssignModal({
+                    visible: true,
+                    page: selectedPlaceholder.page,
+                    x: selectedPlaceholder.x,
+                    y: selectedPlaceholder.y,
+                    width: selectedPlaceholder.width,
+                    height: selectedPlaceholder.height,
+                    editingId: selectedPlaceholder.id,
+                  });
+                  setSelectedPlaceholder(null);
+                }}
+              >
+                Change Signee
+              </button>
+              <button
+                onClick={() => {
+                  setPlaceholders((prev) =>
+                    prev.filter((p) => p.id !== selectedPlaceholder.id)
+                  );
+                  setSelectedPlaceholder(null);
+                }}
+              >
+                Delete Placeholder
+              </button>
+              <button onClick={() => setSelectedPlaceholder(null)}>
+                Cancel
+              </button>
+            </div>
+          )}
+        </Document>
+      </div>
+
+      {role !== "sender" && (
+        <>
+          <p>
+            You have{" "}
+            {
+              placeholders.filter((ph) => ph.signee === role && !ph.isSigned)
+                .length
+            }{" "}
+            placeholders to sign.
+          </p>
+
+          <button onClick={() => setModalOpen(true)}>Sign Document</button>
+        </>
+      )}
+
+      {/* Modal */}
+      <SignatureModal
+        modalOpen={modalOpen}
+        setModalOpen={setModalOpen}
+        applySignature={applySignature}
+        signatureImage={signatureImage}
+        setSignatureImage={setSignatureImage}
+      />
+    </div>
+  );
+}

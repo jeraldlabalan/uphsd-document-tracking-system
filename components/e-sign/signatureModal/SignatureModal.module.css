@@ -1,0 +1,141 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+
+/* Modal content styles */
+.modalContent {
+  background-color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  width: clamp(300px, 90vw, 400px); /* Responsive width */
+  height: clamp(300px, 50vh, 400px); /* Responsive height */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  overflow: hidden; /* Prevent scrollbars inside */
+}
+
+.drawContainer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+
+
+.toggleButtons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.userSignaturePlaceholder {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.signatureButton {
+    width: 50%;
+    color: black;
+}
+
+.signatureButton:first-of-type {
+    
+}
+
+.signatureButton:last-of-type {
+    
+}
+
+.toggleActive {
+  color: black;
+  width: 50%;
+  background-color: maroon;
+  color: white;
+}
+
+
+.sigCanvas {
+  border: 2px solid #ccc;
+  width: 100%;
+  flex: 1;
+  border-radius: 5px;
+}
+
+
+.userUploadedSignatureContainer {
+  width: 90%;
+  height: 90%;
+  position: relative;
+}
+
+.userUploadedSignatureContainer img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+
+.uploadSignatureContainer {
+ width: 100%;
+ height: 100%;
+ flex: 1;
+}
+
+
+.uploadContainerUI {
+    color: black;
+    flex: 1;
+    height: 100%;
+    width: 100%;
+}
+
+.saveDrawnSignature {
+    color: black;
+    background-color: lawngreen;
+    padding: 5px 20px;
+    text-transform: capitalize;
+}
+
+.applySignatureButton {
+    color: black;
+    background-color: maroon;
+    padding: 5px 20px;
+    text-transform: capitalize;
+    color: white;
+}
+
+.uploadDropZone {
+  width: 100%;
+  flex: 1;
+  border: 2px dashed #aaa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background-color: #f9f9f9;
+  transition: background-color 0.2s ease;
+  text-align: center;
+  padding: 1rem;
+  color: black;
+  border-radius: 5px;
+}
