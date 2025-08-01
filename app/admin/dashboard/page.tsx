@@ -1,109 +1,262 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import styles from "./adminDashboardStyles.module.css";
 import AdminHeader from "@/components/shared/adminHeader";
-import { Search as SearchIcon } from "lucide-react";
-import Image from "next/image";
-import { X } from "lucide-react";
-import Link from "next/link";
+import { X, Users, FileText, School } from "lucide-react";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { Users, FileText, Clock, School } from "lucide-react";
+import Link from "next/link";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 
-type DashboardDocuments = {
-  id: string;
-  name: string;
-  type: string;
-  file: string;
-  status: string;
-  date: string;
-  creator: string;
-  preview: string;
-};
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function AdminDashboard() {
   useEffect(() => {
-    AOS.init({
-      duration: 1000,
-      once: true,
-    });
+    AOS.init({ duration: 1000, once: true });
   }, []);
 
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
-  const [selectedDoc, setSelectedDoc] = useState<DashboardDocuments | null>(
-    null
-  );
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [activeChart, setActiveChart] = useState<"weekly" | "monthly" | "yearly" | null>(null);
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [selectedDetails, setSelectedDetails] = useState<string[]>([]);
 
-  const documents: DashboardDocuments[] = [
-    {
-      id: "DOC001",
-      name: "IT Equipment Purchase Request",
-      type: "Request",
-      file: "PDF File",
-      status: "Pending",
-      date: "July 5, 2025",
-      creator: "Kai Sotto",
-      preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
-    },
-    {
-      id: "DOC002",
-      name: "Student Grades",
-      type: "Evaluation",
-      file: "PDF File",
-      status: "Completed",
-      date: "July 5, 2025",
-      creator: "Kobe Bryant",
-      preview: "/example-doc.png",
-    },
-    {
-      id: "DOC003",
-      name: "Student Good Moral Request",
-      type: "Request",
-      file: "PDF File",
-      status: "Pending",
-      date: "July 5, 2025",
-      creator: "Kyrie Irving",
-      preview: "/example-doc.png",
-    },
-  ];
+  const summaryRef = useRef<HTMLDivElement>(null);
+  const weeklyRef = useRef<HTMLDivElement>(null);
+  const monthlyRef = useRef<HTMLDivElement>(null);
+  const yearlyRef = useRef<HTMLDivElement>(null);
 
-  const handleDownload = () => {
-    if (selectedDoc?.preview) {
-      const link = document.createElement("a");
-      link.href = selectedDoc.preview;
-      link.download = selectedDoc.name || "document";
-      link.click();
-      document.body.removeChild(link);
+  const printRef = useRef<HTMLDivElement>(null);
+
+
+
+  const weeklyData = [3, 2, 4, 1, 5, 0, 2];
+  const monthlyData = [10, 12, 8, 14, 6, 11, 15, 9];
+  const yearlyData = [100];
+
+  const weeklyChartRef = useRef<any>(null);
+const monthlyChartRef = useRef<any>(null);
+const yearlyChartRef = useRef<any>(null);
+
+const [weeklyChartImg, setWeeklyChartImg] = useState<string | null>(null);
+const [monthlyChartImg, setMonthlyChartImg] = useState<string | null>(null);
+const [yearlyChartImg, setYearlyChartImg] = useState<string | null>(null);
+
+const prepareChartImages = () => {
+  if (weeklyChartRef.current) {
+    setWeeklyChartImg(weeklyChartRef.current.canvas.toDataURL());
+  }
+  if (monthlyChartRef.current) {
+    setMonthlyChartImg(monthlyChartRef.current.canvas.toDataURL());
+  }
+  if (yearlyChartRef.current) {
+    setYearlyChartImg(yearlyChartRef.current.canvas.toDataURL());
+  }
+};
+
+
+
+  const getSelectedContent = () => {
+    const elements: HTMLElement[] = [];
+
+    if (selectedDetails.includes("users") || selectedDetails.includes("documents") || selectedDetails.includes("departments")) {
+      if (summaryRef.current) elements.push(summaryRef.current);
     }
+    if (selectedDetails.includes("weekly") && weeklyRef.current) elements.push(weeklyRef.current);
+    if (selectedDetails.includes("monthly") && monthlyRef.current) elements.push(monthlyRef.current);
+    if (selectedDetails.includes("yearly") && yearlyRef.current) elements.push(yearlyRef.current);
+
+    return elements;
   };
 
-  const handlePrint = () => {
-    if (selectedDoc?.preview) {
-      const printWindow = window.open(selectedDoc.preview, "_blank");
-      if (printWindow) {
-        printWindow.focus();
-        printWindow.onload = () => {
-          printWindow.print();
-        };
-      }
-    }
-  };
+  const handleDownload = async () => {
+  if (!printRef.current) return;
 
-  const filteredDocs = documents.filter((doc) => {
-    const statusMatch = !statusFilter || doc.status === statusFilter;
-    const typeMatch = !typeFilter || doc.type === typeFilter;
-    const searchMatch = doc.name.toLowerCase().includes(search.toLowerCase());
-    return statusMatch && typeMatch && searchMatch;
+  const canvas = await html2canvas(printRef.current, {
+    scale: 2, // High resolution
   });
 
+  const imgData = canvas.toDataURL("image/png");
+
+  const pdf = new jsPDF("p", "pt", "a4");
+  const pageWidth = pdf.internal.pageSize.getWidth(); // 595.28pt
+  const pageHeight = pdf.internal.pageSize.getHeight(); // 841.89pt
+
+  // Word-like 1-inch margins (72pt)
+  const marginTop = 10;
+  const marginBottom = 72;
+  const marginLeft = 72;
+  const marginRight = 72;
+
+  const usableWidth = pageWidth - marginLeft - marginRight;
+  const imgHeight = (canvas.height * usableWidth) / canvas.width;
+
+  let heightLeft = imgHeight;
+  let position = marginTop;
+
+  // First page
+  pdf.addImage(imgData, "PNG", marginLeft, position, usableWidth, imgHeight);
+  heightLeft -= pageHeight - marginTop - marginBottom;
+
+  // Add extra pages if needed
+  while (heightLeft > 0) {
+    position = marginTop - (imgHeight - heightLeft);
+    pdf.addPage();
+    pdf.addImage(imgData, "PNG", marginLeft, position, usableWidth, imgHeight);
+    heightLeft -= pageHeight - marginTop - marginBottom;
+  }
+
+  pdf.save("report.pdf");
+};
+
+
+
+ 
+    
   return (
     <div>
       <AdminHeader />
+
+      {/* Print-only content */}
+<div
+  id="print-template"
+  ref={printRef}
+  style={{
+    position: "absolute", 
+    top: "-10000px",
+    left: "0",
+    width: "800px",
+    padding: "1rem",
+    background: "white",
+    color: "black",
+    zIndex: -1,
+    fontSize: "12px",
+  }}
+>
+
+
+<div style={{ textAlign: "center", marginBottom: "2rem" }}>
+  
+  <h2 style={{ marginTop: "1rem", fontWeight: 700, fontSize: "18px" }}>
+    Document Tracking System Report
+  </h2>
+</div>
+
+  <div ref={summaryRef}>
+    <h3>Summary</h3>
+    <div className={styles.summary}>
+      {selectedDetails.includes("users") && (
+        <div className={styles.summaryCard}>
+          <Users />
+          <div>
+            <h4>Total Users</h4>
+            <p>30</p>
+          </div>
+        </div>
+      )}
+      {selectedDetails.includes("documents") && (
+        <div className={styles.summaryCard}>
+          <FileText />
+          <div>
+            <h4>Total Documents</h4>
+            <p>3</p>
+          </div>
+        </div>
+      )}
+      {selectedDetails.includes("departments") && (
+        <div className={styles.summaryCard}>
+          <School />
+          <div>
+            <h4>Total Departments</h4>
+            <p>5</p>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+
+  {/* Charts */}
+  {selectedDetails.includes("weekly") && (
+    <div ref={weeklyRef} style={{ marginTop: "2rem" }}>
+      <h3>Weekly Graph</h3>
+      <Bar
+        data={{
+          labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+          datasets: [{
+            label: "Weekly Documents",
+            data: weeklyData,
+            backgroundColor: "#800000"
+          }],
+        }}
+        options={{
+          responsive: false, // important for fixed size
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+        }}
+        width={600}
+        height={300}
+      />
+    </div>
+  )}
+
+  {selectedDetails.includes("monthly") && (
+    <div ref={monthlyRef} style={{ marginTop: "2rem" }}>
+      <h3>Monthly Graph</h3>
+      <Bar
+        data={{
+          labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"],
+          datasets: [{
+            label: "Monthly Documents",
+            data: monthlyData,
+            backgroundColor: "#800000"
+          }],
+        }}
+        options={{
+          responsive: false,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+        }}
+        width={600}
+        height={300}
+      />
+    </div>
+  )}
+
+  {selectedDetails.includes("yearly") && (
+    <div ref={yearlyRef} style={{ marginTop: "2rem" }}>
+      <h3>Yearly Graph</h3>
+      <Bar
+        data={{
+          labels: ["2025"],
+          datasets: [{
+            label: "Yearly Documents",
+            data: yearlyData,
+            backgroundColor: "#800000"
+          }],
+        }}
+        options={{
+          responsive: false,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+        }}
+        width={600}
+        height={300}
+      />
+    </div>
+  )}
+</div>
+
+      {/* Main Content */}
       <div className={styles.container}>
         <div data-aos="fade-up" className={styles.contentSection}>
           <div className={styles.headerRow}>
@@ -111,195 +264,170 @@ export default function AdminDashboard() {
           </div>
           <hr className={styles.separator} />
 
+          {/* Summary Cards */}
           <div className={styles.summary}>
-            <div className={`${styles.card} ${styles.orange}`}>
-              <Users className={styles.icon} />
-              <span className={styles.count}>30</span>
-              <span>Total Users</span>
-            </div>
-            <div className={`${styles.card} ${styles.cyan}`}>
-              <FileText className={styles.icon} />
-              <span className={styles.count}>3</span>
-              <span>Total Documents</span>
-            </div>
-            <div className={`${styles.card} ${styles.green}`}>
-              <Clock className={styles.icon} />
-              <span className={styles.count}>5</span>
-              <span>Pending Approvals</span>
-            </div>
-            <div className={`${styles.card} ${styles.yellow}`}>
-              <School className={styles.icon} />
-              <span className={styles.count}>5</span>
-              <span>Total Departments</span>
-            </div>
+            <Link href="./user-management" className={styles.cardLink}>
+              <div className={`${styles.card} ${styles.orange}`}>
+                <Users className={styles.icon} />
+                <span className={styles.count}>30</span>
+                <span>Total Users</span>
+              </div>
+            </Link>
+
+            <Link href="./document-overview" className={styles.cardLink}>
+              <div className={`${styles.card} ${styles.cyan}`}>
+                <FileText className={styles.icon} />
+                <span className={styles.count}>3</span>
+                <span>Total Documents</span>
+              </div>
+            </Link>
+
+            <Link href="./user-management" className={styles.cardLink}>
+              <div className={`${styles.card} ${styles.green}`}>
+                <School className={styles.icon} />
+                <span className={styles.count}>5</span>
+                <span>Total Departments</span>
+              </div>
+            </Link>
           </div>
 
-          <div className={styles.filters}>
-            <div className={styles.searchWrapper}>
-              <SearchIcon className={styles.searchIcon} size={18} />
-              <input
-                type="text"
-                placeholder="Search documents..."
-                className={styles.searchInput}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+          {/* Charts */}
+          <div className={styles.graphContainer}>
+            {["weekly", "monthly", "yearly"].map((type) => (
+              <div key={type} className={styles.chartCard} onClick={() => setActiveChart(type as any)}>
+                <h3 className={styles.chartTitle}>{type.charAt(0).toUpperCase() + type.slice(1)}</h3>
+                <Bar
+                  data={{
+                    labels:
+                      type === "weekly"
+                        ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                        : type === "monthly"
+                        ? ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"]
+                        : ["2025"],
+                    datasets: [
+                      {
+                        label: "Documents",
+                        data: type === "weekly" ? weeklyData : type === "monthly" ? monthlyData : yearlyData,
+                        backgroundColor: type === "weekly" ? "#FFA500" : type === "monthly" ? "#00BFFF" : "#32CD32",
+                      },
+                    ],
+                  }}
+                  options={{ responsive: true, maintainAspectRatio: false }}
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className={styles.graphHeader}>
+            <button className={styles.printButton} onClick={() => setShowPrintModal(true)}>
+              Download
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Modals */}
+      {activeChart && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalCard}>
+            <button className={styles.closeButton} onClick={() => setActiveChart(null)} aria-label="Close Modal">
+              <X size={20} />
+            </button>
+            <div className={styles.modalTop}>
+              <h3 className={styles.modalTitle}>{activeChart.charAt(0).toUpperCase() + activeChart.slice(1)} Documents</h3>
+            </div>
+            <div className={styles.modalChart}>
+              <Bar
+                data={{
+                  labels:
+                    activeChart === "weekly"
+                      ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                      : activeChart === "monthly"
+                      ? ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"]
+                      : ["2025"],
+                  datasets: [
+                    {
+                      label: "Documents",
+                      data:
+                        activeChart === "weekly"
+                          ? weeklyData
+                          : activeChart === "monthly"
+                          ? monthlyData
+                          : yearlyData,
+                      backgroundColor:
+                        activeChart === "weekly"
+                          ? "#FFA500"
+                          : activeChart === "monthly"
+                          ? "#00BFFF"
+                          : "#32CD32",
+                    },
+                  ],
+                }}
+                options={{ responsive: true, maintainAspectRatio: false }}
               />
             </div>
-
-            <select
-              className={styles.dropdown}
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="">All Status</option>
-              <option>Pending</option>
-              <option>In Process</option>
-              <option>Completed</option>
-              <option>Rejected</option>
-            </select>
-
-            <select
-              className={styles.dropdown}
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="">All Types</option>
-              <option>Report</option>
-              <option>Request</option>
-              <option>Evaluation</option>
-              <option>Budget</option>
-            </select>
-            <div className={styles.dateFilterWrapper}>
-              <div className={styles.dateGroup}>
-                <span className={styles.dateLabel}>From:</span>
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  className={styles.dateInput}
-                />
-              </div>
-
-              <div className={styles.dateGroup}>
-                <span className={styles.dateLabel}>To:</span>
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  className={styles.dateInput}
-                />
-              </div>
-            </div>
           </div>
-          <table className={styles.docTable}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Department</th>
-                <th>Position</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredDocs.map((doc, i) => (
-                <tr key={i}>
-                  <td>{doc.id}</td>
-                  <td>{doc.name}</td>
-                  <td>{doc.file}</td>
-                  <td>
-                    <span
-                      className={`${styles.badge} ${
-                        doc.status === "Completed"
-                          ? styles.completed
-                          : styles.pending
-                      }`}
-                    >
-                      {doc.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
+      )}
 
-        {selectedDoc && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modalCard}>
-              <button
-                className={styles.closeButton}
-                onClick={() => setSelectedDoc(null)}
-                aria-label="Close Modal"
-              >
-                <X size={20} />
-              </button>
+      {showPrintModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalCardPrint}>
+            <button className={styles.closeButton} onClick={() => setShowPrintModal(false)} aria-label="Close Modal">
+              <X size={20} />
+            </button>
+            <div className={styles.modalTop}>
+              <h3 className={styles.modalTitle}>Download Details</h3>
+            </div>
 
-              {/* Header Row */}
-              <div className={styles.modalTop}>
-                <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
-                <span
-                  className={`${styles.badge} ${
-                    selectedDoc.status === "Completed"
-                      ? styles.completed
-                      : styles.pending
-                  }`}
-                >
-                  {selectedDoc.status}
-                </span>
-              </div>
+            <div className={styles.checkboxGroup}>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={selectedDetails.length === 6}
+                  onChange={(e) =>
+                    setSelectedDetails(
+                      e.target.checked
+                        ? ["users", "documents", "departments", "weekly", "monthly", "yearly"]
+                        : []
+                    )
+                  }
+                />
+                Select All
+              </label>
+              {[
+                { label: "Total Users", value: "users" },
+                { label: "Total Documents", value: "documents" },
+                { label: "Total Departments", value: "departments" },
+                { label: "Weekly Graph", value: "weekly" },
+                { label: "Monthly Graph", value: "monthly" },
+                { label: "Yearly Graph", value: "yearly" },
+              ].map((item) => (
+                <label key={item.value}>
+                  <input
+                    type="checkbox"
+                    value={item.value}
+                    checked={selectedDetails.includes(item.value)}
+                    onChange={(e) =>
+                      setSelectedDetails((prev) =>
+                        e.target.checked
+                          ? [...prev, item.value]
+                          : prev.filter((val) => val !== item.value)
+                      )
+                    }
+                  />
+                  {item.label}
+                </label>
+              ))}
+            </div>
 
-              {/* Metadata Row */}
-              <div className={styles.metaGrid}>
-                <div className={styles.metaLabelRow}>
-                  <span>Creator:</span>
-                  <span>Type:</span>
-                  <span>Date:</span>
-                </div>
-                <div className={styles.metaValueRow}>
-                  <p>{selectedDoc.creator}</p>
-                  <p>{selectedDoc.type}</p>
-                  <p>{selectedDoc.date}</p>
-                </div>
-              </div>
-
-              {/* Document Preview */}
-              <div className={styles.previewContainer}>
-                {selectedDoc.preview?.match(/\.pdf$/i) ? (
-                  <iframe
-                    src={`${selectedDoc.preview}#toolbar=0&navpanes=0&scrollbar=0`}
-                    title="PDF Preview"
-                    width="100%"
-                    height="600px"
-                    style={{ border: "none" }}
-                  ></iframe>
-                ) : selectedDoc.preview ? (
-                  <p>
-                    <a
-                      href={selectedDoc.preview}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Download File
-                    </a>
-                  </p>
-                ) : (
-                  <p>No file selected.</p>
-                )}
-              </div>
-
-              {/* Footer Buttons */}
-              <div className={styles.modalFooter}>
-                <button className={styles.download} onClick={handleDownload}>
-                  Download
-                </button>
-                <button className={styles.print} onClick={handlePrint}>
-                  Print
-                </button>
-              </div>
+            <div className={styles.modalActions}>
+              <button className={styles.actionButton} onClick={handleDownload}>Confirm</button>
+            
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
