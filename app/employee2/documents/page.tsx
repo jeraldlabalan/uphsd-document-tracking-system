@@ -16,11 +16,7 @@ type Document = {
   date: string;
   type: string;
   creator: string;
-
   preview: string;
-
-<!--   preview?: string; -->
-
 };
 
 export default function Documents() {
@@ -60,12 +56,25 @@ export default function Documents() {
 
 useEffect(() => {
   const fetchDocuments = async () => {
-    const res = await fetch("/api/employee/documents");
-    const data = await res.json();
-    console.log("Full response:", data);
+    try {
+      const res = await fetch("/api/employee/documents");
+      const data = await res.json();
 
-    console.log("Fetched documents:", data.documents); // ✅ log this
-    setDocuments(data.docs); // ✅ correct key
+      // Log to verify shape
+      console.log("API response:", data);
+
+      // Make sure to access the array correctly
+      if (Array.isArray(data)) {
+        setDocuments(data);
+      } else if (Array.isArray(data.docs)) {
+        setDocuments(data.docs); // ✅ most likely this
+      } else {
+        console.error("❌ Invalid documents data:", data);
+        setDocuments([]); // fallback to prevent crashes
+      }
+    } catch (err) {
+      console.error("Failed to fetch documents", err);
+    }
   };
 
   fetchDocuments();
@@ -94,9 +103,47 @@ useEffect(() => {
   //   },
   // ];
 
+
+  // const formattedDocs: Document[] = documents.map((doc) => ({
+  //   id: doc.DocumentID,
+  //   name: doc.Title,
+  //   file: doc.FilePath,
+  //   status: doc.Status,
+  //   date: doc.CreatedAt.toISOString().split("T")[0],
+  //   type: doc.Type?.TypeName ?? "N/A",
+  //   creator: `${user.FirstName} ${user.LastName}`,
+  //   preview: `/uploads/${doc.FilePath}`,
+  // }));
+
+useEffect(() => {
+  const fetchDocuments = async () => {
+    try {
+      const res = await fetch("/api/employee/documents");
+      const data = await res.json();
+
+      console.log("📦 API response:", data);
+
+      if (Array.isArray(data)) {
+        setDocuments(data); // If backend returns an array directly
+      } else if (Array.isArray(data.documents)) {
+        setDocuments(data.documents); // If response is { documents: [...] }
+      } else {
+        console.error("❌ Unexpected API shape:", data);
+        setDocuments([]);
+      }
+    } catch (err) {
+      console.error("Failed to fetch documents", err);
+      setDocuments([]);
+    }
+  };
+
+  fetchDocuments();
+}, []);
+
+
   const filteredDocs = documents.filter((doc) => {
     const matchesSearch =
-      doc.creator.toLowerCase().includes(search.toLowerCase()) ||
+      doc.name.toLowerCase().includes(search.toLowerCase()) ||
       doc.id.toString().includes(search);
 
     const matchesStatus = !statusFilter || doc.status === statusFilter;
@@ -111,49 +158,6 @@ useEffect(() => {
 
     return matchesSearch && matchesStatus && matchesType && matchesDate;
   });
-
-//   const formattedDocs: Document[] = documents.map((doc) => ({
-//     id: doc.DocumentID,
-//     name: doc.Title,
-//     file: doc.FilePath,
-//     status: doc.Status,
-//     date: doc.CreatedAt.toISOString().split("T")[0],
-//     type: doc.Type?.TypeName ?? "N/A",
-//     creator: `${user.FirstName} ${user.LastName}`,
-//     preview: `/uploads/${doc.FilePath}`,
-//   }));
-
-//   useEffect(() => {
-//     const fetchDocuments = async () => {
-//       try {
-//         const res = await fetch("/api/employee/documents");
-//         const data = await res.json();
-//         setDocuments(data);
-//       } catch (err) {
-//         console.error("Failed to fetch documents", err);
-//       }
-//     };
-
-//     fetchDocuments();
-//   }, []);
-
-//   const filteredDocs = documents.filter((doc) => {
-//     const matchesSearch =
-//       doc.name.toLowerCase().includes(search.toLowerCase()) ||
-//       doc.id.toString().includes(search);
-
-//     const matchesStatus = !statusFilter || doc.status === statusFilter;
-//     const matchesType = !typeFilter || doc.type === typeFilter;
-
-//     const docDate = new Date(doc.date);
-//     const fromDate = dateFrom ? new Date(dateFrom) : null;
-//     const toDate = dateTo ? new Date(dateTo) : null;
-
-//     const matchesDate =
-//       (!fromDate || docDate >= fromDate) && (!toDate || docDate <= toDate);
-
-//     return matchesSearch && matchesStatus && matchesType && matchesDate;
-//   });
 
   const handleDownload = () => {
     if (!selectedDoc?.file) return;

@@ -30,12 +30,28 @@ export default function CreateNewDocument() {
   const [departmentID, setDepartmentID] = useState<number | null>(null);
   const [approverIDs, setApproverIDs] = useState<number[]>([0]); // or []
 
-  useEffect(() => {
+useEffect(() => {
   async function fetchApprovers() {
-    const res = await fetch("/api/employee/create-document/approvers");
-    const data = await res.json();
-    setApprovers(data);
+    try {
+      const res = await fetch("/api/employee/create-document/approvers");
+      if (!res.ok) {
+        throw new Error(`Failed to fetch: ${res.status}`);
+      }
+      const data = await res.json();
+
+      // Validate that data is an array
+      if (Array.isArray(data)) {
+        setApprovers(data);
+      } else {
+        console.error("Approvers response is not an array:", data);
+        setApprovers([]);
+      }
+    } catch (error) {
+      console.error("Error fetching approvers:", error);
+      setApprovers([]); // Fallback to empty list to prevent crash
+    }
   }
+
   fetchApprovers();
 }, []);
 

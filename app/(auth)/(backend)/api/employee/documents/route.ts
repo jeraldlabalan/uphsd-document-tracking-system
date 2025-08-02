@@ -78,8 +78,6 @@ export async function GET(req: Request) {
     });
   } catch (err) {
     console.error("Error fetching documents:", err);
-=======
-//     console.error("Error loading documents:", err);
     return NextResponse.json({ error: "Failed to load documents" }, { status: 500 });
   }
 }
