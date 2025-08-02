@@ -6,7 +6,7 @@ import { verify } from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
-export async function PUT(req: NextRequest) {
+export async function PATCH(req: NextRequest) {
   const cookieStore = await cookies();
   const token = cookieStore.get("session")?.value;
 

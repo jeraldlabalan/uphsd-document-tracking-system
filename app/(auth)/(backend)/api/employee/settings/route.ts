@@ -12,7 +12,10 @@ export async function GET(req: NextRequest) {
     console.log("Token from cookies:", token);
 
     if (!token) {
-      return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+      return NextResponse.json(
+        { message: "Not authenticated" },
+        { status: 401 }
+      );
     }
 
     let decoded: any;
@@ -42,7 +45,6 @@ export async function GET(req: NextRequest) {
       Department: user.Department?.Name || null,
       ProfilePicture: user.ProfilePicture,
     });
-
   } catch (error) {
     console.error(error);
     return NextResponse.json({ message: "Server error" }, { status: 500 });
@@ -55,7 +57,10 @@ export async function PUT(req: NextRequest) {
     const token = cookieStore.get("session")?.value;
 
     if (!token) {
-      return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+      return NextResponse.json(
+        { message: "Not authenticated" },
+        { status: 401 }
+      );
     }
 
     let decoded: any;
@@ -66,24 +71,21 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { FirstName, LastName, MobileNumber, Position, DepartmentID } = body;
+    const { firstName, lastName, mobileNumber, position, department } = body;
 
     const updatedUser = await db.user.update({
       where: { UserID: decoded.UserID },
       data: {
-        FirstName,
-        LastName,
-        MobileNumber,
-        Position,
-        DepartmentID: DepartmentID ? parseInt(DepartmentID) : undefined,
+        FirstName: firstName,
+        LastName: lastName,
+        MobileNumber: mobileNumber,
+        Position: position,
+        Department: department,
       },
     });
-    
     return NextResponse.json({ message: "Profile updated", updatedUser });
-
   } catch (error) {
     console.error(error);
     return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }
-
