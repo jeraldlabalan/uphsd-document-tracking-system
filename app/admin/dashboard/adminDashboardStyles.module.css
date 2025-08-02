@@ -117,6 +117,120 @@
   color: #000000; 
 }
 
+.cardLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  flex: 1;
+}
+
+
+.cardLink:hover {
+  color: inherit;
+}
+
+
+.graphHeader {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.printButton {
+  position: relative;
+  background-color: var(--color-maroon);
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  overflow: hidden;
+  z-index: 0;
+  transition: color 0.3s ease;
+}
+
+.printButton::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-yellow);
+  border-radius: 8px;
+  z-index: -1;
+  transition: left 0.4s ease;
+}
+
+.printButton:hover::before {
+  left: 0; 
+}
+
+.printButton:hover {
+  color: #000;  
+}
+
+
+.checkboxGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.checkboxGroup label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.actionButton {
+  position: relative;
+  background-color: var(--color-maroon);
+  color: white;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  overflow: hidden;
+  z-index: 0;
+  transition: color 0.3s ease;
+}
+
+.actionButton::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-yellow); 
+  transition: left 0.4s ease;
+  z-index: -1;
+  border-radius: 5px;
+}
+
+.actionButton:hover::before {
+  left: 0; 
+}
+
+.actionButton:hover {
+  color: black; 
+}
+
+
+
+
 
 
 .orange {
@@ -283,144 +397,93 @@
   text-decoration: underline;
 }
 
-.modalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
+
+.graphContainer {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 2rem;
   padding: 1rem;
 }
 
+.chartCard {
+  background-color: white;
+  padding: 1rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  height: 300px;
+  cursor: pointer;
+}
+
+.chartTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--color-maroon);
+  text-align: center;
+}
+
+/* Modal styles */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+
 .modalCard {
   background: white;
+  border-radius: 1rem;
+  max-width: 700px;
   width: 100%;
-  max-width: 1000px;
-  height: 90vh;                     
-  border-radius: 10px;
-  padding: 1.5rem;
+  padding: 2rem;
   position: relative;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  display: flex;
-  flex-direction: column;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.modalCardPrint {
+  background: white;
+  border-radius: 1rem;
+  max-width: 400px;
+  width: 100%;
+  padding: 2rem;
+  position: relative;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
 .closeButton {
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background: none;
+  background: transparent;
   border: none;
   cursor: pointer;
-  color: var(--color-maroon);
 }
 
 .modalTop {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 1rem;
+  text-align: center;
 }
 
 .modalTitle {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.4rem;
   color: var(--color-maroon);
+  font-weight: 700;
 }
 
-.metaGrid {
-  margin-bottom: 1.5rem;
+.modalChart {
+  height: 300px;
 }
-
-.metaLabelRow,
-.metaValueRow {
-  display: flex;
-  justify-content: space-between;
-  text-align: left;
-}
-
-.metaLabelRow span {
-  flex: 1;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #666;
-}
-
-.metaValueRow p {
-  flex: 1;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--color-maroon);
-  margin: 0.2rem 0 0;
-}
-
-
-.previewContainer {
-  flex: 1;                          
-  overflow-y: auto;               
-  margin-bottom: 1rem;
-  border: 1px solid #eee;
-  padding: 0.5rem;
-  border-radius: 6px;
-}
-
-.modalFooter {
-  display: flex;
-  justify-content: space-between;
-  padding-top: 1rem;
-  border-top: 1px solid #ddd;
-}
-
-.download,
-.print {
-  position: relative;
-  overflow: hidden;
-  background-color: var(--color-maroon);
-  color: white;
-  font-weight: 600;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  z-index: 0;
-  transition: color 0.3s ease;
-}
-
-.download::before,
-.print::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background-color: #FCCB0A;
-  z-index: -1;
-  transition: left 0.4s ease;
-}
-
-.download:hover::before,
-.print:hover::before {
-  left: 0;
-}
-
-.download:hover,
-.print:hover {
-  color: black;
-}
-
-
 
 
 
 @media (max-width: 768px) {
   
-
   .pageTitle {
     font-size: 20px;
     text-align: center;
@@ -467,4 +530,60 @@
     display: inline-block;
     margin: 0.25rem 0;
   }
+
+   .graphContainer {
+    grid-template-columns: 1fr;
+  }
+
+  .chartCard {
+    height: 250px;
+  }
+
+  .modalChart {
+    height: 250px;
+  }
+
+  
 }
+
+
+@media print {
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: white;
+  }
+
+  #print-template {
+    position: relative !important;
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 9999 !important;
+    width: 100% !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  /* Hide everything except #print-template */
+  body * {
+    visibility: hidden !important;
+  }
+
+  #print-template,
+  #print-template * {
+    visibility: visible !important;
+  }
+
+  /* Avoid content being cut off */
+  @page {
+    margin: 1in;
+    size: A4 portrait;
+  }
+
+  /* Optional: remove scrollbars or fixed headers/footers if present */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+}
+

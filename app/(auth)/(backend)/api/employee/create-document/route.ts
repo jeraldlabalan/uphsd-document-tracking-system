@@ -19,78 +19,85 @@ export async function POST(req: NextRequest) {
 
     const creatorID = decoded.UserID;
 
+
     const {
       Title,
       Description,
-      Type,
+      TypeID,
       FilePath,
-      FileType,
       DepartmentID,
       ApproverIDs, // array of UserIDs
     } = await req.json();
 
-    // 1. Create the main document
+    // Step 1: Create the document
     const newDocument = await db.document.create({
       data: {
         Title,
         Description,
-        DocumentType: Type, // Add this line to include the required DocumentType property
-        Department: DepartmentID
-          ? { connect: { DepartmentID } }
-          : undefined,
-        Creator: { connect: { UserID: creatorID } },
-        CreatedAt: new Date(),
+        TypeID : 1, // for testing only
+        // FilePath,
+        CreatedBy: creatorID,
+        DepartmentID: DepartmentID || null,
       },
     });
 
-    // 2. Create initial document version
+    // Step 2: Create initial version
     await db.documentVersion.create({
       data: {
-        Document: { connect: { DocumentID: newDocument.DocumentID } },
+        DocumentID: newDocument.DocumentID,
         VersionNumber: 1,
         FilePath,
+        ChangedBy: creatorID,
         ChangeDescription: "Initial version",
-        User: { connect: { UserID: creatorID } },
       },
     });
 
-    // 3. Create document requests + notifications for each approver
-    const status = await db.status.findFirst({
-      where: { StatusName: "Pending" },
+    // Step 3: Find 'Pending' status
+    const pendingStatus = await db.status.findFirst({
+      where: { StatusName: "In-Process" },
     });
 
-    if (!status) {
-      return NextResponse.json({ error: "Missing 'Pending' status in DB" }, { status: 500 });
+    if (!pendingStatus) {
+      return NextResponse.json(
+        { error: "Missing 'Pending' status in DB" },
+        { status: 500 }
+      );
     }
 
-    const notifications = ApproverIDs.map((approverID: number) =>
-      db.notification.create({
-        data: {
-          UserID: approverID,
-          Message: `A new document "${Title}" requires your review.`,
-          CreatedAt: new Date(),
-        },
-      })
-    );
+    // Step 4: Create document requests and notifications
 
-    const documentRequests = ApproverIDs.map((approverID: number) =>
+    
+    const requests = ApproverIDs.map((approverID: number) =>
       db.documentRequest.create({
         data: {
-          UserID: approverID,
+          RequestedByID: creatorID,
+          RecipientUserID: 1, // for testing only shoubeld be approverID
           DocumentID: newDocument.DocumentID,
-          StatusID: status.StatusID,
+          StatusID: pendingStatus.StatusID,
+          Priority: "Normal",
           Remarks: "Awaiting review",
         },
       })
     );
 
-    await Promise.all([...notifications, ...documentRequests]);
+    const notifs = ApproverIDs.map((approverID: number) =>
+      db.notification.create({
+        data: {
+          SenderID: creatorID,
+          ReceiverID: 1, // for testing only should be approverID
+          Title: "New Document for Review",
+          Message: `A new document "${Title}" requires your review.`,
+        },
+      })
+    );
+
+    await Promise.all([...requests, ...notifs]);
 
     return NextResponse.json({
       message: "Document successfully created",
       documentID: newDocument.DocumentID,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Document creation error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

@@ -37,7 +37,8 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${passionOne.variable}`}
     >
-      <body className="antialiased">
+      <body className="antialiased" 
+      id="__next">
         <Toaster position="top-center" reverseOrder={false} />
         {children}
       </body>

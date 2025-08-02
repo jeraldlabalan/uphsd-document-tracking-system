@@ -1,22 +1,43 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "./createNewDocStyles.module.css";
 import { FileUp } from "lucide-react";
 import EmpHeader from "@/components/shared/empHeader";
 import Link from "next/link";
 
+type Approver = {
+  UserID: number;
+  FirstName: string;
+  LastName: string;
+};
+
+
 export default function CreateNewDocument() {
   const [documentName, setDocumentName] = useState("");
   const [classification, setClassification] = useState("Select Document Type");
-  const [description, setDescription] = useState("");
   const [department, setDepartment] = useState("Select Department");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [approvers, setApprovers] = useState([{ id: Date.now() }]);
+  const [approvers, setApprovers] = useState<Approver[]>([]);
   const [date, setDate] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
   const [sendEmail, setSendEmail] = useState(false);
   const [readReceipt, setReadReceipt] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [type, setType] = useState(0);
+  const [filePath, setFilePath] = useState("");
+  const [departmentID, setDepartmentID] = useState<number | null>(null);
+  const [approverIDs, setApproverIDs] = useState<number[]>([0]); // or []
+
+  useEffect(() => {
+  async function fetchApprovers() {
+    const res = await fetch("/api/employee/create-document/approvers");
+    const data = await res.json();
+    setApprovers(data);
+  }
+  fetchApprovers();
+}, []);
 
   const departmentOptions = [
     "Select Department",
@@ -31,19 +52,47 @@ export default function CreateNewDocument() {
     "Notice",
   ];
 
+  const handleSubmit = async (e: { preventDefault: () => void; }) => {
+  e.preventDefault();
+
+  const payload = {
+    Title: title,
+    Description: description,
+    TypeID: type,
+    FilePath: filePath,
+    DepartmentID: departmentID,
+    ApproverIDs: approverIDs,
+  };
+
+  const res = await fetch("/api/employee/create-document", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+
+  if (res.ok) {
+    alert("Document created successfully!");
+  } else {
+    alert(data.error || "Failed to create document");
+  }
+};
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
     }
   };
 
-  const addApprover = () => {
-    setApprovers((prev) => [...prev, { id: Date.now() }]);
-  };
+const addApprover = () => {
+  setApproverIDs([...approverIDs, 0]); // 0 means no selection yet
+};
 
-  const removeApprover = (id: number) => {
-    setApprovers((prev) => prev.filter((approver) => approver.id !== id));
-  };
+const removeApprover = (index: number) => {
+  const updated = [...approverIDs];
+  updated.splice(index, 1);
+  setApproverIDs(updated);
+};
 
   const handleClear = () => {
     setDocumentName("");
@@ -51,7 +100,7 @@ export default function CreateNewDocument() {
     setDescription("");
     setDepartment("Select Department");
     setSelectedFile(null);
-    setApprovers([{ id: Date.now() }]);
+    setApprovers([]);
     setDate("");
     setDueDate("");
     setNotes("");
@@ -67,7 +116,7 @@ export default function CreateNewDocument() {
           <h2 className={styles.title}>Create New Document</h2>
 
           <div className={styles.sectionTitle}>Information</div>
-
+        <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.formGroup}>
             <div className={styles.inputGroup}>
               <label>Document Name</label>
@@ -155,25 +204,34 @@ export default function CreateNewDocument() {
             </div>
 
             {approvers.map((approver, index) => (
-              <div className={styles.approverRow} key={approver.id}>
+              <div className={styles.approverRow} key={approver.UserID}>
                 <span className={styles.approverNumber}>{index + 1}</span>
-                <select className={styles.selectField}>
-                  <option>{`Select approver`}</option>
-                </select>
-                {approvers.length > 1 && (
-                  <button
-                    className={styles.removeBtn}
-                    onClick={() => removeApprover(approver.id)}
-                  >
-                    Remove
-                  </button>
-                )}
+<select
+  multiple
+  className={styles.selectField}
+  value={approver.FirstName ? approver.UserID : ""}
+  onChange={(e) =>
+    setApproverIDs(
+      Array.from(e.target.selectedOptions, (option) => Number(option.value))
+    )
+  }
+>
+  {/* Optional placeholder-like item (not selectable in <select multiple>) */}
+  {approvers.length === 0 && (
+    <option disabled>No approvers available</option>
+  )}
+
+  {approvers.map((user) => (
+    <option key={user.UserID} value={user.UserID}>
+      {user.FirstName} {user.LastName}
+    </option>
+  ))}
+</select>
+
               </div>
             ))}
 
-            <button className={styles.addBtn} onClick={addApprover}>
-              + Add New Approver
-            </button>
+  
           </div>
 
           <div className={styles.formGroup}>
@@ -238,9 +296,10 @@ export default function CreateNewDocument() {
               <button className={styles.clearBtn} onClick={handleClear}>
                 Clear
               </button>
-              <button className={styles.submitBtn}>Submit</button>
+              <button className={styles.submitBtn} type="submit">Submit</button>
             </div>
           </div>
+        </form>
         </div>
       </div>
     </div>
