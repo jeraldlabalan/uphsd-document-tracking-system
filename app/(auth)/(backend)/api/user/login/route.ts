@@ -10,6 +10,8 @@ interface UserWithRole {
   email: string;
   password: string;
   role: "Admin" | "Employee";
+  FirstName: string;
+  LastName: string;
 }
 
 async function findUserByEmail(email: string): Promise<UserWithRole | null> {
@@ -28,6 +30,8 @@ async function findUserByEmail(email: string): Promise<UserWithRole | null> {
     email: user.Email,
     password: user.Password,
     role: roleName,
+    FirstName: user.FirstName,
+    LastName: user.LastName,
   };
 }
 
