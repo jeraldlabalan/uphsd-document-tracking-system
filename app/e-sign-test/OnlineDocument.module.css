@@ -1,15 +1,9 @@
 .container {
   display: flex;
+  height: 100dvh;
   height: 100vh;
   overflow: hidden;
-}
-
-.sidebar {
-  width: 250px;
-  background-color: #2c3e50;
-  color: white;
-  padding: 1rem;
-  transition: all 0.3s ease;
+  margin: 0;
 }
 
 .mainContent {
@@ -17,25 +11,45 @@
   flex-direction: column;
   flex-grow: 1;
   transition: all 0.3s ease;
+  flex: 1;
+  background-color: #ccc;
+  width: 100%;
+  max-width: 100%;
 }
 
+.sidebar {
+  width: clamp(180px, 20vw, 250px); /* min:180px, preferred:20% of viewport width, max:250px */
+  flex-shrink: 0;
+  background-color: #fafafa;
+  border-right: 1px solid #ccc;
+  overflow-y: auto;
+}
+
+
 .withSidebar {
-  width: calc(100% - 250px);
+  width: calc(100% - 250px); /* If sidebar is 250px */
 }
 
 .fullWidth {
-  width: 100%;
+  width: auto;
 }
 
 .header {
-  background-color: #f1f1f1;
-  padding: 1rem;
+  background-color: var(--color-maroon);
   border-bottom: 1px solid #ccc;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.60rem 1rem;
+}
+
+.headerLogo {
+  width: 30px;
+  height: 45px;
 }
 
 .pdfViewer {
-  flex-grow: 1;
-  background-color: #ecf0f1;
-  padding: 1rem;
-  overflow: auto;
+  margin-inline: auto;
+  width: 100%;
+  max-width: 100%;
 }
