@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     const token = sign(
       { UserID: user.id, email: user.email, role: user.role },
       JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "10m" }
     );
 
     // ✅ Set JWT in HttpOnly cookie

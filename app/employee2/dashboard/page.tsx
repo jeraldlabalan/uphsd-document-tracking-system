@@ -45,7 +45,7 @@ export default function employeeDashboard() {
 
     const fetchData = async () => {
       try {
-        const res = await fetch("/api/documents");
+        const res = await fetch("/api/employee/dashboard");
         const data = await res.json();
 
         const formattedDocs: Document[] = data.recentDocuments.map((req: any) => ({
