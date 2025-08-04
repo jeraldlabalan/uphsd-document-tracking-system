@@ -12,7 +12,10 @@ export async function GET(req: NextRequest) {
     console.log("Token from cookies:", token);
 
     if (!token) {
-      return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+      return NextResponse.json(
+        { message: "Not authenticated" },
+        { status: 401 }
+      );
     }
 
     let decoded: any;
@@ -25,7 +28,7 @@ export async function GET(req: NextRequest) {
 
     const user = await db.user.findUnique({
       where: { UserID: decoded.UserID },
-      include: { Department: true, Role: true },
+      include: { Department: true, Position: true, Role: true },
     });
 
     if (!user) {
@@ -39,10 +42,10 @@ export async function GET(req: NextRequest) {
       EmployeeID: user.EmployeeID,
       MobileNumber: user.MobileNumber,
       PositionID: user.PositionID,
+      Position: user.Position?.Name || null, // ✅ Get name from relation
       Department: user.Department?.Name || null,
       ProfilePicture: user.ProfilePicture,
     });
-
   } catch (error) {
     console.error(error);
     return NextResponse.json({ message: "Server error" }, { status: 500 });
@@ -55,7 +58,10 @@ export async function PUT(req: NextRequest) {
     const token = cookieStore.get("session")?.value;
 
     if (!token) {
-      return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+      return NextResponse.json(
+        { message: "Not authenticated" },
+        { status: 401 }
+      );
     }
 
     let decoded: any;
@@ -66,24 +72,29 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { FirstName, LastName, MobileNumber, Position, DepartmentID } = body;
+    const { firstName, lastName, mobileNumber, position, department } = body;
 
-    const updatedUser = await db.user.update({
-      where: { UserID: decoded.UserID },
+const updatedUser = await db.user.update({
+  where: { UserID: decoded.UserID },
+  data: {
+    FirstName: firstName,
+    LastName: lastName,
+    MobileNumber: mobileNumber,
+  },
+});
+
+    await db.activityLog.create({
       data: {
-        FirstName,
-        LastName,
-        MobileNumber,
-        Position,
-        DepartmentID: DepartmentID ? parseInt(DepartmentID) : undefined,
+        PerformedBy: updatedUser.UserID,
+        Action: "Updated Profile",
+        TargetType: "User",
+        TargetID: updatedUser.UserID,
       },
     });
-    
-    return NextResponse.json({ message: "Profile updated", updatedUser });
 
+    return NextResponse.json({ message: "Profile updated", updatedUser });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }
-

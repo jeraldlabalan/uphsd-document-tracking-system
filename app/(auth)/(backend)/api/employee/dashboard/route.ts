@@ -36,8 +36,8 @@ export async function GET() {
             Department: true,
           },
         },
-        User: true,
         Status: true,
+        // User: true, // <- Removed because 'User' is not a valid relation
       },
     });
 
