@@ -1,5 +1,6 @@
 // import { NextResponse } from "next/server";
 // import { db } from "@/lib/db";
+// import bcrypt from "bcryptjs";
 
 // interface Params {
 //   id: string;
@@ -7,7 +8,6 @@
 
 // export async function GET(request: Request, { params }: { params: Params }) {
 //   const userId = Number(params.id);
-
 //   if (!userId || isNaN(userId)) {
 //     return NextResponse.json({ message: "Invalid user ID" }, { status: 400 });
 //   }
@@ -46,15 +46,11 @@
 //       mobile: user.MobileNumber,
 //       sex: user.Sex,
 //       employeeId: user.EmployeeID,
-//       departmentId: user.DepartmentID,
-//       departmentName: user.Department?.Name || "",
-//       positionId: user.PositionID,
-//       positionName: user.Position?.Name || "",
 //       roleId: user.RoleID,
-//       roleName: user.Role.RoleName,
+//       departmentId: user.DepartmentID,
+//       positionId: user.PositionID,
+//       profilePicture: user.ProfilePicture,
 //       isActive: user.IsActive,
-//       profilePicture: user.ProfilePicture ?? null,
-//       hasPassword: true, // if needed
 //     });
 //   } catch (error) {
 //     console.error("GET user error:", error);
@@ -64,14 +60,12 @@
 
 // export async function PUT(request: Request, { params }: { params: Params }) {
 //   const userId = Number(params.id);
-
 //   if (!userId || isNaN(userId)) {
 //     return NextResponse.json({ message: "Invalid user ID" }, { status: 400 });
 //   }
 
 //   try {
 //     const body = await request.json();
-
 //     const {
 //       firstName,
 //       lastName,
@@ -93,14 +87,23 @@
 //       MobileNumber: mobile,
 //       Sex: sex,
 //       RoleID: roleId,
-//       DepartmentID: departmentId || null,
 //       PositionID: positionId,
 //       EmployeeID: employeeId,
 //       IsActive: isActive,
 //     };
 
-//     if (password && password.trim().length > 0) {
-//       updateData.Password = password;
+//     // Set department if not Employee; otherwise null
+//     const roleRecord = await db.role.findUnique({
+//       where: { RoleID: roleId },
+//     });
+//     const roleName = roleRecord?.RoleName?.toLowerCase() || "";
+//     updateData.DepartmentID =
+//       roleName === "employee" ? null : (departmentId ?? null);
+
+//     // Only hash & include password if provided
+//     if (password?.trim()) {
+//       const hashed = await bcrypt.hash(password, 10);
+//       updateData.Password = hashed;
 //     }
 
 //     await db.user.update({
@@ -125,58 +128,10 @@
 
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import bcrypt from "bcryptjs";
 
 interface Params {
   id: string;
-}
-
-export async function GET(request: Request, { params }: { params: Params }) {
-  const userId = Number(params.id);
-  if (!userId || isNaN(userId)) {
-    return NextResponse.json({ message: "Invalid user ID" }, { status: 400 });
-  }
-
-  try {
-    const user = await db.user.findUnique({
-      where: { UserID: userId },
-      select: {
-        UserID: true,
-        FirstName: true,
-        LastName: true,
-        Email: true,
-        MobileNumber: true,
-        Sex: true,
-        EmployeeID: true,
-        RoleID: true,
-        DepartmentID: true,
-        PositionID: true,
-        ProfilePicture: true,
-        Role: { select: { RoleName: true } },
-        Department: { select: { Name: true } },
-        Position: { select: { Name: true } },
-        IsActive: true,
-      },
-    });
-
-    if (!user) return NextResponse.json({ message: "User not found" }, { status: 404 });
-
-    return NextResponse.json({
-      id: user.UserID,
-      firstName: user.FirstName,
-      lastName: user.LastName,
-      email: user.Email,
-      mobile: user.MobileNumber,
-      sex: user.Sex,
-      employeeId: user.EmployeeID,
-      departmentId: user.DepartmentID,
-      positionId: user.PositionID,
-      roleId: user.RoleID,
-      profilePicture: user.ProfilePicture,
-    });
-  } catch (error) {
-    console.error("GET user error:", error);
-    return NextResponse.json({ message: "Server error" }, { status: 500 });
-  }
 }
 
 export async function PUT(request: Request, { params }: { params: Params }) {
@@ -187,6 +142,7 @@ export async function PUT(request: Request, { params }: { params: Params }) {
 
   try {
     const body = await request.json();
+
     const {
       firstName,
       lastName,
@@ -201,6 +157,13 @@ export async function PUT(request: Request, { params }: { params: Params }) {
       isActive,
     } = body;
 
+    // Get role name (to determine if departmentID should be null)
+    const roleRecord = await db.role.findUnique({
+      where: { RoleID: roleId },
+    });
+    const roleName = roleRecord?.RoleName?.toLowerCase() || "";
+
+    // Build update object (include everything except password initially)
     const updateData: any = {
       FirstName: firstName,
       LastName: lastName,
@@ -208,16 +171,19 @@ export async function PUT(request: Request, { params }: { params: Params }) {
       MobileNumber: mobile,
       Sex: sex,
       RoleID: roleId,
-      DepartmentID: departmentId || null,
       PositionID: positionId,
       EmployeeID: employeeId,
       IsActive: isActive,
+      DepartmentID: roleName === "employee" ? null : (departmentId ?? null),
     };
 
+    // Only hash and include password if it's provided
     if (password?.trim()) {
-      updateData.Password = password;
+      const hashed = await bcrypt.hash(password, 10);
+      updateData.Password = hashed;
     }
 
+    // Update user
     await db.user.update({
       where: { UserID: userId },
       data: updateData,
