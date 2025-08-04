@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Passion_One } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

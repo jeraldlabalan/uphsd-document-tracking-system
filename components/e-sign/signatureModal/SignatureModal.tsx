@@ -86,7 +86,7 @@ const SignatureModal = ({
       return;
     }
 
-    applySignature(); // Now applySignature should use the image already stored in state
+    applySignature(signatureImage); // Now applySignature should use the image already stored in state
     setModalOpen(false);
     setUploadedSignature(null);
     setImgDims(null);
@@ -99,41 +99,37 @@ const SignatureModal = ({
       contentLabel="Signature Modal"
       appElement={
         typeof window !== "undefined"
-          ? document.getElementById("__next") ?? undefined
+          ? (document.getElementById("__next") ?? undefined)
           : undefined
       }
       className={styles.modalContent}
       overlayClassName={styles.modalOverlay}
     >
-
-      
-        {/* Toggle Buttons */}
-        <div className={styles.toggleButtons}>
-
-          <button
-            onClick={() => {
-              setMode("draw");
-              clearOtherInput();
-            }}
-            className={` ${mode === "draw" ? styles.toggleActive : styles.signatureButton} `}
-          >
+      {/* Toggle Buttons */}
+      <div className={styles.toggleButtons}>
+        <button
+          onClick={() => {
+            setMode("draw");
+            clearOtherInput();
+          }}
+          className={` ${mode === "draw" ? styles.toggleActive : styles.signatureButton} `}
+        >
           Draw
-          </button>
+        </button>
 
-          <button
-            onClick={() => {
-              setMode("upload");
-              clearOtherInput();
-            }}
-            className={` ${mode === "upload" ? styles.toggleActive : styles.signatureButton} `}
-          >
-            Upload
-          </button>
+        <button
+          onClick={() => {
+            setMode("upload");
+            clearOtherInput();
+          }}
+          className={` ${mode === "upload" ? styles.toggleActive : styles.signatureButton} `}
+        >
+          Upload
+        </button>
+      </div>
 
-        </div>
-
-        <div className={styles.userSignaturePlaceholder}>
-          {/* Conditional UI */}
+      <div className={styles.userSignaturePlaceholder}>
+        {/* Conditional UI */}
         {mode === "draw" && (
           <div className={styles.drawContainer}>
             <SignatureCanvas
@@ -142,7 +138,10 @@ const SignatureModal = ({
               backgroundColor="transparent"
               canvasProps={{ className: styles.sigCanvas }}
             />
-            <button onClick={handleDrawSave} className={styles.saveDrawnSignature}>
+            <button
+              onClick={handleDrawSave}
+              className={styles.saveDrawnSignature}
+            >
               Save Drawn Signature
             </button>
           </div>
@@ -150,39 +149,48 @@ const SignatureModal = ({
 
         {mode === "upload" && (
           <>
-            <div 
-            className={styles.uploadDropZone}
-            onClick={() => fileInputRef.current?.click()}>
+            <div
+              className={styles.uploadDropZone}
+              onClick={() => fileInputRef.current?.click()}
+            >
               <input
-              placeholder="file"
-              type="file"
-              accept="image/png, image/jpeg"
-              onChange={handleFileChange}
-              ref={fileInputRef}
-              style={ { display: "none" } }
-            />
-            {!uploadedSignature && <span>Upload Signature</span>}
+                placeholder="file"
+                type="file"
+                accept="image/png, image/jpeg"
+                onChange={handleFileChange}
+                ref={fileInputRef}
+                style={{ display: "none" }}
+              />
+              {!uploadedSignature && <span>Upload Signature</span>}
 
-            {uploadedSignature && imgDims && (
-              <div className={styles.userUploadedSignatureContainer}>
-                <Image
-                  src={uploadedSignature}
-                  width={1} // Required if no `fill`
-                  height={1}
-                  alt="Uploaded Signature"
-                />
-              </div>
-            )}
+              {uploadedSignature && imgDims && (
+                <div className={styles.userUploadedSignatureContainer}>
+                  <Image
+                    src={uploadedSignature}
+                    width={1}
+                    height={1}
+                    className={styles.uploadedImageSignature}
+                    alt="Uploaded Signature"
+                  />
+                </div>
+              )}
             </div>
           </>
         )}
-        </div>
+      </div>
 
-        {/* Final apply */}
-        <button onClick={handleApplyClick} className={styles.applySignatureButton} disabled={!signatureImage}>
-          Apply Signature
-        </button>
-
+      <button
+        onClick={async () => {
+          if (!signatureImage) {
+            alert("Please provide a signature first.");
+            return;
+          }
+          await applySignature(signatureImage); // ✅
+          setModalOpen(false);
+        }}
+      >
+        Apply Signature
+      </button>
     </Modal>
   );
 };

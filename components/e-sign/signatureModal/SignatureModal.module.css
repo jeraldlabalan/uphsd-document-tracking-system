@@ -1,3 +1,4 @@
+
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -9,23 +10,24 @@
   justify-content: center;
   align-items: center;
   background-color: rgba(0, 0, 0, 0.5);
-}
+  z-index: 99999;
+} 
 
 
 /* Modal content styles */
-.modalContent {
+ .modalContent {
   background-color: white;
   padding: 1rem;
   border-radius: 8px;
-  width: clamp(300px, 90vw, 400px); /* Responsive width */
-  height: clamp(300px, 50vh, 400px); /* Responsive height */
+  width: clamp(250px, 80%, 400px); 
+  height: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  overflow: hidden; /* Prevent scrollbars inside */
-}
+  overflow: hidden; 
+} 
 
 .drawContainer {
     flex: 1;
@@ -44,12 +46,15 @@
 }
 
 .userSignaturePlaceholder {
-  flex: 1;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+.uploadedImageSignature {
+  aspect-ratio: 1 / 1;
 }
 
 
