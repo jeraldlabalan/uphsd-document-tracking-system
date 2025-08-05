@@ -28,31 +28,49 @@ export default function CreateNewDocument() {
   const [filePath, setFilePath] = useState("");
   const [departmentID, setDepartmentID] = useState<number | null>(null);
   const [approverIDs, setApproverIDs] = useState<number[]>([0]); // or []
-  const [documentTypes, setDocumentTypes] = useState<{ TypeID: number; TypeName: string }[]>([]);
+  const [documentTypes, setDocumentTypes] = useState<
+    { TypeID: number; TypeName: string }[]
+  >([]);
 
   const [selectedType, setSelectedType] = useState("");
+  const [departments, setDepartments] = useState<
+    { DepartmentID: number; Name: string }[]
+  >([]);
 
   useEffect(() => {
-  async function fetchDocumentTypes() {
-    try {
-      const res = await fetch("/api/user/doctype"); // Adjust the endpoint if needed
-      if (!res.ok) throw new Error("Failed to fetch document types");
-      const data = await res.json();
-
-      if (Array.isArray(data)) {
-        setDocumentTypes(data);
-      } else {
-        console.error("Unexpected data format:", data);
+    async function fetchDepartments() {
+      try {
+        const res = await fetch("/api/user/department");
+        if (!res.ok) throw new Error("Failed to fetch departments");
+        const data = await res.json();
+        setDepartments(data);
+      } catch (error) {
+        console.error("Error fetching departments:", error);
       }
-    } catch (error) {
-      console.error("Error fetching document types:", error);
     }
-  }
 
-  fetchDocumentTypes();
-}, []);
+    fetchDepartments();
+  }, []);
 
+  useEffect(() => {
+    async function fetchDocumentTypes() {
+      try {
+        const res = await fetch("/api/user/doctype"); // Adjust the endpoint if needed
+        if (!res.ok) throw new Error("Failed to fetch document types");
+        const data = await res.json();
 
+        if (Array.isArray(data)) {
+          setDocumentTypes(data);
+        } else {
+          console.error("Unexpected data format:", data);
+        }
+      } catch (error) {
+        console.error("Error fetching document types:", error);
+      }
+    }
+
+    fetchDocumentTypes();
+  }, []);
 
   useEffect(() => {
     async function fetchApprovers() {
@@ -201,11 +219,18 @@ export default function CreateNewDocument() {
               <label>Department</label>
               <select
                 className={styles.selectField}
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
+                value={departmentID ?? ""}
+                onChange={(e) => {
+                  const selectedID = Number(e.target.value);
+                  setDepartmentID(isNaN(selectedID) ? null : selectedID);
+                }}
+                required
               >
-                {departmentOptions.map((dep, idx) => (
-                  <option key={idx}>{dep}</option>
+                <option value="">Select Department</option>
+                {departments.map((dep) => (
+                  <option key={dep.DepartmentID} value={dep.DepartmentID}>
+                    {dep.Name}
+                  </option>
                 ))}
               </select>
             </div>
