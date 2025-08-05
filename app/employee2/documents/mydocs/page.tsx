@@ -12,6 +12,7 @@ export default function MyDocuments() {
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [dateError, setDateError] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
 
   const documents = [
@@ -163,18 +164,34 @@ export default function MyDocuments() {
                 <input
                   type="date"
                   value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
+                  onChange={(e) => {
+                    const newFrom = e.target.value;
+                    setDateFrom(newFrom);
+
+                    if (dateTo && newFrom > dateTo) {
+                      setDateError('"From" date cannot be later than "To" date.');
+                    } else {
+                      setDateError("");
+                    }
+                  }}
                   className={styles.dateInput}
                 />
-              </div>
 
-              <div className={styles.dateGroup}>
-                <span className={styles.dateLabel}>To:</span>
                 <input
                   type="date"
                   value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
+                  onChange={(e) => {
+                    const newTo = e.target.value;
+                    setDateTo(newTo);
+
+                    if (dateFrom && newTo < dateFrom) {
+                      setDateError('"To" date cannot be earlier than "From" date.');
+                    } else {
+                      setDateError("");
+                    }
+                  }}
                   className={styles.dateInput}
+                  min={dateFrom}
                 />
               </div>
             </div>
