@@ -1,7 +1,8 @@
-import styles from "./Sidebar.module.css"; // Your sidebar CSS module
+import { useState } from "react";
+import styles from "./Sidebar.module.css";
 import { SidebarProps, Role } from "../types";
-import { PDFViewerRef } from "../types";
-import { useRef } from "react";
+import CustomSelect from "@/components/custom-select/CustomSelect";
+
 
 export default function Sidebar({
   role,
@@ -24,6 +25,17 @@ export default function Sidebar({
   );
 
   console.log("Remaining placeholders", remainingPlaceholders);
+
+  const departmentOptions = [
+  "Engineering",
+  "Business",
+  "Information Technology",
+  "Human Resource",
+  "Medicine",
+];
+
+const [selectedDepartment, setSelectedDepartment] = useState("Select");
+
 
   return (
     <div className={styles.sidebar}>
@@ -101,6 +113,8 @@ export default function Sidebar({
       <a href="" className={styles.backToDashboard}>
         Back to dashboard
       </a>
+
+      <CustomSelect options={departmentOptions} value={selectedDepartment} onChange={(val) => setSelectedDepartment(val)} />
     </div>
   );
 }
