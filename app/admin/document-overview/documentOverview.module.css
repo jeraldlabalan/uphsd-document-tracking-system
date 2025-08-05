@@ -294,6 +294,37 @@ background-color: #ff0000;
   color: white;
 }
 
+.actionBtn {
+  color: white;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.deleteBtn {
+  background-color: #AD191B;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+.deleteBtn:hover {
+  background-color: #8B1416; 
+}
+
+.viewBtn {
+  background-color: white;
+  color: var(--color-maroon);
+  border: var(--color-maroon) 1px solid;
+  transition: background-color 0.3s ease;
+}
+
+.viewBtn:hover {
+  background-color: rgb(255, 236, 236); 
+}
+
 .actions a {
   color: var(--color-maroon);
   font-weight: 500;
@@ -556,6 +587,12 @@ background-color: #ff0000;
   .searchInput,
   .dropdown {
     width: 100%;
+  }
+
+  .dateGroup {
+    flex-direction: column;
+    align-items: flex-start; 
+    gap: 4px; 
   }
 
   .docTable th,

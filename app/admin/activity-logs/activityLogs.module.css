@@ -522,6 +522,12 @@ background-color: #ff0000;
     width: 100%;
   }
 
+  .dateGroup {
+    flex-direction: column;
+    align-items: flex-start; 
+    gap: 4px; 
+  }
+
   .docTable th,
   .docTable td {
     padding: 0.5rem;

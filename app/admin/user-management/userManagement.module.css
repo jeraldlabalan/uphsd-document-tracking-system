@@ -239,6 +239,10 @@
   width: 100%;
   border-collapse: collapse;
   background-color: white;
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+
 }
 
 .docTable th {
@@ -246,6 +250,7 @@
   text-align: left;
   padding: 0.75rem;
   font-weight: 600;
+  width: auto;
 }
 
 .docTable tr:hover {
@@ -294,6 +299,38 @@
 .actions a:hover {
   text-decoration: underline;
 }
+
+.actionBtn {
+  color: white;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.editBtn {
+  background-color: white;
+  border: var(--color-maroon) 2px solid; 
+  color: var(--color-maroon);
+}
+
+.reactivateBtn {
+  background-color: #0F72B8;
+  color: white;
+}
+
+.deactivateBtn {
+  background-color: #AD191B;
+  color: white;
+}
+
+.terminateBtn {
+  background-color: black;
+  color: white;
+}
+
 
 .modalOverlay {
   position: fixed;
@@ -552,6 +589,34 @@
 }
 
 
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 2rem;
+  color: #333;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #ccc;
+  border-top: 5px solid var(--color-maroon); 
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+
 
 
 @media (max-width: 768px) {
@@ -580,6 +645,12 @@
   .filters {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .dateGroup {
+    flex-direction: column;
+    align-items: flex-start; 
+    gap: 4px; 
   }
 
   .searchInput,

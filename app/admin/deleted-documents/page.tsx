@@ -225,7 +225,7 @@ export default function DeletedDocuments() {
                   }}
                   className={styles.dateInput}
                 />
-
+              <span className={styles.dateLabel}>To:</span>
                 <input
                   type="date"
                   value={dateTo}
@@ -271,15 +271,19 @@ export default function DeletedDocuments() {
                   <td>
                     <a
                       href="#"
+                      className={`${styles.actionBtn} ${styles.restoreBtn}`}
                       onClick={() => {
                         setSelectedDoc(doc);
                         setShowConfirmRestore(true);
                       }}
                     >
                       Restore
-                    </a>{" "}
+                    </a>
+
+                       {" "}
+
                     <button
-                      className={styles.actionBtn}
+                      className={`${styles.actionBtn} ${styles.deleteBtn}`}
                       onClick={() => {
                         setSelectedUser(doc);
                         setShowConfirmPermanentDelete(true);
@@ -287,6 +291,7 @@ export default function DeletedDocuments() {
                     >
                       Permanently Delete
                     </button>
+
                   </td>
                 </tr>
               ))}
