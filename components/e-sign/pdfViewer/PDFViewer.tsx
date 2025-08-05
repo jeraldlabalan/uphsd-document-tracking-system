@@ -5,25 +5,51 @@ import { Document, Page, pdfjs } from "react-pdf";
 import { PDFDocument, rgb } from "pdf-lib";
 import { Rnd } from "react-rnd";
 import { StandardFonts } from "pdf-lib";
-import { PDFViewerProps, Placeholder } from "../../e-sign/types";
+import { PDFViewerProps, Placeholder, PDFViewerRef } from "../../e-sign/types";
 import styles from "./PDFViewer.module.css";
 import SignatureModal from "../signatureModal/SignatureModal";
 import React, { forwardRef, useImperativeHandle } from "react";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
-export default function PDFViewer({
-  role,
-  pdfUrl,
-  placeholders,
-  setPlaceholders,
-  placeholderRefs,
-  modalOpen,
-  setModalOpen,
-  draggingEnabled,
-  setDraggingEnabled,
-}: PDFViewerProps) {
+function PDFViewer(
+  {
+    role,
+    pdfUrl,
+    placeholders,
+    setPlaceholders,
+    placeholderRefs,
+    modalOpen,
+    setModalOpen,
+    draggingEnabled,
+    setDraggingEnabled,
+    onApplyComplete,
+    viewMode,
+    originalPdfUrl,
+    hasSigned,
+  }: PDFViewerProps,
+  ref: React.Ref<PDFViewerRef>
+) {
   const [numPages, setNumPages] = useState<number>(0);
+
+  const [uploadedSignature, setUploadedSignature] = useState<string | null>(
+    null
+  );
+
+  useImperativeHandle(ref, () => ({
+    applySignature,
+    resetSignaturePreview,
+  }));
+
+  const resetSignaturePreview = () => {
+    setSignatureImage(null);
+    setUploadedSignature(null);
+    setPlaceholders((prev) =>
+      prev.map(
+        (p) => (p.signee === role ? { ...p, isSigned: false } : p) // make sure this signee's placeholder is always ready to re-sign
+      )
+    );
+  };
 
   const BASE_WIDTH = 800;
   const [scale, setScale] = useState(1); // ← this is the original PDF width you expect
@@ -124,6 +150,7 @@ export default function PDFViewer({
     width: number;
     height: number;
     editingId?: number;
+    existingId?: number;
   } | null>(null);
 
   const [search, setSearch] = useState("");
@@ -143,7 +170,7 @@ export default function PDFViewer({
     e: React.MouseEvent<HTMLDivElement>,
     page: number
   ) => {
-    if (!draggingEnabled || role !== "sender") return;
+    if (!draggingEnabled || role !== "sender" || modalOpen) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -230,154 +257,6 @@ export default function PDFViewer({
     setAssignModal(null);
   };
 
-  //   const applySignature = async () => {
-  //     if (!signatureImage) return;
-
-  //     try {
-  //       if (!pdfUrl) {
-  //         console.error("No PDF URL provided");
-  //         return;
-  //       }
-
-  //       const existingPdfBytes = await fetch(pdfUrl).then((res) =>
-  //         res.arrayBuffer()
-  //       );
-  //       const pdfDoc = await PDFDocument.load(existingPdfBytes);
-  //       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  //       const pages = pdfDoc.getPages();
-
-  //       // ✅ Determine image format and decode base64
-  //       const imageTypeMatch = signatureImage.match(
-  //         /^data:image\/(png|jpeg);base64,/
-  //       );
-  //       if (!imageTypeMatch) {
-  //         throw new Error("Unsupported image format");
-  //       }
-  //       const imageType = imageTypeMatch[1];
-  //       const base64 = signatureImage.replace(
-  //         /^data:image\/(png|jpeg);base64,/,
-  //         ""
-  //       );
-  //       const byteArray = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-
-  //       const embeddedImage =
-  //         imageType === "png"
-  //           ? await pdfDoc.embedPng(byteArray)
-  //           : await pdfDoc.embedJpg(byteArray);
-
-  //       const now = new Date();
-  //       const dateOnly = now.toLocaleDateString();
-  //       const timeOnly = now.toLocaleTimeString([], {
-  //         hour: "2-digit",
-  //         minute: "2-digit",
-  //       });
-  //       const timestamp = now.toLocaleString();
-
-  //       const signeeName =
-  //         signees.find((s) => s.id === role)?.name || role.toUpperCase();
-  //       const initials = signeeName
-  //         .split(" ")
-  //         .map((w) => w[0])
-  //         .join("")
-  //         .toUpperCase();
-
-  //       const updatedPlaceholders: Placeholder[] = placeholders.map((ph) => {
-  //         if (ph.signee === role && !ph.isSigned) {
-  //           const page = pages[ph.page];
-  //           const { width, height } = page.getSize();
-
-  //           const pdfX = ph.x / scale;
-  // const pdfY = (containerDims.height - ph.y - ph.height) / scale;
-  // const pdfWidth = ph.width / scale;
-  // const pdfHeight = ph.height / scale;
-
-  //           const padding = 6;
-
-  //           // Draw dashed border
-  //           page.drawRectangle({
-  //             x: pdfX,
-  //             y: pdfY,
-  //             width: pdfWidth,
-  //             height: pdfHeight,
-  //             borderColor: rgb(0, 0, 0),
-  //             borderWidth: 1,
-  //             borderDashArray: [3, 3],
-  //           });
-
-  //           const halfWidth = pdfWidth / 2;
-  //           const imgBoxWidth = halfWidth - padding * 2;
-  //           const imgBoxHeight = pdfHeight - padding * 2;
-
-  //           // 🖼 Scale image to fit left box
-  //           const scaled = embeddedImage.scale(1);
-  //           const originalWidth = scaled.width;
-  //           const originalHeight = scaled.height;
-
-  //           const scale = Math.min(
-  //             imgBoxWidth / originalWidth,
-  //             imgBoxHeight / originalHeight
-  //           );
-  //           const scaledWidth = originalWidth * scale;
-  //           const scaledHeight = originalHeight * scale;
-
-  //           const imgX = pdfX + padding + (imgBoxWidth - scaledWidth) / 2;
-  //           const imgY = pdfY + padding + (imgBoxHeight - scaledHeight) / 2;
-
-  //           page.drawImage(embeddedImage, {
-  //             x: imgX,
-  //             y: imgY,
-  //             width: scaledWidth,
-  //             height: scaledHeight,
-  //           });
-
-  //           // 📝 Text on the right half
-  //           const textBlockX = pdfX + halfWidth + padding;
-  //           const textLines = [
-  //             { text: "Digitally signed by", size: 8 },
-  //             { text: signeeName, size: 10 },
-  //             { text: `Date: ${dateOnly}`, size: 7 },
-  //             { text: `Time: ${timeOnly}`, size: 7 },
-  //           ];
-  //           const lineHeight = 12;
-  //           const totalTextHeight = textLines.length * lineHeight;
-  //           const textStartY =
-  //             pdfY + (pdfHeight + totalTextHeight) / 2 - lineHeight;
-
-  //           textLines.forEach((line, i) => {
-  //             const textWidth = font.widthOfTextAtSize(line.text, line.size);
-  //             const textX =
-  //               textBlockX + (halfWidth - padding * 2 - textWidth) / 2;
-  //             page.drawText(line.text, {
-  //               x: textX,
-  //               y: textStartY - i * lineHeight,
-  //               size: line.size,
-  //               font,
-  //               color: rgb(0, 0, 0),
-  //             });
-  //           });
-
-  //           return {
-  //             ...ph,
-  //             isSigned: true,
-  //             signedAt: timestamp,
-  //             initials,
-  //           };
-  //         }
-  //         return ph;
-  //       });
-
-  //       setPlaceholders(updatedPlaceholders);
-
-  //       const pdfBytes = await pdfDoc.save();
-  //       const blob = new Blob([pdfBytes], { type: "application/pdf" });
-  //       const url = URL.createObjectURL(blob);
-  //       window.open(url);
-  //     } catch (err) {
-  //       console.error("Error applying signature:", err);
-  //       alert("Failed to apply signature. See console for details.");
-  //     }
-  //   };
-
   const applySignature = async () => {
     if (!signatureImage) return;
 
@@ -387,9 +266,10 @@ export default function PDFViewer({
         return;
       }
 
-      const existingPdfBytes = await fetch(pdfUrl).then((res) =>
-        res.arrayBuffer()
+      const existingPdfBytes = await fetch(originalPdfUrl!).then((r) =>
+        r.arrayBuffer()
       );
+
       const pdfDoc = await PDFDocument.load(existingPdfBytes);
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
       const pages = pdfDoc.getPages();
@@ -514,9 +394,11 @@ export default function PDFViewer({
       setPlaceholders(updatedPlaceholders);
 
       const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      const blob = new Blob([new Uint8Array(pdfBytes)], {
+        type: "application/pdf",
+      });
       const url = URL.createObjectURL(blob);
-      window.open(url);
+      return url;
     } catch (err) {
       console.error("Error applying signature:", err);
       alert("Failed to apply signature. See console for details.");
@@ -601,163 +483,169 @@ export default function PDFViewer({
                 }
               />
 
-              {placeholders
-                .filter((ph) => {
-                  if (ph.page !== i) return false;
-                  if (
-                    role === "signee" &&
-                    selectedAssignee?.signee !== ph.signee
-                  )
-                    return false;
-                  return true;
-                })
-                .map((ph) => (
-                  <Rnd
-                    size={{
-                      width: ph.width * scale,
-                      height: ph.height * scale,
-                    }}
-                    position={{
-                      x: ph.x * scale,
-                      y: ph.y * scale,
-                    }}
-                    minWidth={MIN_WIDTH * scale}
-                    maxWidth={MAX_WIDTH * scale}
-                    minHeight={MIN_HEIGHT * scale}
-                    maxHeight={MAX_HEIGHT * scale}
-                    enableResizing={
-                      role === "sender"
-                        ? {
-                            top: true,
-                            right: true,
-                            bottom: true,
-                            left: true,
-                            topRight: true,
-                            bottomRight: true,
-                            bottomLeft: true,
-                            topLeft: true,
-                          }
-                        : false
-                    }
-                    key={ph.id}
-                    onDragStop={(e, d) => {
-                      setPlaceholders((prev) =>
-                        prev.map((p) =>
-                          p.id === ph.id
-                            ? {
-                                ...p,
-                                x: d.x / scale,
-                                y: d.y / scale,
-                              }
-                            : p
-                        )
-                      );
-                    }}
-                    onResizeStop={(e, direction, ref, delta, position) => {
-                      setPlaceholders((prev) =>
-                        prev.map((p) =>
-                          p.id === ph.id
-                            ? {
-                                ...p,
-                                width: parseInt(ref.style.width) / scale,
-                                height: parseInt(ref.style.height) / scale,
-                                x: position.x / scale,
-                                y: position.y / scale,
-                              }
-                            : p
-                        )
-                      );
-                    }}
-                    disableDragging={role !== "sender"}
-                    bounds="parent"
-                    style={{ zIndex: 10 }}
-                  >
-                    <div
-                      ref={(el) => {
-                        placeholderRefs.current[ph.id] = el;
+              {(!hasSigned && viewMode === "edit") &&
+                placeholders
+                  .filter((ph) => {
+                    if (ph.page !== i) return false;
+                    if (
+                      role === "signee" &&
+                      selectedAssignee?.signee !== ph.signee
+                    )
+                      return false;
+                    return true;
+                  })
+                  .map((ph) => (
+                    <Rnd
+                      size={{
+                        width: ph.width * scale,
+                        height: ph.height * scale,
                       }}
-                      className={`${styles.actualSignaturePlaceholder} ${
-                        role === "sender" ? styles.sender : styles.receiver
-                      }`}
-                      onMouseDown={(e) => {
-                        if (role !== "sender") return;
+                      position={{
+                        x: ph.x * scale,
+                        y: ph.y * scale,
+                      }}
+                      minWidth={MIN_WIDTH * scale}
+                      maxWidth={MAX_WIDTH * scale}
+                      minHeight={MIN_HEIGHT * scale}
+                      maxHeight={MAX_HEIGHT * scale}
+                      enableResizing={
+                        role === "sender"
+                          ? {
+                              top: true,
+                              right: true,
+                              bottom: true,
+                              left: true,
+                              topRight: true,
+                              bottomRight: true,
+                              bottomLeft: true,
+                              topLeft: true,
+                            }
+                          : false
+                      }
+                      key={ph.id}
+                      onDragStop={(e, d) => {
+                        setPlaceholders((prev) =>
+                          prev.map((p) =>
+                            p.id === ph.id
+                              ? {
+                                  ...p,
+                                  x: d.x / scale,
+                                  y: d.y / scale,
+                                }
+                              : p
+                          )
+                        );
+                      }}
+                      onResizeStop={(e, direction, ref, delta, position) => {
+                        setPlaceholders((prev) =>
+                          prev.map((p) =>
+                            p.id === ph.id
+                              ? {
+                                  ...p,
+                                  width: parseInt(ref.style.width) / scale,
+                                  height: parseInt(ref.style.height) / scale,
+                                  x: position.x / scale,
+                                  y: position.y / scale,
+                                }
+                              : p
+                          )
+                        );
+                      }}
+                      disableDragging={role !== "sender"}
+                      bounds="parent"
+                      style={{ zIndex: 10 }}
+                    >
+                      <div
+                        ref={(el) => {
+                          placeholderRefs.current[ph.id] = el;
+                        }}
+                        className={`${styles.actualSignaturePlaceholder} ${
+                          role === "sender" ? styles.sender : styles.receiver
+                        }`}
+                        onMouseDown={(e) => {
+                          if (role !== "sender") return;
 
-                        const clickTime = Date.now();
+                          const clickTime = Date.now();
 
-                        const handleMouseUp = (upEvent: MouseEvent) => {
-                          const dragDuration = Date.now() - clickTime;
+                          const handleMouseUp = (upEvent: MouseEvent) => {
+                            const dragDuration = Date.now() - clickTime;
 
-                          if (
-                            (e.target as HTMLElement)?.closest(
-                              "[data-ignore-click]"
-                            ) ||
-                            (upEvent.target as HTMLElement)?.closest(
-                              "[data-ignore-click]"
-                            )
-                          ) {
+                            if (
+                              (e.target as HTMLElement)?.closest(
+                                "[data-ignore-click]"
+                              ) ||
+                              (upEvent.target as HTMLElement)?.closest(
+                                "[data-ignore-click]"
+                              )
+                            ) {
+                              window.removeEventListener(
+                                "mouseup",
+                                handleMouseUp
+                              );
+                              return;
+                            }
+
+                            if (dragDuration < 200) {
+                              setAssignModal({
+                                x: ph.x,
+                                y: ph.y,
+                                page: ph.page,
+                                existingId: ph.id,
+                                width: ph.width,
+                                height: ph.height,
+                                visible: true,
+                              });
+                              setSelectedAssignee({
+                                signee: ph.signee ?? "",
+                                signeeName: ph.signeeName ?? "",
+                              });
+                            }
+
                             window.removeEventListener(
                               "mouseup",
                               handleMouseUp
                             );
-                            return;
-                          }
+                          };
 
-                          if (dragDuration < 200) {
-                            setAssignModal({
-                              x: ph.x,
-                              y: ph.y,
-                              page: ph.page,
-                              existingId: ph.id,
-                              width: ph.width,
-                              height: ph.height,
-                              visible: true,
-                            });
-                            setSelectedAssignee({
-                              signee: ph.signee ?? "",
-                              signeeName: ph.signeeName ?? "",
-                            });
-                          }
-
-                          window.removeEventListener("mouseup", handleMouseUp);
-                        };
-
-                        window.addEventListener("mouseup", handleMouseUp);
-                      }}
-                    >
-                      {role === "sender" && (
-                        <div
-                          className={styles.removePlaceholderButton}
-                          data-ignore-click
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPlaceholders((prev) =>
-                              prev.filter((p) => p.id !== ph.id)
-                            );
-                          }}
-                          title="Remove placeholder"
-                        >
-                          ×
-                        </div>
-                      )}
-
-                      <div style={{ color: "black" }}>
-                        <strong className={styles.signeeName}>{ph.signeeName || ph.signee}</strong>
-                      </div>
-
-                      {ph.isSigned ? (
-                        <div className="text-center">
-                          <div className="text-[8px] text-gray-600">
-                            {ph.signedAt}
+                          window.addEventListener("mouseup", handleMouseUp);
+                        }}
+                      >
+                        {role === "sender" && (
+                          <div
+                            className={styles.removePlaceholderButton}
+                            data-ignore-click
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPlaceholders((prev) =>
+                                prev.filter((p) => p.id !== ph.id)
+                              );
+                            }}
+                            title="Remove placeholder"
+                          >
+                            ×
                           </div>
+                        )}
+
+                        <div style={{ color: "black" }}>
+                          <strong className={styles.signeeName}>
+                            {ph.signeeName || ph.signee}
+                          </strong>
                         </div>
-                      ) : (
-                        <div className={styles.needsToSign}>
-                          Needs to sign
-                        </div>
-                      )}
-                    </div>
-                  </Rnd>
-                ))}
+
+                        {ph.isSigned ? (
+                          <div className="text-center">
+                            <div className="text-[8px] text-gray-600">
+                              {ph.signedAt}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className={styles.needsToSign}>
+                            Needs to sign
+                          </div>
+                        )}
+                      </div>
+                    </Rnd>
+                  ))}
 
               {/* Drag Rectangle */}
               {dragRect && dragPage === i && (
@@ -886,7 +774,12 @@ export default function PDFViewer({
         applySignature={applySignature}
         signatureImage={signatureImage}
         setSignatureImage={setSignatureImage}
+        onApplyComplete={onApplyComplete}
+        uploadedSignature={uploadedSignature} // new
+        setUploadedSignature={setUploadedSignature}
       />
     </div>
   );
 }
+
+export default forwardRef<PDFViewerRef, PDFViewerProps>(PDFViewer);

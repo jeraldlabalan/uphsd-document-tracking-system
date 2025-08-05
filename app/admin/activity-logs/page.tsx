@@ -190,7 +190,7 @@ export default function ActivityLogs() {
               <option>Rejected</option>
             </select>
 
-            <select
+            <select 
               className={styles.dropdown}
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
@@ -219,7 +219,7 @@ export default function ActivityLogs() {
                   }}
                   className={styles.dateInput}
                 />
-
+                <span className={styles.dateLabel}>To:</span>
                 <input
                   type="date"
                   value={dateTo}

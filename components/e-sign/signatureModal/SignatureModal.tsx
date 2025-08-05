@@ -11,6 +11,7 @@ const SignatureModal = ({
   applySignature,
   signatureImage,
   setSignatureImage,
+  onApplyComplete,
 }: SignatureModalProps) => {
   const canvasRef = useRef<SignatureCanvas>(null);
 
@@ -185,8 +186,11 @@ const SignatureModal = ({
             alert("Please provide a signature first.");
             return;
           }
-          await applySignature(signatureImage); // ✅
-          setModalOpen(false);
+          const signedUrl = await applySignature(signatureImage);
+          if (signedUrl) {
+            onApplyComplete(signedUrl); // updates PDF url in page.tsx
+            setModalOpen(false); // close modal
+          }
         }}
       >
         Apply Signature

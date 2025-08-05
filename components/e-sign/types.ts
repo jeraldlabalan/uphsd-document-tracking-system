@@ -16,6 +16,11 @@ export type PDFViewerProps = {
   setModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   draggingEnabled: boolean;
   setDraggingEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  onApplyComplete: (signedUrl: string) => void;
+  viewMode: "edit" | "signed";
+  setViewMode: React.Dispatch<React.SetStateAction<"edit" | "signed">>;
+  originalPdfUrl: string | null;
+  hasSigned: boolean;
 };
 
 
@@ -37,9 +42,13 @@ export type Placeholder = {
 export type SignatureModalProps = {
   modalOpen: boolean;
   setModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  applySignature: (image: string) => void; // ← Fix here
+  applySignature: (image: string) => Promise<string | undefined>; 
   signatureImage: string | null;
   setSignatureImage: React.Dispatch<React.SetStateAction<string | null>>;
+  onApplyComplete: (url: string) => void;
+  uploadedSignature: string | null;
+  setUploadedSignature: React.Dispatch<React.SetStateAction<string | null>>;
+
 };
 
 
@@ -60,8 +69,13 @@ export type SidebarProps = {
   onOpenSignatureModal?: () => void;
   setModalOpen: (open: boolean) => void; 
   setDraggingEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  hasSigned: boolean;
+  resetSignaturePreview: () => void;
+  setViewMode: React.Dispatch<React.SetStateAction<"edit" | "signed">>;  // if you're using it
+
 }
 
 export type PDFViewerRef = {
   applySignature: () => void;
+  resetSignaturePreview: () => void;  
 };

@@ -531,8 +531,21 @@
     margin: 0.25rem 0;
   }
 
-   .graphContainer {
+  .graphContainer {
+    display: grid;
     grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
+    overflow-x: auto;
+    width: 100%;
+  }
+
+  .graphContainer > * {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    transform: scale(0.95); 
+    transform-origin: top center;
   }
 
   .chartCard {

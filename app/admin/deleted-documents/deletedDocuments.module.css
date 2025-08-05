@@ -446,7 +446,37 @@ background-color: #ff0000;
     
 }
 
-/* loading modal */
+.actionBtn {
+  color: white;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.deleteBtn {
+  background-color: #AD191B;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+.deleteBtn:hover {
+  background-color: #8B1416; 
+}
+
+.restoreBtn {
+  background-color: #177054;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+.restoreBtn:hover {
+  background-color: #105C45; 
+}
+
+
 
 .loadingContainer {
     display: flex;
@@ -480,6 +510,11 @@ background-color: #ff0000;
   }
 }
 
+
+
+
+
+
 @media (max-width: 768px) {
   
 
@@ -506,6 +541,12 @@ background-color: #ff0000;
   .filters {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .dateGroup {
+    flex-direction: column;
+    align-items: flex-start; 
+    gap: 4px; 
   }
 
   .searchInput,

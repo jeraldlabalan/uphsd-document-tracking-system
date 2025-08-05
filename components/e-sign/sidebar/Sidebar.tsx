@@ -1,7 +1,8 @@
-import styles from "./Sidebar.module.css"; // Your sidebar CSS module
+import { useState } from "react";
+import styles from "./Sidebar.module.css";
 import { SidebarProps, Role } from "../types";
-import { PDFViewerRef } from "../types";
-import { useRef } from "react";
+import CustomSelect from "@/components/custom-select/CustomSelect";
+
 
 export default function Sidebar({
   role,
@@ -12,6 +13,9 @@ export default function Sidebar({
   jumpToNextSignature,
   setModalOpen,
   setDraggingEnabled,
+  hasSigned,
+  resetSignaturePreview,
+  setViewMode,
 }: SidebarProps) {
   console.log("All placeholders", placeholders);
   console.log("Current role:", role);
@@ -22,10 +26,20 @@ export default function Sidebar({
 
   console.log("Remaining placeholders", remainingPlaceholders);
 
+  const departmentOptions = [
+  "Engineering",
+  "Business",
+  "Information Technology",
+  "Human Resource",
+  "Medicine",
+];
+
+const [selectedDepartment, setSelectedDepartment] = useState("Select");
+
+
   return (
     <div className={styles.sidebar}>
       <div className={styles.sidebarHeader}>
-
         <label htmlFor="">document</label>
       </div>
 
@@ -70,8 +84,7 @@ export default function Sidebar({
       {role !== "sender" && (
         <div className={styles.receiverButtons}>
           <p className={styles.signatureCount}>
-            You have {remainingPlaceholders.length} signature
-            placeholder
+            You have {remainingPlaceholders.length} signature placeholder
             {remainingPlaceholders.length === 1 ? "" : "s"} remaining.
           </p>
 
@@ -84,23 +97,24 @@ export default function Sidebar({
 
           <button
             onClick={() => {
-              console.log("Setting modal open to true");
+              resetSignaturePreview();
+              setViewMode("edit");
               setModalOpen(true);
             }}
             className={styles.signDocument}
           >
-            Sign Document
+            {hasSigned ? "Re-upload Signature" : "Sign Document"}
           </button>
 
-          <button className={styles.saveFileButton}>
-            Save File
-          </button>
+          <button className={styles.saveFileButton}>Save File</button>
         </div>
       )}
 
       <a href="" className={styles.backToDashboard}>
         Back to dashboard
       </a>
+
+      <CustomSelect options={departmentOptions} value={selectedDepartment} onChange={(val) => setSelectedDepartment(val)} />
     </div>
   );
 }

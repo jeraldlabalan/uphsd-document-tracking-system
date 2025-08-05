@@ -224,7 +224,7 @@ const handleCloseSuccess = () => {
                   }}
                   className={styles.dateInput}
                 />
-
+    <span className={styles.dateLabel}>To:</span>
                 <input
                   type="date"
                   value={dateTo}
@@ -281,13 +281,14 @@ const handleCloseSuccess = () => {
         </td>
         <td>{doc.dateCreated}</td>
         <td>
-          <a href="#" onClick={() => setSelectedDoc(doc)}>
+          <a href="#" onClick={() => setSelectedDoc(doc)}
+            className={`${styles.actionBtn} ${styles.viewBtn}`}>
             View
           </a> 
           {" "}
          
           <button
-  className={styles.actionBtn}
+  className={`${styles.actionBtn} ${styles.deleteBtn}`}
   onClick={() => {
     setSelectedUser(doc);
     setIsModalOpen(true);
