@@ -19,7 +19,6 @@ export async function POST(req: NextRequest) {
 
     const creatorID = decoded.UserID;
 
-
     const {
       Title,
       Description,
@@ -34,15 +33,24 @@ export async function POST(req: NextRequest) {
       data: {
         Title,
         Description,
-        TypeID : 1, // for testing only
-        // FilePath,
+        TypeID: 1, // for testing only
         CreatedBy: creatorID,
         DepartmentID: DepartmentID || null,
       },
     });
 
-    // Step 2: Create initial version
-    await db.documentVersion.create({
+    await db.activityLog.create({
+      data: {
+        PerformedBy: creatorID,
+        Action: "Created Document",
+        TargetType: "Document",
+        Remarks: `Document "${Title}" created with ID ${newDocument.DocumentID}`,
+        TargetID: newDocument.DocumentID,
+      },
+    });
+
+    // Step 2: Create initial version and logs user activity
+    const newVersion = await db.documentVersion.create({
       data: {
         DocumentID: newDocument.DocumentID,
         VersionNumber: 1,
@@ -52,44 +60,76 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Step 3: Find 'Pending' status
+    await db.activityLog.create({
+      data: {
+        PerformedBy: creatorID,
+        Action: "Created Document Version",
+        TargetType: "DocumentVersion",
+        Remarks: `Initial version uploaded for document ID ${newDocument.DocumentID}`,
+        TargetID: newVersion.VersionID,
+      },
+    });
+
+    // Step 3: Find 'In-Process' status
     const pendingStatus = await db.status.findFirst({
       where: { StatusName: "In-Process" },
     });
 
     if (!pendingStatus) {
       return NextResponse.json(
-        { error: "Missing 'Pending' status in DB" },
+        { error: "Missing 'In-Process' status in DB" },
         { status: 500 }
       );
     }
 
-    // Step 4: Create document requests and notifications
-
-    
-    const requests = ApproverIDs.map((approverID: number) =>
-      db.documentRequest.create({
+    // Step 4: Create requests and notifications
+    const requests = ApproverIDs.map(async (approverID: number) => {
+      const request = await db.documentRequest.create({
         data: {
           RequestedByID: creatorID,
-          RecipientUserID: 1, // for testing only shoubeld be approverID
+          RecipientUserID: approverID, // <- Now correct!
           DocumentID: newDocument.DocumentID,
           StatusID: pendingStatus.StatusID,
           Priority: "Normal",
           Remarks: "Awaiting review",
         },
-      })
-    );
+      });
 
-    const notifs = ApproverIDs.map((approverID: number) =>
-      db.notification.create({
+      await db.activityLog.create({
+        data: {
+          PerformedBy: creatorID,
+          Action: "Created Document Request",
+          TargetType: "DocumentRequest",
+          Remarks: `Request created for user ${approverID} on document ${newDocument.DocumentID}`,
+          TargetID: request.RequestID,
+        },
+      });
+
+      return request;
+    });
+
+    const notifs = ApproverIDs.map(async (approverID: number) => {
+      const notif = await db.notification.create({
         data: {
           SenderID: creatorID,
-          ReceiverID: 1, // for testing only should be approverID
+          ReceiverID: approverID, // <- Now correct!
           Title: "New Document for Review",
           Message: `A new document "${Title}" requires your review.`,
         },
-      })
-    );
+      });
+
+      await db.activityLog.create({
+        data: {
+          PerformedBy: creatorID,
+          Action: "Sent Notification",
+          TargetType: "Notification",
+          Remarks: `Notification sent to user ${approverID} for document ${newDocument.DocumentID}`,
+          TargetID: notif.NotificationID,
+        },
+      });
+
+      return notif;
+    });
 
     await Promise.all([...requests, ...notifs]);
 

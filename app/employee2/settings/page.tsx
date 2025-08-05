@@ -46,6 +46,8 @@ export default function ProfileSettings() {
       const res = await fetch("/api/employee/settings");
       const data = await res.json();
 
+       console.log("Profile data:", data); // <--- Add this
+
       setEmail(data.Email || "");
       setEmployeeID(data.EmployeeID || "");
       setMobileNumber(data.MobileNumber || "");

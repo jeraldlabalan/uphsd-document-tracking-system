@@ -227,8 +227,8 @@ export default function receiveDocuments() {
                     </td>
                     <td>{doc.date}</td>
                     <td className={styles.actions}>
-                      <a href="#" onClick={() => setSelectedDoc(doc)}>View</a> |{" "}
-                      <Link href="./edit-doc">Edit</Link>
+                      <a href="#" onClick={() => setSelectedDoc(doc)}>View</a> 
+                     
                     </td>
                   </tr>
                 ))}
@@ -254,7 +254,7 @@ export default function receiveDocuments() {
                   <p><strong className={styles.highlighted}>Creator:</strong> {doc.creator}</p>
                   <div className={styles.cardActions}>
                     <button onClick={() => setSelectedDoc(doc)}>View</button>
-                    <Link href="./edit-doc">Edit</Link>
+                    
                   </div>
                 </div>
               ))}
@@ -316,6 +316,8 @@ export default function receiveDocuments() {
 
               <div className={styles.modalFooter}>
                 <button className={styles.download} onClick={handleDownload}>Download</button>
+                <button className={styles.Approve}>Approve</button>
+                    <button className={styles.OnHold}>On Hold</button>
                 <button className={styles.print} onClick={handlePrint}>Print</button>
               </div>
             </div>

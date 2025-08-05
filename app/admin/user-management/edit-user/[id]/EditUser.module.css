@@ -1,0 +1,203 @@
+:root {
+  --color-text: #222222;
+  --color-accent: #1a73e8;
+  --color-background: #fefefe;
+  --color-input-bg: #fafafa;
+  --color-input-border: #d1d5db;
+  --color-input-focus: #1a73e8;
+  --color-error: #e53e3e;
+  --color-success: #2f855a;
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  --border-radius: 6px;
+  --transition-fast: 0.15s ease-in-out;
+}
+
+.editContainer {
+  max-width: 540px;
+  margin: 4rem auto;
+  padding: 2.5rem 2rem;
+  background: var(--color-background);
+  font-family: var(--font-family);
+  color: var(--color-text);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.07);
+  border-radius: var(--border-radius);
+}
+
+.title {
+  font-size: 2.1rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 2.5rem;
+  letter-spacing: 0.03em;
+  color: var(--color-text);
+}
+
+/* PROFILE SECTION */
+.profileSection {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2.5rem;
+}
+
+.profileCenter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.profilePicture,
+.initialsFallback {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.9rem;
+  color: #64748b;
+  user-select: none;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+}
+
+.initialsFallback {
+  background-color: #555;
+  color: white;
+}
+
+.nameContainer {
+  margin-top: 0.75rem;
+}
+
+.fullName {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  color: #374151;
+}
+
+.formGroup input[type="text"],
+.formGroup input[type="email"],
+.formGroup input[type="password"],
+.formGroup select {
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  border: 1.5px solid var(--color-input-border);
+  border-radius: var(--border-radius);
+  background: var(--color-input-bg);
+  font-size: 1rem;
+  color: var(--color-text);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.formGroup input[type="text"]:focus,
+.formGroup input[type="email"]:focus,
+.formGroup input[type="password"]:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: var(--color-input-focus);
+  box-shadow: 0 0 6px rgb(26 115 232 / 0.25);
+  background: #fff;
+}
+
+.errorMsg {
+  color: var(--color-error);
+  font-size: 0.85rem;
+  margin-top: 0.3rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.passwordReqList {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 0.6rem;
+  padding-left: 1.2rem;
+  list-style-type: disc;
+  user-select: none;
+}
+
+.passwordReqList li {
+  margin-bottom: 0.25rem;
+  color: #9ca3af;
+  transition: color var(--transition-fast);
+}
+
+.passwordReqList li.valid {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.saveBtn {
+  width: 100%;
+  padding: 0.75rem 0;
+  background: var(--color-accent);
+  border: none;
+  border-radius: var(--border-radius);
+  color: white;
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: background-color 0.25s ease;
+  box-shadow: 0 2px 5px rgb(26 115 232 / 0.4);
+}
+
+.saveBtn:hover {
+  background: #155db2;
+  box-shadow: 0 4px 12px rgb(21 93 178 / 0.6);
+}
+
+.successMsg {
+  text-align: center;
+  margin-top: 1.2rem;
+  color: var(--color-success);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+}
+
+.hide {
+  display: none;
+}
+
+.show {
+  display: flex;
+}
+
+@media (max-width: 480px) {
+  .editContainer {
+    margin: 2rem 1rem;
+    padding: 2rem 1rem;
+  }
+
+  .profileSection {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .profilePicture,
+  .initialsFallback {
+    width: 72px;
+    height: 72px;
+    font-size: 1.5rem;
+  }
+}

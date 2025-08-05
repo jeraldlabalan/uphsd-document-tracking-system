@@ -47,6 +47,10 @@ export default function UserManagement() {
   const [showEditConfirm, setShowEditConfirm] = useState(false);
   const [showEditSuccess, setShowEditSuccess] = useState(false);
 
+  // New states for Deactivate modal & success
+  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
+  const [showDeactivateSuccess, setShowDeactivateSuccess] = useState(false);
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -103,6 +107,114 @@ export default function UserManagement() {
 
     return statusMatch && searchMatch && dateMatch;
   });
+
+  // Sort filteredUsers descending by id
+  const sortedUsers = filteredUsers.slice().sort((a, b) => a.id - b.id);
+
+  const handleReactivate = async () => {
+    if (!selectedUser) return;
+
+    try {
+      const res = await fetch(`/api/admin/user-management/reactivate`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: selectedUser.id }),
+      });
+
+      if (res.ok) {
+        setUsers((prev) =>
+          prev.map((user) =>
+            user.id === selectedUser.id ? { ...user, status: "Active" } : user
+          )
+        );
+        setShowEditConfirm(false);
+        setShowEditSuccess(true);
+      } else {
+        const data = await res.json();
+        alert(`Failed to reactivate user: ${data.message}`);
+      }
+    } catch (err) {
+      console.error("Reactivate Error:", err);
+      alert("Something went wrong.");
+    }
+  };
+
+  const handleTerminate = async () => {
+    if (!selectedUser) return;
+
+    try {
+      const res = await fetch(`/api/admin/user-management/terminate`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: selectedUser.id }),
+      });
+
+      const text = await res.text();
+      let data = null;
+      if (text.trim()) {
+        try {
+          data = JSON.parse(text);
+        } catch (err) {
+          console.error("Invalid JSON returned:", err);
+        }
+      }
+
+      if (res.ok) {
+        setUsers((prev) =>
+          prev.map((user) =>
+            user.id === selectedUser.id
+              ? { ...user, status: "Terminated" }
+              : user
+          )
+        );
+        setShowTerminateConfirm(false);
+        setShowTerminateSuccess(true);
+      } else {
+        alert(`Failed to terminate user: ${data?.message || res.statusText}`);
+      }
+    } catch (err) {
+      console.error("Terminate Error:", err);
+      alert("Something went wrong.");
+    }
+  };
+
+  // New: handleDeactivate
+  const handleDeactivate = async () => {
+    if (!selectedUser) return;
+
+    try {
+      const res = await fetch(`/api/admin/user-management/deactivate`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: selectedUser.id }),
+      });
+
+      const text = await res.text();
+      let data = null;
+      if (text.trim()) {
+        try {
+          data = JSON.parse(text);
+        } catch (err) {
+          console.error("Invalid JSON returned:", err);
+        }
+      }
+
+      if (res.ok) {
+        setUsers((prev) =>
+          prev.map((user) =>
+            user.id === selectedUser.id ? { ...user, status: "Inactive" } : user
+          )
+        );
+        setShowDeactivateConfirm(false);
+        setShowDeactivateSuccess(true);
+      } else {
+        alert(`Failed to deactivate user: ${data?.message || res.statusText}`);
+      }
+    } catch (err) {
+      console.error("Deactivate Error:", err);
+      alert("Something went wrong.");
+    }
+  };
 
   return (
     <div>
@@ -232,7 +344,7 @@ export default function UserManagement() {
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.map((user, i) => (
+                {sortedUsers.map((user, i) => (
                   <tr key={i}>
                     <td>{user.id}</td>
                     <td>{user.name}</td>
@@ -259,23 +371,53 @@ export default function UserManagement() {
                     <td>{new Date(user.dateCreated).toLocaleDateString()}</td>
                     <td>
                       <>
-                        <Link
-                          href="/admin/user-management/edit-user"
-                          className={styles.actionBtn}
-                        >
-                          Edit
-                        </Link>
                         {user.status === "Active" && (
-                          <button
-                            className={styles.actionBtn}
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setShowTerminateConfirm(true);
-                            }}
-                          >
-                            Terminate
-                          </button>
+                          <>
+                            <Link
+                              href={`/admin/user-management/edit-user/${user.id}`}
+                              className={styles.actionBtn}
+                              onClick={() => {
+                                if (typeof window !== "undefined") {
+                                  const [firstName, ...rest] =
+                                    user.name.split(" ");
+                                  const lastName = rest.join(" ");
+                                  const userWithNames = {
+                                    ...user,
+                                    firstName,
+                                    lastName,
+                                  };
+                                  localStorage.setItem(
+                                    "editUser",
+                                    JSON.stringify(userWithNames)
+                                  );
+                                }
+                              }}
+                            >
+                              Edit
+                            </Link>
+
+                            <button
+                              className={styles.actionBtn}
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setShowDeactivateConfirm(true);
+                              }}
+                            >
+                              Deactivate
+                            </button>
+
+                            <button
+                              className={styles.actionBtn}
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setShowTerminateConfirm(true);
+                              }}
+                            >
+                              Terminate
+                            </button>
+                          </>
                         )}
+
                         {(user.status === "Inactive" ||
                           user.status === "Terminated") && (
                           <button
@@ -297,13 +439,13 @@ export default function UserManagement() {
           )}
         </div>
 
-        {/* Reactivate Confirmation Modal */}
+        {/* Reactivate Modal */}
         {showEditConfirm && (
           <div className={styles.modalOverlay}>
             <div className={styles.modalContent}>
               <h3 className={styles.editmodalTitle}>Confirm Reactivation</h3>
               <p>
-                Are you sure you want to reactivate the account for{" "}
+                Are you sure you want to reactivate{" "}
                 <strong>{selectedUser?.name}</strong>?
               </p>
               <div className={styles.modalActions}>
@@ -318,10 +460,7 @@ export default function UserManagement() {
                 </button>
                 <button
                   className={styles.confirmButton}
-                  onClick={() => {
-                    setShowEditConfirm(false);
-                    setShowEditSuccess(true);
-                  }}
+                  onClick={handleReactivate}
                 >
                   Continue
                 </button>
@@ -334,7 +473,10 @@ export default function UserManagement() {
           <div className={styles.successmodalOverlay}>
             <div className={styles.modal}>
               <h3 className={styles.successmodalTitle}>Success!</h3>
-              <p>{selectedUser?.name} has been successfully reactivated.</p>
+              <p>
+                <strong>{selectedUser?.name}</strong> has been successfully
+                reactivated.
+              </p>
               <div className={styles.modalActions}>
                 <button
                   onClick={() => {
@@ -350,7 +492,7 @@ export default function UserManagement() {
           </div>
         )}
 
-        {/* Terminate Confirmation Modal */}
+        {/* Terminate Modal */}
         {showTerminateConfirm && (
           <div className={styles.modalOverlay}>
             <div className={styles.modalContent}>
@@ -358,7 +500,7 @@ export default function UserManagement() {
                 Confirm Termination
               </h3>
               <p>
-                Are you sure you want to terminate the account for{" "}
+                Are you sure you want to terminate{" "}
                 <strong>{selectedUser?.name}</strong>?
               </p>
               <div className={styles.modalActions}>
@@ -373,10 +515,7 @@ export default function UserManagement() {
                 </button>
                 <button
                   className={styles.terminateButton}
-                  onClick={() => {
-                    setShowTerminateConfirm(false);
-                    setShowTerminateSuccess(true);
-                  }}
+                  onClick={handleTerminate}
                 >
                   Continue
                 </button>
@@ -389,11 +528,70 @@ export default function UserManagement() {
           <div className={styles.successmodalOverlay}>
             <div className={styles.modal}>
               <h3 className={styles.successmodalTitle}>Terminated</h3>
-              <p>{selectedUser?.name} has been successfully terminated.</p>
+              <p>
+                <strong>{selectedUser?.name}</strong> has been successfully
+                terminated.
+              </p>
               <div className={styles.modalActions}>
                 <button
                   onClick={() => {
                     setShowTerminateSuccess(false);
+                    setSelectedUser(null);
+                  }}
+                  className={styles.closeButtonx}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Deactivate Modal */}
+        {showDeactivateConfirm && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.modalContent}>
+              <h3 className={styles.terminatemodalTitle}>
+                Confirm Deactivation
+              </h3>
+              <p>
+                Are you sure you want to deactivate{" "}
+                <strong>{selectedUser?.name}</strong>?
+              </p>
+              <div className={styles.modalActions}>
+                <button
+                  className={styles.terminatecancelButton}
+                  onClick={() => {
+                    setShowDeactivateConfirm(false);
+                    setSelectedUser(null);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className={styles.terminateButton}
+                  onClick={handleDeactivate}
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Deactivate Success Modal */}
+        {showDeactivateSuccess && (
+          <div className={styles.successmodalOverlay}>
+            <div className={styles.modal}>
+              <h3 className={styles.successmodalTitle}>Deactivated</h3>
+              <p>
+                <strong>{selectedUser?.name}</strong> has been successfully
+                deactivated.
+              </p>
+              <div className={styles.modalActions}>
+                <button
+                  onClick={() => {
+                    setShowDeactivateSuccess(false);
                     setSelectedUser(null);
                   }}
                   className={styles.closeButtonx}

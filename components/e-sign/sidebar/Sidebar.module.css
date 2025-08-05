@@ -1,0 +1,87 @@
+.sidebar {
+    width: clamp(200px, 20vw, 300px); /* min:180px, preferred:20% of viewport width, max:250px */
+  background-color: #fafafa;
+  border-right: 1px solid #ccc;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-maroon);
+    padding: 10px 0;
+    padding-inline: calc(clamp(180px, 20vw, 250px) * 0.1);
+    gap: 20px;
+    flex-wrap: nowrap;
+}
+
+.senderButtons, .receiverButtons {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    
+}
+
+.senderButtons > *, .receiverButtons > *  {
+    text-transform: capitalize;
+    color: black;
+    padding: 10px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    font-weight: 500;
+    border: none;
+}
+
+.senderButtons > * {
+
+}
+
+.senderButtons {
+}
+
+.dragAndDropButton {
+  background-color: white;
+}   
+
+.saveFileButton {
+    background-color: var(--color-yellow);
+    
+}
+
+.receiverButtons {
+    
+}
+
+.signDocument, .jumpToSignature {
+    background-color: white;
+}
+
+.backToDashboard {
+    color: white;
+    border-bottom: 1px solid white;
+    width: max-content;
+    margin-inline: auto;
+}
+
+.sidebarHeader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-transform: uppercase;
+    gap: 10px;
+}
+
+/* .sidebarHeader > :first-child {
+    width: 20px;
+    height: 20px;
+} */
+
+.sidebarHeader > label {
+    font-size: 2rem;
+    letter-spacing: -1;
+    color: var(--color-yellow);
+    font-weight: 900;
+    margin: 0;
+}
+
+.signatureCount {
+    text-align: center;
+}
