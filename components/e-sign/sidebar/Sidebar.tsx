@@ -12,6 +12,9 @@ export default function Sidebar({
   jumpToNextSignature,
   setModalOpen,
   setDraggingEnabled,
+  hasSigned,
+  resetSignaturePreview,
+  setViewMode,
 }: SidebarProps) {
   console.log("All placeholders", placeholders);
   console.log("Current role:", role);
@@ -25,7 +28,6 @@ export default function Sidebar({
   return (
     <div className={styles.sidebar}>
       <div className={styles.sidebarHeader}>
-
         <label htmlFor="">document</label>
       </div>
 
@@ -70,8 +72,7 @@ export default function Sidebar({
       {role !== "sender" && (
         <div className={styles.receiverButtons}>
           <p className={styles.signatureCount}>
-            You have {remainingPlaceholders.length} signature
-            placeholder
+            You have {remainingPlaceholders.length} signature placeholder
             {remainingPlaceholders.length === 1 ? "" : "s"} remaining.
           </p>
 
@@ -84,17 +85,16 @@ export default function Sidebar({
 
           <button
             onClick={() => {
-              console.log("Setting modal open to true");
+              resetSignaturePreview();
+              setViewMode("edit");
               setModalOpen(true);
             }}
             className={styles.signDocument}
           >
-            Sign Document
+            {hasSigned ? "Re-upload Signature" : "Sign Document"}
           </button>
 
-          <button className={styles.saveFileButton}>
-            Save File
-          </button>
+          <button className={styles.saveFileButton}>Save File</button>
         </div>
       )}
 
