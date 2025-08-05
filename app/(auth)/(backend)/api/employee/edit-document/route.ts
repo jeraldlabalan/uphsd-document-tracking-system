@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     } = await req.json();
 
     // Step 1: Create the document
-    const newDocument = await db.document.update({
+    const newDocument = await db.document.create({
       data: {
         Title,
         Description,

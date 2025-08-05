@@ -12,30 +12,33 @@ export default function MyDocuments() {
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [dateError, setDateError] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
 
-  const documents = [
-    {
-      id: 1,
-      name: "Budget Report",
-      file: "budget2025.pdf",
-      status: "Completed",
-      date: "2025-07-26",
-      type: "Budget",
-      creator: "John Doe",
-      preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
-    },
-    {
-      id: 2,
-      name: "IT Evaluation",
-      file: "eval-it.docx",
-      status: "Pending",
-      date: "2025-07-20",
-      type: "Evaluation",
-      creator: "John HAHA",
-      preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
-    },
-  ];
+  // const documents = [
+  //   {
+  //     id: 1,
+  //     name: "Budget Report",
+  //     file: "budget2025.pdf",
+  //     status: "Completed",
+  //     date: "2025-07-26",
+  //     type: "Budget",
+  //     creator: "John Doe",
+  //     preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
+  //   },
+  //   {
+  //     id: 2,
+  //     name: "IT Evaluation",
+  //     file: "eval-it.docx",
+  //     status: "Pending",
+  //     date: "2025-07-20",
+  //     type: "Evaluation",
+  //     creator: "John HAHA",
+  //     preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
+  //   },
+  // ];
+
+  
 
   const filteredDocs = documents.filter((doc) => {
     const matchesSearch =
@@ -65,6 +68,8 @@ export default function MyDocuments() {
   const handlePrint = () => {
     window.print();
   };
+
+
 
   return (
     <div>
@@ -163,18 +168,34 @@ export default function MyDocuments() {
                 <input
                   type="date"
                   value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
+                  onChange={(e) => {
+                    const newFrom = e.target.value;
+                    setDateFrom(newFrom);
+
+                    if (dateTo && newFrom > dateTo) {
+                      setDateError('"From" date cannot be later than "To" date.');
+                    } else {
+                      setDateError("");
+                    }
+                  }}
                   className={styles.dateInput}
                 />
-              </div>
 
-              <div className={styles.dateGroup}>
-                <span className={styles.dateLabel}>To:</span>
                 <input
                   type="date"
                   value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
+                  onChange={(e) => {
+                    const newTo = e.target.value;
+                    setDateTo(newTo);
+
+                    if (dateFrom && newTo < dateFrom) {
+                      setDateError('"To" date cannot be earlier than "From" date.');
+                    } else {
+                      setDateError("");
+                    }
+                  }}
                   className={styles.dateInput}
+                  min={dateFrom}
                 />
               </div>
             </div>
@@ -211,7 +232,7 @@ export default function MyDocuments() {
                     <td>{doc.date}</td>
                     <td className={styles.actions}>
                       <a href="#" onClick={() => setSelectedDoc(doc)}>View</a> |{" "}
-                      <Link href="./edit-doc">Edit</Link>
+                      <Link href={`./edit-doc/${doc.id}`}>Edit</Link>
                     </td>
                   </tr>
                 ))}
@@ -237,7 +258,7 @@ export default function MyDocuments() {
                   <p><strong className={styles.highlighted}>Creator:</strong> {doc.creator}</p>
                   <div className={styles.cardActions}>
                     <button onClick={() => setSelectedDoc(doc)}>View</button>
-                    <Link href="./edit-doc">Edit</Link>
+                    <Link href={`./edit-doc/${doc.id}`}>Edit</Link>
                   </div>
                 </div>
               ))}

@@ -37,6 +37,7 @@ export default function DocumentOverview() {
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [dateError, setDateError] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -209,21 +210,37 @@ const handleCloseSuccess = () => {
   <div className={styles.dateGroup}>
     <span className={styles.dateLabel}>From:</span>
     <input
-      type="date"
-      value={dateFrom}
-      onChange={(e) => setDateFrom(e.target.value)}
-      className={styles.dateInput}
-    />
-  </div>
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => {
+                    const newFrom = e.target.value;
+                    setDateFrom(newFrom);
 
-  <div className={styles.dateGroup}>
-    <span className={styles.dateLabel}>To:</span>
-    <input
-      type="date"
-      value={dateTo}
-      onChange={(e) => setDateTo(e.target.value)}
-      className={styles.dateInput}
-    />
+                    if (dateTo && newFrom > dateTo) {
+                      setDateError('"From" date cannot be later than "To" date.');
+                    } else {
+                      setDateError("");
+                    }
+                  }}
+                  className={styles.dateInput}
+                />
+
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => {
+                    const newTo = e.target.value;
+                    setDateTo(newTo);
+
+                    if (dateFrom && newTo < dateFrom) {
+                      setDateError('"To" date cannot be earlier than "From" date.');
+                    } else {
+                      setDateError("");
+                    }
+                  }}
+                  className={styles.dateInput}
+                  min={dateFrom}
+                />
   </div>
 </div>
 
