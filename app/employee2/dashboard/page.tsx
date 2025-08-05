@@ -16,13 +16,13 @@ export default function employeeDashboard() {
       once: true,
     });
   }, []);
-  
+
   const [documents, setDocuments] = useState<Document[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [search, setSearch] = useState("");
-  
+
   const [summary, setSummary] = useState({
     total: 0,
     inProcess: 0,
@@ -30,17 +30,17 @@ export default function employeeDashboard() {
     pending: 0,
   });
   type Document = {
-  id: number;
-  name: string;
-  type: string;
-  file: string;
-  status: string;
-  date: string;
-  creator: string;
-  preview?: string;
-};
+    id: number;
+    name: string;
+    type: string;
+    file: string;
+    status: string;
+    date: string;
+    creator: string;
+    preview?: string;
+  };
 
-   useEffect(() => {
+  useEffect(() => {
     AOS.init({ duration: 1000, once: true });
 
     const fetchData = async () => {
@@ -48,20 +48,22 @@ export default function employeeDashboard() {
         const res = await fetch("/api/employee/dashboard");
         const data = await res.json();
 
-        const formattedDocs: Document[] = data.recentDocuments.map((req: any) => ({
-          id: req.Document?.DocumentID, // <--- important!
-          name: req.Document?.DocumentName || "Untitled",
-          type: req.Document?.Type || "Unknown",
-          file: req.Document?.FileType || "PDF",
-          status: req.Status?.StatusName || "Pending",
-          date: new Date(req.RequestedAt).toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-         }),
-          creator: `${req.User?.FirstName || "Unknown"} ${req.User?.LastName || ""}`,
-          preview: req.Document?.FilePath || "",
-        }));
+        const formattedDocs: Document[] = data.recentDocuments.map(
+          (req: any) => ({
+            id: req.Document?.DocumentID,
+            name: req.Document?.Title || "Untitled",
+            type: req.Document?.DocumentType?.TypeName || "Unknown",
+            file: "PDF File", // Or adjust based on your schema
+            status: req.Status?.StatusName || "Pending",
+            date: new Date(req.RequestedAt).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            }),
+            creator: `${req.RequestedBy?.FirstName || "Unknown"} ${req.RequestedBy?.LastName || ""}`, // ✅ updated
+            preview: req.Document?.FilePath || "",
+          })
+        );
 
         setDocuments(formattedDocs);
         setSummary({
@@ -77,10 +79,6 @@ export default function employeeDashboard() {
 
     fetchData();
   }, []);
-
-  
-
-
 
   // const [selectedDoc, setSelectedDoc] = useState<Document | null>(null); // modal state
 
@@ -125,10 +123,10 @@ export default function employeeDashboard() {
   };
 
   const handleView = async (id: number) => {
-  const res = await fetch(`/api/documents/${id}`);
-  const data = await res.json();
-  setSelectedDoc(data); // assuming it returns full doc details
-};
+    const res = await fetch(`/api/documents/${id}`);
+    const data = await res.json();
+    setSelectedDoc(data); // assuming it returns full doc details
+  };
 
   const handlePrint = () => {
     if (selectedDoc?.preview) {
@@ -176,6 +174,10 @@ export default function employeeDashboard() {
             <div className={`${styles.card} ${styles.green}`}>
               <span className={styles.count}>{summary.completed}</span>
               <span>Completed</span>
+            </div>
+            <div className={`${styles.card} ${styles.green}`}>    // red DAPAT YAN @NEILYVAN CALIWAN
+              <span className={styles.count}>{summary.pending}</span>
+              <span>On Hold</span>
             </div>
           </div>
 
@@ -244,7 +246,9 @@ export default function employeeDashboard() {
                   </td>
                   <td>{doc.date}</td>
                   <td className={styles.actions}>
-                    <a href="#" onClick={() => handleView(doc.id)}>View</a>
+                    <a href="#" onClick={() => handleView(doc.id)}>
+                      View
+                    </a>
                     | <Link href={`./edit-doc/${doc.id}`}>Edit</Link>
                   </td>
                 </tr>

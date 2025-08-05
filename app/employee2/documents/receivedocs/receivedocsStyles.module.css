@@ -553,18 +553,31 @@
 }
 
 .download,
-.print {
+.print, 
+.Approve,
+.OnHold {
   position: relative;
   overflow: hidden;
-  background-color: var(--color-maroon);
-  color: white;
   font-weight: 600;
+  color: white;
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   z-index: 0;
   transition: color 0.3s ease;
+}
+
+.download, .print {
+  background-color: var(--color-maroon);
+}
+
+.Approve {
+  background-color: #008000; 
+}
+
+.OnHold {
+  background-color: #a52a2a;
 }
 
 .download::before,
@@ -580,6 +593,32 @@
   transition: left 0.4s ease;
 }
 
+.Approve::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: #00fa9a;
+  z-index: -1;
+  transition: left 0.4s ease;
+}
+
+
+.OnHold::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: #ff6347;
+  z-index: -1;
+  transition: left 0.4s ease;
+}
+
+
 .download:hover::before,
 .print:hover::before {
   left: 0;
@@ -589,6 +628,23 @@
 .print:hover {
   color: black;
 }
+
+.Approve:hover::before,
+.OnHold:hover::before {
+  left: 0;
+}
+
+.Approve:hover,
+.OnHold:hover {
+  color: black;
+}
+
+
+
+
+
+
+
 
 
 @media (max-width: 855px) {
