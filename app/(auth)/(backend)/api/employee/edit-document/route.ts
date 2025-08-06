@@ -17,60 +17,66 @@ export async function POST(req: NextRequest) {
       Role: string;
     };
 
-    const creatorID = decoded.UserID;
-
     const {
+      DocumentID,
       Title,
       Description,
       TypeID,
       FilePath,
       DepartmentID,
-      ApproverIDs, // array of UserIDs
+      ApproverIDs,
     } = await req.json();
 
-    // Step 1: Create the document
-    const newDocument = await db.document.create({
+    // 1. Update the existing document info
+    await db.document.update({
+      where: { DocumentID },
       data: {
         Title,
         Description,
-        TypeID: 1, // for testing only
-        CreatedBy: creatorID,
-        DepartmentID: DepartmentID || null,
+        TypeID,
+        DepartmentID,
       },
     });
 
-    await db.activityLog.create({
-      data: {
-        PerformedBy: creatorID,
-        Action: "Created Document",
-        TargetType: "Document",
-        Remarks: `Document "${Title}" created with ID ${newDocument.DocumentID}`,
-        TargetID: newDocument.DocumentID,
-      },
+    // 2. Get the current max version number
+    const latestVersion = await db.documentVersion.findFirst({
+      where: { DocumentID },
+      orderBy: { VersionNumber: "desc" },
     });
 
-    // Step 2: Create initial version and logs user activity
+    const newVersionNumber = (latestVersion?.VersionNumber || 0) + 1;
+
     const newVersion = await db.documentVersion.create({
       data: {
-        DocumentID: newDocument.DocumentID,
-        VersionNumber: 1,
+        DocumentID,
+        VersionNumber: newVersionNumber,
         FilePath,
-        ChangedBy: creatorID,
-        ChangeDescription: "Initial version",
+        ChangedBy: decoded.UserID,
+        ChangeDescription: "Updated version",
       },
     });
 
-    await db.activityLog.create({
-      data: {
-        PerformedBy: creatorID,
-        Action: "Created Document Version",
-        TargetType: "DocumentVersion",
-        Remarks: `Initial version uploaded for document ID ${newDocument.DocumentID}`,
-        TargetID: newVersion.VersionID,
-      },
+    // 3. Log activity
+    await db.activityLog.createMany({
+      data: [
+        {
+          PerformedBy: decoded.UserID,
+          Action: "Updated Document",
+          TargetType: "Document",
+          Remarks: `Document "${Title}" (ID ${DocumentID}) updated.`,
+          TargetID: DocumentID,
+        },
+        {
+          PerformedBy: decoded.UserID,
+          Action: "Created Document Version",
+          TargetType: "DocumentVersion",
+          Remarks: `New version ${newVersionNumber} added to document ID ${DocumentID}.`,
+          TargetID: newVersion.VersionID,
+        },
+      ],
     });
 
-    // Step 3: Find 'In-Process' status
+    // 4. Update document requests and notifications
     const pendingStatus = await db.status.findFirst({
       where: { StatusName: "In-Process" },
     });
@@ -82,13 +88,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Step 4: Create requests and notifications
+    // Optional: delete existing requests and notifs, if desired
+    await db.documentRequest.deleteMany({ where: { DocumentID } });
+    await db.notification.deleteMany({
+      where: {
+        Title: "New Document for Review",
+        Message: {
+          contains: `"${Title}"`, // assuming consistent format
+        },
+      },
+    });
+
+    // 5. Re-create requests and notifications
     const requests = ApproverIDs.map(async (approverID: number) => {
       const request = await db.documentRequest.create({
         data: {
-          RequestedByID: creatorID,
-          RecipientUserID: approverID, // <- Now correct!
-          DocumentID: newDocument.DocumentID,
+          RequestedByID: decoded.UserID,
+          RecipientUserID: approverID,
+          DocumentID,
           StatusID: pendingStatus.StatusID,
           Priority: "Normal",
           Remarks: "Awaiting review",
@@ -97,10 +114,10 @@ export async function POST(req: NextRequest) {
 
       await db.activityLog.create({
         data: {
-          PerformedBy: creatorID,
-          Action: "Created Document Request",
+          PerformedBy: decoded.UserID,
+          Action: "Updated Document Request",
           TargetType: "DocumentRequest",
-          Remarks: `Request created for user ${approverID} on document ${newDocument.DocumentID}`,
+          Remarks: `Request created for user ${approverID} on document ${DocumentID}`,
           TargetID: request.RequestID,
         },
       });
@@ -111,19 +128,19 @@ export async function POST(req: NextRequest) {
     const notifs = ApproverIDs.map(async (approverID: number) => {
       const notif = await db.notification.create({
         data: {
-          SenderID: creatorID,
-          ReceiverID: approverID, // <- Now correct!
+          SenderID: decoded.UserID,
+          ReceiverID: approverID,
           Title: "New Document for Review",
-          Message: `A new document "${Title}" requires your review.`,
+          Message: `A new version of "${Title}" requires your review.`,
         },
       });
 
       await db.activityLog.create({
         data: {
-          PerformedBy: creatorID,
+          PerformedBy: decoded.UserID,
           Action: "Sent Notification",
           TargetType: "Notification",
-          Remarks: `Notification sent to user ${approverID} for document ${newDocument.DocumentID}`,
+          Remarks: `Notification sent to user ${approverID} for document ${DocumentID}`,
           TargetID: notif.NotificationID,
         },
       });
@@ -133,12 +150,9 @@ export async function POST(req: NextRequest) {
 
     await Promise.all([...requests, ...notifs]);
 
-    return NextResponse.json({
-      message: "Document successfully created",
-      documentID: newDocument.DocumentID,
-    });
+    return NextResponse.json({ message: "Document successfully updated" });
   } catch (error) {
-    console.error("Document creation error:", error);
+    console.error("Edit Document Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

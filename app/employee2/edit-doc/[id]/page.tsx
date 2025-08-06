@@ -198,34 +198,7 @@ export default function CreateNewDocument() {
             </div>
           </div>
 
-          <div className={styles.inputGroup}>
-            <label>Additional Notes</label>
-            <textarea
-              className={styles.textareaField}
-              placeholder="Any additional instruction or note for approver"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </div>
 
-          <div className={styles.checkboxGroup}>
-            <label>
-              <input
-                type="checkbox"
-                checked={sendEmail}
-                onChange={(e) => setSendEmail(e.target.checked)}
-              />
-              Send email notifications to approver
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={readReceipt}
-                onChange={(e) => setReadReceipt(e.target.checked)}
-              />
-              Request read receipts
-            </label>
-          </div>
 
           <div className={styles.buttonGroup}>
             <div className={styles.leftButtons}>
