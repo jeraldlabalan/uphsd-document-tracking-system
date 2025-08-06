@@ -1,20 +1,15 @@
-// /app/api/document-types/route.ts
-import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const types = await db.documentType.findMany({
-      where: { IsDeleted: false }, // Only fetch active ones
-      select: {
-        TypeID: true,
-        TypeName: true,
-      },
+    const notifications = await db.notification.findMany({
+      orderBy: { CreatedAt: "desc" },
     });
 
-    return NextResponse.json(types);
+    return NextResponse.json(notifications);
   } catch (error) {
-    console.error("Failed to fetch document types:", error);
-    return NextResponse.json({ message: "Error fetching document types" }, { status: 500 });
+    console.error("❌ Failed to fetch notifications:", error);
+    return NextResponse.json({ error: "Failed to fetch notifications" }, { status: 500 });
   }
 }
