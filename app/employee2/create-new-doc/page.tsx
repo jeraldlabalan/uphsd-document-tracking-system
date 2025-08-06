@@ -1,9 +1,11 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import styles from "./createNewDocStyles.module.css";
-import { FileUp } from "lucide-react";
+import { FileUp, Plus, X } from "lucide-react";
 import EmpHeader from "@/components/shared/empHeader";
 import Link from "next/link";
+import CustomSelect from "@/components/custom-select/CustomSelect";
+import Select from "react-select";
 
 type Approver = {
   UserID: number;
@@ -27,15 +29,24 @@ export default function CreateNewDocument() {
   const [type, setType] = useState(0);
   const [filePath, setFilePath] = useState("");
   const [departmentID, setDepartmentID] = useState<number | null>(null);
-  const [approverIDs, setApproverIDs] = useState<number[]>([0]); // or []
+  const [approverIDs, setApproverIDs] = useState<number[]>(["Select Approver"]); // or []
   const [documentTypes, setDocumentTypes] = useState<
     { TypeID: number; TypeName: string }[]
   >([]);
 
-  const [selectedType, setSelectedType] = useState("");
+  const [selectedType, setSelectedType] = useState("Select Document Type");
   const [departments, setDepartments] = useState<
     { DepartmentID: number; Name: string }[]
   >([]);
+  const [files, setFiles] = useState([]);
+  const [approvalRequired, setApprovalRequired] = useState(false);
+  const [showDocuments, setShowDocuments] = useState(false);
+
+
+  const selectOptions = approvers.map((user) => ({
+  value: user.UserID,
+  label: `${user.FirstName} ${user.LastName}`,
+}));
 
   useEffect(() => {
     async function fetchDepartments() {
@@ -98,13 +109,11 @@ export default function CreateNewDocument() {
   }, []);
 
   const departmentOptions = [
-    "Select Department",
     "Information Technology",
     "Business",
     "Human Resource",
   ];
   const documentClassification = [
-    "Select Document Type",
     "Memo",
     "Report",
     "Notice",
@@ -136,11 +145,25 @@ export default function CreateNewDocument() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+  const handleFileChange = (e) => {
+    const newFile = e.target.files[0];
+    if (newFile) {
+      setFiles((prev) => [...prev, { file: newFile, requireEsign: false }]);
     }
   };
+
+  const handleToggleEsign = (index) => {
+    const updatedFiles = [...files];
+    updatedFiles[index].requireEsign = !updatedFiles[index].requireEsign;
+    setFiles(updatedFiles);
+  };
+
+  const handleRemoveFile = (index) => {
+    const updatedFiles = [...files];
+    updatedFiles.splice(index, 1);
+    setFiles(updatedFiles);
+  };
+
 
   const addApprover = () => {
     setApproverIDs([...approverIDs, 0]); // 0 means no selection yet
@@ -189,7 +212,7 @@ export default function CreateNewDocument() {
 
               <div className={styles.inputGroup}>
                 <label>Document Classification</label>
-                <select
+                {/* <select
                   id="documentType"
                   value={selectedType}
                   onChange={(e) => setSelectedType(e.target.value)}
@@ -201,7 +224,9 @@ export default function CreateNewDocument() {
                       {type.TypeName}
                     </option>
                   ))}
-                </select>
+                </select> */}
+
+                <CustomSelect options={documentClassification} value={selectedType} onChange={setSelectedType} />
               </div>
             </div>
 
@@ -217,7 +242,7 @@ export default function CreateNewDocument() {
 
             <div className={styles.inputGroup}>
               <label>Department</label>
-              <select
+              {/* <select
                 className={styles.selectField}
                 value={departmentID ?? ""}
                 onChange={(e) => {
@@ -232,124 +257,189 @@ export default function CreateNewDocument() {
                     {dep.Name}
                   </option>
                 ))}
-              </select>
+              </select> */}
+
+              <CustomSelect options={departmentOptions} value={department} onChange={setDepartment} />
+
             </div>
 
-            <div className={styles.sectionTitle}>Document Files</div>
+           <div className={styles.sectionHeader}>
+  <div className={styles.sectionTitle}>Document Files</div>
 
-            <div className={styles.inputGroup}>
-              <label>Upload Documents</label>
-              <label className={styles.uploadBox}>
-                <input
-                  type="file"
-                  onChange={handleFileChange}
-                  className={styles.hiddenInput}
-                />
-                <div className={styles.uploadContent}>
-                  <FileUp size={32} />
-                  <span>
-                    {selectedFile
-                      ? selectedFile.name
-                      : "Click or drag to upload"}
-                  </span>
-                </div>
-              </label>
-            </div>
+  <div className={styles.toggleContainer}>
+    <span>Document Required</span>
+    <label className={styles.switch}>
+      <input
+        type="checkbox"
+        checked={showDocuments}
+        onChange={() => setShowDocuments(!showDocuments)}
+      />
+      <span className={styles.slider}></span>
+    </label>
+  </div>
+</div>
+
+
+{showDocuments && (
+  <>
+    {files.map((item, index) => (
+      <div key={index} className={styles.inputGroup}>
+        <div className={styles.fileItem}>
+          <span className={styles.fileName}>{item.file.name}</span>
+
+          <div className={styles.fileActions}>
+            <label className={styles.switchContainer}>
+              <input
+                type="checkbox"
+                checked={item.requireEsign}
+                onChange={() => handleToggleEsign(index)}
+              />
+              <span className={styles.switchSlider}></span>
+              <span className={styles.switchLabel}>Require E-sign</span>
+            </label>
+
+            <button
+              type="button"
+              className={styles.removeBtn}
+              onClick={() => handleRemoveFile(index)}
+              aria-label="Remove file"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+      </div>
+    ))}
+
+    <div className={styles.inputGroup}>
+      <label>Upload Documents</label>
+
+      <label className={styles.uploadBox}>
+        <input
+          type="file"
+          onChange={handleFileChange}
+          className={styles.hiddenInput}
+        />
+        <div className={styles.uploadContent}>
+          <FileUp size={32} />
+          <span>Click or drag to upload</span>
+        </div>
+      </label>
+
+      {files.length > 0 && (
+        <button
+          type="button"
+          onClick={() =>
+            document.querySelector(`.${styles.hiddenInput}`).click()
+          }
+          className={styles.addFileBtn}
+        >
+          <Plus size={20} /> Add another file
+        </button>
+      )}
+    </div>
+  </>
+)}
+
+
+
 
             {/* Send Document Section */}
-            <div className={styles.sectionTitle}>Send Document</div>
+<div className={styles.sectionTitle}>Send Document</div>
 
-            <div className={styles.approvalContainer}>
-              <div className={styles.approvalHeader}>
-                <p>
-                  Select the people who need to review and approve this document
-                  in order.
-                </p>
-                <div className={styles.toggleContainer}>
-                  <span>Approval Required</span>
-                  <label className={styles.switch}>
-                    <input type="checkbox" />
-                    <span className={styles.slider}></span>
-                  </label>
-                </div>
-              </div>
+<div className={styles.approvalContainer}>
+  <div className={styles.approvalHeader}>
+    <p>
+      Select the people who need to review and approve this document in order.
+    </p>
+    <div className={styles.toggleContainer}>
+      <span>Approval Required</span>
+      <label className={styles.switch}>
+        <input
+          type="checkbox"
+          checked={approvalRequired}
+          onChange={(e) => setApprovalRequired(e.target.checked)}
+        />
+        <span className={styles.slider}></span>
+      </label>
+    </div>
+  </div>
 
-              {approverIDs.map((id, index) => (
-                <div className={styles.approverRow} key={index}>
-                  <span className={styles.approverNumber}>{index + 1}</span>
-                  <select
-                    className={styles.selectField}
-                    value={id}
-                    onChange={(e) => {
-                      const newIDs = [...approverIDs];
-                      newIDs[index] = Number(e.target.value);
-                      setApproverIDs(newIDs);
-                    }}
-                  >
-                    <option value="">Select an approver</option>
-                    {approvers.map((user) => (
-                      <option key={user.UserID} value={user.UserID}>
-                        {user.FirstName} {user.LastName}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={addApprover}
-                    className={styles.addBtn}
-                  >
-                    + Add Approver
-                  </button>
+  {/* ✅ Conditionally show approver rows */}
+{approvalRequired &&
+  approverIDs.map((id, index) => (
+    <div className={styles.approverRow} key={index}>
+      <span className={styles.approverNumber}>{index + 1}</span>
 
-                  <button type="button" onClick={() => removeApprover(index)}>
-                    Remove
-                  </button>
-                </div>
-              ))}
-            </div>
+      {/* ✅ Searchable Select Dropdown */}
+      <Select
+  classNamePrefix="select"
+  options={selectOptions}
+  value={selectOptions.find((opt) => opt.value === id) || null}
+  onChange={(selected) => {
+    const newIDs = [...approverIDs];
+    newIDs[index] = selected?.value || null;
+    setApproverIDs(newIDs);
+  }}
+  placeholder="Select approver..."
+  isSearchable
+  menuPortalTarget={typeof window !== "undefined" ? document.body : null}
+  styles={{
+    container: (base) => ({
+      ...base,
+      width: 'auto',         
+      minWidth: '120px',     
+      maxWidth: '100%',     
+      flex: 1,              
+    }),
+    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+  }}
+/>
 
-            <div className={styles.formGroup}>
+
+
+
+      {/* ✅ Add Approver Button */}
+      <button
+        type="button"
+        onClick={addApprover}
+        className={styles.addBtn}
+      >
+        + Add Approver
+      </button>
+
+      {/* ✅ Only show Remove if more than 1 approver */}
+      {approverIDs.length > 1 && (
+        <button
+          type="button"
+          onClick={() => removeApprover(index)}
+          className={styles.removeBtn}
+        >
+          Remove
+        </button>
+      )}
+    </div>
+  ))}
+
+
+
+
+            
               <div className={styles.inputGroup}>
-                <label>Date</label>
-                <input
-                  type="date"
-                  className={styles.inputField}
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                />
-              </div>
-              <div className={styles.inputGroup}>
-                <label>
-                  Due Date <span className={styles.optional}>(optional)</span>
-                </label>
-                <input
-                  type="date"
-                  className={styles.inputField}
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                />
-              </div>
+  <label>
+    Due Date <span className={styles.optional}>(optional)</span>
+  </label>
+  <input
+    type="date"
+    className={styles.inputField}
+    value={dueDate}
+    onChange={(e) => setDueDate(e.target.value)}
+    min={new Date().toISOString().split("T")[0]} // 👈 prevents past dates
+  />
+</div>
             </div>
 
-            <div className={styles.checkboxGroup}>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={sendEmail}
-                  onChange={(e) => setSendEmail(e.target.checked)}
-                />
-                Send email notifications to approver
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={readReceipt}
-                  onChange={(e) => setReadReceipt(e.target.checked)}
-                />
-                Request read receipts
-              </label>
-            </div>
-
+           
             <div className={styles.buttonGroup}>
               <div className={styles.leftButtons}>
                 <Link href="./my-documents">

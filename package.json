@@ -38,6 +38,7 @@
     "react-pdf": "^7.7.0",
     "react-resizable": "^3.0.4",
     "react-rnd": "^10.5.2",
+    "react-select": "^5.10.2",
     "react-signature-canvas": "^1.1.0-alpha.2",
     "resend": "^4.7.0",
     "uuid": "^11.1.0"
