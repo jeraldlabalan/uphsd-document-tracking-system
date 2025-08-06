@@ -48,19 +48,19 @@ export default function employeeDashboard() {
         const res = await fetch("/api/employee/dashboard");
         const data = await res.json();
 
-        const formattedDocs: Document[] = data.recentDocuments.map(
+        const formattedDocs: Document[] = (data.recentDocuments || []).map(
           (req: any) => ({
             id: req.Document?.DocumentID,
             name: req.Document?.Title || "Untitled",
             type: req.Document?.DocumentType?.TypeName || "Unknown",
-            file: "PDF File", // Or adjust based on your schema
+            file: "PDF File",
             status: req.Status?.StatusName || "Pending",
             date: new Date(req.RequestedAt).toLocaleDateString("en-US", {
               year: "numeric",
               month: "long",
               day: "numeric",
             }),
-            creator: `${req.RequestedBy?.FirstName || "Unknown"} ${req.RequestedBy?.LastName || ""}`, // ✅ updated
+            creator: `${req.RequestedBy?.FirstName || "Unknown"} ${req.RequestedBy?.LastName || ""}`,
             preview: req.Document?.FilePath || "",
           })
         );
@@ -175,7 +175,9 @@ export default function employeeDashboard() {
               <span className={styles.count}>{summary.completed}</span>
               <span>Completed</span>
             </div>
-            <div className={`${styles.card} ${styles.green}`}>    // red DAPAT YAN @NEILYVAN CALIWAN
+            <div className={`${styles.card} ${styles.green}`}>
+              {" "}
+              // red DAPAT YAN @NEILYVAN CALIWAN
               <span className={styles.count}>{summary.pending}</span>
               <span>On Hold</span>
             </div>
