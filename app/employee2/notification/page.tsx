@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./notificationStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
 
@@ -14,41 +14,43 @@ type Notification = {
   color: string;
 };
 
-const initialNotifications: Notification[] = [
-  {
-    id: 1,
-    title: "IT Equipment Purchase Request",
-    content:
-      "Kurt Macaranas has submitted a request for an academic transcript. The request is pending approval from the Registrar's office.",
-    time: "15 minutes ago",
-    tag: "Document Request",
-    status: "Unread",
-    color: "#ff8000ff",
-  },
-  {
-    id: 2,
-    title: "Student Good Moral Request",
-    content:
-      'The document request for "Student Good Moral" submitted by Kurt Macaranas has been approved.',
-    time: "15 minutes ago",
-    tag: "Document Request",
-    status: "Unread",
-    color: "#2E7D32",
-  },
-  {
-    id: 3,
-    title: "Document Approval",
-    content:
-      "Jerald Labalan has submitted a request for an academic transcript. The request is pending approval from.",
-    time: "15 minutes ago",
-    tag: "Document for Approval",
-    status: "Unread",
-    color: "#00796B",
-  },
-];
+// const initialNotifications: Notification[] = [
+//   {
+//     id: 1,
+//     title: "IT Equipment Purchase Request",
+//     content:
+//       "Kurt Macaranas has submitted a request for an academic transcript. The request is pending approval from the Registrar's office.",
+//     time: "15 minutes ago",
+//     tag: "Document Request",
+//     status: "Unread",
+//     color: "#ff8000ff",
+//   },
+//   {
+//     id: 2,
+//     title: "Student Good Moral Request",
+//     content:
+//       'The document request for "Student Good Moral" submitted by Kurt Macaranas has been approved.',
+//     time: "15 minutes ago",
+//     tag: "Document Request",
+//     status: "Unread",
+//     color: "#2E7D32",
+//   },
+//   {
+//     id: 3,
+//     title: "Document Approval",
+//     content:
+//       "Jerald Labalan has submitted a request for an academic transcript. The request is pending approval from.",
+//     time: "15 minutes ago",
+//     tag: "Document for Approval",
+//     status: "Unread",
+//     color: "#00796B",
+//   },
+// ];
+
+
 
 export default function NotificationPage() {
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
   const [selectedNotification, setSelectedNotification] =
     useState<Notification | null>(null);
@@ -61,6 +63,21 @@ export default function NotificationPage() {
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
+
+
+useEffect(() => {
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch("/api/employee/notification"); // Adjust endpoint!
+      const data = await response.json();
+      setNotifications(data);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    }
+  };
+
+  fetchNotifications();
+}, []);
 
   const toggleAll = () => {
     setSelected(

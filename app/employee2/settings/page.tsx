@@ -268,6 +268,7 @@ export default function ProfileSettings() {
                       className={styles.inputField}
                       name="email"
                       value={email}
+                      readOnly
                       onChange={(e) => setEmail(e.target.value)}
                     />
                   </div>
