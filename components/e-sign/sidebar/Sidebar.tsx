@@ -1,8 +1,6 @@
 import { useState } from "react";
 import styles from "./Sidebar.module.css";
 import { SidebarProps, Role } from "../types";
-import CustomSelect from "@/components/custom-select/CustomSelect";
-
 
 export default function Sidebar({
   role,
@@ -112,9 +110,7 @@ const [selectedDepartment, setSelectedDepartment] = useState("Select");
 
       <a href="" className={styles.backToDashboard}>
         Back to dashboard
-      </a>
-
-      <CustomSelect options={departmentOptions} value={selectedDepartment} onChange={(val) => setSelectedDepartment(val)} />
+      </a>        
     </div>
   );
 }
