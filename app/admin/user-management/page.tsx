@@ -300,7 +300,7 @@ export default function UserManagement() {
                   }}
                   className={styles.dateInput}
                 />
-
+              <span className={styles.dateLabel}>To:</span>
                 <input
                   type="date"
                   value={dateTo}
@@ -322,7 +322,10 @@ export default function UserManagement() {
           </div>
 
           {loading ? (
+            <div className={styles.loadingContainer}>
+            <div className={styles.spinner}></div>
             <p>Loading users...</p>
+          </div>
           ) : error ? (
             <p style={{ color: "red" }}>Error: {error}</p>
           ) : (
@@ -375,7 +378,7 @@ export default function UserManagement() {
                           <>
                             <Link
                               href={`/admin/user-management/edit-user/${user.id}`}
-                              className={styles.actionBtn}
+                              className={`${styles.actionBtn} ${styles.editBtn}`}
                               onClick={() => {
                                 if (typeof window !== "undefined") {
                                   const [firstName, ...rest] =
@@ -395,9 +398,10 @@ export default function UserManagement() {
                             >
                               Edit
                             </Link>
+                             {" "}
 
                             <button
-                              className={styles.actionBtn}
+                              className={`${styles.actionBtn} ${styles.deactivateBtn}`}
                               onClick={() => {
                                 setSelectedUser(user);
                                 setShowDeactivateConfirm(true);
@@ -405,9 +409,10 @@ export default function UserManagement() {
                             >
                               Deactivate
                             </button>
+                             {" "}
 
                             <button
-                              className={styles.actionBtn}
+                              className={`${styles.actionBtn} ${styles.terminateBtn}`}
                               onClick={() => {
                                 setSelectedUser(user);
                                 setShowTerminateConfirm(true);
@@ -421,7 +426,7 @@ export default function UserManagement() {
                         {(user.status === "Inactive" ||
                           user.status === "Terminated") && (
                           <button
-                            className={styles.actionBtn}
+                            className={`${styles.actionBtn} ${styles.reactivateBtn}`}
                             onClick={() => {
                               setSelectedUser(user);
                               setShowEditConfirm(true);

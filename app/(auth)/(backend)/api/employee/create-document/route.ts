@@ -31,9 +31,9 @@ export async function POST(req: NextRequest) {
     // Step 1: Create the document
     const newDocument = await db.document.create({
       data: {
-        Title,
+        Title: Title,
         Description,
-        TypeID: 1, // for testing only
+        TypeID: TypeID, // for testing only
         CreatedBy: creatorID,
         DepartmentID: DepartmentID || null,
       },
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
       const request = await db.documentRequest.create({
         data: {
           RequestedByID: creatorID,
-          RecipientUserID: approverID, // <- Now correct!
+          RecipientUserID: approverID, // <- Now correct! should be the approverID
           DocumentID: newDocument.DocumentID,
           StatusID: pendingStatus.StatusID,
           Priority: "Normal",
@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
       const notif = await db.notification.create({
         data: {
           SenderID: creatorID,
-          ReceiverID: approverID, // <- Now correct!
+          ReceiverID: approverID, // <- Now correct! should
           Title: "New Document for Review",
           Message: `A new document "${Title}" requires your review.`,
         },

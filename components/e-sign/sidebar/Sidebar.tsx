@@ -2,6 +2,7 @@ import { useState } from "react";
 import styles from "./Sidebar.module.css";
 import { SidebarProps, Role } from "../types";
 
+
 export default function Sidebar({
   role,
   signees,
@@ -111,6 +112,7 @@ const [selectedDepartment, setSelectedDepartment] = useState("Select");
       <a href="" className={styles.backToDashboard}>
         Back to dashboard
       </a>        
+
     </div>
   );
 }
