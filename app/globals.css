@@ -18,3 +18,7 @@
 button, a, li {
   cursor: pointer;
 }
+
+html, body {
+  overflow-x: hidden;
+}
