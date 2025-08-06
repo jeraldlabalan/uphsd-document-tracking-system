@@ -18,7 +18,7 @@ export default function employeeDashboard() {
   }, []);
 
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
+  const [selectedDoc, setSelectedDoc] = useState<Document | null>(null); // modal state
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [search, setSearch] = useState("");
@@ -80,7 +80,7 @@ export default function employeeDashboard() {
     fetchData();
   }, []);
 
-  // const [selectedDoc, setSelectedDoc] = useState<Document | null>(null); // modal state
+  
 
   // const documents: Document[] = [
   //   {
@@ -175,9 +175,7 @@ export default function employeeDashboard() {
               <span className={styles.count}>{summary.completed}</span>
               <span>Completed</span>
             </div>
-            <div className={`${styles.card} ${styles.green}`}>
-              {" "}
-              // red DAPAT YAN @NEILYVAN CALIWAN
+            <div className={`${styles.card} ${styles.red}`}>
               <span className={styles.count}>{summary.pending}</span>
               <span>On Hold</span>
             </div>

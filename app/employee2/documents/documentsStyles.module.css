@@ -385,4 +385,10 @@
     display: inline-block;
     margin: 0.25rem 0;
   }
+
+  .dateGroup {
+    flex-direction: column;
+    align-items: flex-start; 
+    gap: 4px; 
+  }
 }

@@ -195,6 +195,7 @@ export default function CreateNewDocument() {
       <div className={styles.contentContainer}>
         <div className={styles.formWrapper}>
           <h2 className={styles.title}>Create New Document</h2>
+          <hr className={styles.separator}></hr>
 
           <div className={styles.sectionTitle}>Information</div>
           <form onSubmit={handleSubmit} className={styles.form}>

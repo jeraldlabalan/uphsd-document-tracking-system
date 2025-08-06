@@ -30,11 +30,17 @@
     text-shadow: rgba(0, 0, 0, 0.6) 1px 1px 0.5px;
 }
 
+.separator {
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+  border: 0;
+  border-top: 1px solid #ccc;
+}
+
 .sectionTitle {
   font-weight: bold;
   font-size: 1.5rem;
   color: var(--color-maroon);
-  padding-top: 2rem;
   padding-bottom: 1rem;
 }
 
@@ -81,9 +87,8 @@
 .inputField:focus,
 .selectField:focus,
 .textareaField:focus {
-  outline: none;
-  border-color: #7a0c1b;
-  box-shadow: 0 0 5px rgba(122, 12, 27, 0.5);
+  outline: var(--color-maroon) solid 2px;
+  
 }
 
 
@@ -93,7 +98,7 @@
 
 
 .textareaField {
-  resize: vertical;
+  resize:none;
   min-height: 80px;
 }
 
@@ -192,38 +197,95 @@
   transform: translateX(18px);
 }
 
-.approverRow {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding-bottom: 1rem;
-}
-
 .approverNumber {
-  font-size: 1.2rem;
   font-weight: bold;
   color: var(--color-maroon);
 }
 
-.addBtn {
-  background-color: #117a37;
-  color: white;
-  padding: 0.4rem 1rem;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: 500;
+.approverRow {
+  display: flex;
+  justify-content: space-between; 
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  background-color: #f9f9f9;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  overflow-x: auto; 
 }
 
+.selectField {
+  flex: 1 1 200px;
+  min-width: 150px;
+}
+
+.addBtn,
 .removeBtn {
-  background-color: var(--color-maroon);
-  color: white;
-  border: none;
+  position: relative;
   padding: 0.4rem 0.8rem;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
+  overflow: hidden;
+  z-index: 0;
+  transition: color 0.3s ease;
+  flex-shrink: 0;
+  border: none;
 }
+
+/* Background hover slide */
+.addBtn::before,
+.removeBtn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  transition: left 0.4s ease;
+  z-index: -1;
+}
+
+/* Green button */
+.addBtn {
+  background-color: #018749;
+  color: white;
+}
+
+.addBtn::before {
+  background-color: #0BDA51;
+  color: white;
+}
+
+.addBtn:hover::before {
+  left: 0;
+}
+
+/* Red outline button */
+.removeBtn {
+  background-color: white;
+  color: #ad191b;
+  border: 1px solid #ad191b;
+}
+
+.removeBtn::before {
+  
+  background-color: red;
+}
+
+.removeBtn:hover {
+  color: white;
+}
+
+.addBtn:hover {
+  color: black;
+}
+
+.removeBtn:hover::before {
+  left: 0;
+}
+
 
 .optional {
   font-weight: normal;
@@ -329,6 +391,159 @@
 }
 
 
+.uploadBox {
+  border: 2px dashed #ccc;
+  padding: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.uploadContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.fileItem {
+  width: 100%; 
+  display: flex;
+  flex-wrap: wrap; 
+  justify-content: space-around;
+  align-items: center;
+  background: #f5f5f5;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  gap: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+
+.fileName {
+  flex-grow: 1;
+  word-break: break-word;
+}
+
+.fileActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.switchContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.switchContainer input {
+  display: none;
+}
+
+.switchSlider {
+  position: relative;
+  width: 40px;
+  height: 20px;
+  background-color: #ccc;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  flex-shrink: 0;
+}
+
+.switchSlider::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  height: 16px;
+  width: 16px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+
+.switchContainer input:checked + .switchSlider {
+  background-color: #4caf50;
+}
+
+.switchContainer input:checked + .switchSlider::before {
+  transform: translateX(20px);
+}
+
+.switchLabel {
+  font-size: 0.95rem;
+}
+
+.addFileBtn {
+  position: relative;
+  margin: 0.5rem auto; 
+  background-color: var(--color-maroon);
+  color: white;
+  padding: 0.5rem 1rem;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  overflow: hidden;
+  z-index: 0;
+  transition: color 0.3s ease;
+}
+
+.addFileBtn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-yellow);
+  z-index: -1;
+  transition: left 0.4s ease;
+}
+
+.addFileBtn:hover::before {
+  left: 0;
+}
+
+.addFileBtn:hover {
+  color: black;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.toggleContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toggleContainer span{
+  color: #333;
+}
+
+
+
+
+
 
 
 @media (max-width: 768px) {
@@ -342,5 +557,64 @@
 
   .formGroup {
     flex-direction: column;
+  }
+
+  .approvalHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .approvalContainer {
+    padding: 0.8rem;
+    border-radius: 8px;
+    text-align: center;
+  }
+
+  .approverRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .selectField {
+    width: 100%;
+  }
+
+  .fileItem {
+    flex-wrap: nowrap;
+  }
+
+  .toggleContainer {
+    flex-direction: column;
+    align-items: flex-start; 
+  }
+
+  .switchSlider {
+    width: 30px;
+    height: 16px;
+  }
+
+  .switchLabel {
+    font-size: 0.8rem;
+  }
+
+  .switchContainer {
+    gap: 0.3rem;
+  }
+  
+  .switchSlider::before {
+    content: "";
+    position: absolute;
+    left: -1px;
+    top: 0px;
+    height: 16px;
+    width: 16px;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.3s;
+  }
+
+  .removeBtn{
+    padding: 0.4rem;
+    font-size: 0.9rem;
   }
 }
