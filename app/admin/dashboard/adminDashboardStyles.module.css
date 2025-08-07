@@ -245,6 +245,9 @@
 .yellow {
   border-left: 10px solid #fffd91;
 }
+.red {
+  border-left: 10px solid #F8D7DA;
+}
 
 .orange::before {
   background-color: #FAC898;
@@ -260,6 +263,9 @@
 
 .yellow::before {
   background-color: #fffd91;
+}
+.red {
+  border-left: 10px solid #F8D7DA;
 }
 
 

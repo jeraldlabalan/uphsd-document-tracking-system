@@ -40,9 +40,29 @@ export default function AdminDashboard() {
 
 
 
-  const weeklyData = [3, 2, 4, 1, 5, 0, 2];
-  const monthlyData = [10, 12, 8, 14, 6, 11, 15, 9];
-  const yearlyData = [100];
+
+const weeklyData = {
+  pending:    [5, 4, 6, 3, 7, 2, 1],
+  completed:  [10, 12, 9, 11, 13, 8, 6],
+  onHold:     [1, 0, 2, 1, 0, 1, 1],
+};
+
+
+const monthlyData = {
+  pending:    [12, 14, 11, 13, 9, 15, 10, 12, 11, 13, 14, 10],
+  completed:  [30, 32, 28, 31, 26, 34, 29, 30, 31, 33, 32, 30],
+  onHold:     [3, 2, 4, 3, 5, 2, 4, 3, 2, 4, 3, 5],
+};
+
+
+const yearlyData = {
+  pending:    [120],
+  completed:  [340],
+  onHold:     [40],
+};
+
+
+
 
   const weeklyChartRef = useRef<any>(null);
 const monthlyChartRef = useRef<any>(null);
@@ -186,75 +206,186 @@ const prepareChartImages = () => {
   </div>
 
   {/* Charts */}
-  {selectedDetails.includes("weekly") && (
-    <div ref={weeklyRef} style={{ marginTop: "2rem" }}>
-      <h3>Weekly Graph</h3>
-      <Bar
-        data={{
-          labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-          datasets: [{
-            label: "Weekly Documents",
-            data: weeklyData,
-            backgroundColor: "#800000"
-          }],
-        }}
-        options={{
-          responsive: false, // important for fixed size
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-        }}
-        width={600}
-        height={300}
-      />
-    </div>
-  )}
+ {selectedDetails.includes("weekly") && (
+  <div ref={weeklyRef} style={{ marginTop: "2rem" }}>
+    <h3>Weekly Graph</h3>
+    <Bar
+      data={{
+        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        datasets: [
+          {
+            label: "Pending",
+            data: weeklyData.pending,
+            backgroundColor: "#FFA500",
+          },
+          {
+            label: "Completed",
+            data: weeklyData.completed,
+            backgroundColor: "#008000",
+          },
+          {
+            label: "On Hold",
+            data: weeklyData.onHold,
+            backgroundColor: "#808080",
+          },
+        ],
+      }}
+      options={{
+        responsive: false,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: "top" },
+        },
+      }}
+      width={600}
+      height={300}
+    />
+  </div>
+)}
+
+
 
   {selectedDetails.includes("monthly") && (
-    <div ref={monthlyRef} style={{ marginTop: "2rem" }}>
-      <h3>Monthly Graph</h3>
-      <Bar
-        data={{
-          labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"],
-          datasets: [{
-            label: "Monthly Documents",
-            data: monthlyData,
-            backgroundColor: "#800000"
-          }],
-        }}
-        options={{
-          responsive: false,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-        }}
-        width={600}
-        height={300}
-      />
-    </div>
-  )}
+  <div ref={monthlyRef} style={{ marginTop: "2rem" }}>
+    <h3>Monthly Graph</h3>
+    <Bar
+      data={{
+        labels: [
+          "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        ],
+        datasets: [
+          {
+            label: "Pending",
+            data: monthlyData.pending,
+            backgroundColor: "#FFA500",
+          },
+          {
+            label: "Completed",
+            data: monthlyData.completed,
+            backgroundColor: "#008000",
+          },
+          {
+            label: "On Hold",
+            data: monthlyData.onHold,
+            backgroundColor: "#808080",
+          },
+        ],
+      }}
+      options={{
+        responsive: false,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: "top" },
+        },
+      }}
+      width={600}
+      height={300}
+    />
+  </div>
+)}
+
 
   {selectedDetails.includes("yearly") && (
-    <div ref={yearlyRef} style={{ marginTop: "2rem" }}>
-      <h3>Yearly Graph</h3>
-      <Bar
-        data={{
-          labels: ["2025"],
-          datasets: [{
-            label: "Yearly Documents",
-            data: yearlyData,
-            backgroundColor: "#800000"
-          }],
-        }}
-        options={{
-          responsive: false,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-        }}
-        width={600}
-        height={300}
-      />
-    </div>
-  )}
+  <div ref={yearlyRef} style={{ marginTop: "2rem" }}>
+    <h3>Yearly Graph</h3>
+    <Bar
+      data={{
+        labels: ["2025"],
+        datasets: [
+          {
+            label: "Pending",
+            data: yearlyData.pending,
+            backgroundColor: "#FFA500",
+          },
+          {
+            label: "Completed",
+            data: yearlyData.completed,
+            backgroundColor: "#008000",
+          },
+          {
+            label: "On Hold",
+            data: yearlyData.onHold,
+            backgroundColor: "#808080",
+          },
+        ],
+      }}
+      options={{
+        responsive: false,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: "top" },
+        },
+      }}
+      width={600}
+      height={300}
+    />
+  </div>
+)}
 </div>
+
+{showPrintModal && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalContent}>
+      <h2>Select Data to Download</h2>
+
+      <div className={styles.logoWrapper}>
+        <img src="/logo.png" alt="Logo" className={styles.logoImage} />
+      </div>
+
+      <div className={styles.checkboxGroup}>
+        <label>
+          <input
+            type="checkbox"
+            checked={selectedDetails.includes("weekly")}
+            onChange={(e) =>
+              setSelectedDetails((prev) =>
+                e.target.checked ? [...prev, "weekly"] : prev.filter((item) => item !== "weekly")
+              )
+            }
+          />
+          Weekly
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            checked={selectedDetails.includes("monthly")}
+            onChange={(e) =>
+              setSelectedDetails((prev) =>
+                e.target.checked ? [...prev, "monthly"] : prev.filter((item) => item !== "monthly")
+              )
+            }
+          />
+          Monthly
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            checked={selectedDetails.includes("yearly")}
+            onChange={(e) =>
+              setSelectedDetails((prev) =>
+                e.target.checked ? [...prev, "yearly"] : prev.filter((item) => item !== "yearly")
+              )
+            }
+          />
+          Yearly
+        </label>
+      </div>
+
+      <div className={styles.buttonGroup}>
+        <button onClick={handleDownload} className={styles.downloadButton}>
+          Download PDF
+        </button>
+        <button onClick={() => setShowPrintModal(false)} className={styles.cancelButton}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
       {/* Main Content */}
       <div className={styles.container}>
@@ -267,7 +398,7 @@ const prepareChartImages = () => {
           {/* Summary Cards */}
           <div className={styles.summary}>
             <Link href="./user-management" className={styles.cardLink}>
-              <div className={`${styles.card} ${styles.orange}`}>
+              <div className={`${styles.card} ${styles.cyan}`}>
                 <Users className={styles.icon} />
                 <span className={styles.count}>30</span>
                 <span>Total Users</span>
@@ -275,7 +406,7 @@ const prepareChartImages = () => {
             </Link>
 
             <Link href="./document-overview" className={styles.cardLink}>
-              <div className={`${styles.card} ${styles.cyan}`}>
+              <div className={`${styles.card} ${styles.green}`}>
                 <FileText className={styles.icon} />
                 <span className={styles.count}>3</span>
                 <span>Total Documents</span>
@@ -283,7 +414,7 @@ const prepareChartImages = () => {
             </Link>
 
             <Link href="./user-management" className={styles.cardLink}>
-              <div className={`${styles.card} ${styles.green}`}>
+              <div className={`${styles.card} ${styles.orange}`}>
                 <School className={styles.icon} />
                 <span className={styles.count}>5</span>
                 <span>Total Departments</span>
@@ -291,32 +422,72 @@ const prepareChartImages = () => {
             </Link>
           </div>
 
-          {/* Charts */}
           <div className={styles.graphContainer}>
-            {["weekly", "monthly", "yearly"].map((type) => (
-              <div key={type} className={styles.chartCard} onClick={() => setActiveChart(type as any)}>
-                <h3 className={styles.chartTitle}>{type.charAt(0).toUpperCase() + type.slice(1)}</h3>
-                <Bar
-                  data={{
-                    labels:
-                      type === "weekly"
-                        ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-                        : type === "monthly"
-                        ? ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"]
-                        : ["2025"],
-                    datasets: [
-                      {
-                        label: "Documents",
-                        data: type === "weekly" ? weeklyData : type === "monthly" ? monthlyData : yearlyData,
-                        backgroundColor: type === "weekly" ? "#FFA500" : type === "monthly" ? "#00BFFF" : "#32CD32",
-                      },
-                    ],
-                  }}
-                  options={{ responsive: true, maintainAspectRatio: false }}
-                />
-              </div>
-            ))}
-          </div>
+  {["weekly", "monthly", "yearly"].map((type) => {
+    // Label sets
+    const labels =
+      type === "weekly"
+        ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        : type === "monthly"
+        ? ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"]
+        : ["2025"];
+
+    // Data sets
+    const dataSet =
+      type === "weekly"
+        ? weeklyData
+        : type === "monthly"
+        ? monthlyData
+        : yearlyData;
+
+    // Build datasets array with three statuses
+    const datasets = [
+      {
+        label: "Pending",
+        data: dataSet.pending,
+        backgroundColor: "#FFAC1C",
+      },
+      {
+        label: "Completed",
+        data: dataSet.completed,
+        backgroundColor: "#50C878",
+      },
+      {
+        label: "On Hold",
+        data: dataSet.onHold,
+        backgroundColor: "#F08080",
+      },
+    ];
+
+    return (
+      <div
+        key={type}
+        className={styles.chartCard}
+        onClick={() => setActiveChart(type)}
+      >
+        <h3 className={styles.chartTitle}>
+          {type.charAt(0).toUpperCase() + type.slice(1)}
+        </h3>
+        <Bar
+          data={{
+            labels,
+            datasets,
+          }}
+          options={{
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "top",
+              },
+            },
+          }}
+        />
+      </div>
+    );
+  })}
+</div>
+
 
           <div className={styles.graphHeader}>
             <button className={styles.printButton} onClick={() => setShowPrintModal(true)}>
@@ -326,108 +497,214 @@ const prepareChartImages = () => {
         </div>
       </div>
 
-      {/* Modals */}
       {activeChart && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalCard}>
-            <button className={styles.closeButton} onClick={() => setActiveChart(null)} aria-label="Close Modal">
-              <X size={20} />
-            </button>
-            <div className={styles.modalTop}>
-              <h3 className={styles.modalTitle}>{activeChart.charAt(0).toUpperCase() + activeChart.slice(1)} Documents</h3>
-            </div>
-            <div className={styles.modalChart}>
-              <Bar
-                data={{
-                  labels:
-                    activeChart === "weekly"
-                      ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-                      : activeChart === "monthly"
-                      ? ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"]
-                      : ["2025"],
-                  datasets: [
-                    {
-                      label: "Documents",
-                      data:
-                        activeChart === "weekly"
-                          ? weeklyData
-                          : activeChart === "monthly"
-                          ? monthlyData
-                          : yearlyData,
-                      backgroundColor:
-                        activeChart === "weekly"
-                          ? "#FFA500"
-                          : activeChart === "monthly"
-                          ? "#00BFFF"
-                          : "#32CD32",
-                    },
-                  ],
-                }}
-                options={{ responsive: true, maintainAspectRatio: false }}
-              />
-            </div>
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalCard}>
+      <button
+        className={styles.closeButton}
+        onClick={() => setActiveChart(null)}
+        aria-label="Close Modal"
+      >
+        <X size={20} />
+      </button>
+      <div className={styles.modalTop}>
+        <h3 className={styles.modalTitle}>
+          {activeChart.charAt(0).toUpperCase() + activeChart.slice(1)} Documents
+        </h3>
+      </div>
+      <div className={styles.modalChart}>
+        <Bar
+          data={{
+            labels:
+              activeChart === "weekly"
+                ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                : activeChart === "monthly"
+                ? ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"]
+                : ["2025"],
+            datasets: [
+              {
+                label: "Pending",
+                data:
+                  activeChart === "weekly"
+                    ? weeklyData.pending
+                    : activeChart === "monthly"
+                    ? monthlyData.pending
+                    : yearlyData.pending,
+                backgroundColor: "#FFAC1C",
+              },
+              {
+                label: "Completed",
+                data:
+                  activeChart === "weekly"
+                    ? weeklyData.completed
+                    : activeChart === "monthly"
+                    ? monthlyData.completed
+                    : yearlyData.completed,
+                backgroundColor: "#50C878",
+              },
+              {
+                label: "On Hold",
+                data:
+                  activeChart === "weekly"
+                    ? weeklyData.onHold
+                    : activeChart === "monthly"
+                    ? monthlyData.onHold
+                    : yearlyData.onHold,
+                backgroundColor: "#F08080",
+              },
+            ],
+          }}
+          options={{
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "top",
+              },
+            },
+          }}
+        />
+      </div>
+
+            
           </div>
         </div>
       )}
 
       {showPrintModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalCardPrint}>
-            <button className={styles.closeButton} onClick={() => setShowPrintModal(false)} aria-label="Close Modal">
-              <X size={20} />
-            </button>
-            <div className={styles.modalTop}>
-              <h3 className={styles.modalTitle}>Download Details</h3>
-            </div>
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalCardPrint}>
+      <button
+        className={styles.closeButton}
+        onClick={() => setShowPrintModal(false)}
+        aria-label="Close Modal"
+      >
+        ×
+      </button>
+<h3 className={styles.modalTitle}>Download</h3>
+      <h3>Select content to include:</h3>
 
-            <div className={styles.checkboxGroup}>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={selectedDetails.length === 6}
-                  onChange={(e) =>
-                    setSelectedDetails(
-                      e.target.checked
-                        ? ["users", "documents", "departments", "weekly", "monthly", "yearly"]
-                        : []
-                    )
-                  }
-                />
-                Select All
-              </label>
-              {[
-                { label: "Total Users", value: "users" },
-                { label: "Total Documents", value: "documents" },
-                { label: "Total Departments", value: "departments" },
-                { label: "Weekly Graph", value: "weekly" },
-                { label: "Monthly Graph", value: "monthly" },
-                { label: "Yearly Graph", value: "yearly" },
-              ].map((item) => (
-                <label key={item.value}>
-                  <input
-                    type="checkbox"
-                    value={item.value}
-                    checked={selectedDetails.includes(item.value)}
-                    onChange={(e) =>
-                      setSelectedDetails((prev) =>
-                        e.target.checked
-                          ? [...prev, item.value]
-                          : prev.filter((val) => val !== item.value)
-                      )
-                    }
-                  />
-                  {item.label}
-                </label>
-              ))}
-            </div>
+      <div className={styles.checkboxGroup}>
+        <label>
+          <input
+            type="checkbox"
+            value="users"
+            checked={selectedDetails.includes("users")}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSelectedDetails((prev) =>
+                prev.includes(value)
+                  ? prev.filter((v) => v !== value)
+                  : [...prev, value]
+              );
+            }}
+          />
+          User Summary
+        </label>
 
-            <div className={styles.modalActions}>
-              <button className={styles.actionButton} onClick={handleDownload}>Confirm</button>
-            
-            </div>
-          </div>
-        </div>
-      )}
+        <label>
+          <input
+            type="checkbox"
+            value="documents"
+            checked={selectedDetails.includes("documents")}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSelectedDetails((prev) =>
+                prev.includes(value)
+                  ? prev.filter((v) => v !== value)
+                  : [...prev, value]
+              );
+            }}
+          />
+          Document Summary
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            value="departments"
+            checked={selectedDetails.includes("departments")}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSelectedDetails((prev) =>
+                prev.includes(value)
+                  ? prev.filter((v) => v !== value)
+                  : [...prev, value]
+              );
+            }}
+          />
+          Department Summary
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            value="weekly"
+            checked={selectedDetails.includes("weekly")}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSelectedDetails((prev) =>
+                prev.includes(value)
+                  ? prev.filter((v) => v !== value)
+                  : [...prev, value]
+              );
+            }}
+          />
+          Weekly Chart
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            value="monthly"
+            checked={selectedDetails.includes("monthly")}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSelectedDetails((prev) =>
+                prev.includes(value)
+                  ? prev.filter((v) => v !== value)
+                  : [...prev, value]
+              );
+            }}
+          />
+          Monthly Chart
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            value="yearly"
+            checked={selectedDetails.includes("yearly")}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSelectedDetails((prev) =>
+                prev.includes(value)
+                  ? prev.filter((v) => v !== value)
+                  : [...prev, value]
+              );
+            }}
+          />
+          Yearly Chart
+        </label>
+      </div>
+
+      <div className={styles.modalActions}>
+        <button
+          className={styles.createButton}
+          onClick={() => {
+            prepareChartImages(); // if needed
+            handleDownload();
+            setShowPrintModal(false);
+          }}
+        >
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
     </div>
   );
 }

@@ -1,0 +1,145 @@
+/* Container wrapper */
+.informationContainer {
+  border: 1px solid var(--color-grey);
+  border-radius: 12px;
+  padding: 20px 20px;
+  gap: 20px;
+  display: flex;
+  flex-direction: column;
+}
+.informationContainer p {
+  color: var(--color-maroon);
+  text-transform: capitalize;
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+/* Main form element */
+.informationForm {
+  display: flex;
+  flex-direction: column;
+  gap: 50px;
+}
+
+/* Grid of inputs */
+.formContainer {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+}
+
+
+.formContainer .formData {
+  display: flex;
+  flex-direction: column;
+}
+
+.formData label {
+  text-transform: capitalize;
+  font-size: 1.05rem;
+}
+
+.formData input[type="text"] {
+  border: 1px solid var(--color-grey);
+  border-radius: 5px;
+  padding: 5px 5px;
+  font-size: 0.95rem;
+  text-transform: capitalize;
+}
+
+.formData input[type="text"]:focus {
+  outline: 2px solid var(--color-maroon);
+}
+
+
+.buttonsContainer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 20px;
+}
+
+.buttonsContainer > :first-child,
+.buttonsContainer > :last-child {
+  border: 2px solid var(--color-maroon);
+  vertical-align: middle;
+  padding: 0 10px;
+  border-radius: 50px;
+  text-transform: capitalize;
+}
+
+.buttonsContainer > :first-child {
+  background-color: var(--color-grey);
+  color: var(--color-maroon);
+}
+
+.buttonsContainer > :last-child {
+  background-color: var(--color-maroon);
+  color: var(--color-yellow);
+}
+
+/* Dropdown styles */
+.optionDropdownContainer {
+  position: relative;
+  display: inline-block;
+  gap: 10px;
+}
+
+.optionDropdownContainer span {
+  text-transform: capitalize;
+}
+
+.optionBtn {
+  padding: 5px 10px;
+  border: 1px solid var(--color-grey);
+  border-radius: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-transform: capitalize;
+  gap: 10px;
+  width: 100%;
+}
+
+.activeOptionBtn {
+  padding: 5px 10px;
+  border: 1px solid var(--color-maroon);
+  border-top-left-radius: 9px;
+  border-top-right-radius: 9px;
+  border-bottom: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-transform: capitalize;
+  gap: 10px;
+  width: 100%;
+  white-space: nowrap;
+}
+
+.tableDropdownMenu {
+  position: absolute;
+  width: 100%;
+  background-color: white;
+  border: 1px solid var(--color-maroon);
+  border-bottom-left-radius: 9px;
+  border-bottom-right-radius: 9px;
+  border-top: none;
+  gap: 10px;
+}
+
+.tableDropdownMenu li {
+  width: 100%;
+  padding: 10px 0;
+  transition: background-color ease-out 0.3s;
+  text-align: center;
+}
+
+.tableDropdownMenu li:last-of-type {
+  border-bottom-left-radius: 9px;
+  border-bottom-right-radius: 9px;
+}
+
+.tableDropdownMenu li:hover {
+  background-color: var(--color-maroon);
+  color: var(--color-yellow);
+}

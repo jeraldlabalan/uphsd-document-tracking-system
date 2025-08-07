@@ -231,26 +231,26 @@ export default function UserManagement() {
           <hr className={styles.separator} />
 
           <div className={styles.summary}>
-            <div className={`${styles.card} ${styles.orange}`}>
+            <div className={`${styles.card} ${styles.cyan}`}>
               <Users className={styles.icon} />
               <span className={styles.count}>{users.length}</span>
               <span>Total User</span>
             </div>
-            <div className={`${styles.card} ${styles.cyan}`}>
+            <div className={`${styles.card} ${styles.green}`}>
               <Activity className={styles.icon} />
               <span className={styles.count}>
                 {users.filter((u) => u.status === "Active").length}
               </span>
               <span>Active User</span>
             </div>
-            <div className={`${styles.card} ${styles.green}`}>
+            <div className={`${styles.card} ${styles.orange}`}>
               <PauseCircle className={styles.icon} />
               <span className={styles.count}>
                 {users.filter((u) => u.status === "Inactive").length}
               </span>
               <span>Inactive User</span>
             </div>
-            <div className={`${styles.card} ${styles.yellow}`}>
+            <div className={`${styles.card} ${styles.red}`}>
               <UserX className={styles.icon} />
               <span className={styles.count}>
                 {users.filter((u) => u.status === "Terminated").length}

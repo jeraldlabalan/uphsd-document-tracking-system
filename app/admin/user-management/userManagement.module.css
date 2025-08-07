@@ -134,6 +134,9 @@
 .purple {
   border-left: 10px solid #e079fa;
 }
+.red {
+  border-left: 10px solid #F8D7DA;
+}
 
 .orange::before {
   background-color: #FAC898;
@@ -155,6 +158,9 @@
   background-color: #e079fa;
 }
 
+.red::before {
+  background-color: #F8D7DA;
+}
 
 .count {
   font-size: 2rem;

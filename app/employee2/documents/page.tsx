@@ -253,7 +253,7 @@ useEffect(() => {
                   }}
                   className={styles.dateInput}
                 />
-
+                <span className={styles.dateLabel}>To:</span>
                 <input
                   type="date"
                   value={dateTo}

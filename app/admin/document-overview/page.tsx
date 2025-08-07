@@ -144,7 +144,7 @@ const handleCloseSuccess = () => {
 
           <div className={styles.summary}>
   
-            <div className={`${styles.card} ${styles.orange}`}>
+            <div className={`${styles.card} ${styles.green}`}>
               <CheckCircle className={styles.icon} />
               <span className={styles.count}>116</span>
               <span>Complete</span>
@@ -156,13 +156,13 @@ const handleCloseSuccess = () => {
               <span>In Process</span>
             </div>
 
-            <div className={`${styles.card} ${styles.green}`}>
+            <div className={`${styles.card} ${styles.orange}`}>
               <Clock className={styles.icon} />
               <span className={styles.count}>5</span>
               <span>Pending Approvals</span>
             </div>
 
-            <div className={`${styles.card} ${styles.yellow}`}>
+            <div className={`${styles.card} ${styles.red}`}>
               <PauseCircle className={styles.icon} />
               <span className={styles.count}>5</span>
               <span>On Hold</span>
