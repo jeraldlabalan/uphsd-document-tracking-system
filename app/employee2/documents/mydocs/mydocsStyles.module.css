@@ -502,7 +502,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
 }
 
 .modalTitle {
@@ -511,9 +510,7 @@
   color: var(--color-maroon);
 }
 
-.metaGrid {
-  margin-bottom: 1.5rem;
-}
+
 
 .metaLabelRow,
 .metaValueRow {
@@ -545,17 +542,35 @@
   border: 1px solid #eee;
   padding: 0.5rem;
   border-radius: 6px;
+  overflow-y: hidden;
 }
 
 .modalFooter {
   display: flex;
   justify-content: space-between;
-  padding-top: 1rem;
+  align-items: center;
   border-top: 1px solid #ddd;
+  flex-wrap: wrap; 
+  gap: 1rem;
 }
 
+
+.leftButtons {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.rightButton {
+  display: flex;
+  justify-content: flex-end;
+}
+
+
 .download,
-.print {
+.print,
+.edit {
   position: relative;
   overflow: hidden;
   background-color: var(--color-maroon);
@@ -567,10 +582,13 @@
   cursor: pointer;
   z-index: 0;
   transition: color 0.3s ease;
+  text-decoration: none;
 }
 
+
 .download::before,
-.print::before {
+.print::before,
+.edit::before {
   content: "";
   position: absolute;
   top: 0;
@@ -582,16 +600,18 @@
   transition: left 0.4s ease;
 }
 
+
 .download:hover::before,
-.print:hover::before {
+.print:hover::before,
+.edit:hover::before {
   left: 0;
 }
 
 .download:hover,
-.print:hover {
+.print:hover,
+.edit:hover {
   color: black;
 }
-
 
 @media (max-width: 855px) {
   .container {
@@ -645,5 +665,27 @@
   .actions a {
     display: inline-block;
     margin: 0.25rem 0;
+  }
+
+  .modalFooter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .leftButtons,
+  .rightButton {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .leftButtons {
+    margin-bottom: 0.5rem;
+  }
+
+  .download,
+  .print,
+  .edit {
+    width: 100%;
+    text-align: center;
   }
 }
