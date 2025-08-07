@@ -231,8 +231,8 @@ export default function MyDocuments() {
                     </td>
                     <td>{doc.date}</td>
                     <td className={styles.actions}>
-                      <a href="#" onClick={() => setSelectedDoc(doc)}>View</a> |{" "}
-                      <Link href={`./edit-doc/${doc.id}`}>Edit</Link>
+                      <a href="#" onClick={() => setSelectedDoc(doc)}>View</a> 
+                      
                     </td>
                   </tr>
                 ))}
@@ -258,8 +258,8 @@ export default function MyDocuments() {
                   <p><strong className={styles.highlighted}>Creator:</strong> {doc.creator}</p>
                   <div className={styles.cardActions}>
                     <button onClick={() => setSelectedDoc(doc)}>View</button>
-                    <button>View</button>
-                    <Link href={`./edit-doc/${doc.id}`}>Edit</Link>
+                    
+                   
                   </div>
                 </div>
               ))}
@@ -320,11 +320,22 @@ export default function MyDocuments() {
               </div>
 
               <div className={styles.modalFooter}>
-                <button className={styles.download} onClick={handleDownload}>Download</button>
-                <button className={styles.print} onClick={handlePrint}>Print</button>
-              </div>
+  <div className={styles.leftButtons}>
+    <button className={styles.download} onClick={handleDownload}>
+      Download
+    </button>
+    <button className={styles.print} onClick={handlePrint}>
+      Print
+    </button>
+  </div>
+  <div className={styles.rightButton}>
+   <Link href={`./edit-doc/`} className={styles.edit}>Edit</Link>
+
+  </div>
+</div>
+
             </div>
-          </div>
+          </div>  
         )}
       </div>
     </div>
