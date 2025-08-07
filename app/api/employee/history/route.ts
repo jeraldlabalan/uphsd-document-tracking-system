@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
     const userId = decoded.UserID;
 
-    const history = await db.documentVersion.findMany({
+    const rawhistory = await db.documentVersion.findMany({
       where: {
         Document: {
           CreatedBy: userId,
@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
         VersionID: true,
         CreatedAt: true,
         VersionNumber: true,
+        ChangeDescription: true,
         ChangedByUser: {
           // ✅ Now at correct level
           select: {
@@ -34,9 +35,7 @@ export async function GET(req: NextRequest) {
           select: {
             Title: true,
             CreatedAt: true,
-            Department: {
-              select: { Name: true },
-            },
+           
             // ❌ remove CreatedByUser here
           },
         },
@@ -45,6 +44,15 @@ export async function GET(req: NextRequest) {
         CreatedAt: "desc",
       },
     });
+
+    // ✅ Combine full name and clean up the result
+const history = rawhistory.map((item) => ({
+  ...item,
+  ChangedByName: item.ChangedByUser
+    ? `${item.ChangedByUser.FirstName} ${item.ChangedByUser.LastName}`
+    : "Unknown User",
+}));
+
     console.log("Fetched history:", history);
     return NextResponse.json(history);
   } catch (err) {
