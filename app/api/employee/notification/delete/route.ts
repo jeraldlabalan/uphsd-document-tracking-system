@@ -2,19 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import jwt from "jsonwebtoken";
 
-export async function PATCH(req: NextRequest) {
+export async function DELETE(req: NextRequest) {
   try {
     const token = req.cookies.get("session")?.value;
-    console.log("Incoming PATCH request with token:", token);
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id, status } = await req.json();
-    console.log("Received body:", req.body);
-    console.log("Incoming PATCH payload:", { id, status });
-    if (!id || !["Read", "Unread"].includes(status)) {
-      return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+    const { id } = await req.json();
+    if (!id) {
+      return NextResponse.json({ error: "Missing notification ID" }, { status: 400 });
     }
 
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
@@ -28,17 +25,26 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const updated = await db.notification.update({
+    // Soft delete
+    await db.notification.update({
       where: { NotificationID: Number(id) },
+      data: { IsDeleted: true },
+    });
+
+    // Log the deletion
+    await db.activityLog.create({
       data: {
-        IsRead: status === "Read",
-        ReadAt: status === "Read" ? new Date() : null,
+        PerformedBy: userId,
+        Action: "Deleted Notification",
+        TargetType: "Notification",
+        Remarks: `Notification "${notification.Title}" deleted with ID ${id}`,
+        TargetID: id,
       },
     });
 
-    return NextResponse.json(updated);
+    return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("Status update error:", err);
+    console.error("Delete error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

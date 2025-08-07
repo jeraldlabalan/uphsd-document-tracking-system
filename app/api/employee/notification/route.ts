@@ -27,6 +27,11 @@ export async function GET(req: Request) {
           select: {
             FirstName: true,
             LastName: true,
+            Department: {
+              select: {
+                Name: true,
+              },
+            }
           },
         },
       },
@@ -43,6 +48,9 @@ export async function GET(req: Request) {
       tag: "Notification",
       status: notif.IsRead ? "Read" : "Unread",
       color: notif.IsRead ? "#B0BEC5" : "#2E7D32", // gray if read, green if unread
+      name: `${notif.Sender.FirstName} ${notif.Sender.LastName}`,
+      createdat: notif.CreatedAt.toISOString(),
+      department: notif.Sender.Department?.Name || "Unknown Department"
     }));
 
     console.log("retrieved notifications:", formatted);
