@@ -30,7 +30,19 @@ interface User {
   positionID: number;
   employeeID: string;
   profilePicture?: string | null;
-  isActive: boolean;
+}
+
+interface UserUpdatePayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password?: string;
+  mobile: string;
+  sex: string;
+  roleId: number;
+  positionId: number;
+  departmentId: number | null;
+  employeeId: string;
 }
 
 const emailRegex = /^[^\s@]+@cvsu\.edu\.ph$/i;
@@ -50,6 +62,12 @@ const toLocalMobileFormat = (mobile: string) => {
   return mobile;
 };
 
+// Helper to check if role is Admin
+const isAdminRole = (roleId: number, roles: Role[]) => {
+  const role = roles.find((r) => r.RoleID === roleId);
+  return role?.RoleName.trim().toLowerCase() === "admin";
+};
+
 export default function EditUserPage() {
   const router = useRouter();
   const { id: userId } = useParams();
@@ -57,20 +75,12 @@ export default function EditUserPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
-  const [errors, setErrors] = useState<{ [k: string]: string }>({});
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const fetchPositionsByRole = async (roleId: number) => {
-    if (!roleId) {
-      setPositions([]);
-      return;
-    }
-    try {
-      const res = await fetch(`/api/user/position?roleId=${roleId}`);
-      const data = res.ok ? await res.json() : [];
-      setPositions(Array.isArray(data) ? data : []);
-    } catch {
-      setPositions([]);
-    }
+    const res = await fetch(`/api/user/position?roleId=${roleId}`);
+    const data = await res.json();
+    setPositions(Array.isArray(data) ? data : []);
   };
 
   useEffect(() => {
@@ -84,46 +94,39 @@ export default function EditUserPage() {
       fetch("/api/user/department"),
       fetch("/api/user/position"),
       fetch(`/api/admin/user-management/users/${userId}`),
-    ])
-      .then(async ([rRoles, rDeps, rPos, rUser]) => {
-        if (!rUser.ok) {
-          router.push("/admin/user-management");
-          return;
-        }
-        const [rolesData, depsData, posData, userData] = await Promise.all([
-          rRoles.json(),
-          rDeps.json(),
-          rPos.json(),
-          rUser.json(),
-        ]);
-
-        setRoles(Array.isArray(rolesData) ? rolesData : []);
-        setDepartments(
-          Array.isArray(depsData) ? depsData : depsData?.departments || []
-        );
-        setPositions(Array.isArray(posData) ? posData : []);
-        setUser({
-          id: userData.id,
-          firstName: userData.firstName ?? "",
-          lastName: userData.lastName ?? "",
-          email: userData.email ?? "",
-          password: "",
-          mobileNumber: toLocalMobileFormat(userData.mobile ?? ""),
-          sex: userData.sex ?? "Male",
-          roleID: userData.roleId ?? 0,
-          departmentID: userData.departmentId ?? null,
-          positionID: userData.positionId ?? 0,
-          employeeID: userData.employeeId ?? "",
-          profilePicture: userData.profilePicture ?? null,
-          isActive: userData.isActive ?? true,
-        });
-        fetchPositionsByRole(userData.roleId ?? 0);
-      })
-      .catch((err) => {
-        console.error("Fetch error:", err);
+    ]).then(async ([rRoles, rDeps, rPos, rUser]) => {
+      if (!rUser.ok) {
         router.push("/admin/user-management");
+        return;
+      }
+      const [rolesData, depsData, posData, userData] = await Promise.all([
+        rRoles.json(),
+        rDeps.json(),
+        rPos.json(),
+        rUser.json(),
+      ]);
+
+      setRoles(rolesData || []);
+      setDepartments(depsData?.departments || depsData || []);
+      setPositions(posData || []);
+      setUser({
+        id: userData.id,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        password: "",
+        mobileNumber: toLocalMobileFormat(userData.mobile),
+        sex: userData.sex,
+        roleID: userData.roleId,
+        departmentID: userData.departmentId,
+        positionID: userData.positionId,
+        employeeID: userData.employeeId,
+        profilePicture: userData.profilePicture,
       });
-  }, [userId, router]);
+
+      fetchPositionsByRole(userData.roleId);
+    });
+  }, [userId]);
 
   const validatePassword = (pw: string) =>
     passwordRequirements.every((r) => r.test(pw));
@@ -138,127 +141,105 @@ export default function EditUserPage() {
     if (name === "mobileNumber") {
       const digits = value.replace(/\D/g, "").slice(0, 11);
       setUser({ ...user, mobileNumber: digits });
-      const valid = /^09\d{9}$/.test(digits) || digits === "";
       setErrors((prev) => ({
         ...prev,
-        mobileNumber: valid ? "" : "Must be 11 digits starting with 09.",
+        mobileNumber: /^09\d{9}$/.test(digits) ? "" : "Invalid mobile number",
       }));
-      if (valid) {
-        setErrors((prev) => {
-          const cp = { ...prev };
-          delete cp.mobileNumber;
-          return cp;
-        });
-      }
       return;
     }
 
     if (name === "email") {
-      const valid = emailRegex.test(value);
       setErrors((prev) => ({
         ...prev,
-        email: valid ? "" : "Must be a valid @cvsu.edu.ph address",
+        email: emailRegex.test(value) ? "" : "Invalid email format",
       }));
-      if (valid) {
-        setErrors((prev) => {
-          const cp = { ...prev };
-          delete cp.email;
-          return cp;
-        });
-      }
-    }
-
-    if (name === "roleID") {
-      const newRoleID = Number(value);
-      fetchPositionsByRole(newRoleID);
-      setUser({
-        ...user,
-        roleID: newRoleID,
-        positionID: 0,
-        departmentID: user.departmentID,
-      });
-      setErrors((prev) => {
-        const cp = { ...prev };
-        delete cp.departmentID;
-        delete cp.positionID;
-        return cp;
-      });
-      return;
-    }
-
-    if (name === "firstName" && value.trim() !== "") {
-      setErrors((prev) => {
-        const cp = { ...prev };
-        delete cp.firstName;
-        return cp;
-      });
-    }
-
-    if (name === "lastName" && value.trim() !== "") {
-      setErrors((prev) => {
-        const cp = { ...prev };
-        delete cp.lastName;
-        return cp;
-      });
     }
 
     if (name === "password") {
-      if (value === "" || validatePassword(value)) {
-        setErrors((prev) => {
-          const cp = { ...prev };
-          delete cp.password;
-          return cp;
-        });
-      }
+      setErrors((prev) => ({
+        ...prev,
+        password: !value || validatePassword(value) ? "" : "Invalid password",
+      }));
+    }
+
+    if (name === "roleID") {
+      const newRoleId = Number(value);
+      fetchPositionsByRole(newRoleId);
+
+      const admin = isAdminRole(newRoleId, roles);
+
+      // Check if the current position is still valid for the new role
+      const currentPositionValid = positions.some(
+        (pos) => pos.PositionID === user.positionID
+      );
+
+      setUser({
+        ...user,
+        roleID: newRoleId,
+        positionID: currentPositionValid ? user.positionID : 0, // Retain position if valid, else reset to default
+        departmentID: admin ? null : user.departmentID,
+      });
+      return;
     }
 
     setUser({
       ...user,
       [name]: name.match(/ID$/) ? Number(value) : value,
     });
+
+    // Validation logic for firstName and lastName:
+    if (name === "firstName" || name === "lastName") {
+      if (!user.firstName && !user.lastName) {
+        setErrors((prev) => ({
+          ...prev,
+          firstName: "Either First Name or Last Name must be provided",
+          lastName: "Either First Name or Last Name must be provided",
+        }));
+      } else {
+        setErrors((prev) => ({
+          ...prev,
+          firstName: "",
+          lastName: "",
+        }));
+      }
+    }
   };
 
   const handleSubmit = async () => {
     if (!user) return;
 
-    const errs: any = {};
+    const errs: { [key: string]: string } = {};
     if (!emailRegex.test(user.email)) errs.email = "Invalid email";
-    if (!user.firstName.trim()) errs.firstName = "First name is required";
-    if (!user.lastName.trim()) errs.lastName = "Last name is required";
+    if (!user.firstName && !user.lastName) {
+      errs.firstName = "Either First Name or Last Name must be provided";
+      errs.lastName = "Either First Name or Last Name must be provided";
+    }
+    if (!user.firstName) errs.firstName = "Required";
+    if (!user.lastName) errs.lastName = "Required";
     if (user.password && !validatePassword(user.password))
-      errs.password = "Password doesn't meet requirements";
-    if (user.mobileNumber && !/^09\d{9}$/.test(user.mobileNumber))
-      errs.mobileNumber = "Mobile invalid";
+      errs.password = "Weak password";
+    if (!/^09\d{9}$/.test(user.mobileNumber))
+      errs.mobileNumber = "Invalid number";
 
     if (Object.keys(errs).length) {
       setErrors(errs);
       return;
     }
 
-    let mobileForDb = user.mobileNumber;
-    if (mobileForDb.startsWith("09")) {
-      mobileForDb = "+63" + mobileForDb.slice(1);
-    }
-
-    const payload: any = {
+    const payload: UserUpdatePayload = {
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
-      mobile: mobileForDb,
+      password: user.password || undefined,
+      mobile: user.mobileNumber.replace(/^0/, "+63"),
       sex: user.sex,
       roleId: user.roleID,
       positionId: user.positionID,
+      departmentId: isAdminRole(user.roleID, roles)
+        ? null
+        : (user.departmentID ?? null),
       employeeId: user.employeeID,
-      isActive: user.isActive,
     };
-    if (user.password) payload.password = user.password;
-
-    const adminRoleId = roles.find(
-      (r) => r.RoleName.toLowerCase() === "admin"
-    )?.RoleID;
-    if (user.roleID !== adminRoleId) {
-      payload.departmentId = user.departmentID ?? null;
-    }
 
     const res = await fetch(`/api/admin/user-management/users/${user.id}`, {
       method: "PUT",
@@ -267,192 +248,184 @@ export default function EditUserPage() {
     });
 
     if (res.ok) {
-      toast.success("User updated successfully!");
-      setTimeout(() => router.push("/admin/user-management"), 1500);
+      toast.success("User updated!");
+      router.push("/admin/user-management");
     } else {
-      toast.error("Update failed");
+      toast.error("Failed to update user");
     }
   };
 
   if (!user) return <p>Loading...</p>;
 
-  const adminRoleId = roles.find(
-    (r) => r.RoleName.toLowerCase() === "admin"
-  )?.RoleID;
-  const employeeRoleId = roles.find(
-    (r) => r.RoleName.toLowerCase() === "employee"
-  )?.RoleID;
-
   return (
-    <div className={styles.editContainer}>
-      <h2 className={styles.title}>Edit User</h2>
-      <div className={styles.profileSection}>
-        <div className={styles.profileCenter}>
-          {user.profilePicture ? (
-            <img
-              src={user.profilePicture}
-              alt="Profile"
-              className={styles.profilePicture}
-            />
-          ) : (
-            <div className={styles.initialsFallback}>
-              {user.firstName.slice(0, 1).toUpperCase()}
-            </div>
-          )}
-          <div className={styles.nameContainer}>
-            <p className={styles.fullName}>
-              {user.firstName} {user.lastName}
-            </p>
-          </div>
-        </div>
+    <div className={styles.container}>
+      <h2 className={styles.heading}>Edit User</h2>
+
+      <div className={styles.profileBox}>
+        {user.profilePicture ? (
+          <img
+            src={user.profilePicture}
+            alt="Profile"
+            className={styles.profileImage}
+          />
+        ) : (
+          <div className={styles.fallbackInitials}>{user.firstName[0]}</div>
+        )}
+        <p className={styles.userName}>
+          {user.firstName} {user.lastName}
+        </p>
       </div>
 
-      <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
-        {/* Employee ID */}
+      <div className={styles.form}>
         <div className={styles.formGroup}>
-          <label>Employee ID</label>
+          <label className={styles.label}>Employee ID</label>
           <input
+            className={styles.input}
             name="employeeID"
-            type="text"
             value={user.employeeID}
-            onChange={handleChange}
+            readOnly
           />
         </div>
 
-        {/* First Name */}
         <div className={styles.formGroup}>
-          <label>Firstname</label>
+          <label className={styles.label}>First Name</label>
           <input
+            className={styles.input}
             name="firstName"
-            type="text"
             value={user.firstName}
             onChange={handleChange}
           />
           {errors.firstName && (
-            <p className={styles.errorMsg}>{errors.firstName}</p>
+            <p className={styles.error}>{errors.firstName}</p>
           )}
         </div>
 
-        {/* Last Name */}
         <div className={styles.formGroup}>
-          <label>Lastname</label>
+          <label className={styles.label}>Last Name</label>
           <input
+            className={styles.input}
             name="lastName"
-            type="text"
             value={user.lastName}
             onChange={handleChange}
           />
-          {errors.lastName && (
-            <p className={styles.errorMsg}>{errors.lastName}</p>
-          )}
+          {errors.lastName && <p className={styles.error}>{errors.lastName}</p>}
         </div>
 
-        {/* Email */}
         <div className={styles.formGroup}>
-          <label>Email</label>
+          <label className={styles.label}>Email</label>
           <input
+            className={styles.input}
             name="email"
-            type="email"
             value={user.email}
-            onChange={handleChange}
+            readOnly
           />
-          {errors.email && <p className={styles.errorMsg}>{errors.email}</p>}
+          {errors.email && <p className={styles.error}>{errors.email}</p>}
         </div>
 
-        {/* Password */}
         <div className={styles.formGroup}>
-          <label>Password</label>
+          <label className={styles.label}>Password</label>
           <input
+            className={styles.input}
             name="password"
             type="password"
-            placeholder="Enter new password"
-            autoComplete="new-password"
-            value={user.password || ""}
+            value={user.password}
             onChange={handleChange}
+            placeholder="Leave blank to keep current"
           />
-          {user.password && (
-            <ul className={styles.passwordReqList}>
-              {passwordRequirements.map((req) => (
-                <li
-                  key={req.label}
-                  style={{
-                    color: req.test(user.password!) ? "green" : "gray",
-                  }}
+          <div className={styles.passwordGuidance}>
+            {passwordRequirements.map((req, index) => {
+              const isValid = req.test(user.password || "");
+              return (
+                <div
+                  key={index}
+                  className={`${styles.passwordRequirement} ${
+                    isValid ? styles.valid : ""
+                  }`}
                 >
-                  {req.label}
-                </li>
-              ))}
-            </ul>
-          )}
-          {errors.password && (
-            <p className={styles.errorMsg}>{errors.password}</p>
+                  {isValid ? "✅" : "❌"} {req.label}
+                </div>
+              );
+            })}
+          </div>
+          {errors.password && !validatePassword(user.password || "") && (
+            <p className={styles.error}>{errors.password}</p>
           )}
         </div>
 
-        {/* Mobile Number */}
         <div className={styles.formGroup}>
-          <label>Mobile Number</label>
+          <label className={styles.label}>Mobile</label>
           <input
+            className={styles.input}
             name="mobileNumber"
-            type="text"
             value={user.mobileNumber}
             onChange={handleChange}
           />
           {errors.mobileNumber && (
-            <p className={styles.errorMsg}>{errors.mobileNumber}</p>
+            <p className={styles.error}>{errors.mobileNumber}</p>
           )}
         </div>
 
-        {/* Sex */}
         <div className={styles.formGroup}>
-          <label>Sex</label>
-          <select name="sex" value={user.sex} onChange={handleChange}>
-            <option>Male</option>
-            <option>Female</option>
+          <label className={styles.label}>Sex</label>
+          <select
+            className={styles.input}
+            name="sex"
+            value={user.sex}
+            onChange={handleChange}
+          >
+            <option value="" disabled hidden>
+              Select Sex
+            </option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
           </select>
         </div>
 
-        {/* Role */}
         <div className={styles.formGroup}>
-          <label>Role</label>
-          <select name="roleID" value={user.roleID} onChange={handleChange}>
+          <label className={styles.label}>Role</label>
+          <select
+            className={styles.input}
+            name="roleID"
+            value={user.roleID}
+            onChange={handleChange}
+          >
             <option value="" disabled hidden>
               Select Role
             </option>
-            {roles.map((r) => (
-              <option key={r.RoleID} value={r.RoleID}>
-                {r.RoleName}
+            {roles.map((role) => (
+              <option key={role.RoleID} value={role.RoleID}>
+                {role.RoleName}
               </option>
             ))}
           </select>
         </div>
 
-        {/* Department (disabled if Employee role) */}
-        {user.roleID !== adminRoleId && (
+        {/* Department dropdown only if NOT Admin */}
+        {!isAdminRole(user.roleID, roles) && (
           <div className={styles.formGroup}>
-            <label>Department</label>
+            <label className={styles.label}>Department</label>
             <select
+              className={styles.input}
               name="departmentID"
               value={user.departmentID ?? ""}
               onChange={handleChange}
-              disabled={user.roleID === employeeRoleId}
             >
               <option value="" disabled hidden>
                 Select Department
               </option>
-              {departments.map((d) => (
-                <option key={d.DepartmentID} value={d.DepartmentID}>
-                  {d.Name}
+              {departments.map((dep) => (
+                <option key={dep.DepartmentID} value={dep.DepartmentID}>
+                  {dep.Name}
                 </option>
               ))}
             </select>
           </div>
         )}
 
-        {/* Position */}
         <div className={styles.formGroup}>
-          <label>Position</label>
+          <label className={styles.label}>Position</label>
           <select
+            className={styles.input}
             name="positionID"
             value={user.positionID}
             onChange={handleChange}
@@ -460,19 +433,22 @@ export default function EditUserPage() {
             <option value="" disabled hidden>
               Select Position
             </option>
-            {positions.map((p) => (
-              <option key={p.PositionID} value={p.PositionID}>
-                {p.Name}
+            {positions.map((pos) => (
+              <option key={pos.PositionID} value={pos.PositionID}>
+                {pos.Name}
               </option>
             ))}
           </select>
         </div>
 
-        {/* Save Button */}
-        <button className={styles.saveBtn} type="button" onClick={handleSubmit}>
-          Save
+        <button
+          className={styles.submitBtn}
+          onClick={handleSubmit}
+          disabled={Object.values(errors).some(Boolean)}
+        >
+          Save Changes
         </button>
-      </form>
+      </div>
     </div>
   );
 }
