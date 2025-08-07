@@ -7,6 +7,23 @@ import { Search as SearchIcon } from "lucide-react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
+type DocumentVersionHistory = {
+  VersionID: number;
+  VersionNumber: number;
+  CreatedAt: string;
+  CreatedByUser: {
+    FirstName: string;
+    LastName: string;
+  };
+  Document: {
+    Title: string;
+    CreatedAt: string;
+    Department: {
+      Name: string;
+    };
+  };
+};
+
 export default function History() {
   useEffect(() => {
     AOS.init({
@@ -18,48 +35,71 @@ export default function History() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
+  const [history, setHistory] = useState<DocumentVersionHistory[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const historyData = [
-    {
-      document: "Final Budget FY2024",
-      type: "Report",
-      sender: "Matthew",
-      department: "Finance",
-      date: "June 12, 2025",
-      dueDate: "June 20, 2025",
-      status: "Completed",
-    },
-    {
-      document: "Employee Feedback Form",
-      type: "Evaluation",
-      sender: "Donna",
-      department: "HR",
-      date: "May 28, 2025",
-      dueDate: "June 5, 2025",
-      status: "Completed",
-    },
-    {
-      document: "Training Request Memo",
-      type: "Request",
-      sender: "Alex",
-      department: "Learning & Dev",
-      date: "May 15, 2025",
-      dueDate: "May 20, 2025",
-      status: "Completed",
-    },
-  ];
+  // const historyData = [
+  //   {
+  //     document: "Final Budget FY2024",
+  //     type: "Report",
+  //     sender: "Matthew",
+  //     department: "Finance",
+  //     date: "June 12, 2025",
+  //     dueDate: "June 20, 2025",
+  //     status: "Completed",
+  //   },
+  //   {
+  //     document: "Employee Feedback Form",
+  //     type: "Evaluation",
+  //     sender: "Donna",
+  //     department: "HR",
+  //     date: "May 28, 2025",
+  //     dueDate: "June 5, 2025",
+  //     status: "Completed",
+  //   },
+  //   {
+  //     document: "Training Request Memo",
+  //     type: "Request",
+  //     sender: "Alex",
+  //     department: "Learning & Dev",
+  //     date: "May 15, 2025",
+  //     dueDate: "May 20, 2025",
+  //     status: "Completed",
+  //   },
+  // ];
 
-  const filtered = historyData.filter((item) => {
-    const searchMatch =
-      item.document.toLowerCase().includes(search.toLowerCase()) ||
-      item.sender.toLowerCase().includes(search.toLowerCase()) ||
-      item.department.toLowerCase().includes(search.toLowerCase());
+   useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch("/api/employee/history"); // <-- replace with your actual route
+        const data = await res.json();
+        console.log("Fetched history data:", data);
+        if (res.ok) {
+          setHistory(data);
+        } else {
+          console.error("Failed to fetch history:", data.error);
+        }
+      } catch (err) {
+        console.error("Fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    const typeMatch = !typeFilter || item.type === typeFilter;
-    const deptMatch = !departmentFilter || item.department === departmentFilter;
+    fetchHistory();
+  }, []);
 
-    return searchMatch && typeMatch && deptMatch;
-  });
+const filtered = history.filter((item) => {
+  const searchMatch =
+    item.Document.Title.toLowerCase().includes(search.toLowerCase()) ||
+    item.CreatedByUser?.FirstName?.toLowerCase().includes(search.toLowerCase()) ||
+    item.Document.Department?.Name?.toLowerCase().includes(search.toLowerCase());
+
+  const typeMatch = !typeFilter || item.Document.Title === typeFilter;
+  const deptMatch = !departmentFilter || item.Document.Department?.Name === departmentFilter;
+
+  return searchMatch && typeMatch && deptMatch;
+});
 
   return (
     <div>
@@ -113,21 +153,23 @@ export default function History() {
             <thead>
               <tr>
                 <th>Document</th>
-                <th>Sent By</th>
+                <th>Changed By</th>
                 <th>Department</th>
                 <th>Date</th>
-                <th>Due Date</th>
+                <th>Version</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((entry, index) => (
                 <tr key={index}>
-                  <td>{entry.document}</td>
-                  <td>{entry.sender}</td>
-                  <td>{entry.department}</td>
-                  <td>{entry.date}</td>
-                  <td>{entry.dueDate}</td>
+                  <td>{entry.Document?.Title || "Untitled"}</td>
+                  <td>  {entry.CreatedByUser
+    ? `${entry.CreatedByUser.FirstName} ${entry.CreatedByUser.LastName}`
+    : "Unknown"}</td>
+                  <td>{entry.Document?.Department?.Name || "No Department"}</td>
+                  <td>{new Date(entry.CreatedAt).toLocaleDateString()}</td>
+                  <td>{entry.VersionNumber}</td>
                   <td className={styles.actions}>
                     <a href="#">View</a> 
                   </td>

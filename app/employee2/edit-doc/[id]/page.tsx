@@ -64,29 +64,43 @@ export default function CreateNewDocument() {
   }, []);
 
 useEffect(() => {
-  async function fetchDocumentData() {
-    if (!docId) return;
+  if (!document) return;
 
+  const fetchDocument = async () => {
     try {
-      const res = await fetch(`/api/employee/my-documents/${docId}`);
-      const data = await res.json();
+      const res = await fetch(`/api/employee/my-documents/${documentId}`);
+      if (!res.ok) throw new Error("Failed to fetch document");
 
-      // populate state with fetched data
-      setDocumentName(data.Title);
-      setDescription(data.Description);
-      setType(data.TypeID);
-      setFilePath(data.FilePath || "");
-      setDepartmentID(data.DepartmentID);
-      setApproverIDs(data.ApproverIDs || []);
-      setSelectedType(data.TypeName); // optional
-      setDepartment(data.DepartmentName); // optional
+      const doc = await res.json();
+
+      // Populate state
+      setDocumentName(doc.Title);
+      setDescription(doc.Description);
+      setDepartmentID(doc.DepartmentID);
+      setType(doc.TypeID);
+      setFilePath(doc.FilePath);
+      setApproverIDs(doc.ApproverIDs || []);
+      setSelectedType(doc.TypeName || "Select Document Type");
+      setDepartment(doc.DepartmentName || "Select Department");
+
+      // If files are stored as array or single path:
+      if (doc.Files) {
+        setFiles(
+          doc.Files.map((f) => ({
+            file: { name: f.FileName }, // Dummy file object (you can't access File from server)
+            requireEsign: f.RequireEsign,
+          }))
+        );
+      }
     } catch (err) {
-      console.error("Failed to fetch document data", err);
+      console.error("Error loading document:", err);
     }
-  }
+  };
 
-  fetchDocumentData();
-}, [docId]);
+  fetchDocument();
+}, [document]);
+
+
   useEffect(() => {
     async function fetchApprovers() {
       try {
