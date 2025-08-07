@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import styles from "./documentsStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
-
+import { useSearchParams } from "next/navigation";
 import { Search as SearchIcon, User } from "lucide-react";
 
 import Link from "next/link";
@@ -28,6 +28,8 @@ export default function Documents() {
   const [dateTo, setDateTo] = useState("");
   const [dateError, setDateError] = useState("");
   const [documents, setDocuments] = useState<Document[]>([]);
+  const searchParams = useSearchParams();
+  const docId = searchParams.get("docId");
 
   // const documents = [
   //   {
@@ -116,30 +118,6 @@ useEffect(() => {
   //   preview: `/uploads/${doc.FilePath}`,
   // }));
 
-useEffect(() => {
-  const fetchDocuments = async () => {
-    try {
-      const res = await fetch("/api/employee/documents");
-      const data = await res.json();
-
-      console.log("📦 API response:", data);
-
-      if (Array.isArray(data)) {
-        setDocuments(data); // If backend returns an array directly
-      } else if (Array.isArray(data.documents)) {
-        setDocuments(data.documents); // If response is { documents: [...] }
-      } else {
-        console.error("❌ Unexpected API shape:", data);
-        setDocuments([]);
-      }
-    } catch (err) {
-      console.error("Failed to fetch documents", err);
-      setDocuments([]);
-    }
-  };
-
-  fetchDocuments();
-}, []);
 
 
   const filteredDocs = documents.filter((doc) => {
@@ -308,7 +286,7 @@ useEffect(() => {
                     <a href="#" onClick={() => setSelectedDoc(doc)}>
                       View
                     </a>{" "}
-                    | <Link href="./edit-doc">Edit</Link>
+                    | <Link href={`./edit-doc/${doc.id}`}>Edit</Link>
                   </td>
                 </tr>
               ))}
