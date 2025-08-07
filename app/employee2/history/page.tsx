@@ -11,6 +11,7 @@ type DocumentVersionHistory = {
   VersionID: number;
   VersionNumber: number;
   CreatedAt: string;
+  ChangeDescription: string;
   CreatedByUser: {
     FirstName: string;
     LastName: string;
@@ -18,10 +19,8 @@ type DocumentVersionHistory = {
   Document: {
     Title: string;
     CreatedAt: string;
-    Department: {
-      Name: string;
-    };
   };
+  ChangedByName: string;
 };
 
 export default function History() {
@@ -93,10 +92,10 @@ const filtered = history.filter((item) => {
   const searchMatch =
     item.Document.Title.toLowerCase().includes(search.toLowerCase()) ||
     item.CreatedByUser?.FirstName?.toLowerCase().includes(search.toLowerCase()) ||
-    item.Document.Department?.Name?.toLowerCase().includes(search.toLowerCase());
+    item.ChangeDescription.toLowerCase().includes(search.toLowerCase());
 
   const typeMatch = !typeFilter || item.Document.Title === typeFilter;
-  const deptMatch = !departmentFilter || item.Document.Department?.Name === departmentFilter;
+  const deptMatch = !departmentFilter || item.ChangeDescription === departmentFilter;
 
   return searchMatch && typeMatch && deptMatch;
 });
@@ -154,7 +153,7 @@ const filtered = history.filter((item) => {
               <tr>
                 <th>Document</th>
                 <th>Changed By</th>
-                <th>Department</th>
+                <th>Description</th>
                 <th>Date</th>
                 <th>Version</th>
                 <th>Action</th>
@@ -164,10 +163,8 @@ const filtered = history.filter((item) => {
               {filtered.map((entry, index) => (
                 <tr key={index}>
                   <td>{entry.Document?.Title || "Untitled"}</td>
-                  <td>  {entry.CreatedByUser
-    ? `${entry.CreatedByUser.FirstName} ${entry.CreatedByUser.LastName}`
-    : "Unknown"}</td>
-                  <td>{entry.Document?.Department?.Name || "No Department"}</td>
+                  <td>{entry.ChangedByName || "Unknown"}</td>
+                  <td>{entry.ChangeDescription || "No Description"}</td>
                   <td>{new Date(entry.CreatedAt).toLocaleDateString()}</td>
                   <td>{entry.VersionNumber}</td>
                   <td className={styles.actions}>
