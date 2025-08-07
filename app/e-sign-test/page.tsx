@@ -55,16 +55,6 @@ export default function ESignTest() {
 
   const [originalPdfUrl, setOriginalPdfUrl] = useState<string | null>(null);
 
-  // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const file = e.target.files?.[0];
-  //   if (file && file.type === "application/pdf") {
-  //     const url = URL.createObjectURL(file);
-  //     setPdfUrl(url);
-  //   } else {
-  //     alert("Please upload a valid PDF file.");
-  //   }
-  // };
-
   return (
     <div className={styles.container}>
       {isSidebarOpen && (

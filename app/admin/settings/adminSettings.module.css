@@ -1,14 +1,14 @@
 
 .container {
-  padding: 24px;
+  padding: min(2rem, 3%);
   background-color: #D9D9D9; 
-  min-height: 100vh;
+  min-height: 100dvh;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .contentSection {
   background-color: white;
-  padding: 24px;
+  padding: min(1rem, 5%);
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
@@ -28,12 +28,10 @@
 }
 
 .mainContanent {
-    flex: 1;
     display: flex;
     padding: 50px 30px;
     gap: 10px;
     background-color: #D9D9D9;
-    
 }
 
 .rightContent {
@@ -41,10 +39,10 @@
     box-shadow: 5px 8px 5px rgba(0, 0, 0, 0.1);
     border-radius: 5px;
     width: 100%;
-    padding: 30px 50px;
+    padding: min(2rem, 3%) min(3rem, 5%);
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 1rem;
 }
 
 .rightContent h1 {
@@ -58,14 +56,15 @@
 .profileContainer {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 1rem;
+    align-self: flex-start;
+    height: 100%;
 }
 
 .settingsContainer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
 }
 
 .displayPictureContainer {
@@ -300,200 +299,17 @@
 }
 
 .documentContainer {
-    border: 1px solid var(--color-grey);
+    border: 1px solid rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
-    width: 100%;
-    height: 100%;
     border-radius: 12px;
-    padding: 20px 20px;
-    gap: 20px;
+    gap: 1rem;
+    padding: min(1rem, 3%);
+    align-self: flex-start;
 }
 
-.sectionTitle {
-    color: var(--color-maroon);
-    font-weight: 600;
-    font-size: 1rem;
-    text-transform: capitalize;
-}
-
-.documentManagementContainer,
-.departmentManagementContainer {
-    border-bottom: 1px solid black;
-    padding-bottom: 10px;
-}
-
-.documentManagementContainer {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.parentSection {
-    margin-left: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.maximumFileSizeSection {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.maximumFileSizeSection > p,
-.allowedFileTypesSection > p {
-    text-transform: capitalize;
-}
-
-.maximumFileSizeSection > :last-child,
-.autoDeleteDocumentSection .inputAndButtonContainer > :first-child {
-    text-transform: capitalize;
-    border: 1px solid var(--color-grey);
-    border-radius: 6px;
-    padding: 0 5px;
-    width: 50%;
-}
-
-.maximumFileSizeSection > :last-child:focus,
-.autoDeleteDocumentSection .inputAndButtonContainer > :first-child:focus {
-    outline: 2px solid var(--color-maroon);
-}
-
-.allowedFileTypesSection .checkboxContainer {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-}
-
-.allowedFileTypesSection .checkboxContainer label {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    cursor: pointer;
-    width: fit-content;
-    gap: 5px;
-}
-
- .checkboxContainer label input[type="checkbox"] {
-    height: 15px;
-    cursor: pointer;
-    border-radius: none;
-}
-
-.autoDeleteDocumentSection {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.autoDeleteDocumentSection .inputAndButtonContainer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.autoDeleteDocumentSection .inputAndButtonContainer > :last-child {
-    width: fit-content;
-    padding: 3px 10px;
-    text-transform: capitalize;
-    background-color: var(--color-maroon);
-    color: var(--color-yellow);
-    border-radius: 50px;
-    font-size: 0.85rem;
-}
-
-.departmentManagementContainer {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.departmentContents {
-    margin-left: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.addNewDepartmentContainer {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.addNewDepartmentContainer label {
-    text-transform: capitalize;
-}
-
-.addNewDepartmentContainer input[type="text"] {
-    border: 1px solid var(--color-grey);
-    border-radius: 5px;
-    padding: 5px 5px;
-    font-size: 0.95rem;
-    width: 50%;
-}
-
-.addNewDepartmentContainer input[type="text"]:focus {
-    outline: 2px solid var(--color-maroon);
-}
-
-.activeDepartmentContainer {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.activeDepartmentContainer > :first-child {
-    text-transform: capitalize;
-}
-
-.departmentList {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    height: 100%;
-}
-
-.departmentListScroll {
-    width: 50%;
-    border: 1px solid var(--color-grey);
-    border-radius: 12px;
-    padding: 10px;
-}
-
-.departmentListScroll ul {
-    height: 100%;
-    max-height: 100px;
-    overflow-y: auto;
-}
-
-.departmentActionButtons {
-    align-self: flex-end;
-    display: flex;
-    justify-content: space-evenly;
-    width: 20%;
-    gap: 15px;
-    padding: 0 15px;
-}
-
-.departmentActionButtons > :first-child {
-    background-color: var(--color-maroon);
-    color: var(--color-yellow);
-}
-
-.departmentActionButtons > :last-child {
-    border: 2px solid var(--color-maroon);
-}
-
-.departmentActionButtons > :first-child,
-.departmentActionButtons > :last-child {
-    border-radius: 50px;
-    text-transform: capitalize;
-    padding: 2px 5px;
-    font-size: 0.85rem;
-    flex: 1;
+.documentContainer > hr {
+    border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
 .changePasswordContainer {
