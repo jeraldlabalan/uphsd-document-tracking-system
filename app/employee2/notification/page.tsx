@@ -47,8 +47,6 @@ type Notification = {
 //   },
 // ];
 
-
-
 export default function NotificationPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
@@ -64,21 +62,27 @@ export default function NotificationPage() {
     );
   };
 
+  useEffect(() => {
+    const fetchNotifications = async () => {
+  try {
+    const response = await fetch("/api/employee/notification");
+    const data = await response.json();
+    console.log("Raw notifications:", data); // ✅ log here
 
-useEffect(() => {
-  const fetchNotifications = async () => {
-    try {
-      const response = await fetch("/api/employee/notification"); // Adjust endpoint!
-      const data = await response.json();
-      setNotifications(data);
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-    }
-  };
+    const mapped = data.map((notif: any) => ({
+      ...notif,
+      id: notif.NotificationID,
+      status: notif.IsRead ? "Read" : "Unread",
+    }));
 
-  fetchNotifications();
-}, []);
+    setNotifications(mapped);
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+  }
+};
 
+    fetchNotifications();
+  }, []);
   const toggleAll = () => {
     setSelected(
       selected.length === notifications.length
@@ -91,22 +95,32 @@ useEffect(() => {
     setNotifications(notifications.filter((n) => !selected.includes(n.id)));
     setSelected([]);
   };
+const updateNotificationStatus = async (id: number, status: "Read" | "Unread") => {
+  try {
+    const response = await fetch("/api/employee/notification/update-status", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ id, status }),
+    });
 
-  const markRead = (id: number) => {
-  setNotifications((prev) =>
-    prev.map((n) =>
-      n.id === id ? { ...n, status: "Read" } : n
-    )
-  );
+    if (!response.ok) {
+      console.error("Failed to update status");
+    } else {
+      // ✅ Update local state
+      setNotifications((prev) =>
+        prev.map((notif) =>
+          notif.id === id ? { ...notif, status } : notif
+        )
+      );
+    }
+  } catch (error) {
+    console.error("Error:", error);
+  }
 };
 
-const markUnread = (id: number) => {
-  setNotifications((prev) =>
-    prev.map((n) =>
-      n.id === id ? { ...n, status: "Unread" } : n
-    )
-  );
-};
+const markRead = (id: number) => updateNotificationStatus(id, "Read");
+const markUnread = (id: number) => updateNotificationStatus(id, "Unread");
 
 
   return (
@@ -143,22 +157,25 @@ const markUnread = (id: number) => {
 
             {notifications.map((notification) => (
               <div
-  key={notification.id}
-  className={styles.notification}
-  style={{
-    backgroundColor:
-      notification.status === "Unread" ? "#f8e0e6" : "transparent",
-  }}
->
-
-
+                key={notification.id}
+                className={styles.notification}
+                style={{
+                  backgroundColor:
+                    notification.status === "Unread"
+                      ? "#f8e0e6"
+                      : "transparent",
+                }}
+              >
                 <div className={styles.details}>
                   <h3
-  className={styles.notifTitle}
-  style={{ fontWeight: notification.status === "Unread" ? "bold" : "normal" }}
->
-  {notification.title}
-</h3>
+                    className={styles.notifTitle}
+                    style={{
+                      fontWeight:
+                        notification.status === "Unread" ? "bold" : "normal",
+                    }}
+                  >
+                    {notification.title}
+                  </h3>
 
                   <p className={styles.description}>{notification.content}</p>
                   <div className={styles.meta}>
@@ -177,15 +194,17 @@ const markUnread = (id: number) => {
                       View
                     </button>
                     <button
-  className={styles.markRead}
-  onClick={() =>
-    notification.status === "Unread"
-      ? markRead(notification.id)
-      : markUnread(notification.id)
-  }
->
-  {notification.status === "Unread" ? "Mark Read" : "Mark Unread"}
-</button>
+                      className={styles.markRead}
+                      onClick={() =>
+                        notification.status === "Unread"
+                          ? markRead(notification.id)
+                          : markUnread(notification.id)
+                      }
+                    >
+                      {notification.status === "Unread"
+                        ? "Mark Read"
+                        : "Mark Unread"}
+                    </button>
 
                     <button
                       className={styles.delete}
@@ -217,9 +236,7 @@ const markUnread = (id: number) => {
               <h2 className={styles.modalTitle}>Document Details</h2>
 
               <div className={styles.documentHeader}>
-                <span className={styles.pdfTag}> 
-                
-                </span>
+                <span className={styles.pdfTag}></span>
                 <div className={styles.headerInfo}>
                   <h3>{selectedNotification.title}</h3>
                   <p>
@@ -238,11 +255,6 @@ const markUnread = (id: number) => {
                 </div>
                 <span className={styles.status}>Processing</span>
               </div>
-
-              
-             
-            
-           
             </div>
           </div>
         )}
