@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./notificationStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
 
@@ -12,43 +12,46 @@ type Notification = {
   tag: string;
   status: string;
   color: string;
+  name?: string; // Optional, in case the name is not available
+  createdat?: string; // Optional, in case the created date is not available
+  department?: string; // Optional, in case the department is not available
 };
 
-const initialNotifications: Notification[] = [
-  {
-    id: 1,
-    title: "IT Equipment Purchase Request",
-    content:
-      "Kurt Macaranas has submitted a request for an academic transcript. The request is pending approval from the Registrar's office.",
-    time: "15 minutes ago",
-    tag: "Document Request",
-    status: "Unread",
-    color: "#ff8000ff",
-  },
-  {
-    id: 2,
-    title: "Student Good Moral Request",
-    content:
-      'The document request for "Student Good Moral" submitted by Kurt Macaranas has been approved.',
-    time: "15 minutes ago",
-    tag: "Document Request",
-    status: "Unread",
-    color: "#2E7D32",
-  },
-  {
-    id: 3,
-    title: "Document Approval",
-    content:
-      "Jerald Labalan has submitted a request for an academic transcript. The request is pending approval from.",
-    time: "15 minutes ago",
-    tag: "Document for Approval",
-    status: "Unread",
-    color: "#00796B",
-  },
-];
+// const initialNotifications: Notification[] = [
+//   {
+//     id: 1,
+//     title: "IT Equipment Purchase Request",
+//     content:
+//       "Kurt Macaranas has submitted a request for an academic transcript. The request is pending approval from the Registrar's office.",
+//     time: "15 minutes ago",
+//     tag: "Document Request",
+//     status: "Unread",
+//     color: "#ff8000ff",
+//   },
+//   {
+//     id: 2,
+//     title: "Student Good Moral Request",
+//     content:
+//       'The document request for "Student Good Moral" submitted by Kurt Macaranas has been approved.',
+//     time: "15 minutes ago",
+//     tag: "Document Request",
+//     status: "Unread",
+//     color: "#2E7D32",
+//   },
+//   {
+//     id: 3,
+//     title: "Document Approval",
+//     content:
+//       "Jerald Labalan has submitted a request for an academic transcript. The request is pending approval from.",
+//     time: "15 minutes ago",
+//     tag: "Document for Approval",
+//     status: "Unread",
+//     color: "#00796B",
+//   },
+// ];
 
 export default function NotificationPage() {
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
   const [selectedNotification, setSelectedNotification] =
     useState<Notification | null>(null);
@@ -62,6 +65,41 @@ export default function NotificationPage() {
     );
   };
 
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const response = await fetch("/api/employee/notification");
+        const data = await response.json();
+
+        console.log("Raw notifications:", data); // 👀 Check the exact structure
+
+        const mapped = data
+          .map((notif: any) => {
+            const id = Number(notif.NotificationID ?? notif.id);
+
+            if (isNaN(id)) {
+              console.error("❌ Invalid ID detected:", notif);
+              return null; // skip this entry
+            }
+
+            return {
+              ...notif,
+              id,
+              status: notif.status,
+            };
+          })
+          .filter((notif: any) => notif !== null); // filter out any null entries
+        console.log("Mapped notifications:", mapped); // ✅ Check the final structure
+
+        setNotifications(mapped);
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+      }
+    };
+
+    fetchNotifications();
+  }, []);
+
   const toggleAll = () => {
     setSelected(
       selected.length === notifications.length
@@ -70,27 +108,73 @@ export default function NotificationPage() {
     );
   };
 
+  const handleDeleteNotification = async (id: number) => {
+  try {
+    const res = await fetch("/api/employee/notification/delete", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id }), // send notification ID
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to delete notification");
+    }
+
+    // ✅ Optionally update your state to remove the deleted notification
+    setNotifications(prev =>
+      prev.filter(notification => notification.id !== id)
+    );
+
+    console.log("Notification deleted successfully");
+  } catch (err) {
+    console.error("Error deleting notification:", err);
+  }
+};
+
+
   const deleteSelected = () => {
     setNotifications(notifications.filter((n) => !selected.includes(n.id)));
     setSelected([]);
   };
 
-  const markRead = (id: number) => {
-  setNotifications((prev) =>
-    prev.map((n) =>
-      n.id === id ? { ...n, status: "Read" } : n
-    )
-  );
-};
+  const updateNotificationStatus = async (
+    id: number,
+    status: "Read" | "Unread"
+  ) => {
+    try {
+      if (typeof id !== "number" || isNaN(id)) {
+        console.error("Invalid ID:", id); // ❗ prevent sending wrong ID
+        return;
+      }
 
-const markUnread = (id: number) => {
-  setNotifications((prev) =>
-    prev.map((n) =>
-      n.id === id ? { ...n, status: "Unread" } : n
-    )
-  );
-};
+      console.log("Sending update for ID:", id); // ✅ confirm what's being sent
 
+      const response = await fetch("/api/employee/notification/update-status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status }), // ✅ safe destructuring
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("Failed to update status:", error);
+      } else {
+        console.log("Status update successful.");
+        setNotifications((prev) =>
+          prev.map((notif) => (notif.id === id ? { ...notif, status } : notif))
+        );
+      }
+    } catch (error) {
+      console.error("Error sending update:", error);
+    }
+  };
+
+  const markRead = (id: number) => updateNotificationStatus(id, "Read");
+  const markUnread = (id: number) => updateNotificationStatus(id, "Unread");
 
   return (
     <div>
@@ -104,44 +188,29 @@ const markUnread = (id: number) => {
           <hr className={styles.separator} />
 
           <div className={styles.main}>
-            <div className={styles.header}>
-              <span className={styles.subtitle}>All Notifications</span>
-              <div className={styles.actionsHeader}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={selected.length === notifications.length}
-                    onChange={toggleAll}
-                  />
-                  Select All
-                </label>
-                <button
-                  className={styles.deleteSelected}
-                  onClick={deleteSelected}
-                >
-                  Delete Selected
-                </button>
-              </div>
-            </div>
+           
 
-            {notifications.map((notification) => (
+            {notifications.map((notification, index) => (
               <div
-  key={notification.id}
-  className={styles.notification}
-  style={{
-    backgroundColor:
-      notification.status === "Unread" ? "#f8e0e6" : "transparent",
-  }}
->
-
-
+                key={index}
+                className={styles.notification}
+                style={{
+                  backgroundColor:
+                    notification.status === "Unread"
+                      ? "#f8e0e6"
+                      : "transparent",
+                }}
+              >
                 <div className={styles.details}>
                   <h3
-  className={styles.notifTitle}
-  style={{ fontWeight: notification.status === "Unread" ? "bold" : "normal" }}
->
-  {notification.title}
-</h3>
+                    className={styles.notifTitle}
+                    style={{
+                      fontWeight:
+                        notification.status === "Unread" ? "bold" : "normal",
+                    }}
+                  >
+                    {notification.title}
+                  </h3>
 
                   <p className={styles.description}>{notification.content}</p>
                   <div className={styles.meta}>
@@ -155,20 +224,25 @@ const markUnread = (id: number) => {
                   <div className={styles.buttons}>
                     <button
                       className={styles.view}
-                      onClick={() => setSelectedNotification(notification)}
+                      onClick={() => {
+                        setSelectedNotification(notification);
+                        if (notification.status === "Unread") {
+                          markRead(notification.id);
+                        }
+                      }}
                     >
                       View
                     </button>
-                    <button
-  className={styles.markRead}
-  onClick={() =>
-    notification.status === "Unread"
-      ? markRead(notification.id)
-      : markUnread(notification.id)
-  }
->
-  {notification.status === "Unread" ? "Mark Read" : "Mark Unread"}
-</button>
+                    {notification.status === "Unread" && (
+                      <button
+                        className={styles.markAsRead}
+                        onClick={() =>
+                          updateNotificationStatus(notification.id, "Read")
+                        }
+                      >
+                        Mark as Read
+                      </button>
+                    )}
 
                     <button
                       className={styles.delete}
@@ -200,32 +274,23 @@ const markUnread = (id: number) => {
               <h2 className={styles.modalTitle}>Document Details</h2>
 
               <div className={styles.documentHeader}>
-                <span className={styles.pdfTag}> 
-                
-                </span>
+                <span className={styles.pdfTag}></span>
                 <div className={styles.headerInfo}>
                   <h3>{selectedNotification.title}</h3>
+                   <p>
+                    Notification ID: {selectedNotification.id || "Unknown ID"}
+                  </p>
                   <p>
-                    Requested by:{" "}
-                    {selectedNotification.title.includes("Kurt")
-                      ? "Kurt Macaranas"
-                      : "Jerald Labalan"}
+                    Requested by: {selectedNotification.name || "Unknown User"}
                   </p>
                   <p>
                     Department:{" "}
-                    {selectedNotification.title.includes("IT")
-                      ? "IT Department"
-                      : "Student Services"}
+                    {selectedNotification.department || "Unknown Department"}
                   </p>
-                  <p>Date/Time: July 7, 2025 – 8:30 AM</p>
+                  <p>Date/Time: {selectedNotification.time}</p>
                 </div>
                 <span className={styles.status}>Processing</span>
               </div>
-
-              
-             
-            
-           
             </div>
           </div>
         )}
@@ -257,14 +322,14 @@ const markUnread = (id: number) => {
                 </button>
                 <button
                   className={styles.confirmDeleteButton}
-                  onClick={() => {
-                    setNotifications((prev) =>
-                      prev.filter((n) => n.id !== notificationToDelete.id)
-                    );
-                    setShowDeleteModal(false);
-                    setNotificationToDelete(null);
-                  }}
-                >
+                  onClick={async () => {
+    if (!notificationToDelete) return;
+
+    await handleDeleteNotification(notificationToDelete.id); // 🔥 delete from DB
+    setShowDeleteModal(false);
+    setNotificationToDelete(null);
+  }}
+>
                   Delete
                 </button>
               </div>

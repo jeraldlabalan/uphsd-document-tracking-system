@@ -12,16 +12,16 @@ datasource db {
 /// USER TABLE
 model User {
   UserID         Int               @id @default(autoincrement())
-  FirstName      String
-  LastName       String
+  FirstName      String?
+  LastName       String?
   Email          String            @unique
   Password       String
-  MobileNumber   String
-  Sex            String
+  MobileNumber   String?
+  Sex            String?
   RoleID         Int
   DepartmentID   Int?
-  PositionID     Int
-  EmployeeID     String            @unique
+  PositionID     Int?
+  EmployeeID     String?           @unique
   ProfilePicture String?
   IsActive       Boolean           @default(true)
   IsDeleted      Boolean           @default(false)
@@ -37,7 +37,7 @@ model User {
   SentNotifs     Notification[]    @relation("SentNotifs")
   Session        Session[]
   Department     Department?       @relation(fields: [DepartmentID], references: [DepartmentID])
-  Position       Position          @relation(fields: [PositionID], references: [PositionID])
+  Position       Position?         @relation(fields: [PositionID], references: [PositionID])
   Role           Role              @relation(fields: [RoleID], references: [RoleID])
 }
 

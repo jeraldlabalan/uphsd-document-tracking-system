@@ -63,26 +63,30 @@ export default function CreateNewDocument() {
     fetchDepartments();
   }, []);
 
-  useEffect(() => {
-    async function fetchDocumentTypes() {
-      try {
-        const res = await fetch("/api/user/doctype"); // Adjust the endpoint if needed
-        if (!res.ok) throw new Error("Failed to fetch document types");
-        const data = await res.json();
+useEffect(() => {
+  async function fetchDocumentData() {
+    if (!docId) return;
 
-        if (Array.isArray(data)) {
-          setDocumentTypes(data);
-        } else {
-          console.error("Unexpected data format:", data);
-        }
-      } catch (error) {
-        console.error("Error fetching document types:", error);
-      }
+    try {
+      const res = await fetch(`/api/employee/my-documents/${docId}`);
+      const data = await res.json();
+
+      // populate state with fetched data
+      setDocumentName(data.Title);
+      setDescription(data.Description);
+      setType(data.TypeID);
+      setFilePath(data.FilePath || "");
+      setDepartmentID(data.DepartmentID);
+      setApproverIDs(data.ApproverIDs || []);
+      setSelectedType(data.TypeName); // optional
+      setDepartment(data.DepartmentName); // optional
+    } catch (err) {
+      console.error("Failed to fetch document data", err);
     }
+  }
 
-    fetchDocumentTypes();
-  }, []);
-
+  fetchDocumentData();
+}, [docId]);
   useEffect(() => {
     async function fetchApprovers() {
       try {

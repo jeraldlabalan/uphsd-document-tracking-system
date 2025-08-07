@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verify } from "jsonwebtoken";
 import { cookies } from "next/headers";
+import { writeFile } from "fs/promises";
+import path from "path";
+import { v4 as uuidv4 } from "uuid";
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,23 +22,34 @@ export async function POST(req: NextRequest) {
 
     const creatorID = decoded.UserID;
 
-    const {
-      Title,
-      Description,
-      TypeID,
-      FilePath,
-      DepartmentID,
-      ApproverIDs, // array of UserIDs
-    } = await req.json();
+    const formData = await req.formData();
 
-    // Step 1: Create the document
+    const file = formData.get("file") as File;
+    const Title = formData.get("Title") as string;
+    const Description = formData.get("Description") as string;
+    const TypeID = Number(formData.get("TypeID"));
+    const DepartmentID = formData.get("DepartmentID") ? Number(formData.get("DepartmentID")) : null;
+    const approverIDs = JSON.parse(formData.get("ApproverIDs") as string) as number[];
+
+    if (!file || !Title || !Description || !TypeID || !approverIDs.length) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    // Save the uploaded file
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const filename = `${uuidv4()}-${file.name}`;
+    const uploadDir = path.join(process.cwd(), "public", "uploads", "documents");
+    await writeFile(path.join(uploadDir, filename), buffer);
+    const FilePath = `/uploads/documents/${filename}`;
+
+    // Create document
     const newDocument = await db.document.create({
       data: {
         Title,
         Description,
-        TypeID: 1, // for testing only
+        TypeID,
         CreatedBy: creatorID,
-        DepartmentID: DepartmentID || null,
+        DepartmentID,
       },
     });
 
@@ -49,7 +63,6 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Step 2: Create initial version and logs user activity
     const newVersion = await db.documentVersion.create({
       data: {
         DocumentID: newDocument.DocumentID,
@@ -70,7 +83,6 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Step 3: Find 'In-Process' status
     const pendingStatus = await db.status.findFirst({
       where: { StatusName: "In-Process" },
     });
@@ -82,12 +94,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Step 4: Create requests and notifications
-    const requests = ApproverIDs.map(async (approverID: number) => {
+    const requests = approverIDs.map(async (approverID: number) => {
       const request = await db.documentRequest.create({
         data: {
           RequestedByID: creatorID,
-          RecipientUserID: approverID, // <- Now correct!
+          RecipientUserID: approverID,
           DocumentID: newDocument.DocumentID,
           StatusID: pendingStatus.StatusID,
           Priority: "Normal",
@@ -108,11 +119,11 @@ export async function POST(req: NextRequest) {
       return request;
     });
 
-    const notifs = ApproverIDs.map(async (approverID: number) => {
+    const notifs = approverIDs.map(async (approverID: number) => {
       const notif = await db.notification.create({
         data: {
           SenderID: creatorID,
-          ReceiverID: approverID, // <- Now correct!
+          ReceiverID: approverID,
           Title: "New Document for Review",
           Message: `A new document "${Title}" requires your review.`,
         },
@@ -137,6 +148,7 @@ export async function POST(req: NextRequest) {
       message: "Document successfully created",
       documentID: newDocument.DocumentID,
     });
+
   } catch (error) {
     console.error("Document creation error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

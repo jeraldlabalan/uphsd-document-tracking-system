@@ -29,7 +29,7 @@ export default function CreateNewDocument() {
   const [type, setType] = useState(0);
   const [filePath, setFilePath] = useState("");
   const [departmentID, setDepartmentID] = useState<number | null>(null);
-  const [approverIDs, setApproverIDs] = useState<number[]>(["Select Approver"]); // or []
+  const [approverIDs, setApproverIDs] = useState<number[]>([]); // or []
   const [documentTypes, setDocumentTypes] = useState<
     { TypeID: number; TypeName: string }[]
   >([]);
@@ -176,7 +176,7 @@ export default function CreateNewDocument() {
   };
 
   const handleClear = () => {
-    setDocumentName("");
+    setTitle("");
     setClassification("Select Document Type");
     setDescription("");
     setDepartment("Select Department");
@@ -185,8 +185,6 @@ export default function CreateNewDocument() {
     setDate("");
     setDueDate("");
     setNotes("");
-    setSendEmail(false);
-    setReadReceipt(false);
   };
 
   return (
@@ -206,8 +204,8 @@ export default function CreateNewDocument() {
                   type="text"
                   placeholder="Enter document name"
                   className={styles.inputField}
-                  value={documentName}
-                  onChange={(e) => setDocumentName(e.target.value)}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
                 />
               </div>
 
@@ -260,7 +258,7 @@ export default function CreateNewDocument() {
                 ))}
               </select> */}
 
-              <CustomSelect options={departmentOptions} value={department} onChange={setDepartment} />
+              <CustomSelect options={departmentOptions} value={departmentID ?? ""} onChange={setDepartment} />
 
             </div>
 

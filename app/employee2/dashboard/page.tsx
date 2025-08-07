@@ -5,6 +5,7 @@ import styles from "./empDashboardStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
 import { Search as SearchIcon } from "lucide-react";
 import { X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AOS from "aos";
 import "aos/dist/aos.css";
@@ -22,7 +23,7 @@ export default function employeeDashboard() {
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [search, setSearch] = useState("");
-
+  const router = useRouter();
   const [summary, setSummary] = useState({
     total: 0,
     inProcess: 0,
@@ -246,9 +247,9 @@ export default function employeeDashboard() {
                   </td>
                   <td>{doc.date}</td>
                   <td className={styles.actions}>
-                    <a href="#" onClick={() => handleView(doc.id)}>
+                    <button onClick={() => router.push(`/employee/edit-document/${doc.id}`)}>
                       View
-                    </a>
+                    </button>
                     | <Link href={`./edit-doc/${doc.id}`}>Edit</Link>
                   </td>
                 </tr>
