@@ -291,9 +291,9 @@
 }
 
 .terminated {
-  background-color: #ff0000;
+  background-color: #000000;
   color: white;
-}
+}s
 
 .actions a {
   color: var(--color-maroon);
@@ -560,12 +560,12 @@
 .terminatemodalTitle {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #AD191B;
+  color: #000000;
   margin-bottom: 1rem;
 }
 
 .terminateButton {
-  background-color: #AD191B;
+  background-color: #000000;
   color: white;
   border: none;
   padding: 0.5rem 1rem;
@@ -576,8 +576,8 @@
 
 .terminatecancelButton {
   background-color: #ffffff;
-  border: 2px solid #AD191B;
-  color: #AD191B;
+  border: 2px solid #000000;
+  color: #000000;
   padding: 0.5rem 1rem;
   border-radius: 8px;
   cursor: pointer;
