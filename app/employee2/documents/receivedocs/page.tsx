@@ -14,6 +14,10 @@ export default function receiveDocuments() {
   const [dateTo, setDateTo] = useState("");
   const [dateError, setDateError] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
+  const [showOnHoldModal, setShowOnHoldModal] = useState(false);
+  const [showConfirmSuccess, setShowConfirmSuccess] = useState(false);
+  const [remarks, setRemarks] = useState("");
+
 
   const documents = [
     {
@@ -66,6 +70,37 @@ export default function receiveDocuments() {
   const handlePrint = () => {
     window.print();
   };
+
+  // Handles backdrop clicks
+const handleBackdropClick = (e: React.MouseEvent, closeFn: () => void) => {
+  if (e.target === e.currentTarget) {
+    closeFn();
+  }
+};
+
+// Handles clicking the "Okay" button
+const handleCancelButtonClick = (
+  e: React.MouseEvent,
+  closeFn: () => void
+) => {
+  e.stopPropagation();
+  closeFn();
+};
+
+// Confirm button logic
+const handleConfirmClick = () => {
+  if (!remarks.trim()) {
+    alert("Please enter your remarks.");
+    return;
+  }
+
+  // You can add your submit logic here (e.g., send to API)
+  console.log("Remarks Submitted:", remarks);
+
+  setShowOnHoldModal(false);
+  setShowConfirmSuccess(true);
+  setRemarks(""); // Reset textarea
+};
 
   return (
     <div>
@@ -317,12 +352,75 @@ export default function receiveDocuments() {
               <div className={styles.modalFooter}>
                 <button className={styles.download} onClick={handleDownload}>Download</button>
                 <button className={styles.Approve}>Approve</button>
-                    <button className={styles.OnHold}>On Hold</button>
+                <button className={styles.OnHold} onClick={() => setShowOnHoldModal(true)}>On Hold</button>
                 <button className={styles.print} onClick={handlePrint}>Print</button>
               </div>
             </div>
           </div>
         )}
+
+       {/* confirm restore modal */}
+         {showOnHoldModal && (
+         
+            <div className={styles.modal}>
+   <div className={styles.modalContent}>
+              <div className={styles.confirmRestoreContainer}>
+        <h2>ON HOLD</h2>
+
+
+               <div>
+          <label htmlFor="remarks" style={{ fontWeight: 500, fontSize: "1rem" }}>Remarks:</label>
+          <textarea
+            id="remarks"
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
+            placeholder="Enter your remarks here..."
+            style={{
+              width: '100%',
+              minHeight: '100px',
+              marginTop: '10px',
+              padding: '10px',
+              fontSize: '0.95rem',
+              borderRadius: '8px',
+              border: '1px solid #ccc',
+              resize: 'none'
+            }}
+          />
+
+                <div className={styles.confirmRestoreActionButton}>
+                   <button onClick={() => setShowOnHoldModal(false)}>Close</button>
+          <button className={styles.restoreBtn} onClick={handleConfirmClick}>Confirm</button>
+
+              </div>
+      </div>
+            </div>
+    </div>
+  </div>
+)}
+
+{/* ✅ Success modal */}
+{showConfirmSuccess && (
+  <div
+    className={styles.modal}
+    onClick={(e) => handleBackdropClick(e, () => setShowConfirmSuccess(false))}
+  >
+    <div className={styles.modalContent}>
+      <div className={styles.confirmSuccessContainer}>
+        <h1>Success!</h1>
+        <p>The remarks have been successfully sent!</p>
+        <button
+        className={styles.restoreBtn}
+          onClick={(e) =>
+            handleCancelButtonClick(e, () => setShowConfirmSuccess(false))
+          }
+        >
+          Okay
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
       </div>
     </div>
   );

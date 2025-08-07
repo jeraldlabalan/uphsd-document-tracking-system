@@ -642,6 +642,105 @@
 
 
 
+/* Modal overlay */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Modal content box */
+.modalContent {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* On Hold Modal */
+.confirmRestoreContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.confirmRestoreContainer h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Button Container */
+.confirmRestoreActionButton {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+/* Success Modal */
+.confirmSuccessContainer {
+  text-align: center;
+}
+
+.confirmSuccessContainer h1 {
+  font-size: 1.75rem;
+  color: #177054;
+  margin-bottom: 0.5rem;
+}
+
+.confirmSuccessContainer p {
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Buttons */
+.restoreBtn {
+  margin-top: 10px;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.button:hover {
+  opacity: 0.9;
+}
+
+/* Restore (confirm) button */
+.restoreBtn {
+  background-color: #177054;
+  color: white;
+}
+
+.restoreBtn:hover {
+  background-color: #125b44;
+}
+
+/* Fade animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
 
 
 
@@ -707,5 +806,19 @@
   .actions a {
     display: inline-block;
     margin: 0.25rem 0;
+  }
+
+   .modalFooter {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .download,
+  .print,
+  .Approve,
+  .OnHold {
+    width: 100%;
+    text-align: center;
   }
 }
