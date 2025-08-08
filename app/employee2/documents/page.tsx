@@ -265,32 +265,41 @@ useEffect(() => {
               </tr>
             </thead>
             <tbody>
-              {filteredDocs.map((doc, i) => (
-                <tr key={i}>
-                  <td>{doc.id}</td>
-                  <td>{doc.name}</td>
-                  <td>{doc.file}</td>
-                  <td>
-                    <span
-                      className={`${styles.badge} ${
-                        doc.status === "Completed"
-                          ? styles.completed
-                          : styles.pending
-                      }`}
-                    >
-                      {doc.status}
-                    </span>
-                  </td>
-                  <td>{doc.date}</td>
-                  <td className={styles.actions}>
-                    <a href="#" onClick={() => setSelectedDoc(doc)}>
-                      View
-                    </a>{" "}
-                    | <Link href={`./edit-doc/${doc.id}`}>Edit</Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+  {filteredDocs.length > 0 ? (
+    filteredDocs.map((doc, i) => (
+      <tr key={i}>
+        <td>{doc.id}</td>
+        <td>{doc.name}</td>
+        <td>{doc.file}</td>
+        <td>
+          <span
+            className={`${styles.badge} ${
+              doc.status === "Completed"
+                ? styles.completed
+                : styles.pending
+            }`}
+          >
+            {doc.status}
+          </span>
+        </td>
+        <td>{doc.date}</td>
+        <td className={styles.actions}>
+          <a href="#" onClick={() => setSelectedDoc(doc)}>
+            View
+          </a>{" "}
+          | <Link href={`./edit-doc/${doc.id}`}>Edit</Link>
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr className={styles.noDataRow}>
+      <td colSpan={6} style={{ textAlign: "center" }}>
+        No documents found.
+      </td>
+    </tr>
+  )}
+</tbody>
+
           </table>
         </div>
         {selectedDoc && (

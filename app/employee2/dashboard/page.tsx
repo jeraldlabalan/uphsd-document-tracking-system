@@ -229,32 +229,40 @@ export default function employeeDashboard() {
                 <th>Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {filteredDocs.map((doc, i) => (
-                <tr key={i}>
-                  <td>{doc.name}</td>
-                  <td>{doc.file}</td>
-                  <td>
-                    <span
-                      className={`${styles.badge} ${
-                        doc.status === "Completed"
-                          ? styles.completed
-                          : styles.pending
-                      }`}
-                    >
-                      {doc.status}
-                    </span>
-                  </td>
-                  <td>{doc.date}</td>
-                  <td className={styles.actions}>
-                    <button onClick={() => router.push(`/employee/edit-document/${doc.id}`)}>
-                      View
-                    </button>
-                    | <Link href={`./edit-doc/${doc.id}`}>Edit</Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+          <tbody>
+  {filteredDocs.length > 0 ? (
+    filteredDocs.map((doc, i) => (
+      <tr key={i}>
+        <td>{doc.name}</td>
+        <td>{doc.file}</td>
+        <td>
+          <span
+            className={`${styles.badge} ${
+              doc.status === "Completed" ? styles.completed : styles.pending
+            }`}
+          >
+            {doc.status}
+          </span>
+        </td>
+        <td>{doc.date}</td>
+        <td className={styles.actions}>
+          <button onClick={() => router.push(`/employee/edit-document/${doc.id}`)}>
+            View
+          </button>
+          {" | "}
+          <Link href={`./edit-doc/${doc.id}`}>Edit</Link>
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr className={styles.noDataRow}>
+      <td colSpan={5} style={{ textAlign: "center" }}>
+        No documents found.
+      </td>
+    </tr>
+  )}
+</tbody>
+
           </table>
         </div>
 

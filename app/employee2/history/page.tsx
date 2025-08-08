@@ -174,24 +174,33 @@ const filtered = history.filter((item) => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((entry, index) => (
-                <tr key={index}>
-                  <td>{entry.Document?.Title || "Untitled"}</td>
-                  <td>{entry.ChangedByName || "Unknown"}</td>
-                  <td>{entry.ChangeDescription || "No Description"}</td>
-                  <td>{new Date(entry.CreatedAt).toLocaleDateString()}</td>
-                  <td>{entry.VersionNumber}</td>
-                  <td className={styles.actions}>
-                    <button
-                      onClick={() => handleView(entry)}
-                      className={styles.viewBtn}
-                    >
-                      View
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+  {filtered.length > 0 ? (
+    filtered.map((entry, index) => (
+      <tr key={index}>
+        <td>{entry.Document?.Title || "Untitled"}</td>
+        <td>{entry.ChangedByName || "Unknown"}</td>
+        <td>{entry.ChangeDescription || "No Description"}</td>
+        <td>{new Date(entry.CreatedAt).toLocaleDateString()}</td>
+        <td>{entry.VersionNumber}</td>
+        <td className={styles.actions}>
+          <button
+            onClick={() => handleView(entry)}
+            className={styles.viewBtn}
+          >
+            View
+          </button>
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr className={styles.noDataRow}>
+      <td colSpan={6} style={{ textAlign: "center" }}>
+        No history found.
+      </td>
+    </tr>
+  )}
+</tbody>
+
           </table>
         </div>
       </div>
