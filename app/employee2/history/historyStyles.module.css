@@ -231,6 +231,73 @@
 }
 
 
+@media (max-width: 768px) {
+  .docTable {
+    width: 100%;
+    display: block;
+  }
+
+  .docTable thead {
+    display: none;
+  }
+
+  .docTable tbody {
+    display: block;
+  }
+
+  .docTable tr {
+    display: block;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    padding: 1rem;
+    border-radius: 6px;
+    background-color: #fff;
+  }
+
+  .docTable td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #eee;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .docTable td::before {
+    font-weight: bold;
+    flex-basis: 45%;
+    text-align: left;
+    content: "";
+  }
+
+  /* Label each cell using nth-child */
+  .docTable td:nth-child(1)::before { content: "Document "; }
+  .docTable td:nth-child(2)::before { content: "Changed By"; }
+  .docTable td:nth-child(3)::before { content: "	Description"; }
+  .docTable td:nth-child(4)::before { content: "	Date"; }
+  .docTable td:nth-child(5)::before { content: "	Version"; }
+  .docTable td:nth-child(6)::before { content: "Action"; }
+ 
+  .docTable td:last-child {
+    border-bottom: none;
+  }
+
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .actions a,
+  .actions button {
+    width: 100%;
+  }
+}
+
+
 
 @media (max-width: 768px) {
   .filters {
