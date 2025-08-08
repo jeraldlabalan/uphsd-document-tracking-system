@@ -13,7 +13,11 @@ import {
   Settings,
   LogOut,
 } from "lucide-react";
-
+export function GET() {
+  const res = new Response();
+  res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  return res;
+}
 export default function EmpDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
@@ -44,9 +48,18 @@ export default function EmpDashboard() {
     fetchUser();
   }, [router]);
 
+    useEffect(() => {
+    // Force refresh so it checks auth on back navigation
+    window.onpageshow = function (event) {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    };
+  }, []);
+
 const handleLogout = async () => {
   try {
-    const res = await fetch("/api/auth/logout", {
+    const res = await fetch("/api/user/logout", {
       method: "POST",
     });
 

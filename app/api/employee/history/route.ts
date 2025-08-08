@@ -35,7 +35,11 @@ export async function GET(req: NextRequest) {
           select: {
             Title: true,
             CreatedAt: true,
-           
+            DocumentType: {
+              select: {
+                TypeName: true,
+              },
+            }
             // ❌ remove CreatedByUser here
           },
         },

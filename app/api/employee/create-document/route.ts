@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     const filename = `${uuidv4()}-${file.name}`;
     const uploadDir = path.join(process.cwd(), "public", "uploads", "documents");
     await writeFile(path.join(uploadDir, filename), buffer);
-    const FilePath = `/uploads/documents/${filename}`;
+    const FilePath = `/public/uploads/documents/${filename}`;
 
     // Create document
     const newDocument = await db.document.create({

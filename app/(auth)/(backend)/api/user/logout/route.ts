@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 
 export async function POST() {
-  // Clear the JWT cookie by setting it to an expired date
-  const cookieStore = await cookies();
-  cookieStore.set("session", "", {
+  const response = NextResponse.json({ message: "Logged out successfully" });
+
+  // Overwrite the cookie with an expired one
+  response.cookies.set("session", "", {
     path: "/",
     httpOnly: true,
-    sameSite: "lax",
-    secure: true,
-    expires: new Date(0), // Immediately expires
+    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+    expires: new Date(0), // Expire it immediately
   });
 
-  return NextResponse.json({ message: "Logged out successfully" });
+  return response;
 }

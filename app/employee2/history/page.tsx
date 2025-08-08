@@ -19,6 +19,9 @@ type DocumentVersionHistory = {
   Document: {
     Title: string;
     CreatedAt: string;
+    DocumentType: {
+      TypeName: string;
+    }
   };
   ChangedByName: string;
 };
@@ -222,7 +225,7 @@ const filtered = history.filter((item) => {
               <p>
                 <strong>Type:</strong>{" "}
                 <span className={styles.highlight}>
-                  {selectedDoc.Document.Type || "Unknown"}
+                  {selectedDoc.Document.DocumentType.TypeName || "Unknown"}
                 </span>
               </p>
               <p>

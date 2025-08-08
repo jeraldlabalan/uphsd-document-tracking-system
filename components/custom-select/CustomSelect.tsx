@@ -3,7 +3,7 @@ import styles from "./CustomSelect.module.css";
 
 interface CustomSelectProps {
   options: string[];
-  value?: string;
+  value?: string | null;
   placeholder?: string;
   onChange: (val: string) => void;
 }
@@ -21,6 +21,7 @@ const CustomSelect = ({
   placeholder = "Select",
   onChange,
 }: CustomSelectProps) => {
+
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 

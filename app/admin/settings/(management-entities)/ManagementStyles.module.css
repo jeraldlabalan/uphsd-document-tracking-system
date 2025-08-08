@@ -16,7 +16,6 @@
   display: flex;
   flex-direction: column;
   gap: min(1rem, 1%);
-  
 }
 
 .addNewContainer {
@@ -37,7 +36,7 @@
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  padding-inline: 5px;
+  padding-inline: 1rem;
   border-radius: 8px;
 }
 
@@ -50,12 +49,13 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  padding-inline: max(1rem, 5vw)
 }
 
 .addTable {
   border-collapse: separate;
   width: 100%;
-  border-spacing: min(0.5rem, 2%);
+  border-spacing: min(0.5rem, 3vw);
 }
 
 .addTable td {
@@ -64,7 +64,7 @@
 }
 
 .addTable td:first-child {
-  width: auto;
+  
 }
 
 .addTable td:last-child {
@@ -123,6 +123,7 @@
   align-items: center;
   justify-content: space-between;
   padding-inline: min(1rem, 3%);
+  height: 30px;
 }
 
 .entryItem:hover {
