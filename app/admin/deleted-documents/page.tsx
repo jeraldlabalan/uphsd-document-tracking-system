@@ -256,46 +256,51 @@ export default function DeletedDocuments() {
                 <th>Action</th>
               </tr>
             </thead>
-            <tbody>
-              {filteredDocs.map((doc, i) => (
-                <tr key={i}>
-                  <td>{doc.id}</td>
-                  <td>
-                    {doc.status === "Completed"
-                      ? "Document Restored"
-                      : "Document Deleted"}
-                  </td>
-                  <td>{doc.creator}</td>
-                  <td>{doc.department}</td>
-                  <td>{doc.dateCreated}</td>
-                  <td>
-                    <a
-                      href="#"
-                      className={`${styles.actionBtn} ${styles.restoreBtn}`}
-                      onClick={() => {
-                        setSelectedDoc(doc);
-                        setShowConfirmRestore(true);
-                      }}
-                    >
-                      Restore
-                    </a>
+          <tbody>
+  {filteredDocs.length > 0 ? (
+    filteredDocs.map((doc, i) => (
+      <tr key={i}>
+        <td>{doc.id}</td>
+        <td>
+          {doc.status === "Completed"
+            ? "Document Restored"
+            : "Document Deleted"}
+        </td>
+        <td>{doc.creator}</td>
+        <td>{doc.department}</td>
+        <td>{doc.dateCreated}</td>
+        <td>
+          <a
+            href="#"
+            className={`${styles.actionBtn} ${styles.restoreBtn}`}
+            onClick={() => {
+              setSelectedDoc(doc);
+              setShowConfirmRestore(true);
+            }}
+          >
+            Restore
+          </a>{" "}
+          <button
+            className={`${styles.actionBtn} ${styles.deleteBtn}`}
+            onClick={() => {
+              setSelectedUser(doc);
+              setShowConfirmPermanentDelete(true);
+            }}
+          >
+            Permanently Delete
+          </button>
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr className={styles.noDataRow}>
+      <td colSpan={6} style={{ textAlign: "center", padding: "1rem" }}>
+        No documents found.
+      </td>
+    </tr>
+  )}
+</tbody>
 
-                       {" "}
-
-                    <button
-                      className={`${styles.actionBtn} ${styles.deleteBtn}`}
-                      onClick={() => {
-                        setSelectedUser(doc);
-                        setShowConfirmPermanentDelete(true);
-                      }}
-                    >
-                      Permanently Delete
-                    </button>
-
-                  </td>
-                </tr>
-              ))}
-            </tbody>
           </table>
         </div>
 
