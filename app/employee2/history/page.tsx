@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import styles from "./historyStyles.module.css"; // Reuse same styles
 import EmpHeader from "@/components/shared/empHeader";
-import { Search as SearchIcon } from "lucide-react";
+import { Search as SearchIcon, X } from "lucide-react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
@@ -36,6 +36,9 @@ export default function History() {
   const [departmentFilter, setDepartmentFilter] = useState("");
   const [history, setHistory] = useState<DocumentVersionHistory[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [selectedDoc, setSelectedDoc] = useState<DocumentVersionHistory | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   // const historyData = [
   //   {
@@ -100,13 +103,24 @@ const filtered = history.filter((item) => {
   return searchMatch && typeMatch && deptMatch;
 });
 
+
+  const handleView = (entry: DocumentVersionHistory) => {
+    setSelectedDoc(entry);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedDoc(null);
+  };
+
   return (
     <div>
       <EmpHeader />
       <div className={styles.container}>
         <div data-aos="fade-up" className={styles.contentSection}>
           <div className={styles.headerRow}>
-            <h2 className={styles.pageTitle}>History</h2>
+            <h2 className={styles.pageTitle}>Version History</h2>
           </div>
 
           <hr className={styles.separator} />
@@ -168,7 +182,12 @@ const filtered = history.filter((item) => {
                   <td>{new Date(entry.CreatedAt).toLocaleDateString()}</td>
                   <td>{entry.VersionNumber}</td>
                   <td className={styles.actions}>
-                    <a href="#">View</a> 
+                    <button
+                      onClick={() => handleView(entry)}
+                      className={styles.viewBtn}
+                    >
+                      View
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -176,6 +195,69 @@ const filtered = history.filter((item) => {
           </table>
         </div>
       </div>
+     {showModal && selectedDoc && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalCard}>
+            <button className={styles.closeButton} onClick={closeModal}>
+              <X size={20} />
+            </button>
+            <h3 className={styles.modalTitle}>File Versions</h3>
+
+            <div className={styles.modalMeta}>
+              <p>
+                <strong>File Name:</strong>{" "}
+                <span className={styles.highlight}>
+                  {selectedDoc.Document.Title}
+                </span>
+              </p>
+              <p>
+                <strong>Type:</strong>{" "}
+                <span className={styles.highlight}>
+                  {selectedDoc.Document.Type || "Unknown"}
+                </span>
+              </p>
+              <p>
+  <strong>Version:</strong>{" "}
+  <select
+    className={styles.versionDropdown}
+    value={selectedDoc.VersionNumber}
+    onChange={(e) => {
+      const selectedVersionNumber = Number(e.target.value);
+      const versionData = history.find(
+        (doc) =>
+          doc.Document.Title === selectedDoc.Document.Title &&
+          doc.VersionNumber === selectedVersionNumber
+      );
+      if (versionData) {
+        setSelectedDoc(versionData);
+      }
+    }}
+  >
+    {history
+      .filter((doc) => doc.Document.Title === selectedDoc.Document.Title)
+      .sort((a, b) => b.VersionNumber - a.VersionNumber) // optional: newest first
+      .map((doc) => (
+        <option key={doc.VersionID} value={doc.VersionNumber}>
+          {doc.VersionNumber}
+        </option>
+      ))}
+  </select>
+</p>
+
+            </div>
+
+            <div className={styles.previewArea}>
+              {/* Replace src with your API/preview link */}
+              <iframe
+                src={`/api/documents/preview/${selectedDoc.VersionID}`}
+                width="100%"
+                height="500px"
+                title="Document Preview"
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

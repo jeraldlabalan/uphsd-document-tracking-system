@@ -65,6 +65,8 @@ export default function NotificationPage() {
     );
   };
 
+  
+
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
@@ -173,6 +175,23 @@ export default function NotificationPage() {
     }
   };
 
+  const handleCancelButtonClick = () => {
+  setShowDeleteModal(false);
+};
+
+// Handles clicking on the backdrop (outside modal content)
+const handleBackdropClick = (
+  e: React.MouseEvent<HTMLDivElement>,
+  closeAction: () => void
+) => {
+  if (e.target === e.currentTarget) {
+    closeAction();
+  }
+};
+
+
+
+
   const markRead = (id: number) => updateNotificationStatus(id, "Read");
   const markUnread = (id: number) => updateNotificationStatus(id, "Unread");
 
@@ -271,71 +290,89 @@ export default function NotificationPage() {
                 &times;
               </button>
 
-              <h2 className={styles.modalTitle}>Document Details</h2>
+              <h2 className={styles.modalTitle}>Notification Details</h2>
 
               <div className={styles.documentHeader}>
-                <span className={styles.pdfTag}></span>
+                {selectedNotification.profilePic ? (
+                  <img
+                    src={selectedNotification.profilePic}
+                    alt={selectedNotification.name || "User"}
+                    className={styles.profileImage}
+                  />
+                ) : (
+                  <div className={styles.userIcon}>
+                    {selectedNotification.name
+                      ? selectedNotification.name.charAt(0).toUpperCase()
+                      : "?"}
+                  </div>
+                )}
+
                 <div className={styles.headerInfo}>
-                  <h3>{selectedNotification.title}</h3>
-                   <p>
-                    Notification ID: {selectedNotification.id || "Unknown ID"}
+                  <h3 className={styles.highlight}>{selectedNotification.title}</h3>
+                  <p> <span className={styles.highlight}>
+                    Notification ID:</span> {selectedNotification.id || "Unknown ID"}
                   </p>
-                  <p>
-                    Requested by: {selectedNotification.name || "Unknown User"}
+                  <p> <span className={styles.highlight}>
+                    Requested by: </span> {selectedNotification.name || "Unknown User"}
                   </p>
-                  <p>
-                    Department:{" "}
-                    {selectedNotification.department || "Unknown Department"}
-                  </p>
-                  <p>Date/Time: {selectedNotification.time}</p>
+                  <p> <span className={styles.highlight}>
+                    Department:  </span>{selectedNotification.department || "Unknown Department"}
+                    </p>
+                  <p> <span className={styles.highlight}>
+                    Date/Time:  </span>{selectedNotification.time}</p>
                 </div>
-                <span className={styles.status}>Processing</span>
+                <button className={styles.viewBtn}>View Document</button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Delete Modal Styles */}
-        {showDeleteModal && notificationToDelete && (
-          <div className={styles.deleteModalOverlay}>
-            <div className={styles.deleteModalContent}>
-              <button
-                className={styles.deleteModalClose}
-                onClick={() => setShowDeleteModal(false)}
-              >
-                &times;
-              </button>
-              <h2 className={styles.deleteModalTitle}>Confirm Deletion</h2>
-              <p>
-                Are you sure you want to delete{" "}
-                <strong>{notificationToDelete.title}</strong>?
-              </p>
-              <div className={styles.deleteModalButtons}>
-                <button
-                  className={styles.cancelButton}
-                  onClick={() => {
-                    setShowDeleteModal(false);
-                    setNotificationToDelete(null);
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  className={styles.confirmDeleteButton}
-                  onClick={async () => {
-    if (!notificationToDelete) return;
+       {/* Delete Modal - using same style as permanent delete modal */}
+{showDeleteModal && notificationToDelete && (
+  <div
+    className={styles.modalDelete}
+    onClick={(e) =>
+      handleBackdropClick(e, () => {
+        setShowDeleteModal(false);
+        setNotificationToDelete(null);
+      })
+    }
+  >
+    <div className={styles.modalContentDelete}>
+      <div className={styles.confirmPermanentDeleteContainer}>
+        <h1>Confirm Deletion</h1>
 
-    await handleDeleteNotification(notificationToDelete.id); // 🔥 delete from DB
-    setShowDeleteModal(false);
-    setNotificationToDelete(null);
-  }}
->
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <p>
+          Are you sure you want to delete{" "}
+          <strong>{notificationToDelete.title}</strong>?
+        </p>
+
+        <div className={styles.confirmPermanentDeleteActionButton}>
+          <button
+            onClick=
+              {handleCancelButtonClick}
+              
+            
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              if (!notificationToDelete) return;
+              await handleDeleteNotification(notificationToDelete.id);
+              setShowDeleteModal(false);
+              setNotificationToDelete(null);
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+
       </div>
     </div>
   );
