@@ -43,22 +43,30 @@
   padding: 2rem;
   border-radius: 10px;
   flex: 1;
-  min-width: 45vw;
-  max-width: 450px;
+  min-width: 40vw;
+  max-width: 768px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.rightColumn h3 {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: var(--color-maroon);
+  margin-bottom: 1rem;
 }
 
 /* Profile Info */
 .profileInfo {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 1rem;
-  margin-bottom: 2rem;
 }
 
 .avatar {
-  width: 80px;
-  height: 80px;
+  width: 150px;
+  height: 150px;
+  border: var(--color-maroon) 5px solid;
   border-radius: 50%;
   object-fit: cover;
 }
@@ -66,7 +74,6 @@
 .profileDetails {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
 }
 
 .name {
@@ -78,27 +85,98 @@
 .role {
   font-size: 0.95rem;
   color: #666;
+  text-align: center;
 }
 
-/* Upload Section */
 .uploadSection {
-  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  margin-top: 0.5rem;
 }
+
+
+
 
 .uploadBtn {
-  display: inline-block;
+  position: relative;
   background-color: var(--color-maroon);
   color: white;
   font-weight: bold;
-  padding: 0.5rem 1.2rem;
+  padding: 10px;
   border-radius: 6px;
+  border: none;
   cursor: pointer;
+  overflow: hidden;
+  z-index: 0;
+  transition: color 0.3s ease;
 }
+
+.uploadBtn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-yellow);
+  transition: left 0.4s ease;
+  z-index: -1;
+}
+
+.uploadBtn:hover::before {
+  left: 0;
+}
+
+.uploadBtn:hover {
+  color: black; 
+}
+
 
 .photoNote {
   font-size: 0.8rem;
   color: #555;
 }
+
+
+
+.clearBtn {
+  position: relative;
+  background-color: white;
+  color: var(--color-maroon);
+  font-weight: bold;
+  padding: 10px;
+  border-radius: 6px;
+  border: var(--color-maroon) 1px solid;
+  cursor: pointer;
+  overflow: hidden;
+  z-index: 0;
+  transition: color 0.3s ease;
+}
+
+.clearBtn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-maroon);
+  transition: left 0.4s ease;
+  z-index: -1;
+}
+
+.clearBtn:hover::before {
+  left: 0;
+}
+
+.clearBtn:hover {
+  color: white; 
+}
+
+
 
 /* Password Form */
 .passwordSection h3 {
@@ -123,9 +201,7 @@
 }
 
 .inputField:focus {
-  outline: none;
-  border-color: #a00000;
-  box-shadow: 0 0 4px rgba(128, 0, 0, 0.4);
+  outline: var(--color-maroon) solid 2px;
 }
 
 .buttonGroup {
@@ -232,6 +308,11 @@
 
 
 @media (max-width: 768px) {
+
+  .contentContainer {
+    padding: 40px 5%;
+  }
+  
   .profileContainer {
     flex-direction: column;
     gap: 1.5rem;
@@ -239,6 +320,10 @@
 
   .inputGroup {
     flex-direction: column;
+  }
+
+  .leftColumn, .rightColumn {
+    padding: 0%;
   }
 
   .buttonGroup {

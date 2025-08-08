@@ -4,6 +4,7 @@ import styles from "./settingStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import Image from "next/image";
 import Email from "next-auth/providers/email";
 import UploadPhotoModal from "@/components/shared/modalSettings/modal";
 
@@ -165,11 +166,15 @@ export default function ProfileSettings() {
             <div className={styles.leftColumn}>
               {/* Profile Photo + Name */}
               <div className={styles.profileInfo}>
-                <img
-                  src={tempPreview || "/placeholder.png"}
-                  alt="Profile"
-                  className={styles.avatar}
-                />
+                <Image
+                    src={tempPreview || "/placeholder.png"}
+                    alt="Profile"
+                    className={styles.avatar}
+                    width={150}
+                    height={150}
+                    onClick={() => setIsModalOpen(true)}
+                    style={{ cursor: "pointer" }}
+                  />
                 <div className={styles.profileDetails}>
                   <h3 className={styles.name}>
                     {firstName} {lastName}
@@ -231,7 +236,7 @@ export default function ProfileSettings() {
                   >
                     Clear
                   </button>
-                  <button className={styles.saveBtn}>Change Password</button>
+                  <button className={styles.uploadBtn}>Change Password</button>
                 </div>
               </form>
             </div>
@@ -322,7 +327,7 @@ export default function ProfileSettings() {
                   <button className={styles.clearBtn} type="button">
                     Cancel
                   </button>
-                  <button className={styles.saveBtn} type="submit">
+                  <button className={styles.uploadBtn} type="submit">
                     Save Changes
                   </button>
                 </div>
