@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import toast from "react-hot-toast";
 import styles from "./EditUser.module.css";
+import AdminHeader from "@/components/shared/adminHeader";
 
 interface Role {
   RoleID: number;
@@ -255,14 +256,22 @@ export default function EditUserPage() {
     }
   };
 
-  if (!user) return <p>Loading...</p>;
+  if (!user) return <div className={styles.loadingContainer}>
+              <div className={styles.spinner}></div>
+              <p>Loading users...</p>
+            </div>;
 
   return (
     <div className={styles.container}>
-      <h2 className={styles.heading}>Edit User</h2>
+      <AdminHeader />
+      <div className={styles.contentContainer}>
+        <div className={styles.formWrapper}>
+      <h2 className={styles.title}>Edit User</h2>
+      <hr className={styles.separator} />
 
       <div className={styles.profileBox}>
         {user.profilePicture ? (
+          
           <img
             src={user.profilePicture}
             alt="Profile"
@@ -450,5 +459,7 @@ export default function EditUserPage() {
         </button>
       </div>
     </div>
+    </div>
+      </div>
   );
 }

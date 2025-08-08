@@ -251,31 +251,42 @@ export default function ActivityLogs() {
               </tr>
             </thead>
             <tbody>
-              {filteredLogs.map((log, i) => (
-                <tr key={i}>
-                  <td>{log.id}</td>
-                  <td>{log.activity}</td>
-                  <td>{log.user}</td>
-                  <td>{log.target}</td>
-                  <td>
-                    <span
-                      className={`${styles.badge} ${
-                        log.status === "Completed"
-                          ? styles.completed
-                          : log.status === "In Process"
-                            ? styles.inProcess
-                            : log.status === "On Hold"
-                              ? styles.onHold
-                              : styles.pending
-                      }`}
-                    >
-                      {log.status}
-                    </span>
-                  </td>
-
-                  <td>{log.dateCreated}</td>
-                </tr>
-              ))}
+              {filteredLogs.length > 0 ? (
+    filteredLogs.map((log, i) => (
+      <tr key={i}>
+        <td>{log.id}</td>
+        <td>{log.activity}</td>
+        <td>{log.user}</td>
+        <td>{log.target}</td>
+        <td>
+          <span
+            className={`${styles.badge} ${
+              log.status === "Completed"
+                ? styles.completed
+                : log.status === "In Process"
+                  ? styles.inProcess
+                  : log.status === "On Hold"
+                    ? styles.onHold
+                    : styles.pending
+            }`}
+          >
+            {log.status}
+          </span>
+        </td>
+        <td>{log.dateCreated}</td>
+      </tr>
+    ))
+  ) : (
+      <tr className={styles.noDataRow}>
+      <td colSpan={6} style={{ textAlign: "center", padding: "1rem" }}>
+        {search ? (
+          <>No logs found for "<strong>{search}</strong>"</>
+        ) : (
+          <>No logs available.</>
+        )}
+      </td>
+    </tr>
+  )}
             </tbody>
           </table>
         </div>

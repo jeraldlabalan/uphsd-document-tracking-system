@@ -258,49 +258,57 @@ const handleCloseSuccess = () => {
     </tr>
   </thead>
   <tbody>
-   {filteredDocs.map((doc, i) => (
-      <tr key={i}>
-        <td>{doc.id}</td>
-        <td>{doc.name}</td>
-        <td>{doc.department}</td>
-        <td>
-          <span
-  className={`${styles.badge} ${
-    doc.status === "Completed"
-      ? styles.completed
-      : doc.status === "In Process"
-      ? styles.inProcess
-      : doc.status === "On Hold"
-      ? styles.onHold
-      : styles.pending
-  }`}
->
-  {doc.status}
-</span>
-
-        </td>
-        <td>{doc.dateCreated}</td>
-        <td>
-          <a href="#" onClick={() => setSelectedDoc(doc)}
-            className={`${styles.actionBtn} ${styles.viewBtn}`}>
-            View
-          </a> 
-          {" "}
-         
-          <button
-  className={`${styles.actionBtn} ${styles.deleteBtn}`}
-  onClick={() => {
-    setSelectedUser(doc);
-    setIsModalOpen(true);
-  }}
->
-  Delete
-</button>
-
-        </td>
-      </tr>
-    ))}
+  {filteredDocs.length > 0 ? (
+  filteredDocs.map((doc, i) => (
+    <tr key={i}>
+      <td>{doc.id}</td>
+      <td>{doc.name}</td>
+      <td>{doc.department}</td>
+      <td>
+        <span
+          className={`${styles.badge} ${
+            doc.status === "Completed"
+              ? styles.completed
+              : doc.status === "In Process"
+              ? styles.inProcess
+              : doc.status === "On Hold"
+              ? styles.onHold
+              : styles.pending
+          }`}
+        >
+          {doc.status}
+        </span>
+      </td>
+      <td>{doc.dateCreated}</td>
+      <td>
+        <a
+          href="#"
+          onClick={() => setSelectedDoc(doc)}
+          className={`${styles.actionBtn} ${styles.viewBtn}`}
+        >
+          View
+        </a>{" "}
+        <button
+          className={`${styles.actionBtn} ${styles.deleteBtn}`}
+          onClick={() => {
+            setSelectedUser(doc);
+            setIsModalOpen(true);
+          }}
+        >
+          Delete
+        </button>
+      </td>
+    </tr>
+  ))
+) : (
+  <tr className={styles.noDataRow}>
+    <td colSpan={6} style={{ textAlign: "center", padding: "1rem" }}>
+      No documents found.
+    </td>
+  </tr>
+)}
   </tbody>
+  
 </table>
 
         </div>

@@ -145,6 +145,7 @@
   gap: 0.5rem;
   margin-left: 1rem;
 }
+
 .buttons {
   display: flex;
   flex-direction: row;
@@ -163,8 +164,8 @@
 }
 
 .view {
-  background-color: #ccc;
-  color: #000;
+  background-color: var(--color-maroon);
+  color: white;
 }
 
 .markRead {
@@ -173,7 +174,7 @@
 }
 
 .delete {
-  background-color: #f44336;
+  background-color: var(--color-maroon);
   color: white;
 }
 
@@ -184,7 +185,8 @@
 }
 
 
-/* View Modal Styles */
+
+
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -196,6 +198,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 1rem; 
 }
 
 .modalContent {
@@ -203,9 +206,9 @@
   border-radius: 12px;
   padding: 2rem;
   width: 650px;
+  max-width: 100%;
   position: relative;
   box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
-
 }
 
 .closeButton {
@@ -221,6 +224,7 @@
 .modalTitle {
   font-size: 1.5rem;
   font-weight: 600;
+  color: var(--color-maroon);
   margin-bottom: 1rem;
   border-bottom: 1px solid #ddd;
   padding-bottom: 0.5rem;
@@ -234,15 +238,29 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap; 
 }
 
-.pdfTag {
-  background: #d32f2f;
-  color: white;
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
+.profileImage {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+}
+
+.userIcon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: #FCCB0A;
+  color: #7F1416;
   font-weight: bold;
-  font-size: 0.9rem;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
 }
 
 .headerInfo {
@@ -251,137 +269,234 @@
 }
 
 .status {
-  background: #fff3cd;
   color: #856404;
   padding: 0.4rem 0.8rem;
   border-radius: 5px;
   font-weight: 600;
   font-size: 0.9rem;
-  border: 1px solid #ffeeba;
 }
 
-
-
-.timelineTitle {
+.highlight {
+  color: var(--color-maroon);
   font-weight: bold;
-  font-size: 1.1rem;
-  margin-bottom: 1rem;
-}
-.timelineSection {
-  padding-left: 1rem;
-  position: relative;
 }
 
-.timelineList {
+.viewBtn {
   position: relative;
-  margin-top: 1rem;
-  margin-left: 1.2rem;        
-  border-left: 2px solid #ccc; 
+  overflow: hidden;
+  background-color: var(--color-maroon);
+  color: white;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 0;
+  transition: color 0.3s ease;
 }
 
-.timelineItem {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  padding-left: 1.5rem; 
-  margin-bottom: 1.5rem;
+.viewBtn:hover {
+  background-color: #8B1416;
 }
 
-.timelineIcon {
+.viewBtn::before {
+  content: "";
   position: absolute;
-  left: -0.8rem; 
-  top: 0.15rem;
-  font-size: 1rem;
-  z-index: 2;
-  background-color: #fff;
-}
-
-.timelineText {
-  font-size: 0.95rem;
-  margin-left: 0.5rem; 
-}
-
-.timelineText p {
-  margin: 0;
-}
-
-.timelineText .byline {
-  color: gray;
-  font-size: 0.85rem;
-}
-
-.timelineDate {
-  font-size: 0.8rem;
-  color: #888;
-  margin-top: 0.25rem;
-}
-
-
-/* Delete Modal Styles */
-.deleteModalOverlay {
-  position: fixed;
   top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: #FCCB0A;
+  z-index: -1;
+  transition: left 0.4s ease;
+}
+
+.viewBtn:hover::before {
   left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
 }
 
-.deleteModalContent {
-  background: white;
-  padding: 2rem;
-  border-radius: 10px;
-  max-width: 420px;
-  width: 90%;
-  position: relative;
-  box-shadow: 0 0 25px rgba(0, 0, 0, 0.2);
-  text-align: center;
+.viewBtn:hover {
+  color: black;
 }
 
-.deleteModalClose {
-  position: absolute;
-  top: 12px;
-  right: 16px;
-  font-size: 1.5rem;
-  background: none;
-  border: none;
-  cursor: pointer;
+
+ .modalDelete {
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5) ;
 }
 
-.deleteModalTitle {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-  color:#7F1416;
+.modalContentDelete {
+    background: #fff;
+    padding: 60px 24px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 450px;
+    position: relative;
+    text-align: center;
+    height: 50%;
+    height: 300px;
 }
 
-.deleteModalButtons {
-  margin-top: 1.5rem;
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
+/* confirm modal */
+
+.confirmRestoreContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
 }
 
-.cancelButton {
-  background-color: #ffffff;
-  color: #7F1416;
+.confirmRestoreContainer > :first-child {
+    color: #177054;
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.confirmRestoreContainer > :nth-child(2) {
+    font-size: 0.95rem;
+    color: black;
+    text-align: center;
+}
+
+.confirmRestoreContainer .confirmRestoreActionButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.confirmRestoreContainer .confirmRestoreActionButton button {
+    height: 35px;
+    width: 100px;
+    border-radius: 12px;
+    text-transform: capitalize;
+    font-size: 0.95rem;
+}
+
+.confirmRestoreContainer .confirmRestoreActionButton > :first-child {
+    border: 2px solid #177054;
+}
+
+.confirmRestoreContainer .confirmRestoreActionButton > :last-child {
+    background-color: #177054;
+    color: white;
+}
+
+
+.confirmPermanentDeleteContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.confirmPermanentDeleteContainer > :first-child {
+    color: var(--color-maroon);
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.confirmPermanentDeleteContainer > :nth-child(2) {
+    font-size: 0.95rem;
+    color: black;
+    text-align: center;
+}
+
+.confirmPermanentDeleteContainer .confirmPermanentDeleteActionButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.confirmPermanentDeleteContainer .confirmPermanentDeleteActionButton button {
+    height: 35px;
+    width: 100px;
+    border-radius: 12px;
+    text-transform: capitalize;
+    font-size: 0.95rem;
+}
+
+.confirmPermanentDeleteContainer .confirmPermanentDeleteActionButton > :first-child {
+    border: 2px solid var(--color-maroon);
+}
+
+.confirmPermanentDeleteContainer .confirmPermanentDeleteActionButton > :last-child {
+    background-color: var(--color-maroon);
+    color: white;
+}
+
+/* success modal */
+
+.confirmSuccessContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.confirmSuccessContainer > :first-child {
+    color: #177054;
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.confirmSuccessContainer > :nth-child(2) {
+    font-size: 0.95rem;
+    color: black;
+    text-align: center;
+}
+
+.confirmSuccessContainer > :nth-child(3) {
+    height: 35px;
+    width: 200px;
+    border-radius: 12px;
+    text-transform: capitalize;
+    font-size: 0.95rem;
+    margin: 0 auto;
+    background-color: #177054;
+    color: white;
+    
+}
+
+.actionBtn {
+  color: white;
   padding: 0.5rem 1rem;
-  border: 2px solid #7F1416;
-  border-radius: 6px;
+  font-weight: 600;
+  border: none;
+  border-radius: 5px;
   cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
-.confirmDeleteButton {
-  background-color: #7F1416;
-  color: #FCCB0A;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+.deleteBtn {
+  background-color: #AD191B;
+  color: white;
+  transition: background-color 0.3s ease;
 }
+
+.deleteBtn:hover {
+  background-color: #8B1416; 
+}
+
+.restoreBtn {
+  background-color: #177054;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+.restoreBtn:hover {
+  background-color: #105C45; 
+}
+
 
 
 @media (max-width: 768px) {
@@ -406,6 +521,60 @@
   .delete {
     width: 100%;
   }
+
+  .tag {
+    border: var(--color-maroon) 1px solid;
+    padding: 2px 4px;
+    border-radius: 20px;
+  }
+
+@media (max-width: 768px) {
+  .modalContent {
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 90%;
+  }
+
+  .modalTitle {
+    font-size: 1.3rem;
+  }
+
+  .documentHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .headerInfo {
+    padding: 0.5rem 0;
+  }
+
+  .status {
+    font-size: 0.8rem;
+  }
+
+  .viewBtn {
+    width: 100%; 
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .modalContent {
+    padding: 1rem;
+    max-width: 95%;
+  }
+
+  .modalTitle {
+    font-size: 1.1rem;
+  }
+
+  .profileImage,
+  .userIcon {
+    width: 40px;
+    height: 40px;
+    font-size: 0.9rem;
+  }
+}
 
   .modalContent {
     width: 95%;
