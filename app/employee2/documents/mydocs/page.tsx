@@ -1,44 +1,55 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./mydocsStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
 import { Search as SearchIcon, X, FileText, Inbox } from "lucide-react";
 import Link from "next/link";
 
+type document = {
+  id: number;
+  name: string;
+  file: string;
+  status: string;
+  date: string;
+  type: string;
+  creator: string;
+  preview: string;
+};
+
+
 export default function MyDocuments() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
-  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [selectedDoc, setSelectedDoc] = useState<document | null>(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [dateError, setDateError] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
+  const [documents, setDocuments] = useState<document[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const documents = [
-    {
-      id: 1,
-      name: "Budget Report",
-      file: "budget2025.pdf",
-      status: "Completed",
-      date: "2025-07-26",
-      type: "Budget",
-      creator: "John Doe",
-      preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
-    },
-    {
-      id: 2,
-      name: "IT Evaluation",
-      file: "eval-it.docx",
-      status: "Pending",
-      date: "2025-07-20",
-      type: "Evaluation",
-      creator: "John HAHA",
-      preview: "/1-Student-Internship-MOA-CvSU-Bacoor-CS-Group (1).pdf",
-    },
-  ];
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        const res = await fetch("/api/employee/documents/mydocs");
+        if (res.ok) {
+          const data = await res.json();
+          setDocuments(data.docs || []);
+        } else {
+          console.error("Failed to load documents");
+          setDocuments([]); // fallback to avoid undefined
+        }
+      } catch (error) {
+        console.error("Error fetching documents:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  
+    fetchDocuments();
+  }, []);
+
 
   const filteredDocs = documents.filter((doc) => {
     const matchesSearch =
@@ -56,7 +67,7 @@ export default function MyDocuments() {
   });
 
   const handleDownload = () => {
-    if (!selectedDoc?.file) return;
+    if (!selectedDoc?.type) return;
     const link = document.createElement("a");
     link.href = `/path/to/files/${selectedDoc.file}`;
     link.download = selectedDoc.file;
@@ -102,7 +113,7 @@ export default function MyDocuments() {
           </div>
         </div>
 
-     
+
         <div data-aos="fade-up" className={styles.contentSection}>
           <div className={styles.headerRow}>
             <div className={styles.headerLeft}>
@@ -201,6 +212,14 @@ export default function MyDocuments() {
             </div>
           </div>
 
+          {loading ? (
+            <p>Loading documents...</p>
+          ) : (
+            filteredDocs.length === 0 ? (
+              <p>No documents found.</p>
+            ) : null
+          )}
+
           {/* Table or Card View */}
           {viewMode === "table" ? (
             <table className={styles.docTable}>
@@ -214,36 +233,35 @@ export default function MyDocuments() {
                   <th>Actions</th>
                 </tr>
               </thead>
-             <tbody>
-  {filteredDocs.length > 0 ? (
-    filteredDocs.map((doc, i) => (
-      <tr key={i}>
-        <td>{doc.id}</td>
-        <td>{doc.name}</td>
-        <td>{doc.file}</td>
-        <td>
-          <span
-            className={`${styles.badge} ${
-              doc.status === "Completed" ? styles.completed : styles.pending
-            }`}
-          >
-            {doc.status}
-          </span>
-        </td>
-        <td>{doc.date}</td>
-        <td className={styles.actions}>
-          <a href="#" onClick={() => setSelectedDoc(doc)}>View</a>
-        </td>
-      </tr>
-    ))
-  ) : (
-    <tr className={styles.noDataRow}>
-      <td colSpan={6} style={{ textAlign: "center" }}>
-        No documents found.
-      </td>
-    </tr>
-  )}
-</tbody>
+              <tbody>
+                {filteredDocs.length > 0 ? (
+                  filteredDocs.map((doc, i) => (
+                    <tr key={i}>
+                      <td>{doc.id}</td>
+                      <td>{doc.name}</td>
+                      <td>{doc.file}</td>
+                      <td>
+                        <span
+                          className={`${styles.badge} ${doc.status === "Completed" ? styles.completed : styles.pending
+                            }`}
+                        >
+                          {doc.status}
+                        </span>
+                      </td>
+                      <td>{doc.date}</td>
+                      <td className={styles.actions}>
+                        <a href="#" onClick={() => setSelectedDoc(doc)}>View</a>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr className={styles.noDataRow}>
+                    <td colSpan={6} style={{ textAlign: "center" }}>
+                      No documents found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
 
             </table>
           ) : (
@@ -253,9 +271,8 @@ export default function MyDocuments() {
                   <div className={styles.cardTop}>
                     <h3 className={styles.highlighted}>{doc.name}</h3>
                     <span
-                      className={`${styles.badge} ${
-                        doc.status === "Completed" ? styles.completed : styles.pending
-                      }`}
+                      className={`${styles.badge} ${doc.status === "Completed" ? styles.completed : styles.pending
+                        }`}
                     >
                       {doc.status}
                     </span>
@@ -266,8 +283,8 @@ export default function MyDocuments() {
                   <p><strong className={styles.highlighted}>Creator:</strong> {doc.creator}</p>
                   <div className={styles.cardActions}>
                     <button onClick={() => setSelectedDoc(doc)}>View</button>
-                    
-                   
+
+
                   </div>
                 </div>
               ))}
@@ -286,9 +303,8 @@ export default function MyDocuments() {
               <div className={styles.modalTop}>
                 <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
                 <span
-                  className={`${styles.badge} ${
-                    selectedDoc.status === "Completed" ? styles.completed : styles.pending
-                  }`}
+                  className={`${styles.badge} ${selectedDoc.status === "Completed" ? styles.completed : styles.pending
+                    }`}
                 >
                   {selectedDoc.status}
                 </span>
@@ -328,24 +344,24 @@ export default function MyDocuments() {
               </div>
 
               <div className={styles.modalFooter}>
-  <div className={styles.leftButtons}>
-    <button className={styles.download} onClick={handleDownload}>
-      Download
-    </button>
-    <button className={styles.print} onClick={handlePrint}>
-      Print
-    </button>
-  </div>
-  <div className={styles.rightButton}>
-   <Link href={`./edit-doc/`} className={styles.edit}>Edit</Link>
+                <div className={styles.leftButtons}>
+                  <button className={styles.download} onClick={handleDownload}>
+                    Download
+                  </button>
+                  <button className={styles.print} onClick={handlePrint}>
+                    Print
+                  </button>
+                </div>
+                <div className={styles.rightButton}>
+                  <Link href={`./edit-doc/`} className={styles.edit}>Edit</Link>
 
-  </div>
-</div>
+                </div>
+              </div>
 
             </div>
-          </div>  
+          </div>
         )}
       </div>
-    </div>
+    </div >
   );
 }
