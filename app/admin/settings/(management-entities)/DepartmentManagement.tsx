@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import styles from "./ManagementStyles.module.css";
+import Modal from "../(modal)/Modal"; // Correct path if necessary
 
 interface InputRow {
   id: string | number;
@@ -20,6 +21,12 @@ const DepartmentManagement: React.FC = () => {
     { id: 11, name: "Information Technology", checked: true },
   ]);
 
+  // Modal state
+  const [showModal, setShowModal] = useState(false);
+  const [rowToDelete, setRowToDelete] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState(false); // Success state for confirmation
+
   const handleAddRow = () => {
     setRows((prev) => [...prev, { id: Date.now(), value: "" }]);
   };
@@ -32,23 +39,31 @@ const DepartmentManagement: React.FC = () => {
     setRows((prev) => prev.filter((r) => r.id !== id));
   };
 
-  const handleToggleActiveItem = (id: number | string) => {
-    setActiveItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, checked: !item.checked } : item
-      )
-    );
+  const handleDeleteActiveItem = (id: number | string) => {
+    setSuccess(false); // Reset success message
+    setRowToDelete(id.toString()); // Set the department to delete
+    setShowModal(true); // Show the confirmation modal
   };
 
-  const handleDeleteActiveItem = (id: number | string) => {
-    setActiveItems((prev) => prev.filter((item) => item.id !== id));
+  // Modal confirmation handler
+  const handleConfirmDeletion = () => {
+    setIsLoading(true); // Show loading spinner
+    setTimeout(() => {
+      setActiveItems((prev) => prev.filter((item) => item.id !== rowToDelete));
+      setIsLoading(false); // Hide loading spinner
+      setSuccess(true); // Set success message
+      setRowToDelete(null); // Reset row to delete
+    }, 2000); // Simulate loading time of 2 seconds
+  };
+
+  const handleCancelDeletion = () => {
+    setShowModal(false); // Close modal without deleting
+    setRowToDelete(null); // Reset row to delete
   };
 
   return (
     <div className={styles.managementContainer}>
-
-      <p className={styles.sectionTitle}>department management</p>
-
+      <p className={styles.sectionTitle}>Department Management</p>
       <div className={styles.managementContents}>
         <p>Add new department(s)</p>
 
@@ -72,19 +87,12 @@ const DepartmentManagement: React.FC = () => {
                         className={styles.addRowButton}
                         onClick={handleAddRow}
                       >
-                        add row
+                        Add Row
                       </button>
                     ) : (
-                      <button
-                        title="delete-row"
-                        onClick={() => handleRemoveRow(row.id)}
-                      >
+                      <button onClick={() => handleRemoveRow(row.id)}>
                         <svg width="10" height="10" viewBox="0 0 10 10">
-                          <path
-                            d="M1 1L9 9M1 9L9 1"
-                            stroke="black"
-                            strokeWidth="2"
-                          />
+                          <path d="M1 1L9 9M1 9L9 1" stroke="black" strokeWidth="2" />
                         </svg>
                       </button>
                     )}
@@ -96,8 +104,7 @@ const DepartmentManagement: React.FC = () => {
         </div>
 
         <div className={styles.activeContainer}>
-          <p>active departments</p>
-
+          <p>Active Departments</p>
           <div className={styles.activeList}>
             <div className={styles.scrollable}>
               <ul>
@@ -108,22 +115,17 @@ const DepartmentManagement: React.FC = () => {
                         title="department"
                         type="checkbox"
                         checked={item.checked}
-                        onChange={() => handleToggleActiveItem(item.id)}
+                        onChange={() => {}}
                       />
                       <label>{item.name}</label>
                     </div>
                     <button
-                      type="button"
                       title="delete"
                       className={styles.deleteButton}
-                      onClick={() => handleDeleteActiveItem(item.id)}
+                      onClick={() => handleDeleteActiveItem(item.id)} // Trigger the delete action
                     >
                       <svg width="10" height="10" viewBox="0 0 10 10">
-                        <path
-                          d="M1 1L9 9M1 9L9 1"
-                          stroke="black"
-                          strokeWidth="2"
-                        />
+                        <path d="M1 1L9 9M1 9L9 1" stroke="black" strokeWidth="2" />
                       </svg>
                     </button>
                   </li>
@@ -132,13 +134,25 @@ const DepartmentManagement: React.FC = () => {
             </div>
 
             <div className={styles.managementActionButtons}>
-              <button>save</button>
+              <button title="save">Save</button>
             </div>
           </div>
         </div>
-
       </div>
-      
+
+      {/* Modal for Confirmation */}
+      <Modal
+        showModal={showModal} // Modal visibility state
+        setShowModal={setShowModal} // Function to toggle the modal
+        description={
+          success
+            ? "Department successfully deleted." // Success message after deletion
+            : "Are you sure you want to delete this department?" // Default modal description
+        }
+        onConfirm={handleConfirmDeletion} // Confirm deletion function
+        onCancel={handleCancelDeletion} // Cancel deletion function
+        isLoading={isLoading} // Show loading spinner during deletion
+      />
     </div>
   );
 };

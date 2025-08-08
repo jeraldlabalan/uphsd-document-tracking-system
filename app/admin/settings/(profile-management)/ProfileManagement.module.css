@@ -1,6 +1,6 @@
-/* Container wrapper */
+/* Information Container */
 .informationContainer {
-  border: 1px solid var(--color-grey);
+  border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 12px;
   padding: 20px 20px;
   gap: 20px;
@@ -14,20 +14,17 @@
   font-size: 1.25rem;
 }
 
-/* Main form element */
 .informationForm {
   display: flex;
   flex-direction: column;
-  gap: 50px;
+  gap: min(2vh, 3rem);
 }
 
-/* Grid of inputs */
 .formContainer {
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
 }
-
 
 .formContainer .formData {
   display: flex;
@@ -39,38 +36,41 @@
   font-size: 1.05rem;
 }
 
-.formData input[type="text"] {
-  border: 1px solid var(--color-grey);
+.formData input[type="text"]{
+  border: 2px solid rgba(0, 0, 0, 0.2);
   border-radius: 5px;
-  padding: 5px 5px;
+  height: 40px;
   font-size: 0.95rem;
   text-transform: capitalize;
+  padding-inline: min(1rem, 3vw);
 }
 
 .formData input[type="text"]:focus {
   outline: 2px solid var(--color-maroon);
+  border: none;
 }
-
 
 .buttonsContainer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 20px;
+  gap: min(1rem, 5vw);
 }
 
 .buttonsContainer > :first-child,
 .buttonsContainer > :last-child {
-  border: 2px solid var(--color-maroon);
-  vertical-align: middle;
-  padding: 0 10px;
-  border-radius: 50px;
+  font-size: 0.75rem;
   text-transform: capitalize;
+  color: var(--color-yellow);
+  padding-inline: 20px;
+  height: 30px;
+  border-radius: 100px;
 }
 
 .buttonsContainer > :first-child {
   background-color: var(--color-grey);
   color: var(--color-maroon);
+  border: 2px solid var(--color-maroon);
 }
 
 .buttonsContainer > :last-child {
@@ -78,7 +78,258 @@
   color: var(--color-yellow);
 }
 
+/* Information Form Custom Select Styles */
+.wrapper {
+  position: relative;
+  width: 100%;
+  cursor: pointer;
+}
+
+.display {
+  padding-inline: min(1rem, 3vw);
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  border-radius: 8px;
+  height: 40px;
+}
+
+.display.active {
+    border-radius: none;
+    border: 2px solid var(--color-maroon);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: none;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.arrow {
+  transition: transform 0.25s ease;
+  color: var(--color-maroon);
+}
+
+.arrow.open {
+  transform: rotate(180deg);
+  color: var(--color-maroon);
+}
+
+.dropdown {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  background: white;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  overflow: hidden;
+  transform-origin: top;
+  transform: scaleY(0);
+  opacity: 0;
+  max-height: 0;
+  transition: transform 0.25s ease, opacity 0.25s ease, max-height 0.25s ease;
+  z-index: 99;
+  overflow-y: auto;
+  border: 2px solid var(--color-maroon);
+  border-top: none;
+}
+
+.dropdown.open {
+  transform: scaleY(1);
+  opacity: 1;
+  max-height: 250px;
+}
+
+.dropdown li {
+  padding: 8px 12px;
+}
+
+.dropdown li:hover {
+  background-color: var(--color-maroon);
+  color: white;
+}
+/* End of Information Form Custom Select Styles */
+/* End of Information Container */
+
+
+/* Profile Display */
+.profileGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.profileItem:not(:nth-of-type(2)) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: min(1rem, 5%);
+}
+
+.profileItem:nth-of-type(2) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: min(0.5rem, 2%);
+}
+
+.profileItem:nth-of-type(2) > h3 {
+  font-size: clamp(1rem, 3vw + 1rem, 2rem);
+}
+
+.profileItem:nth-of-type(3) > label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background-color: var(--color-maroon);
+  height: 40px;
+  padding-inline: min(1rem, 5%);
+  text-transform: capitalize;
+  border-radius: 12px;
+  color: white;
+  font-weight: 400;
+}
+
+.profileItem:nth-of-type(3) > label > svg {
+  height: 15px;
+  width: 15px;
+}
+
+
+.profileItem:nth-of-type(3) .uploadButton {
+  display: none;
+}
+
+.profileItem:last-of-type > p{
+  text-align: center;
+}
+
+.profileItem > .imageContainer {
+  position: relative;
+  width: clamp(100px, 100%, 150px);
+  aspect-ratio: 1 / 1;
+  height: clamp(100px, 100%, 150px);
+  object-fit: cover;
+  object-position: center center;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.imageContainer > .profileImage {
+  border-radius: 50%;
+  border: 5px solid var(--color-maroon);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+
+
+
+/* Change Password */
+.changePasswordWrapper {
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.changePasswordContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.sectionTitle {
+  color: var(--color-maroon);
+  text-transform: capitalize;
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.changePasswordContents {
+    margin-left: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    
+}
+
+.changePasswordDataForm {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+}
+
+.changePasswordDataForm .dataForm {
+    display: flex;
+    flex-direction: column;
+}
+
+.changePasswordDataForm .dataForm > :first-child {
+    text-transform: capitalize;
+   
+}
+
+.changePasswordDataForm .dataForm > :last-child {
+  height: 40px;
+  padding-inline: min(1rem, 3vw);
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  transform: transform 0.3s ease-in-out;
+}
+
+.changePasswordDataForm .dataForm > :last-child:focus {
+    outline: 2px solid var(--color-maroon);
+    border: none;
+}
+
+.changePasswordButtons {
+    align-self: flex-end;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    width: 100%;
+   
+}
+
+.changePasswordButtons > :first-child,
+.changePasswordButtons > :last-child {
+  font-size: 0.75rem;
+  text-transform: capitalize;
+  color: var(--color-yellow);
+  padding-inline: 20px;
+  height: 30px;
+  border-radius: 100px;
+  white-space: nowrap;
+}
+
+.changePasswordButtons > :first-child {
+    background-color: var(--color-grey);
+    color: var(--color-maroon);
+    border: 2px solid var(--color-maroon);
+}
+
+.changePasswordButtons > :last-child {
+    background-color: var(--color-maroon);
+    color: var(--color-yellow);
+}
+/* End of Change Password */
+
+
+
 /* Dropdown styles */
+
 .optionDropdownContainer {
   position: relative;
   display: inline-block;
@@ -142,4 +393,26 @@
 .tableDropdownMenu li:hover {
   background-color: var(--color-maroon);
   color: var(--color-yellow);
+}
+
+@media (width >= 1200px) {
+  .profileGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+
+}
+
+@media (width <= 420px) {
+  .changePasswordContents {
+    margin-left: 0;
+  }
+
+  .changePasswordButtons {
+    justify-content: center;
+  }
+
+  .buttonsContainer {
+    justify-content: center;
+  }
 }
