@@ -33,6 +33,7 @@
     "react-dom": "^18.2.0",
     "react-draggable": "^4.4.5",
     "react-dropzone": "^14.3.8",
+    "react-easy-crop": "^5.5.0",
     "react-hot-toast": "^2.5.2",
     "react-modal": "^3.16.3",
     "react-pdf": "^7.7.0",
