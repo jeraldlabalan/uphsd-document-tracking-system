@@ -2,14 +2,14 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #D9D9D9;
+  background-color: #d9d9d9;
 }
 
 .contentContainer {
   display: flex;
   justify-content: center;
   padding: 60px 10%;
-  background-color: #D9D9D9;
+  background-color: #d9d9d9;
 }
 
 .formWrapper {
@@ -27,7 +27,7 @@
   color: var(--color-maroon);
   padding-bottom: 1.5rem;
   text-align: center;
-    text-shadow: rgba(0, 0, 0, 0.6) 1px 1px 0.5px;
+  text-shadow: rgba(0, 0, 0, 0.6) 1px 1px 0.5px;
 }
 
 .separator {
@@ -138,7 +138,6 @@
   color: green;
 }
 
-
 .loadingContainer {
   display: flex;
   flex-direction: column;
@@ -151,7 +150,7 @@
   width: 50px;
   height: 50px;
   border: 5px solid #ccc;
-  border-top: 5px solid var(--color-maroon); 
+  border-top: 5px solid var(--color-maroon);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
@@ -165,7 +164,6 @@
     transform: rotate(360deg);
   }
 }
-
 
 .submitBtn {
   position: relative;
@@ -199,16 +197,8 @@
 }
 
 .submitBtn:hover {
-  color: black; 
+  color: black;
 }
-
-
-
-
-
-
-
-
 
 @media (max-width: 768px) {
   .contentContainer {

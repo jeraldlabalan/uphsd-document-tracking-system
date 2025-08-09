@@ -144,7 +144,9 @@ export default function EditUserPage() {
       setUser({ ...user, mobileNumber: digits });
       setErrors((prev) => ({
         ...prev,
-        mobileNumber: /^09\d{9}$/.test(digits) ? "" : "Invalid mobile number",
+        mobileNumber: /^09\d{9}$/.test(digits)
+          ? ""
+          : "Must be 11 digits starting with 09",
       }));
       return;
     }
@@ -193,8 +195,8 @@ export default function EditUserPage() {
       if (!user.firstName && !user.lastName) {
         setErrors((prev) => ({
           ...prev,
-          firstName: "Either First Name or Last Name must be provided",
-          lastName: "Either First Name or Last Name must be provided",
+          firstName: "Either Firstname or Lastname must be provided",
+          lastName: "Either Firstname or Lastname must be provided",
         }));
       } else {
         setErrors((prev) => ({
@@ -212,8 +214,8 @@ export default function EditUserPage() {
     const errs: { [key: string]: string } = {};
     if (!emailRegex.test(user.email)) errs.email = "Invalid email";
     if (!user.firstName && !user.lastName) {
-      errs.firstName = "Either First Name or Last Name must be provided";
-      errs.lastName = "Either First Name or Last Name must be provided";
+      errs.firstName = "Either Firstname or Lastname must be provided";
+      errs.lastName = "Either Firstname or Lastname must be provided";
     }
     if (!user.firstName) errs.firstName = "Required";
     if (!user.lastName) errs.lastName = "Required";
@@ -256,210 +258,217 @@ export default function EditUserPage() {
     }
   };
 
-  if (!user) return <div className={styles.loadingContainer}>
-              <div className={styles.spinner}></div>
-              <p>Loading users...</p>
-            </div>;
+  if (!user)
+    return (
+      <div className={styles.loadingContainer}>
+        <div className={styles.spinner}></div>
+        <p>Loading users...</p>
+      </div>
+    );
 
   return (
     <div className={styles.container}>
       <AdminHeader />
       <div className={styles.contentContainer}>
         <div className={styles.formWrapper}>
-      <h2 className={styles.title}>Edit User</h2>
-      <hr className={styles.separator} />
+          <h2 className={styles.title}>Edit User</h2>
+          <hr className={styles.separator} />
 
-      <div className={styles.profileBox}>
-        {user.profilePicture ? (
-          
-          <img
-            src={user.profilePicture}
-            alt="Profile"
-            className={styles.profileImage}
-          />
-        ) : (
-          <div className={styles.fallbackInitials}>{user.firstName[0]}</div>
-        )}
-        <p className={styles.userName}>
-          {user.firstName} {user.lastName}
-        </p>
-      </div>
+          <div className={styles.profileBox}>
+            {user.profilePicture ? (
+              <img
+                src={user.profilePicture}
+                alt="Profile"
+                className={styles.profileImage}
+              />
+            ) : (
+              <div className={styles.fallbackInitials}>{user.firstName[0]}</div>
+            )}
+            <p className={styles.userName}>
+              {user.firstName} {user.lastName}
+            </p>
+          </div>
 
-      <div className={styles.form}>
-        <div className={styles.formGroup}>
-          <label className={styles.label}>Employee ID</label>
-          <input
-            className={styles.input}
-            name="employeeID"
-            value={user.employeeID}
-            readOnly
-          />
-        </div>
+          <div className={styles.form}>
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Employee ID</label>
+              <input
+                className={styles.input}
+                name="employeeID"
+                value={user.employeeID}
+                readOnly
+              />
+            </div>
 
-        <div className={styles.formGroup}>
-          <label className={styles.label}>First Name</label>
-          <input
-            className={styles.input}
-            name="firstName"
-            value={user.firstName}
-            onChange={handleChange}
-          />
-          {errors.firstName && (
-            <p className={styles.error}>{errors.firstName}</p>
-          )}
-        </div>
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Firstname</label>
+              <input
+                className={styles.input}
+                name="firstName"
+                value={user.firstName}
+                onChange={handleChange}
+              />
+              {errors.firstName && (
+                <p className={styles.error}>{errors.firstName}</p>
+              )}
+            </div>
 
-        <div className={styles.formGroup}>
-          <label className={styles.label}>Last Name</label>
-          <input
-            className={styles.input}
-            name="lastName"
-            value={user.lastName}
-            onChange={handleChange}
-          />
-          {errors.lastName && <p className={styles.error}>{errors.lastName}</p>}
-        </div>
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Lastname</label>
+              <input
+                className={styles.input}
+                name="lastName"
+                value={user.lastName}
+                onChange={handleChange}
+              />
+              {errors.lastName && (
+                <p className={styles.error}>{errors.lastName}</p>
+              )}
+            </div>
 
-        <div className={styles.formGroup}>
-          <label className={styles.label}>Email</label>
-          <input
-            className={styles.input}
-            name="email"
-            value={user.email}
-            readOnly
-          />
-          {errors.email && <p className={styles.error}>{errors.email}</p>}
-        </div>
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Email</label>
+              <input
+                className={styles.input}
+                name="email"
+                value={user.email}
+                readOnly
+              />
+              {errors.email && <p className={styles.error}>{errors.email}</p>}
+            </div>
 
-        <div className={styles.formGroup}>
-          <label className={styles.label}>Password</label>
-          <input
-            className={styles.input}
-            name="password"
-            type="password"
-            value={user.password}
-            onChange={handleChange}
-            placeholder="Leave blank to keep current"
-          />
-          <div className={styles.passwordGuidance}>
-            {passwordRequirements.map((req, index) => {
-              const isValid = req.test(user.password || "");
-              return (
-                <div
-                  key={index}
-                  className={`${styles.passwordRequirement} ${
-                    isValid ? styles.valid : ""
-                  }`}
-                >
-                  {isValid ? "✅" : "❌"} {req.label}
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Password</label>
+              <input
+                className={styles.input}
+                name="password"
+                type="password"
+                value={user.password}
+                onChange={handleChange}
+                placeholder="Leave blank to keep current"
+              />
+              {user.password && (
+                <div className={styles.passwordGuidance}>
+                  {passwordRequirements.map((req, index) => {
+                    const isValid = req.test(user.password || "");
+                    return (
+                      <div
+                        key={index}
+                        className={`${styles.passwordRequirement} ${
+                          isValid ? styles.valid : ""
+                        }`}
+                      >
+                        {isValid ? "✅" : "❌"} {req.label}
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
-          {errors.password && !validatePassword(user.password || "") && (
-            <p className={styles.error}>{errors.password}</p>
-          )}
-        </div>
+              )}
 
-        <div className={styles.formGroup}>
-          <label className={styles.label}>Mobile</label>
-          <input
-            className={styles.input}
-            name="mobileNumber"
-            value={user.mobileNumber}
-            onChange={handleChange}
-          />
-          {errors.mobileNumber && (
-            <p className={styles.error}>{errors.mobileNumber}</p>
-          )}
-        </div>
+              {errors.password && !validatePassword(user.password || "") && (
+                <p className={styles.error}>{errors.password}</p>
+              )}
+            </div>
 
-        <div className={styles.formGroup}>
-          <label className={styles.label}>Sex</label>
-          <select
-            className={styles.input}
-            name="sex"
-            value={user.sex}
-            onChange={handleChange}
-          >
-            <option value="" disabled hidden>
-              Select Sex
-            </option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-          </select>
-        </div>
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Mobile</label>
+              <input
+                className={styles.input}
+                name="mobileNumber"
+                value={user.mobileNumber}
+                onChange={handleChange}
+              />
+              {errors.mobileNumber && (
+                <p className={styles.error}>{errors.mobileNumber}</p>
+              )}
+            </div>
 
-        <div className={styles.formGroup}>
-          <label className={styles.label}>Role</label>
-          <select
-            className={styles.input}
-            name="roleID"
-            value={user.roleID}
-            onChange={handleChange}
-          >
-            <option value="" disabled hidden>
-              Select Role
-            </option>
-            {roles.map((role) => (
-              <option key={role.RoleID} value={role.RoleID}>
-                {role.RoleName}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Department dropdown only if NOT Admin */}
-        {!isAdminRole(user.roleID, roles) && (
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Department</label>
-            <select
-              className={styles.input}
-              name="departmentID"
-              value={user.departmentID ?? ""}
-              onChange={handleChange}
-            >
-              <option value="" disabled hidden>
-                Select Department
-              </option>
-              {departments.map((dep) => (
-                <option key={dep.DepartmentID} value={dep.DepartmentID}>
-                  {dep.Name}
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Sex</label>
+              <select
+                className={styles.input}
+                name="sex"
+                value={user.sex}
+                onChange={handleChange}
+              >
+                <option value="" disabled hidden>
+                  Select Sex
                 </option>
-              ))}
-            </select>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Role</label>
+              <select
+                className={styles.input}
+                name="roleID"
+                value={user.roleID}
+                onChange={handleChange}
+              >
+                <option value="" disabled hidden>
+                  Select Role
+                </option>
+                {roles.map((role) => (
+                  <option key={role.RoleID} value={role.RoleID}>
+                    {role.RoleName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Department dropdown only if NOT Admin */}
+            {!isAdminRole(user.roleID, roles) && (
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Department</label>
+                <select
+                  className={styles.input}
+                  name="departmentID"
+                  value={user.departmentID ?? ""}
+                  onChange={handleChange}
+                >
+                  <option value="" disabled hidden>
+                    Select Department
+                  </option>
+                  {departments.map((dep) => (
+                    <option key={dep.DepartmentID} value={dep.DepartmentID}>
+                      {dep.Name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Position</label>
+              <select
+                className={styles.input}
+                name="positionID"
+                value={user.positionID}
+                onChange={handleChange}
+              >
+                <option value="" disabled hidden>
+                  Select Position
+                </option>
+                {positions.map((pos) => (
+                  <option key={pos.PositionID} value={pos.PositionID}>
+                    {pos.Name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              className={styles.submitBtn}
+              onClick={handleSubmit}
+              disabled={Object.values(errors).some(Boolean)}
+            >
+              Save Changes
+            </button>
           </div>
-        )}
-
-        <div className={styles.formGroup}>
-          <label className={styles.label}>Position</label>
-          <select
-            className={styles.input}
-            name="positionID"
-            value={user.positionID}
-            onChange={handleChange}
-          >
-            <option value="" disabled hidden>
-              Select Position
-            </option>
-            {positions.map((pos) => (
-              <option key={pos.PositionID} value={pos.PositionID}>
-                {pos.Name}
-              </option>
-            ))}
-          </select>
         </div>
-
-        <button
-          className={styles.submitBtn}
-          onClick={handleSubmit}
-          disabled={Object.values(errors).some(Boolean)}
-        >
-          Save Changes
-        </button>
       </div>
     </div>
-    </div>
-      </div>
   );
 }
