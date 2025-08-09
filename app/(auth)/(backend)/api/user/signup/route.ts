@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { sign } from "jsonwebtoken";
 import { sendVerificationEmail } from "@/lib/email";
+import { db } from "@/lib/db"
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
@@ -31,6 +32,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "Invalid email domain." }, { status: 400 });
   }
 
+    // ✅ Check if email already exists
+  const existingUser = await db.user.findUnique({
+    where: { Email },
+  });
+
+  if (existingUser) {
+    return NextResponse.json(
+      { message: "Email already registered." },
+      { status: 409 } // 409 Conflict
+    );
+  }
+
+
   // ✅ Generate OTP
   const otp = crypto.randomInt(100000, 999999).toString();
 
@@ -54,7 +68,7 @@ export async function POST(req: Request) {
   console.log(`📧 Sending OTP ${otp} to ${Email}`);
   console.log("✅ Reached SMTP call");
   console.log(`Sending email with OTP: ${otp} to: ${Email}`);
-  await sendVerificationEmail({ to: "isaacbides03@gmail.com", otp });
+  await sendVerificationEmail({ to: Email, otp });
   console.log(`✅ OTP email function called`);
   console.log("JWT_SECRET:", JWT_SECRET);
   console.log("✅ Signing JWT payload:", payload);

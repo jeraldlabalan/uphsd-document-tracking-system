@@ -355,7 +355,7 @@ useEffect(() => {
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      Download File
+                      No file attached
                     </a>
                   </p>
                 ) : (

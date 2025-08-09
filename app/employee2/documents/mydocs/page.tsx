@@ -532,7 +532,7 @@ export default function MyDocuments() {
           </div>
         )}
 
-        {/* remarks modal */}
+        {/* mark as complete modal */}
         {showMarkCompletedSuccess && (
           <div
             className={styles.modal}
@@ -543,9 +543,15 @@ export default function MyDocuments() {
                 <h1>success!</h1>
                 <p>Document successfully completed.</p>
 
-                <button onClick={() => setShowMarkCompletedSuccess(false)}>
+                <button
+                  onClick={() => {
+                    setShowMarkCompletedSuccess(false);
+                    window.location.reload();
+                  }}
+                >
                   OK
                 </button>
+
               </div>
             </div>
           </div>
