@@ -34,5 +34,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/employee/:path*'], // Automatically triggers on these routes
+  matcher: ['/admin5/:path*', '/employee/:path*'], // Automatically triggers on these routes
 };
