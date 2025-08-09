@@ -66,9 +66,17 @@ export default function Login() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
+        credentials: "include", // ✅ send & receive cookies
       });
 
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        toast.error("Invalid server response");
+        setIsLoading(false);
+        return;
+      }
 
       if (!res.ok) {
         toast.error(data.message || "Login failed");
@@ -77,16 +85,19 @@ export default function Login() {
       }
 
       toast.success("Login successful!");
+      setIsLoading(false); // ✅ Reset before navigation
 
       if (data.role === "Admin") {
+        await new Promise((r) => setTimeout(r, 100)); // slight delay
         router.push("/admin/dashboard");
       } else if (data.role === "Employee") {
+        await new Promise((r) => setTimeout(r, 100)); // slight delay
         router.push("/employee2/dashboard");
       } else {
         router.push("/");
       }
     } catch (error) {
-      toast.error("Something went wrong.");
+      toast.error("Something went wrong." + error);
       setIsLoading(false);
     }
   }
