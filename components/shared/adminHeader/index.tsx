@@ -27,24 +27,24 @@ export default function AdminHeader() {
     ProfilePicture?: string;
   } | null>(null);
 
-  // useEffect(() => {
-  //   const fetchUser = async () => {
-  //     try {
-  //       const res = await fetch("/api/user/me");
-  //       const data = await res.json();
-  //       if (res.ok) {
-  //         setUser(data);
-  //       } else {
-  //         console.error(data.error);
-  //         router.push("/login");
-  //       }
-  //     } catch (err) {
-  //       console.error("Failed to fetch user");
-  //       router.push("/login");
-  //     }
-  //   };
-  //   fetchUser();
-  // }, [router]);
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("/api/user/me");
+        const data = await res.json();
+        if (res.ok) {
+          setUser(data);
+        } else {
+          console.error(data.error);
+          router.push("/login");
+        }
+      } catch (err) {
+        console.error("Failed to fetch user");
+        router.push("/login");
+      }
+    };
+    fetchUser();
+  }, [router]);
 
   const handleLogout = () => {
     document.cookie =

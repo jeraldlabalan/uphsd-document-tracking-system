@@ -2,9 +2,8 @@
 import { useEffect, useState } from "react";
 import styles from "./mydocsStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
-import { Search as SearchIcon, X, FileText, Inbox } from "lucide-react";
+import { Search as SearchIcon, X, FileText, Inbox, FileX } from "lucide-react";
 import Link from "next/link";
-
 type document = {
   id: number;
   name: string;
@@ -28,6 +27,9 @@ export default function MyDocuments() {
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [documents, setDocuments] = useState<document[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRemarksModalOpen, setIsRemarksModalOpen] = useState(false);
+  const [showMarkCompletedSuccess, setShowMarkCompletedSuccess] = useState(false);
+
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -155,10 +157,11 @@ export default function MyDocuments() {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="">All Status</option>
-              <option>Pending</option>
-              <option>In Process</option>
+              <option>In-Process</option>
+              <option>Approved</option>
+              <option>Awaiting-Completion</option>
               <option>Completed</option>
-              <option>Rejected</option>
+              <option>On Hold</option>
             </select>
 
             <select
@@ -191,7 +194,7 @@ export default function MyDocuments() {
                   }}
                   className={styles.dateInput}
                 />
-
+                <span className={styles.dateLabel}>To:</span>
                 <input
                   type="date"
                   value={dateTo}
@@ -212,85 +215,122 @@ export default function MyDocuments() {
             </div>
           </div>
 
-          {loading ? (
-            <p>Loading documents...</p>
-          ) : (
-            filteredDocs.length === 0 ? (
-              <p>No documents found.</p>
-            ) : null
-          )}
+          
 
-          {/* Table or Card View */}
-          {viewMode === "table" ? (
-            <table className={styles.docTable}>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Document</th>
-                  <th>File</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredDocs.length > 0 ? (
-                  filteredDocs.map((doc, i) => (
-                    <tr key={i}>
-                      <td>{doc.id}</td>
-                      <td>{doc.name}</td>
-                      <td>{doc.file}</td>
-                      <td>
-                        <span
-                          className={`${styles.badge} ${doc.status === "Completed" ? styles.completed : styles.pending
-                            }`}
-                        >
-                          {doc.status}
-                        </span>
-                      </td>
-                      <td>{doc.date}</td>
-                      <td className={styles.actions}>
-                        <a href="#" onClick={() => setSelectedDoc(doc)}>View</a>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr className={styles.noDataRow}>
-                    <td colSpan={6} style={{ textAlign: "center" }}>
-                      No documents found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-
-            </table>
-          ) : (
-            <div className={styles.cardGrid}>
-              {filteredDocs.map((doc) => (
-                <div key={doc.id} className={styles.cardItem}>
-                  <div className={styles.cardTop}>
-                    <h3 className={styles.highlighted}>{doc.name}</h3>
-                    <span
-                      className={`${styles.badge} ${doc.status === "Completed" ? styles.completed : styles.pending
-                        }`}
-                    >
-                      {doc.status}
-                    </span>
-                  </div>
-                  <p><strong className={styles.highlighted}>File:</strong> {doc.file}</p>
-                  <p><strong className={styles.highlighted}>Type:</strong> {doc.type}</p>
-                  <p><strong className={styles.highlighted}>Date:</strong> {doc.date}</p>
-                  <p><strong className={styles.highlighted}>Creator:</strong> {doc.creator}</p>
-                  <div className={styles.cardActions}>
-                    <button onClick={() => setSelectedDoc(doc)}>View</button>
-
-
-                  </div>
-                </div>
-              ))}
+         {/* Table or Card View */}
+{viewMode === "table" ? (
+  <table className={styles.docTable}>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Document</th>
+        <th>File</th>
+        <th>Status</th>
+        <th>Date</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {loading ? (
+        <tr>
+          <td colSpan={6} style={{ textAlign: "center" }}>
+            <div className={styles.loadingContainer}>
+              <div className={styles.spinner}></div>
+              <p>Loading documents...</p>
             </div>
-          )}
+          </td>
+        </tr>
+      ) : filteredDocs.length > 0 ? (
+        filteredDocs.map((doc, i) => (
+          <tr key={i}>
+            <td>{doc.id}</td>
+            <td>{doc.name}</td>
+            <td>{doc.file}</td>
+            <td>
+              <span
+                className={`${styles.badge} 
+                  ${doc.status === "In-Process"
+                    ? styles.inProcess
+                    : doc.status === "Completed"
+                      ? styles.completed
+                      : doc.status === "On-Hold"
+                        ? styles.onHold
+                        : doc.status === "Approved"
+                          ? styles.approved
+                          : doc.status === "Awaiting-Completion"
+                            ? styles.awaiting
+                            : ""
+                  }`}
+              >
+                {doc.status}
+              </span>
+            </td>
+            <td>{doc.date}</td>
+            <td className={styles.actions}>
+              <a href="#" onClick={() => setSelectedDoc(doc)}>View</a>
+            </td>
+          </tr>
+        ))
+      ) : (
+        <tr className={styles.noDataRow}>
+          <td colSpan={6} className={styles.noDataCell}>
+            <div className={styles.noDataContent}>
+              <FileX className={styles.noDataIcon} />
+              <span className={styles.noDataText}>No documents found.</span>
+            </div>
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+) : (
+  <div className={styles.cardGrid}>
+    {loading ? (
+      <div className={styles.loadingContainer}>
+        <div className={styles.spinner}></div>
+        <p>Loading documents...</p>
+      </div>
+    ) : filteredDocs.length > 0 ? (
+      filteredDocs.map((doc) => (
+        <div key={doc.id} className={styles.cardItem}>
+          <div className={styles.cardTop}>
+            <h3 className={styles.highlighted}>{doc.name}</h3>
+            <span
+              className={`${styles.badge} 
+                ${doc.status === "In-Process"
+                  ? styles.inProcess
+                  : doc.status === "Completed"
+                    ? styles.completed
+                    : doc.status === "On-Hold"
+                      ? styles.onHold
+                      : doc.status === "Approved"
+                        ? styles.approved
+                        : doc.status === "Awaiting-Completion"
+                          ? styles.awaiting
+                          : ""
+                }`}
+            >
+              {doc.status}
+            </span>
+          </div>
+          <p><strong className={styles.highlighted}>File:</strong> {doc.file}</p>
+          <p><strong className={styles.highlighted}>Type:</strong> {doc.type}</p>
+          <p><strong className={styles.highlighted}>Date:</strong> {doc.date}</p>
+          <p><strong className={styles.highlighted}>Creator:</strong> {doc.creator}</p>
+          <div className={styles.cardActions}>
+            <button onClick={() => setSelectedDoc(doc)}>View</button>
+          </div>
         </div>
+      ))
+    ) : (
+      <div className={styles.noDataContent}>
+        <FileX className={styles.noDataIcon} />
+        <span className={styles.noDataText}>No documents found.</span>
+      </div>
+    )}
+  </div>
+)}
+</div>
 
         {/* Modal */}
         {selectedDoc && (
@@ -303,11 +343,22 @@ export default function MyDocuments() {
               <div className={styles.modalTop}>
                 <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
                 <span
-                  className={`${styles.badge} ${selectedDoc.status === "Completed" ? styles.completed : styles.pending
-                    }`}
-                >
-                  {selectedDoc.status}
-                </span>
+                              className={`${styles.badge} 
+                                ${selectedDoc.status === "In-Process" 
+                                  ? styles.inProcess 
+                                  : selectedDoc.status === "Completed" 
+                                    ? styles.completed 
+                                    : selectedDoc.status === "On-Hold" 
+                                      ? styles.onHold 
+                                      : selectedDoc.status === "Approved" 
+                                        ? styles.approved 
+                                        : selectedDoc.status === "Awaiting-Completion" 
+                                          ? styles.awaiting 
+                                          : ""
+                                }`}
+                            >
+                                {selectedDoc.status}
+                            </span>
               </div>
 
               <div className={styles.metaGrid}>
@@ -351,16 +402,128 @@ export default function MyDocuments() {
                   <button className={styles.print} onClick={handlePrint}>
                     Print
                   </button>
+                  
                 </div>
                 <div className={styles.rightButton}>
-                  <Link href={`./edit-doc/`} className={styles.edit}>Edit</Link>
+                  
+                  <Link href={`./edit-doc/`}> <button className={styles.edit}>Edit</button></Link>
+                  
+                  {selectedDoc.status === "Awaiting-Completion" && (
+                    <button
+                      className={styles.markCompleteBtn}
+                      onClick={() => setShowMarkCompletedSuccess(true)}
+                    >
+                      Mark as Completed
+                    </button>
+
+                  )}
+
+                  {selectedDoc.status === "On-Hold" && (
+                    <button
+                      className={styles.RemarksBtn}
+                      onClick={() => setIsRemarksModalOpen(true)}
+                    >
+                      Remarks
+                    </button>
+                  )}
 
                 </div>
               </div>
 
+
             </div>
           </div>
         )}
+
+        {isRemarksModalOpen && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalCardRemarks}>
+      <button
+        className={styles.closeButton}
+        onClick={() => setIsRemarksModalOpen(false)}
+        aria-label="Close"
+      >
+        <X size={20} />
+      </button>
+
+      <div className={styles.modalTopRemarks}>
+        <h3 className={styles.modalTitle}>{selectedDoc.name}{" "} - Remarks</h3>
+        <span className={`${styles.badge} ${styles.onHold}`}>
+          On-Hold
+        </span>
+      </div>
+
+      <div className={styles.metaGrid}>
+                <div className={styles.metaLabelRow}>
+                  <span>Creator:</span>
+                  <span>Type:</span>
+                  <span>Date:</span>
+                  <span>Recipient:</span>
+                </div>
+                <div className={styles.metaValueRow}>
+                  <p>{selectedDoc.creator}</p>
+                  <p>{selectedDoc.type}</p>
+                  <p>{selectedDoc.date}</p>
+                  <p>dito nakalagay recipient</p>
+                </div>
+              </div>
+
+      <p className={styles.remarksBox}>
+  dito nakalagay reason boss bides backless
+  dito nakalagay reason boss bides backless
+  dito nakalagay reason boss bides backless
+  dito nakalagay reason boss bides backless
+  dito nakalagay reason boss bides backless
+  dito nakalagay reason boss bides backless
+  dito nakalagay reason boss bides backless
+  dito nakalagay reason boss bides backless
+  dito nakalagay reason boss bides backless
+  v
+  dito nakalagay reason boss bides backless
+
+</p>
+
+
+       <div className={styles.modalFooterRemarks}>
+        <button
+          className={styles.okButton}
+          onClick={() => setIsRemarksModalOpen(false)}
+        >
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{/* remarks modal */}
+{showMarkCompletedSuccess  && (
+  <div
+    className={styles.modal}
+    
+    onClick={() => setShowMarkCompletedSuccess(false)}
+  >
+    <div className={styles.modalContent}>
+      <div className={styles.confirmSuccessContainer}>
+                <h1>success!</h1>
+        <p>
+          Document successfully completed.
+        </p>
+
+          <button
+
+            onClick={() => setShowMarkCompletedSuccess(false)}
+          >
+            OK
+          </button>
+
+      </div>
+    </div>
+  </div>
+)}
+
+
+
       </div>
     </div >
   );
