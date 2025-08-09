@@ -14,56 +14,67 @@ type Approver = {
 
 export default function CreateNewDocument() {
   // State for tracking open/close state of dropdowns
-  const [openSelects, setOpenSelects] = useState<{ [key: string]: boolean }>({
-    select1: false, // for "Document Classification"
-    select2: false, // for "Department"
-  });
+  const [openSelect1, setOpenSelect1] = useState(false); // Document Classification
+  const [openSelect2, setOpenSelect2] = useState(false); // Department
 
-  const [selectedType, setSelectedType] = useState<number | string>(
+  // States to hold selected values
+  const [selectedType, setSelectedType] = useState<string>(
     "Select Document Type"
   );
   const [department, setDepartment] = useState<string>("Select Department");
+  const [documentTypes, setDocumentTypes] = useState<
+    { TypeID: number; TypeName: string }[]
+  >([]);
 
-  // Ref for detecting clicks outside
+  const [departments, setDepartments] = useState<
+    { DepartmentID: number; Name: string }[]
+  >([]);
+
   const ref = useRef<HTMLDivElement>(null);
 
-  // Toggle dropdown open/close on button click
-  const toggleSelectOpen = (selectName: string) => {
-    setOpenSelects((prev) => ({
-      ...prev,
-      [selectName]: !prev[selectName], // Toggle dropdown state
-      // Close the other dropdown when one is opened
-      ...(selectName === "select1" ? { select2: false } : { select1: false }),
-    }));
+  const toggleSelectOpen1 = () => setOpenSelect1((prev) => !prev);
+  const toggleSelectOpen2 = () => setOpenSelect2((prev) => !prev);
+
+  // Handle department select
+  const handleDepartmentSelect = (name: string) => {
+    console.log("Selected Department:", name); // Log selected department
+    setDepartment(name); // Update department value
+    setOpenSelect2(false);
   };
 
-  // Handle selection change for both selects
-  const handleSelectChange = (selectName: string, value: string) => {
-    if (selectName === "select1") {
-      setSelectedType(value); // Set selected document type (TypeName)
-    } else if (selectName === "select2") {
-      setDepartment(value); // Set selected department (Department name)
-    }
+  useEffect(() => {
+    console.log("Open Select2 Status:", openSelect2); // Log current state of the dropdown
+  }, [openSelect2]); // This will log whenever the dropdown state changes
 
-    // Close dropdown after selection
-    setOpenSelects((prev) => ({ ...prev, [selectName]: false }));
+  const handleDocumentSelect = (name: string, id: number) => {
+    console.log(name);
+    console.log(id);
+    setDocumentName(name); // Update selected department
+    setSelectedType(name);
+    setOpenSelect1(false); // Close dropdown after selection
   };
 
   // Close dropdown when clicking outside
+  // useEffect(() => {
+  //   const handleClickOutside = (event: MouseEvent) => {
+  //     if (ref.current && !ref.current.contains(event.target as Node)) {
+  //       setOpenSelect2(false); // Close dropdown when clicking outside
+  //     }
+  //   };
+
+  //   document.addEventListener("mousedown", handleClickOutside);
+
+  //   return () => document.removeEventListener("mousedown", handleClickOutside);
+  // }, []);
+
+  // useEffect(() => {
+  //   console.log("Selected Department:", department); // Log whenever the department state changes
+  // }, [department]); // This will log whenever department is updated
+
+  // Log department value whenever it changes
   useEffect(() => {
-    const handleClick = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
-        // Close both dropdowns if clicking outside
-        setOpenSelects({ select1: false, select2: false });
-      }
-    };
-
-    // Attach event listener
-    document.addEventListener("mousedown", handleClick);
-
-    // Cleanup listener
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+    console.log("Current selected department:", department); // Log the department when it changes
+  }, [department]);
 
   const [documentName, setDocumentName] = useState("");
   const [classification, setClassification] = useState("Select Document Type");
@@ -84,14 +95,6 @@ export default function CreateNewDocument() {
     []
   );
 
-  const [documentTypes, setDocumentTypes] = useState<
-    { TypeID: number; TypeName: string }[]
-  >([]);
-
-  const [departments, setDepartments] = useState<
-    { DepartmentID: number; Name: string }[]
-  >([]);
-
   const [approvalRequired, setApprovalRequired] = useState(false);
   const [showDocuments, setShowDocuments] = useState(false);
 
@@ -100,25 +103,18 @@ export default function CreateNewDocument() {
     label: `${user.FirstName} ${user.LastName}`,
   }));
 
+  // Fetch departments
   useEffect(() => {
     async function fetchDepartments() {
       try {
         const res = await fetch("/api/user/department");
         if (!res.ok) throw new Error("Failed to fetch departments");
         const data = await res.json();
-
         setDepartments(data); // Set department list
-
-        // Set default department values (name & ID)
-        if (data.length > 0) {
-          setDepartment(data[0].Name); // Default department name
-          setDepartmentID(data[0].DepartmentID); // Default department ID
-        }
       } catch (error) {
         console.error("Error fetching departments:", error);
       }
     }
-
     fetchDepartments();
   }, []);
 
@@ -128,17 +124,11 @@ export default function CreateNewDocument() {
         const res = await fetch("/api/user/doctype");
         if (!res.ok) throw new Error("Failed to fetch document types");
         const data = await res.json();
+        setDocumentTypes(data);
 
-        if (Array.isArray(data)) {
-          setDocumentTypes(data); // Set document types list
-
-          // Set default document type values (name & ID)
-          if (data.length > 0) {
-            setSelectedType(data[0].TypeName); // Default document type name
-            setType(data[0].TypeID); // Default document type ID
-          }
-        } else {
-          console.error("Unexpected data format:", data);
+        // Set default document type values (name & ID)
+        if (data.length > 0) {
+          setSelectedType(data[0].TypeName); // Default document type name
         }
       } catch (error) {
         console.error("Error fetching document types:", error);
@@ -282,13 +272,12 @@ export default function CreateNewDocument() {
                 <label>Document Classification</label>
                 <div className={styles.wrapper} ref={ref}>
                   <div
-                    className={`${styles.display} ${openSelects.select1 ? styles.active : ""}`}
-                    onClick={() => toggleSelectOpen("select1")} // Toggle dropdown
+                    className={`${styles.display} ${openSelect1 ? styles.active : ""}`}
+                    onClick={toggleSelectOpen1} // Toggle Document Classification dropdown
                   >
                     {selectedType || "Select Document Type"}{" "}
-                    {/* Display selected document type */}
                     <span
-                      className={`${styles.arrow} ${openSelects.select1 ? styles.open : ""}`}
+                      className={`${styles.arrow} ${openSelect1 ? styles.open : ""}`}
                     >
                       <svg
                         width="12"
@@ -305,22 +294,22 @@ export default function CreateNewDocument() {
                     </span>
                   </div>
 
-                  {openSelects.select1 && (
+
                     <ul
-                      className={`${styles.dropdown} ${openSelects.select1 ? styles.open : ""}`}
+                      className={`${styles.dropdown} ${openSelect1 ? styles.open : ""}`}
                     >
                       {documentTypes.map((type) => (
                         <li
                           key={type.TypeID}
                           onClick={() =>
-                            handleSelectChange("select1", type.TypeName)
-                          } // Update selected document type (TypeName)
+                            handleDocumentSelect(type.TypeName, type.TypeID)
+                          }
                         >
-                          {type.TypeName} {/* Display document type name */}
+                          {type.TypeName}
                         </li>
                       ))}
                     </ul>
-                  )}
+
                 </div>
               </div>
             </div>
@@ -339,13 +328,13 @@ export default function CreateNewDocument() {
               <label>Department</label>
               <div className={styles.wrapper}>
                 <div
-                  className={`${styles.display} ${openSelects.select2 ? styles.active : ""}`}
-                  onClick={() => toggleSelectOpen("select2")} // Toggle dropdown
+                  className={`${styles.display} ${openSelect2 ? styles.active : ""}`}
+                  onClick={toggleSelectOpen2}// Toggle dropdown visibility
                 >
-                  {department || "Select Department"}{" "}
+                  {department}
                   {/* Display selected department */}
                   <span
-                    className={`${styles.arrow} ${openSelects.select2 ? styles.open : ""}`}
+                    className={`${styles.arrow} ${openSelect2 ? styles.open : ""}`}
                   >
                     <svg
                       width="12"
@@ -362,20 +351,20 @@ export default function CreateNewDocument() {
                   </span>
                 </div>
 
-                {openSelects.select2 && (
+
                   <ul
-                    className={`${styles.dropdown} ${openSelects.select2 ? styles.open : ""}`}
+                    className={`${styles.dropdown} ${openSelect2 ? styles.open : ""}`}
                   >
                     {departments.map((dep) => (
                       <li
                         key={dep.DepartmentID}
-                        onClick={() => handleSelectChange("select2", dep.Name)} // Update selected department (Department name)
+                        onClick={() => handleDepartmentSelect(dep.Name)} // Pass both Name and ID
                       >
                         {dep.Name} {/* Display department name */}
                       </li>
                     ))}
                   </ul>
-                )}
+  
               </div>
             </div>
 

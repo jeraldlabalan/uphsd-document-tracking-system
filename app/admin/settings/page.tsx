@@ -43,28 +43,28 @@ export default function Settings() {
 
           <div className={styles.settingsContainer}>
             {/* Profile Section */}
-            <div className={styles.profileContainer}>
-              <ProfileDisplay
-                profileImage={profileData.profileImage}
-                name={profileData.name}
-                role={profileData.role}
-                description={profileData.description}
-              />
-              <InformationForm />
-              <ChangePasswordForm />
-            </div>
+              <div className={styles.profileContainer}>
+                <ProfileDisplay
+                  profileImage={profileData.profileImage}
+                  name={profileData.name}
+                  role={profileData.role}
+                  description={profileData.description}
+                />
+                <InformationForm />
+                <ChangePasswordForm />
+              </div>
 
-            {/* Document and Management Section */}
-            <div className={styles.documentContainer}>
-              <DocumentManagement />
-              <hr />
-              <DepartmentManagement
-                setShowModal={setShowModal}
-                setRowToDelete={setRowToDelete}
-              />
-              <hr />
-              <PositionManagement />
-            </div>
+              {/* Document and Management Section */}
+              <div className={styles.documentContainer}>
+                <DocumentManagement />
+                <hr />
+                <DepartmentManagement
+                  setShowModal={setShowModal}
+                  setRowToDelete={setRowToDelete}
+                />
+                <hr />
+                <PositionManagement />
+              </div>
           </div>
         </div>
       </div>
