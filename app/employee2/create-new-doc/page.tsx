@@ -460,11 +460,18 @@ export default function CreateNewDocument() {
                   <span>Approval Required</span>
                   <label className={styles.switch}>
                     <input
-                      title="approval"
-                      type="checkbox"
-                      checked={approvalRequired}
-                      onChange={(e) => setApprovalRequired(e.target.checked)}
-                    />
+                          title="approval"
+                          type="checkbox"
+                          checked={approvalRequired}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setApprovalRequired(checked);
+                            if (checked && approverIDs.length === 0) {
+                              setApproverIDs([0]); // Start with one blank approver slot
+                            }
+                          }}
+                        />
+
                     <span className={styles.slider}></span>
                   </label>
                 </div>
