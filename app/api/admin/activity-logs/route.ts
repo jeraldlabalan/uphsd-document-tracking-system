@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
     });
 
     
-
+    console.log("Activity Logs: ", logs);
     return NextResponse.json(logs);
   } catch (error) {
     console.error("Error fetching activity logs:", error);

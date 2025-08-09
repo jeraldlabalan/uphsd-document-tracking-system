@@ -16,7 +16,7 @@ import { CheckCircle, Clock, PauseCircle } from "lucide-react";
 
 
 type Log = {
-  ActivityLogID: number; // Adjust to match your DB column
+  LogID: number; // Adjust to match your DB column
   Action: string;
   TargetType: string;
   Timestamp: string;
@@ -278,7 +278,7 @@ export default function ActivityLogs() {
               {filteredLogs.length > 0 ? (
     filteredLogs.map((log, i) => (
       <tr key={i}>
-        <td>{log.ActivityLogID}</td>
+        <td>{log.LogID}</td>
         <td>{log.Action}</td>
         <td>{log.User?.FirstName +" "+ log.User?.LastName}</td>
         <td>{log.TargetType}</td>
