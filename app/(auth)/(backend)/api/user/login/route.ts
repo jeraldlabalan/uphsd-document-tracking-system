@@ -6,7 +6,7 @@ import { compare } from "bcryptjs";
 const JWT_SECRET = process.env.JWT_SECRET!;
 
 interface UserWithRole {
-  id: number;             // ✅ Add UserID
+  id: number; // ✅ Add UserID
   email: string;
   password: string;
   role: "Admin" | "Employee";
@@ -26,7 +26,7 @@ async function findUserByEmail(email: string): Promise<UserWithRole | null> {
     user.Role.RoleName.trim().toLowerCase() === "admin" ? "Admin" : "Employee";
 
   return {
-    id: user.UserID,     // ✅ Save ID
+    id: user.UserID, // ✅ Save ID
     email: user.Email,
     password: user.Password,
     role: roleName,
@@ -89,24 +89,22 @@ export async function POST(request: NextRequest) {
       { expiresIn: "24h" }
     );
 
-    // ✅ Set JWT in HttpOnly cookie
-    const response = NextResponse.json(
-      { role: user.role, message: "Login successful" },
-      { status: 200 }
-    );
+    const response = NextResponse.json({
+      success: true,
+      role: user.role,
+    });
 
     response.cookies.set({
       name: "session",
       value: token,
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7,
     });
 
     return response;
-
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(
