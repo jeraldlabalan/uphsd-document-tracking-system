@@ -65,13 +65,19 @@
 }
 
 .inputField,
-.selectField,
-.textareaField {
-  padding: 0.6rem;
-  border: 1px solid #800000;
-  border-radius: 5px;
+.selectField {
+  height: 40px;
+  padding-inline: min(3vw, 1rem);
+  border: 1px solid var(--color-maroon);
+  border-radius: 8px;
   font-size: 1rem;
   width: 100%;
+}
+
+.textareaField  {
+    padding: min(3vw, 1rem);
+    border-radius: 8px;
+    border: 1px solid var(--color-maroon);
 }
 
 .selectField option {
@@ -617,4 +623,79 @@
     padding: 0.4rem;
     font-size: 0.9rem;
   }
+}
+
+
+/* CUSTOM SELECT */
+.wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.display {
+  height: 40px;
+  padding-inline: min(3%, 1rem);
+  border: 1px solid var(--color-maroon);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.display.active {
+  border: 2px solid var(--color-maroon);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom-left-radius: 0;
+  border-top-left-radius: 8px;
+  border-bottom-right-radius: 0;
+  border-top-right-radius: 8px;
+  border-bottom: none;
+}
+
+.arrow {
+  transition: transform 0.25s ease;
+  color: var(--color-maroon);
+}
+
+.arrow.open {
+  transform: rotate(180deg);
+}
+
+.dropdown {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  background: white;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  overflow: hidden;
+  transform-origin: top;
+  transform: scaleY(0);
+  opacity: 0;
+  max-height: 0;
+  transition: transform 0.25s ease, opacity 0.25s ease, max-height 0.25s ease;
+  z-index: 99;
+  overflow-y: auto;
+  border: 2px solid var(--color-maroon);
+  border-top: none;
+}
+
+.dropdown.open {
+  transform: scaleY(1);
+  opacity: 1;
+  max-height: 250px;
+}
+
+.dropdown li {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.dropdown li:hover {
+  background-color: var(--color-maroon);
+  color: white;
 }

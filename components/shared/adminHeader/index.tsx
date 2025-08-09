@@ -46,10 +46,20 @@ export default function AdminHeader() {
     fetchUser();
   }, [router]);
 
-  const handleLogout = () => {
-    document.cookie =
-      "session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      const res = await fetch("/api/user/logout", {
+        method: "POST",
+      });
+
+      if (res.ok) {
+        router.push("/login");
+      } else {
+        console.error("Logout failed");
+      }
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
   };
 
   const firstInitial = user?.FirstName?.charAt(0).toUpperCase() || "U";
