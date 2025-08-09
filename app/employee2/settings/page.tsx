@@ -78,24 +78,33 @@ export default function ProfileSettings() {
   }, []);
 
   const handleSave = async (
-    e: React.FormEvent<HTMLFormElement>
-  ): Promise<void> => {
-    e.preventDefault();
-    const payload: ProfilePayload = {
-      firstName,
-      lastName,
-      mobileNumber,
-      position,
-      department, // optional
-    };
-    const res: Response = await fetch("/api/employee/settings", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data: ApiResponse = await res.json();
-    console.log(data);
+  e: React.FormEvent<HTMLFormElement>
+): Promise<void> => {
+  e.preventDefault();
+
+  const payload: ProfilePayload = {
+    firstName,
+    lastName,
+    mobileNumber,
+    position,
+    department, // optional
   };
+
+  const res: Response = await fetch("/api/employee/settings", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data: ApiResponse = await res.json();
+  console.log(data);
+
+  if (res.ok) {
+    // optional: show a success toast/modal before reload
+    window.location.reload();
+  }
+};
+
 
   const handlePasswordSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

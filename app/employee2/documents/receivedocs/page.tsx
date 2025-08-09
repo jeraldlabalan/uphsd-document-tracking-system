@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import styles from "./receivedocsStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
-import { Search as SearchIcon, X, FileText, Inbox } from "lucide-react";
+import { Search as SearchIcon, X, FileText, Inbox, FileX } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 
@@ -346,76 +346,120 @@ const handleConfirmClick = async () => {
             </div>
           </div>
 
-          {/* Table or Card View */}
-          {viewMode === "table" ? (
-            <table className={styles.docTable}>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Document</th>
-                  <th>File</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredDocs.length > 0 ? (
-                  filteredDocs.map((doc, i) => (
-                    <tr key={i}>
-                      <td>{doc.id}</td>
-                      <td>{doc.name}</td>
-                      <td>{doc.type}</td>
-                      <td>
-                        <span
-                          className={`${styles.badge} ${doc.status === "Approved" ? styles.completed : doc.status === "On-Hold" ? styles.Rejected : styles.pending
-                            }`}
-                        >
-                          {doc.status}
-                        </span>
-                      </td>
-                      <td>{doc.date}</td>
-                      <td className={styles.actions}>
-                        <a href="#" onClick={() => setSelectedDoc(doc)}>View</a>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr className={styles.noDataRow}>
-                    <td colSpan={6} style={{ textAlign: "center" }}>
-                      No documents found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-
-            </table>
-          ) : (
-            <div className={styles.cardGrid}>
-              {filteredDocs.map((doc) => (
-                <div key={doc.id} className={styles.cardItem}>
-                  <div className={styles.cardTop}>
-                    <h3 className={styles.highlighted}>{doc.name}</h3>
-                    <span
-                      className={`${styles.badge} ${doc.status === "Approved" ? styles.completed : styles.pending
-                        }`}
-                    >
-                      {doc.status}
-                    </span>
-                  </div>
-                  <p><strong className={styles.highlighted}>File:</strong> {doc.file}</p>
-                  <p><strong className={styles.highlighted}>Type:</strong> {doc.type}</p>
-                  <p><strong className={styles.highlighted}>Date:</strong> {doc.date}</p>
-                  <p><strong className={styles.highlighted}>Creator:</strong> {doc.creator}</p>
-                  <div className={styles.cardActions}>
-                    <button onClick={() => handleView(doc)}>View</button>
-
-                  </div>
-                </div>
-              ))}
+         {/* Table or Card View */}
+{viewMode === "table" ? (
+  <table className={styles.docTable}>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Document</th>
+        <th>File</th>
+        <th>Status</th>
+        <th>Date</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {loading ? ( // 👈 Loading state
+        <tr>
+          <td colSpan={6} style={{ textAlign: "center", padding: "2rem 0" }}>
+            <div className={styles.loadingContainer}>
+        <div className={styles.spinner}></div>
+        <p>Loading documents...</p>
+      </div>
+          </td>
+        </tr>
+      ) : filteredDocs.length > 0 ? (
+        filteredDocs.map((doc, i) => (
+          <tr key={i}>
+            <td>{doc.id}</td>
+            <td>{doc.name}</td>
+            <td>{doc.type}</td>
+            <td>
+              <span
+                className={`${styles.badge} 
+                  ${doc.status === "In-Process" 
+                    ? styles.inProcess 
+                    : doc.status === "Completed" 
+                      ? styles.completed 
+                      : doc.status === "On-Hold" 
+                        ? styles.onHold 
+                        : doc.status === "Approved" 
+                          ? styles.approved 
+                          : doc.status === "Awaiting-Completion" 
+                            ? styles.awaiting 
+                            : ""
+                  }`}
+              >
+                {doc.status}
+              </span>
+            </td>
+            <td>{doc.date}</td>
+            <td className={styles.actions}>
+              <a href="#" onClick={() => setSelectedDoc(doc)}>View</a>
+            </td>
+          </tr>
+        ))
+      ) : (
+        <tr className={styles.noDataRow}>
+          <td colSpan={6} style={{ textAlign: "center", padding: "2rem 0" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
+              <FileX size={40} color="#999" />
+              <span style={{ fontSize: "1rem", color: "#777" }}>No documents found.</span>
             </div>
-          )}
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+) : (
+  <div className={styles.cardGrid}>
+    {loading ? ( // 👈 Loading state for card view
+      <div className={styles.loadingContainer}>
+        <div className={styles.spinner}></div>
+        <p>Loading documents...</p>
+      </div>
+    ) : filteredDocs.length > 0 ? (
+      filteredDocs.map((doc) => (
+        <div key={doc.id} className={styles.cardItem}>
+          <div className={styles.cardTop}>
+            <h3 className={styles.highlighted}>{doc.name}</h3>
+            <span
+              className={`${styles.badge} 
+                ${doc.status === "In-Process" 
+                  ? styles.inProcess 
+                  : doc.status === "Completed" 
+                    ? styles.completed 
+                    : doc.status === "On-Hold" 
+                      ? styles.onHold 
+                      : doc.status === "Approved" 
+                        ? styles.approved 
+                        : doc.status === "Awaiting-Completion" 
+                          ? styles.awaiting 
+                          : ""
+                }`}
+            >
+              {doc.status}
+            </span>
+          </div>
+          <p><strong className={styles.highlighted}>File:</strong> {doc.file}</p>
+          <p><strong className={styles.highlighted}>Type:</strong> {doc.type}</p>
+          <p><strong className={styles.highlighted}>Date:</strong> {doc.date}</p>
+          <p><strong className={styles.highlighted}>Creator:</strong> {doc.creator}</p>
+          <div className={styles.cardActions}>
+            <button onClick={() => handleView(doc)}>View</button>
+          </div>
         </div>
+      ))
+    ) : (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem", marginTop: "2rem" }}>
+        <FileX size={40} color="#999" />
+        <span style={{ fontSize: "1rem", color: "#777" }}>No documents found.</span>
+      </div>
+    )}
+  </div>
+)}
+</div>
 
         {/* Modal */}
         {selectedDoc && (
@@ -428,11 +472,22 @@ const handleConfirmClick = async () => {
               <div className={styles.modalTop}>
                 <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
                 <span
-                  className={`${styles.badge} ${selectedDoc.status === "Approved" ? styles.completed : selectedDoc.status === "On-Hold" ? styles.Rejected : styles.pending
-                            }`}
-                >
-                  {selectedDoc.status}
-                </span>
+                              className={`${styles.badge} 
+                                ${selectedDoc.status === "In-Process" 
+                                  ? styles.inProcess 
+                                  : selectedDoc.status === "Completed" 
+                                    ? styles.completed 
+                                    : selectedDoc.status === "On-Hold" 
+                                      ? styles.onHold 
+                                      : selectedDoc.status === "Approved" 
+                                        ? styles.approved 
+                                        : selectedDoc.status === "Awaiting-Completion" 
+                                          ? styles.awaiting 
+                                          : ""
+                                }`}
+                            >
+                                {selectedDoc.status}
+                            </span>
               </div>
 
               <div className={styles.metaGrid}>

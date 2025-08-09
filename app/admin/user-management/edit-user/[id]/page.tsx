@@ -302,6 +302,7 @@ export default function EditUserPage() {
                 name="employeeID"
                 value={user.employeeID}
                 onChange={handleChange}
+
               />
             </div>
 
