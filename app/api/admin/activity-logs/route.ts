@@ -46,6 +46,9 @@ export async function GET(req: NextRequest) {
       where.CreatedAt = { gte: startDate, lte: endDate };
     }
 
+    const totallog = await db.activityLog.count({
+      where,
+    })
     const logs = await db.activityLog.findMany({
       where,
       include: {
@@ -63,6 +66,8 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    
+    console.log("Activity Logs: ", logs);
     return NextResponse.json(logs);
   } catch (error) {
     console.error("Error fetching activity logs:", error);

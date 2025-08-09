@@ -16,10 +16,16 @@ import { CheckCircle, Clock, PauseCircle } from "lucide-react";
 
 
 type Log = {
-  Timestamp: string;
+  LogID: number; // Adjust to match your DB column
   Action: string;
   TargetType: string;
-  // Add other properties as needed
+  Timestamp: string;
+  User?: {
+    FirstName: string;
+    LastName: string;
+    Department?: { Name: string };
+    Role?: { RoleName: string };
+  };
 };
 
 export default function ActivityLogs() {
@@ -30,6 +36,8 @@ export default function ActivityLogs() {
     });
   }, []);
 
+  const [logs, setLogs] = useState<Log[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -48,51 +56,67 @@ export default function ActivityLogs() {
   const [showSuccessPermanentDelete, setShowSuccessPermanentDelete] =
     useState(false);
 
-  const activityLogs = [
-    {
-      id: "ACT001",
-      activity: "Document Deleted",
-      user: "Naruto Uzumaki",
-      target: "hr-policy.pdf",
-      status: "Completed",
-      dateCreated: "2025-07-30",
-    },
-    {
-      id: "ACT002",
-      activity: "Document Restored",
-      user: "Sasuke Uchiha",
-      target: "finance-q3-request.pdf",
-      status: "Completed",
-      dateCreated: "2025-07-29",
-    },
-    {
-      id: "ACT003",
-      activity: "User Deactivated",
-      user: "Kakashi Hatake",
-      target: "HR Department",
-      status: "Pending",
-      dateCreated: "2025-07-29",
-    },
-  ];
+     useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        const params = new URLSearchParams();
+        if (statusFilter) params.append("action", statusFilter);
+        if (typeFilter) params.append("documentType", typeFilter);
+        if (dateFrom) params.append("date", dateFrom); // Your backend only supports single date
 
-  const filteredLogs = activityLogs.filter((log) => {
+        const res = await fetch(`/api/admin/activity-logs?${params.toString()}`, {
+          method: "GET",
+          credentials: "include", // IMPORTANT: send cookies
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch logs");
+
+        const data = await res.json();
+        setLogs(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLogs();
+  }, [statusFilter, typeFilter, dateFrom]); // Re-fetch on filter change
+
+  // const activityLogs = [
+  //   {
+  //     id: "ACT001",
+  //     activity: "Document Deleted",
+  //     user: "Naruto Uzumaki",
+  //     target: "hr-policy.pdf",
+  //     status: "Completed",
+  //     dateCreated: "2025-07-30",
+  //   },
+  //   {
+  //     id: "ACT002",
+  //     activity: "Document Restored",
+  //     user: "Sasuke Uchiha",
+  //     target: "finance-q3-request.pdf",
+  //     status: "Completed",
+  //     dateCreated: "2025-07-29",
+  //   },
+  //   {
+  //     id: "ACT003",
+  //     activity: "User Deactivated",
+  //     user: "Kakashi Hatake",
+  //     target: "HR Department",
+  //     status: "Pending",
+  //     dateCreated: "2025-07-29",
+  //   },
+  // ];
+
+  const filteredLogs = logs.filter((log) => {
     const searchMatch =
       !search ||
-      log.user?.toLowerCase().includes(search.toLowerCase()) ||
-      log.activity?.toLowerCase().includes(search.toLowerCase()) ||
-      log.target?.toLowerCase().includes(search.toLowerCase());
-
-    const statusMatch =
-      !statusFilter || log.status?.toLowerCase() === statusFilter.toLowerCase();
-
-    const logDate = new Date(log.dateCreated);
-    const fromDate = dateFrom ? new Date(dateFrom) : null;
-    const toDate = dateTo ? new Date(dateTo) : null;
-
-    const dateMatch =
-      (!fromDate || logDate >= fromDate) && (!toDate || logDate <= toDate);
-
-    return searchMatch && dateMatch && statusMatch;
+      log.User?.FirstName?.toLowerCase().includes(search.toLowerCase()) ||
+      log.User?.LastName?.toLowerCase().includes(search.toLowerCase()) ||
+      log.Action?.toLowerCase().includes(search.toLowerCase());
+    return searchMatch;
   });
 
   const handleCancelButtonClick = (
@@ -246,7 +270,7 @@ export default function ActivityLogs() {
                 <th>Activity</th>
                 <th>User</th>
                 <th>Target</th>
-                <th>Status</th>
+                <th>Department</th>
                 <th>Date</th>
               </tr>
             </thead>
@@ -254,26 +278,12 @@ export default function ActivityLogs() {
               {filteredLogs.length > 0 ? (
     filteredLogs.map((log, i) => (
       <tr key={i}>
-        <td>{log.id}</td>
-        <td>{log.activity}</td>
-        <td>{log.user}</td>
-        <td>{log.target}</td>
-        <td>
-          <span
-            className={`${styles.badge} ${
-              log.status === "Completed"
-                ? styles.completed
-                : log.status === "In Process"
-                  ? styles.inProcess
-                  : log.status === "On Hold"
-                    ? styles.onHold
-                    : styles.pending
-            }`}
-          >
-            {log.status}
-          </span>
-        </td>
-        <td>{log.dateCreated}</td>
+        <td>{log.LogID}</td>
+        <td>{log.Action}</td>
+        <td>{log.User?.FirstName +" "+ log.User?.LastName}</td>
+        <td>{log.TargetType}</td>
+        <td>{log.User?.Department?.Name}</td>
+        <td>{log.Timestamp}</td>
       </tr>
     ))
   ) : (

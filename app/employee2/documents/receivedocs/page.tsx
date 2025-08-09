@@ -18,7 +18,7 @@ type ReceivedDocument = {
   preview: string;
 };
 
-export default function receiveDocuments() {
+export default function ReceiveDocuments() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");

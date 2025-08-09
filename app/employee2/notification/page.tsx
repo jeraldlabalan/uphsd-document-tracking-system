@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import styles from "./notificationStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
+import { Bell } from "lucide-react";
 
 type Notification = {
   id: number;
@@ -280,52 +281,61 @@ const handleBackdropClick = (
         </div>
 
         {/* View Modal Styles */}
-        {selectedNotification && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modalContent}>
-              <button
-                className={styles.closeButton}
-                onClick={() => setSelectedNotification(null)}
-              >
-                &times;
-              </button>
+{selectedNotification && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalContent}>
+      <button
+        className={styles.closeButton}
+        onClick={() => setSelectedNotification(null)}
+      >
+        &times;
+      </button>
 
-              <h2 className={styles.modalTitle}>Notification Details</h2>
+      <h2 className={styles.modalTitle}>Notification Details</h2>
 
-              <div className={styles.documentHeader}>
-                {selectedNotification.profilePic ? (
-                  <img
-                    src={selectedNotification.profilePic}
-                    alt={selectedNotification.name || "User"}
-                    className={styles.profileImage}
-                  />
-                ) : (
-                  <div className={styles.userIcon}>
-                    {selectedNotification.name
-                      ? selectedNotification.name.charAt(0).toUpperCase()
-                      : "?"}
-                  </div>
-                )}
+      <div className={styles.documentHeader}>
+        {/* Left: Notification Icon */}
+        <Bell size={40} className={styles.icon} />
 
-                <div className={styles.headerInfo}>
-                  <h3 className={styles.highlight}>{selectedNotification.title}</h3>
-                  <p> <span className={styles.highlight}>
-                    Notification ID:</span> {selectedNotification.id || "Unknown ID"}
-                  </p>
-                  <p> <span className={styles.highlight}>
-                    Requested by: </span> {selectedNotification.name || "Unknown User"}
-                  </p>
-                  <p> <span className={styles.highlight}>
-                    Department:  </span>{selectedNotification.department || "Unknown Department"}
-                    </p>
-                  <p> <span className={styles.highlight}>
-                    Date/Time:  </span>{selectedNotification.time}</p>
-                </div>
-                <button className={styles.viewBtn}>View Document</button>
-              </div>
-            </div>
+        {/* Middle: Details */}
+        <div className={styles.headerInfo}>
+          <h3 className={styles.highlight}>{selectedNotification.title}</h3>
+          <p>
+            <span className={styles.highlight}>Requested by:</span>{" "}
+            {selectedNotification.name || "Unknown User"}
+          </p>
+          <p>
+            <span className={styles.highlight}>Department:</span>{" "}
+            {selectedNotification.department || "Unknown Department"}
+          </p>
+          <p>
+            <span className={styles.highlight}>Date/Time:</span>{" "}
+            {selectedNotification.time}
+          </p>
+          <p>
+            <span className={styles.highlight}>Message:</span>{" "}
+            {selectedNotification.content}
+          </p>
+        </div>
+
+        {/* Right: Profile Pic or Initial */}
+        {selectedNotification.profilePic ? (
+          <img
+            src={selectedNotification.profilePic}
+            alt={selectedNotification.name || "User"}
+            className={styles.profileImage}
+          />
+        ) : (
+          <div className={styles.userIcon}>
+            {selectedNotification.name
+              ? selectedNotification.name.charAt(0).toUpperCase()
+              : "?"}
           </div>
         )}
+      </div>
+    </div>
+  </div>
+)}
 
        {/* Delete Modal - using same style as permanent delete modal */}
 {showDeleteModal && notificationToDelete && (

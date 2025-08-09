@@ -34,6 +34,12 @@ export async function GET(req: Request) {
             },
           },
         },
+        Recipient: {
+          select: {
+            FirstName: true,
+            LastName: true,
+          },
+        },
         Status: true,
       },
       orderBy: {
@@ -55,6 +61,8 @@ export async function GET(req: Request) {
       date: req.RequestedAt.toISOString().split("T")[0],
       creator: `${req.Document?.Creator?.FirstName || "Unknown"} ${req.Document?.Creator?.LastName || "Unknown"}`,
       preview: `/public/uploads/files/${req.Document?.Title ?? ""}`,
+      recipient: `${req.Recipient?.FirstName || "Unknown"} ${req.Recipient?.LastName || "Unknown"}`,
+      remarks: req.Remarks ?? "No Remarks",
     }));
 
 
