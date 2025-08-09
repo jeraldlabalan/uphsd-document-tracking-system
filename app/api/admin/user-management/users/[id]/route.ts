@@ -80,6 +80,8 @@ export async function PUT(request: Request, { params }: { params: Params }) {
 
   try {
     const body = await request.json();
+
+    // Destructure fields from body (may be partial)
     const {
       firstName,
       lastName,
@@ -93,45 +95,44 @@ export async function PUT(request: Request, { params }: { params: Params }) {
       employeeId,
     } = body;
 
-    // Fetch the role information to determine if it's Admin
-    const role = await db.role.findUnique({
-      where: { RoleID: roleId },
-      select: { RoleName: true },
-    });
-
-    const roleName = role?.RoleName?.trim().toLowerCase() ?? "";
-    const isAdmin = roleName === "admin";
-
-    // Set departmentId to null if Admin
-    const deptIdForUpdate = isAdmin ? null : (departmentId ?? null);
-
-    // Optional: If Admin and departmentId is not null, reject the request
-    if (isAdmin && departmentId !== null) {
-      return NextResponse.json(
-        { message: "Admin role must not have a department assigned." },
-        { status: 400 }
-      );
+    // If roleId is provided, fetch role info for admin check
+    let isAdmin = false;
+    if (typeof roleId === "number") {
+      const role = await db.role.findUnique({
+        where: { RoleID: roleId },
+        select: { RoleName: true },
+      });
+      const roleName = role?.RoleName?.trim().toLowerCase() ?? "";
+      isAdmin = roleName === "admin";
     }
 
-    // Hash password if provided
-    let hashedPassword = undefined;
-    if (password && password.trim().length > 0) {
-      hashedPassword = await bcrypt.hash(password, 12);
+    // Prepare data object only with fields provided in request
+    const updatedUserData: UpdateUserData = {};
+
+    if (firstName !== undefined) updatedUserData.FirstName = firstName;
+    if (lastName !== undefined) updatedUserData.LastName = lastName;
+    if (email !== undefined) updatedUserData.Email = email;
+    if (mobile !== undefined) updatedUserData.MobileNumber = mobile;
+    if (sex !== undefined) updatedUserData.Sex = sex;
+    if (roleId !== undefined) updatedUserData.RoleID = roleId;
+    if (positionId !== undefined) updatedUserData.PositionID = positionId;
+
+    if (employeeId !== undefined) updatedUserData.EmployeeID = employeeId;
+
+    // For DepartmentID, enforce Admin role condition:
+    if (departmentId !== undefined) {
+      if (isAdmin && departmentId !== null) {
+        return NextResponse.json(
+          { message: "Admin role must not have a department assigned." },
+          { status: 400 }
+        );
+      }
+      updatedUserData.DepartmentID = isAdmin ? null : departmentId;
     }
 
-    const updatedUserData: UpdateUserData = {
-      FirstName: firstName,
-      LastName: lastName,
-      Email: email,
-      MobileNumber: mobile,
-      Sex: sex,
-      RoleID: roleId,
-      DepartmentID: deptIdForUpdate,
-      PositionID: positionId,
-      EmployeeID: employeeId,
-    };
-
-    if (hashedPassword) {
+    // Hash password if provided and non-empty
+    if (password !== undefined && password.trim().length > 0) {
+      const hashedPassword = await bcrypt.hash(password, 12);
       updatedUserData.Password = hashedPassword;
     }
 
