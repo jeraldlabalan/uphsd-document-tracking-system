@@ -19,7 +19,9 @@ export default function CreateNewDocument() {
   const [selectedType, setSelectedType] = useState<string>(
     "Select Document Type"
   );
+
   const [selectedTypeID, setSelectedTypeID] = useState<number | null>(null);
+
 
   const [department, setDepartment] = useState<string>("Select Department");
 
@@ -43,8 +45,7 @@ export default function CreateNewDocument() {
     console.log("Selected Department:", name, "ID:", id); // Log selected department
     setDepartment(name); // Update department value
     setDepartmentID(id); // Update department ID
-    setOpenSelect2(false); // Close dropdown after selection
-  };
+
 
   useEffect(() => {
     console.log("Open Select2 Status:", openSelect2); // Log current state of the dropdown
@@ -481,6 +482,7 @@ export default function CreateNewDocument() {
                     <li
                       key={dep.DepartmentID}
                       onClick={() => handleDepartmentSelect(dep.Name, dep.DepartmentID)}
+
                     >
                       {dep.Name} {/* Display department name */}
                     </li>
