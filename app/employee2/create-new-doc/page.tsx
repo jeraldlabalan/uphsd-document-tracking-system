@@ -19,6 +19,7 @@ export default function CreateNewDocument() {
   const [selectedType, setSelectedType] = useState<string>(
     "Select Document Type"
   );
+  const [selectedTypeID, setSelectedTypeID] = useState<number | null>(null);
 
   const [department, setDepartment] = useState<string>("Select Department");
 
@@ -38,9 +39,10 @@ export default function CreateNewDocument() {
   const toggleSelectOpen2 = () => setOpenSelect2((prev) => !prev);
 
   // Handle department select
-  const handleDepartmentSelect = (name: string) => {
-    console.log("Selected Department:", name); // Log selected department
+  const handleDepartmentSelect = (name: string, id: number) => {
+    console.log("Selected Department:", name, "ID:", id); // Log selected department
     setDepartment(name); // Update department value
+    setDepartmentID(id); // Update department ID
     setOpenSelect2(false); // Close dropdown after selection
   };
 
@@ -52,6 +54,7 @@ export default function CreateNewDocument() {
     console.log(name);
     console.log(id);
     setSelectedType(name);
+    setSelectedTypeID(id);
     setOpenSelect1(false); // Close dropdown after selection
   };
 
@@ -145,6 +148,55 @@ export default function CreateNewDocument() {
     fetchApprovers();
   }, []);
 
+  // Check for e-signed documents when page loads
+  useEffect(() => {
+    const eSignedUrl = localStorage.getItem('eSignedDocumentUrl');
+    const eSignedTitle = localStorage.getItem('eSignedDocumentTitle');
+    
+    if (eSignedUrl && eSignedTitle) {
+      // Show success message
+      alert(`E-signed document "${eSignedTitle}" has been saved successfully!`);
+      
+      // Clear localStorage
+      localStorage.removeItem('eSignedDocumentUrl');
+      localStorage.removeItem('eSignedTitle');
+      
+      // In a real implementation, you would:
+      // 1. Update the form to show the e-signed document
+      // 2. Replace the original file with the e-signed version
+      // 3. Update the file list to reflect the changes
+    }
+  }, []);
+
+  // Check for documents with placeholders when page loads
+  useEffect(() => {
+    const savedDocumentUrl = localStorage.getItem('documentWithPlaceholdersUrl');
+    const savedDocumentTitle = localStorage.getItem('documentWithPlaceholdersTitle');
+    
+    if (savedDocumentUrl && savedDocumentTitle) {
+      // Clear the localStorage
+      localStorage.removeItem('documentWithPlaceholdersUrl');
+      localStorage.removeItem('documentWithPlaceholdersTitle');
+      
+      // Set the saved document state to display in UI
+      setSavedDocument({
+        title: savedDocumentTitle,
+        url: savedDocumentUrl,
+        status: "Awaiting Signatures"
+      });
+      
+      // Show success message with more details
+      alert(`Document "${savedDocumentTitle}" has been saved with signature placeholders!\n\nWhat happens next:\n1. The document is now ready for signees to review\n2. Signees will be notified automatically\n3. They can access the document through their dashboard\n4. Once all signatures are complete, the document will be fully processed`);
+    }
+  }, []);
+
+  // State for saved document display
+  const [savedDocument, setSavedDocument] = useState<{
+    title: string;
+    url: string;
+    status: string;
+  } | null>(null);
+
   // Handle Approver Change (example of setting approver IDs)
   const handleApproverChange = (
     selected: SingleValue<{ value: number; label: string }>,
@@ -196,6 +248,91 @@ export default function CreateNewDocument() {
     const newFile = e.target.files ? e.target.files[0] : null;
     if (newFile) {
       setFiles((prev) => [...prev, { file: newFile, requireEsign: false }]);
+    }
+  };
+
+  // Handle opening e-sign interface for a specific file
+  const handleOpenESign = async (file: File, index: number) => {
+    if (file.type !== 'application/pdf') {
+      alert('Only PDF files are supported for e-signing');
+      return;
+    }
+
+    // Validate required fields before creating document
+    if (!title.trim()) {
+      alert('Please enter a document title before proceeding with e-signing.');
+      return;
+    }
+
+    if (!selectedTypeID) {
+      alert('Please select a document type before proceeding with e-signing.');
+      return;
+    }
+
+    if (!departmentID) {
+      alert('Please select a department before proceeding with e-signing.');
+      return;
+    }
+
+    if (approverIDs.filter(id => id !== 0).length === 0) {
+      alert('Please select at least one approver before proceeding with e-signing.');
+      return;
+    }
+
+    // First, create the document in the database
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("Title", title.trim());
+      formData.append("Description", description || '');
+      formData.append("TypeID", selectedTypeID.toString());
+      formData.append("DepartmentID", departmentID.toString());
+      formData.append("ApproverIDs", JSON.stringify(approverIDs.filter(id => id !== 0)));
+
+      const res = await fetch("/api/employee/create-document", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to create document");
+      }
+
+      const data = await res.json();
+      const documentId = data.documentID;
+
+      // Create blob URL for the file
+      const fileUrl = URL.createObjectURL(file);
+      
+      // Prepare approvers data with proper user IDs for database
+      const selectedApprovers = approverIDs.filter(id => id !== 0);
+      const approversData = selectedApprovers.map(id => {
+        const approver = approvers.find(a => a.UserID === id);
+        return {
+          id: id.toString(), // Use actual user ID
+          userId: id, // Database user ID
+          name: approver ? `${approver.FirstName} ${approver.LastName}` : `Approver ${id}`
+        };
+      });
+
+      // Create URL parameters with the document ID
+      const params = new URLSearchParams({
+        docId: documentId.toString(),
+        title: title.trim(),
+        type: selectedType || 'Unknown Type',
+        department: department || 'Unknown Department',
+        approvers: encodeURIComponent(JSON.stringify(approversData)),
+        file: fileUrl,
+        userRole: 'sender', // The person creating the document is automatically the sender
+      });
+
+      // Open e-sign interface in new tab with the document ID
+      window.open(`/employee2/e-sign-document?${params.toString()}`, '_blank');
+      
+    } catch (error) {
+      console.error('Error creating document:', error);
+      alert(`Failed to create document: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -343,7 +480,7 @@ export default function CreateNewDocument() {
                   {departments.map((dep) => (
                     <li
                       key={dep.DepartmentID}
-                      onClick={() => handleDepartmentSelect(dep.Name)} // Pass both Name and ID
+                      onClick={() => handleDepartmentSelect(dep.Name, dep.DepartmentID)}
                     >
                       {dep.Name} {/* Display department name */}
                     </li>
@@ -373,7 +510,12 @@ export default function CreateNewDocument() {
                 {files.map((item, index) => (
                   <div key={index} className={styles.inputGroup}>
                     <div className={styles.fileItem}>
-                      <span className={styles.fileName}>{item.file.name}</span>
+                      <div className={styles.fileInfo}>
+                        <span className={styles.fileName}>{item.file.name}</span>
+                        {item.requireEsign && (
+                          <span className={styles.eSignBadge}>E-Sign Required</span>
+                        )}
+                      </div>
 
                       <div className={styles.fileActions}>
                         <label className={styles.switchContainer}>
@@ -396,6 +538,17 @@ export default function CreateNewDocument() {
                         >
                           <X size={20} />
                         </button>
+                        
+                        {item.requireEsign && (
+                          <button
+                            type="button"
+                            className={styles.eSignBtn}
+                            onClick={() => handleOpenESign(item.file, index)}
+                            aria-label="Open e-sign interface"
+                          >
+                            Open E-Sign
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -419,9 +572,12 @@ export default function CreateNewDocument() {
                   {files.length > 0 && (
                     <button
                       type="button"
-                      onClick={() =>
-                        document.querySelector(`.${styles.hiddenInput}`).click()
-                      }
+                      onClick={() => {
+                        const input = document.querySelector(`.${styles.hiddenInput}`) as HTMLInputElement;
+                        if (input) {
+                          input.click();
+                        }
+                      }}
                       className={styles.addFileBtn}
                     >
                       <Plus size={20} /> Add another file
@@ -544,6 +700,23 @@ export default function CreateNewDocument() {
             </div>
           </form>
         </div>
+
+        {/* Document Status Section */}
+        {savedDocument && (
+          <div className={styles.documentStatus}>
+            <h3>Document Status</h3>
+            <div className={styles.statusCard}>
+              <h4>{savedDocument.title}</h4>
+              <p><strong>Status:</strong> {savedDocument.status}</p>
+              <p><strong>File:</strong> <a href={savedDocument.url} target="_blank" rel="noopener noreferrer">View Document</a></p>
+              <div className={styles.statusInfo}>
+                <p>✅ Document has been saved with signature placeholders</p>
+                <p>📧 Signees have been notified automatically</p>
+                <p>⏳ Waiting for all signatures to be completed</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

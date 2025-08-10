@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import PendingSignatures from "./pending-signatures";
 
 export default function employeeDashboard() {
   useEffect(() => {
@@ -182,7 +183,10 @@ export default function employeeDashboard() {
             </div>
           </div>
 
-          
+          {/* Pending Signatures Section */}
+          <div className={styles.pendingSignaturesSection}>
+            <PendingSignatures />
+          </div>
         </div>
         </div>
         </div>

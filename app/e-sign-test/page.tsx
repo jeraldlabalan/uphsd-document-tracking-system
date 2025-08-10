@@ -141,6 +141,7 @@ export default function ESignTest() {
               }}
               originalPdfUrl={originalPdfUrl}
               hasSigned={hasSigned}
+              signees={SIGNEES} // Add missing signees prop
             />
           )}
         </div>
