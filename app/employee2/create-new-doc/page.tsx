@@ -13,15 +13,15 @@ type Approver = {
 };
 
 export default function CreateNewDocument() {
-  // State for tracking open/close state of dropdowns
   const [openSelect1, setOpenSelect1] = useState(false); // Document Classification
   const [openSelect2, setOpenSelect2] = useState(false); // Department
 
-  // States to hold selected values
   const [selectedType, setSelectedType] = useState<string>(
     "Select Document Type"
   );
+
   const [department, setDepartment] = useState<string>("Select Department");
+
   const [documentTypes, setDocumentTypes] = useState<
     { TypeID: number; TypeName: string }[]
   >([]);
@@ -29,6 +29,8 @@ export default function CreateNewDocument() {
   const [departments, setDepartments] = useState<
     { DepartmentID: number; Name: string }[]
   >([]);
+
+  const [departmentID, setDepartmentID] = useState<number | null>(null);
 
   const ref = useRef<HTMLDivElement>(null);
 
@@ -39,7 +41,7 @@ export default function CreateNewDocument() {
   const handleDepartmentSelect = (name: string) => {
     console.log("Selected Department:", name); // Log selected department
     setDepartment(name); // Update department value
-    setOpenSelect2(false);
+    setOpenSelect2(false); // Close dropdown after selection
   };
 
   useEffect(() => {
@@ -49,35 +51,17 @@ export default function CreateNewDocument() {
   const handleDocumentSelect = (name: string, id: number) => {
     console.log(name);
     console.log(id);
-    setDocumentName(name); // Update selected department
     setSelectedType(name);
     setOpenSelect1(false); // Close dropdown after selection
   };
 
-  // Close dropdown when clicking outside
-  // useEffect(() => {
-  //   const handleClickOutside = (event: MouseEvent) => {
-  //     if (ref.current && !ref.current.contains(event.target as Node)) {
-  //       setOpenSelect2(false); // Close dropdown when clicking outside
-  //     }
-  //   };
-
-  //   document.addEventListener("mousedown", handleClickOutside);
-
-  //   return () => document.removeEventListener("mousedown", handleClickOutside);
-  // }, []);
-
-  // useEffect(() => {
-  //   console.log("Selected Department:", department); // Log whenever the department state changes
-  // }, [department]); // This will log whenever department is updated
-
-  // Log department value whenever it changes
   useEffect(() => {
     console.log("Current selected department:", department); // Log the department when it changes
   }, [department]);
 
-  const [documentName, setDocumentName] = useState("");
-  const [classification, setClassification] = useState("Select Document Type");
+  const [classification, setClassification] = useState<string>(
+    "Select Document Type"
+  );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [approvers, setApprovers] = useState<Approver[]>([]);
   const [date, setDate] = useState("");
@@ -89,7 +73,6 @@ export default function CreateNewDocument() {
   const [description, setDescription] = useState("");
   const [type, setType] = useState(0);
   const [filePath, setFilePath] = useState("");
-  const [departmentID, setDepartmentID] = useState<number | null>(null);
   const [approverIDs, setApproverIDs] = useState<number[]>([]); // or []
   const [files, setFiles] = useState<{ file: File; requireEsign: boolean }[]>(
     []
@@ -103,7 +86,6 @@ export default function CreateNewDocument() {
     label: `${user.FirstName} ${user.LastName}`,
   }));
 
-  // Fetch departments
   useEffect(() => {
     async function fetchDepartments() {
       try {
@@ -125,11 +107,6 @@ export default function CreateNewDocument() {
         if (!res.ok) throw new Error("Failed to fetch document types");
         const data = await res.json();
         setDocumentTypes(data);
-
-        // Set default document type values (name & ID)
-        if (data.length > 0) {
-          setSelectedType(data[0].TypeName); // Default document type name
-        }
       } catch (error) {
         console.error("Error fetching document types:", error);
       }
@@ -187,20 +164,31 @@ export default function CreateNewDocument() {
       TypeID: type, // Use document type ID
       FilePath: filePath,
       DepartmentID: departmentID, // Use department ID
-      ApproverIDs: approverIDs,
+      ApproverIDs: approverIDs, // Array of approver IDs
     };
 
-    const res = await fetch("/api/employee/create-document", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
+    try {
+      // Make the POST request to the API
+      const res = await fetch("/api/employee/create-document", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json", // Set content type to JSON
+        },
+        body: JSON.stringify(payload), // Send data as JSON
+      });
 
-    const data = await res.json();
+      // Handle the response
+      const data = await res.json(); // Parse response as JSON
 
-    if (res.ok) {
-      alert("Document created successfully!");
-    } else {
-      alert(data.error || "Failed to create document");
+      if (res.ok) {
+        alert("Document created successfully!");
+        // Optionally, clear the form or navigate elsewhere
+      } else {
+        alert(data.error || "Failed to create document"); // Show error from the response
+      }
+    } catch (error) {
+      console.error("Error creating document:", error);
+      alert("An error occurred while creating the document. Please try again."); // Fallback error message
     }
   };
 
@@ -275,7 +263,7 @@ export default function CreateNewDocument() {
                     className={`${styles.display} ${openSelect1 ? styles.active : ""}`}
                     onClick={toggleSelectOpen1} // Toggle Document Classification dropdown
                   >
-                    {selectedType || "Select Document Type"}{" "}
+                    {selectedType}
                     <span
                       className={`${styles.arrow} ${openSelect1 ? styles.open : ""}`}
                     >
@@ -294,22 +282,20 @@ export default function CreateNewDocument() {
                     </span>
                   </div>
 
-
-                    <ul
-                      className={`${styles.dropdown} ${openSelect1 ? styles.open : ""}`}
-                    >
-                      {documentTypes.map((type) => (
-                        <li
-                          key={type.TypeID}
-                          onClick={() =>
-                            handleDocumentSelect(type.TypeName, type.TypeID)
-                          }
-                        >
-                          {type.TypeName}
-                        </li>
-                      ))}
-                    </ul>
-
+                  <ul
+                    className={`${styles.dropdown} ${openSelect1 ? styles.open : ""}`}
+                  >
+                    {documentTypes.map((type) => (
+                      <li
+                        key={type.TypeID}
+                        onClick={() =>
+                          handleDocumentSelect(type.TypeName, type.TypeID)
+                        }
+                      >
+                        {type.TypeName}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             </div>
@@ -329,7 +315,7 @@ export default function CreateNewDocument() {
               <div className={styles.wrapper}>
                 <div
                   className={`${styles.display} ${openSelect2 ? styles.active : ""}`}
-                  onClick={toggleSelectOpen2}// Toggle dropdown visibility
+                  onClick={toggleSelectOpen2} // Toggle dropdown visibility
                 >
                   {department}
                   {/* Display selected department */}
@@ -351,20 +337,18 @@ export default function CreateNewDocument() {
                   </span>
                 </div>
 
-
-                  <ul
-                    className={`${styles.dropdown} ${openSelect2 ? styles.open : ""}`}
-                  >
-                    {departments.map((dep) => (
-                      <li
-                        key={dep.DepartmentID}
-                        onClick={() => handleDepartmentSelect(dep.Name)} // Pass both Name and ID
-                      >
-                        {dep.Name} {/* Display department name */}
-                      </li>
-                    ))}
-                  </ul>
-  
+                <ul
+                  className={`${styles.dropdown} ${openSelect2 ? styles.open : ""}`}
+                >
+                  {departments.map((dep) => (
+                    <li
+                      key={dep.DepartmentID}
+                      onClick={() => handleDepartmentSelect(dep.Name)} // Pass both Name and ID
+                    >
+                      {dep.Name} {/* Display department name */}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
 
@@ -447,7 +431,6 @@ export default function CreateNewDocument() {
               </>
             )}
 
-            {/* Send Document Section */}
             <div className={styles.sectionTitle}>Send Document</div>
 
             <div className={styles.approvalContainer}>
@@ -460,38 +443,36 @@ export default function CreateNewDocument() {
                   <span>Approval Required</span>
                   <label className={styles.switch}>
                     <input
-                          title="approval"
-                          type="checkbox"
-                          checked={approvalRequired}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
-                            setApprovalRequired(checked);
-                            if (checked && approverIDs.length === 0) {
-                              setApproverIDs([0]); // Start with one blank approver slot
-                            }
-                          }}
-                        />
+                      title="approval"
+                      type="checkbox"
+                      checked={approvalRequired}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setApprovalRequired(checked);
+                        if (checked && approverIDs.length === 0) {
+                          setApproverIDs([0]);
+                        }
+                      }}
+                    />
 
                     <span className={styles.slider}></span>
                   </label>
                 </div>
               </div>
 
-              {/* ✅ Conditionally show approver rows */}
               {approvalRequired &&
                 approverIDs.map((id, index) => (
                   <div className={styles.approverRow} key={index}>
                     <span className={styles.approverNumber}>{index + 1}</span>
 
-                    {/* ✅ Searchable Select Dropdown */}
                     <Select
-                      options={selectOptions} // Your list of approvers
+                      options={selectOptions}
                       value={
                         selectOptions.find((opt) => opt.value === id) || null
                       }
                       onChange={(selected) =>
                         handleApproverChange(selected, index)
-                      } // Pass the selected option and index
+                      }
                       placeholder="Select approver..."
                       isSearchable
                       menuPortalTarget={
