@@ -55,10 +55,55 @@
 }
 
 .backToDashboard {
-    color: white;
-    border-bottom: 1px solid white;
-    width: max-content;
-    margin-inline: auto;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  width: 100%;
+  margin-top: 20px;
+  transition: background-color 0.2s ease;
+}
+
+.backToDashboard:hover {
+  background-color: #5a6268;
+}
+
+.senderInstructions {
+  color: white;
+  font-size: 12px;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.senderInstructionsList {
+  color: white;
+  font-size: 11px;
+  margin-bottom: 16px;
+  padding-left: 16px;
+  line-height: 1.3;
+}
+
+.senderInstructionsList li {
+  margin-bottom: 4px;
+}
+
+/* Disabled button states */
+.jumpToSignature:disabled,
+.signDocument:disabled,
+.saveFileButton:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.jumpToSignature:disabled:hover,
+.signDocument:disabled:hover,
+.saveFileButton:disabled:hover {
+  background-color: #6c757d;
 }
 
 .sidebarHeader {
@@ -84,4 +129,26 @@
 
 .signatureCount {
     text-align: center;
+}
+
+.roleDisplay {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: white;
+}
+
+.roleDisplay > label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.roleValue {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }

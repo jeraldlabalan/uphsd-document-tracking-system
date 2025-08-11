@@ -13,60 +13,59 @@ type Approver = {
 };
 
 export default function CreateNewDocument() {
-  // State for tracking open/close state of dropdowns
-  const [openSelects, setOpenSelects] = useState<{ [key: string]: boolean }>({
-    select1: false, // for "Document Classification"
-    select2: false, // for "Department"
-  });
+  const [openSelect1, setOpenSelect1] = useState(false); // Document Classification
+  const [openSelect2, setOpenSelect2] = useState(false); // Department
 
-  const [selectedType, setSelectedType] = useState<number | string>(
+  const [selectedType, setSelectedType] = useState<string>(
     "Select Document Type"
   );
+
+  const [selectedTypeID, setSelectedTypeID] = useState<number | null>(null);
+
+
   const [department, setDepartment] = useState<string>("Select Department");
 
-  // Ref for detecting clicks outside
+  const [documentTypes, setDocumentTypes] = useState<
+    { TypeID: number; TypeName: string }[]
+  >([]);
+
+  const [departments, setDepartments] = useState<
+    { DepartmentID: number; Name: string }[]
+  >([]);
+
+  const [departmentID, setDepartmentID] = useState<number | null>(null);
+
   const ref = useRef<HTMLDivElement>(null);
 
-  // Toggle dropdown open/close on button click
-  const toggleSelectOpen = (selectName: string) => {
-    setOpenSelects((prev) => ({
-      ...prev,
-      [selectName]: !prev[selectName], // Toggle dropdown state
-      // Close the other dropdown when one is opened
-      ...(selectName === "select1" ? { select2: false } : { select1: false }),
-    }));
-  };
+  const toggleSelectOpen1 = () => setOpenSelect1((prev) => !prev);
+  const toggleSelectOpen2 = () => setOpenSelect2((prev) => !prev);
 
-  // Handle selection change for both selects
-  const handleSelectChange = (selectName: string, value: string) => {
-    if (selectName === "select1") {
-      setSelectedType(value); // Set selected document type (TypeName)
-    } else if (selectName === "select2") {
-      setDepartment(value); // Set selected department (Department name)
-    }
+  // Handle department select
+  const handleDepartmentSelect = (name: string, id: number) => {
+    console.log("Selected Department:", name, "ID:", id); // Log selected department
+    setDepartment(name); // Update department value
+    setDepartmentID(id); // Update department ID
 
-    // Close dropdown after selection
-    setOpenSelects((prev) => ({ ...prev, [selectName]: false }));
-  };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClick = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
-        // Close both dropdowns if clicking outside
-        setOpenSelects({ select1: false, select2: false });
-      }
-    };
+    console.log("Open Select2 Status:", openSelect2); // Log current state of the dropdown
+  }, [openSelect2]); // This will log whenever the dropdown state changes
 
-    // Attach event listener
-    document.addEventListener("mousedown", handleClick);
+  const handleDocumentSelect = (name: string, id: number) => {
+    console.log(name);
+    console.log(id);
+    setSelectedType(name);
+    setSelectedTypeID(id);
+    setOpenSelect1(false); // Close dropdown after selection
+  };
 
-    // Cleanup listener
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+  useEffect(() => {
+    console.log("Current selected department:", department); // Log the department when it changes
+  }, [department]);
 
-  const [documentName, setDocumentName] = useState("");
-  const [classification, setClassification] = useState("Select Document Type");
+  const [classification, setClassification] = useState<string>(
+    "Select Document Type"
+  );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [approvers, setApprovers] = useState<Approver[]>([]);
   const [date, setDate] = useState("");
@@ -78,19 +77,10 @@ export default function CreateNewDocument() {
   const [description, setDescription] = useState("");
   const [type, setType] = useState(0);
   const [filePath, setFilePath] = useState("");
-  const [departmentID, setDepartmentID] = useState<number | null>(null);
   const [approverIDs, setApproverIDs] = useState<number[]>([]); // or []
   const [files, setFiles] = useState<{ file: File; requireEsign: boolean }[]>(
     []
   );
-
-  const [documentTypes, setDocumentTypes] = useState<
-    { TypeID: number; TypeName: string }[]
-  >([]);
-
-  const [departments, setDepartments] = useState<
-    { DepartmentID: number; Name: string }[]
-  >([]);
 
   const [approvalRequired, setApprovalRequired] = useState(false);
   const [showDocuments, setShowDocuments] = useState(false);
@@ -106,19 +96,11 @@ export default function CreateNewDocument() {
         const res = await fetch("/api/user/department");
         if (!res.ok) throw new Error("Failed to fetch departments");
         const data = await res.json();
-
         setDepartments(data); // Set department list
-
-        // Set default department values (name & ID)
-        if (data.length > 0) {
-          setDepartment(data[0].Name); // Default department name
-          setDepartmentID(data[0].DepartmentID); // Default department ID
-        }
       } catch (error) {
         console.error("Error fetching departments:", error);
       }
     }
-
     fetchDepartments();
   }, []);
 
@@ -128,18 +110,7 @@ export default function CreateNewDocument() {
         const res = await fetch("/api/user/doctype");
         if (!res.ok) throw new Error("Failed to fetch document types");
         const data = await res.json();
-
-        if (Array.isArray(data)) {
-          setDocumentTypes(data); // Set document types list
-
-          // Set default document type values (name & ID)
-          if (data.length > 0) {
-            setSelectedType(data[0].TypeName); // Default document type name
-            setType(data[0].TypeID); // Default document type ID
-          }
-        } else {
-          console.error("Unexpected data format:", data);
-        }
+        setDocumentTypes(data);
       } catch (error) {
         console.error("Error fetching document types:", error);
       }
@@ -178,6 +149,55 @@ export default function CreateNewDocument() {
     fetchApprovers();
   }, []);
 
+  // Check for e-signed documents when page loads
+  useEffect(() => {
+    const eSignedUrl = localStorage.getItem('eSignedDocumentUrl');
+    const eSignedTitle = localStorage.getItem('eSignedDocumentTitle');
+    
+    if (eSignedUrl && eSignedTitle) {
+      // Show success message
+      alert(`E-signed document "${eSignedTitle}" has been saved successfully!`);
+      
+      // Clear localStorage
+      localStorage.removeItem('eSignedDocumentUrl');
+      localStorage.removeItem('eSignedTitle');
+      
+      // In a real implementation, you would:
+      // 1. Update the form to show the e-signed document
+      // 2. Replace the original file with the e-signed version
+      // 3. Update the file list to reflect the changes
+    }
+  }, []);
+
+  // Check for documents with placeholders when page loads
+  useEffect(() => {
+    const savedDocumentUrl = localStorage.getItem('documentWithPlaceholdersUrl');
+    const savedDocumentTitle = localStorage.getItem('documentWithPlaceholdersTitle');
+    
+    if (savedDocumentUrl && savedDocumentTitle) {
+      // Clear the localStorage
+      localStorage.removeItem('documentWithPlaceholdersUrl');
+      localStorage.removeItem('documentWithPlaceholdersTitle');
+      
+      // Set the saved document state to display in UI
+      setSavedDocument({
+        title: savedDocumentTitle,
+        url: savedDocumentUrl,
+        status: "Awaiting Signatures"
+      });
+      
+      // Show success message with more details
+      alert(`Document "${savedDocumentTitle}" has been saved with signature placeholders!\n\nWhat happens next:\n1. The document is now ready for signees to review\n2. Signees will be notified automatically\n3. They can access the document through their dashboard\n4. Once all signatures are complete, the document will be fully processed`);
+    }
+  }, []);
+
+  // State for saved document display
+  const [savedDocument, setSavedDocument] = useState<{
+    title: string;
+    url: string;
+    status: string;
+  } | null>(null);
+
   // Handle Approver Change (example of setting approver IDs)
   const handleApproverChange = (
     selected: SingleValue<{ value: number; label: string }>,
@@ -197,20 +217,31 @@ export default function CreateNewDocument() {
       TypeID: type, // Use document type ID
       FilePath: filePath,
       DepartmentID: departmentID, // Use department ID
-      ApproverIDs: approverIDs,
+      ApproverIDs: approverIDs, // Array of approver IDs
     };
 
-    const res = await fetch("/api/employee/create-document", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
+    try {
+      // Make the POST request to the API
+      const res = await fetch("/api/employee/create-document", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json", // Set content type to JSON
+        },
+        body: JSON.stringify(payload), // Send data as JSON
+      });
 
-    const data = await res.json();
+      // Handle the response
+      const data = await res.json(); // Parse response as JSON
 
-    if (res.ok) {
-      alert("Document created successfully!");
-    } else {
-      alert(data.error || "Failed to create document");
+      if (res.ok) {
+        alert("Document created successfully!");
+        // Optionally, clear the form or navigate elsewhere
+      } else {
+        alert(data.error || "Failed to create document"); // Show error from the response
+      }
+    } catch (error) {
+      console.error("Error creating document:", error);
+      alert("An error occurred while creating the document. Please try again."); // Fallback error message
     }
   };
 
@@ -218,6 +249,91 @@ export default function CreateNewDocument() {
     const newFile = e.target.files ? e.target.files[0] : null;
     if (newFile) {
       setFiles((prev) => [...prev, { file: newFile, requireEsign: false }]);
+    }
+  };
+
+  // Handle opening e-sign interface for a specific file
+  const handleOpenESign = async (file: File, index: number) => {
+    if (file.type !== 'application/pdf') {
+      alert('Only PDF files are supported for e-signing');
+      return;
+    }
+
+    // Validate required fields before creating document
+    if (!title.trim()) {
+      alert('Please enter a document title before proceeding with e-signing.');
+      return;
+    }
+
+    if (!selectedTypeID) {
+      alert('Please select a document type before proceeding with e-signing.');
+      return;
+    }
+
+    if (!departmentID) {
+      alert('Please select a department before proceeding with e-signing.');
+      return;
+    }
+
+    if (approverIDs.filter(id => id !== 0).length === 0) {
+      alert('Please select at least one approver before proceeding with e-signing.');
+      return;
+    }
+
+    // First, create the document in the database
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("Title", title.trim());
+      formData.append("Description", description || '');
+      formData.append("TypeID", selectedTypeID.toString());
+      formData.append("DepartmentID", departmentID.toString());
+      formData.append("ApproverIDs", JSON.stringify(approverIDs.filter(id => id !== 0)));
+
+      const res = await fetch("/api/employee/create-document", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to create document");
+      }
+
+      const data = await res.json();
+      const documentId = data.documentID;
+
+      // Create blob URL for the file
+      const fileUrl = URL.createObjectURL(file);
+      
+      // Prepare approvers data with proper user IDs for database
+      const selectedApprovers = approverIDs.filter(id => id !== 0);
+      const approversData = selectedApprovers.map(id => {
+        const approver = approvers.find(a => a.UserID === id);
+        return {
+          id: id.toString(), // Use actual user ID
+          userId: id, // Database user ID
+          name: approver ? `${approver.FirstName} ${approver.LastName}` : `Approver ${id}`
+        };
+      });
+
+      // Create URL parameters with the document ID
+      const params = new URLSearchParams({
+        docId: documentId.toString(),
+        title: title.trim(),
+        type: selectedType || 'Unknown Type',
+        department: department || 'Unknown Department',
+        approvers: encodeURIComponent(JSON.stringify(approversData)),
+        file: fileUrl,
+        userRole: 'sender', // The person creating the document is automatically the sender
+      });
+
+      // Open e-sign interface in new tab with the document ID
+      window.open(`/employee2/e-sign-document?${params.toString()}`, '_blank');
+      
+    } catch (error) {
+      console.error('Error creating document:', error);
+      alert(`Failed to create document: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -282,13 +398,12 @@ export default function CreateNewDocument() {
                 <label>Document Classification</label>
                 <div className={styles.wrapper} ref={ref}>
                   <div
-                    className={`${styles.display} ${openSelects.select1 ? styles.active : ""}`}
-                    onClick={() => toggleSelectOpen("select1")} // Toggle dropdown
+                    className={`${styles.display} ${openSelect1 ? styles.active : ""}`}
+                    onClick={toggleSelectOpen1} // Toggle Document Classification dropdown
                   >
-                    {selectedType || "Select Document Type"}{" "}
-                    {/* Display selected document type */}
+                    {selectedType}
                     <span
-                      className={`${styles.arrow} ${openSelects.select1 ? styles.open : ""}`}
+                      className={`${styles.arrow} ${openSelect1 ? styles.open : ""}`}
                     >
                       <svg
                         width="12"
@@ -305,22 +420,20 @@ export default function CreateNewDocument() {
                     </span>
                   </div>
 
-                  {openSelects.select1 && (
-                    <ul
-                      className={`${styles.dropdown} ${openSelects.select1 ? styles.open : ""}`}
-                    >
-                      {documentTypes.map((type) => (
-                        <li
-                          key={type.TypeID}
-                          onClick={() =>
-                            handleSelectChange("select1", type.TypeName)
-                          } // Update selected document type (TypeName)
-                        >
-                          {type.TypeName} {/* Display document type name */}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  <ul
+                    className={`${styles.dropdown} ${openSelect1 ? styles.open : ""}`}
+                  >
+                    {documentTypes.map((type) => (
+                      <li
+                        key={type.TypeID}
+                        onClick={() =>
+                          handleDocumentSelect(type.TypeName, type.TypeID)
+                        }
+                      >
+                        {type.TypeName}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             </div>
@@ -339,13 +452,13 @@ export default function CreateNewDocument() {
               <label>Department</label>
               <div className={styles.wrapper}>
                 <div
-                  className={`${styles.display} ${openSelects.select2 ? styles.active : ""}`}
-                  onClick={() => toggleSelectOpen("select2")} // Toggle dropdown
+                  className={`${styles.display} ${openSelect2 ? styles.active : ""}`}
+                  onClick={toggleSelectOpen2} // Toggle dropdown visibility
                 >
-                  {department || "Select Department"}{" "}
+                  {department}
                   {/* Display selected department */}
                   <span
-                    className={`${styles.arrow} ${openSelects.select2 ? styles.open : ""}`}
+                    className={`${styles.arrow} ${openSelect2 ? styles.open : ""}`}
                   >
                     <svg
                       width="12"
@@ -362,20 +475,19 @@ export default function CreateNewDocument() {
                   </span>
                 </div>
 
-                {openSelects.select2 && (
-                  <ul
-                    className={`${styles.dropdown} ${openSelects.select2 ? styles.open : ""}`}
-                  >
-                    {departments.map((dep) => (
-                      <li
-                        key={dep.DepartmentID}
-                        onClick={() => handleSelectChange("select2", dep.Name)} // Update selected department (Department name)
-                      >
-                        {dep.Name} {/* Display department name */}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                <ul
+                  className={`${styles.dropdown} ${openSelect2 ? styles.open : ""}`}
+                >
+                  {departments.map((dep) => (
+                    <li
+                      key={dep.DepartmentID}
+                      onClick={() => handleDepartmentSelect(dep.Name, dep.DepartmentID)}
+
+                    >
+                      {dep.Name} {/* Display department name */}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
 
@@ -400,7 +512,12 @@ export default function CreateNewDocument() {
                 {files.map((item, index) => (
                   <div key={index} className={styles.inputGroup}>
                     <div className={styles.fileItem}>
-                      <span className={styles.fileName}>{item.file.name}</span>
+                      <div className={styles.fileInfo}>
+                        <span className={styles.fileName}>{item.file.name}</span>
+                        {item.requireEsign && (
+                          <span className={styles.eSignBadge}>E-Sign Required</span>
+                        )}
+                      </div>
 
                       <div className={styles.fileActions}>
                         <label className={styles.switchContainer}>
@@ -423,6 +540,17 @@ export default function CreateNewDocument() {
                         >
                           <X size={20} />
                         </button>
+                        
+                        {item.requireEsign && (
+                          <button
+                            type="button"
+                            className={styles.eSignBtn}
+                            onClick={() => handleOpenESign(item.file, index)}
+                            aria-label="Open e-sign interface"
+                          >
+                            Open E-Sign
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -446,9 +574,12 @@ export default function CreateNewDocument() {
                   {files.length > 0 && (
                     <button
                       type="button"
-                      onClick={() =>
-                        document.querySelector(`.${styles.hiddenInput}`).click()
-                      }
+                      onClick={() => {
+                        const input = document.querySelector(`.${styles.hiddenInput}`) as HTMLInputElement;
+                        if (input) {
+                          input.click();
+                        }
+                      }}
                       className={styles.addFileBtn}
                     >
                       <Plus size={20} /> Add another file
@@ -458,7 +589,6 @@ export default function CreateNewDocument() {
               </>
             )}
 
-            {/* Send Document Section */}
             <div className={styles.sectionTitle}>Send Document</div>
 
             <div className={styles.approvalContainer}>
@@ -474,28 +604,33 @@ export default function CreateNewDocument() {
                       title="approval"
                       type="checkbox"
                       checked={approvalRequired}
-                      onChange={(e) => setApprovalRequired(e.target.checked)}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setApprovalRequired(checked);
+                        if (checked && approverIDs.length === 0) {
+                          setApproverIDs([0]);
+                        }
+                      }}
                     />
+
                     <span className={styles.slider}></span>
                   </label>
                 </div>
               </div>
 
-              {/* ✅ Conditionally show approver rows */}
               {approvalRequired &&
                 approverIDs.map((id, index) => (
                   <div className={styles.approverRow} key={index}>
                     <span className={styles.approverNumber}>{index + 1}</span>
 
-                    {/* ✅ Searchable Select Dropdown */}
                     <Select
-                      options={selectOptions} // Your list of approvers
+                      options={selectOptions}
                       value={
                         selectOptions.find((opt) => opt.value === id) || null
                       }
                       onChange={(selected) =>
                         handleApproverChange(selected, index)
-                      } // Pass the selected option and index
+                      }
                       placeholder="Select approver..."
                       isSearchable
                       menuPortalTarget={
@@ -567,6 +702,23 @@ export default function CreateNewDocument() {
             </div>
           </form>
         </div>
+
+        {/* Document Status Section */}
+        {savedDocument && (
+          <div className={styles.documentStatus}>
+            <h3>Document Status</h3>
+            <div className={styles.statusCard}>
+              <h4>{savedDocument.title}</h4>
+              <p><strong>Status:</strong> {savedDocument.status}</p>
+              <p><strong>File:</strong> <a href={savedDocument.url} target="_blank" rel="noopener noreferrer">View Document</a></p>
+              <div className={styles.statusInfo}>
+                <p>✅ Document has been saved with signature placeholders</p>
+                <p>📧 Signees have been notified automatically</p>
+                <p>⏳ Waiting for all signatures to be completed</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
 
-
 export type Props = {
   role: string;
   pdfUrl: string | null;
@@ -21,24 +20,27 @@ export type PDFViewerProps = {
   setViewMode: React.Dispatch<React.SetStateAction<"edit" | "signed">>;
   originalPdfUrl: string | null;
   hasSigned: boolean;
+  signees: Signee[];
+  documentId?: string;
+  onSavePlaceholders?: (placeholders: Placeholder[]) => void;
 };
-
 
 export type Placeholder = {
   id: number;
+  placeholderId?: number; // Database ID when saved
   page: number;
   x: number;
   y: number;
   width: number;
   height: number;
-  signee: string;
+  signee: string; // User ID
   signeeName: string;
   isSigned: boolean;
   signedAt?: string | null;
   initials?: string | null;
+  assignedToId?: number; // Database User ID
 };
 
-// Update SignatureModalProps:
 export type SignatureModalProps = {
   modalOpen: boolean;
   setModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -48,16 +50,15 @@ export type SignatureModalProps = {
   onApplyComplete: (url: string) => void;
   uploadedSignature: string | null;
   setUploadedSignature: React.Dispatch<React.SetStateAction<string | null>>;
-
 };
-
 
 export type Signee = {
   id: string;
   name: string;
+  userId?: number; // Database User ID
 };
 
-export type Role = "sender" | "emp001" | "emp002" | "emp003";
+export type Role = "sender" | "receiver" | string;
 
 export type SidebarProps = {
   role: Role;
@@ -71,11 +72,16 @@ export type SidebarProps = {
   setDraggingEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   hasSigned: boolean;
   resetSignaturePreview: () => void;
-  setViewMode: React.Dispatch<React.SetStateAction<"edit" | "signed">>;  // if you're using it
-
+  setViewMode: React.Dispatch<React.SetStateAction<"edit" | "signed">>;
+  onSaveFile?: () => void;
+  onSavePlaceholders?: (placeholders: Placeholder[]) => void;
+  onBackToDashboard?: () => void;
+  documentId?: string;
+  isDocumentCreator?: boolean;
 }
 
 export type PDFViewerRef = {
   applySignature: () => void;
-  resetSignaturePreview: () => void;  
+  resetSignaturePreview: () => void;
+  generatePdfWithPlaceholders: () => Promise<string | null>;
 };

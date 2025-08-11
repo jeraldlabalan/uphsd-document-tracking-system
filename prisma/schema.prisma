@@ -33,6 +33,7 @@ model User {
   RequestsMade   DocumentRequest[] @relation("RequestsMade")
   VersionChanges DocumentVersion[]
   Signatures     ESignature[]
+  SignaturePlaceholders SignaturePlaceholder[]
   ReceivedNotifs Notification[]    @relation("ReceivedNotifs")
   SentNotifs     Notification[]    @relation("SentNotifs")
   Session        Session[]
@@ -91,6 +92,7 @@ model Document {
   DocumentType DocumentType      @relation(fields: [TypeID], references: [TypeID])
   Requests     DocumentRequest[]
   Versions     DocumentVersion[]
+  SignaturePlaceholders SignaturePlaceholder[]
 }
 
 /// DOCUMENT REQUEST TABLE
@@ -143,6 +145,25 @@ model ESignature {
   IsDeleted     Boolean         @default(false)
   Request       DocumentRequest @relation(fields: [RequestID], references: [RequestID])
   Signer        User            @relation(fields: [SignedBy], references: [UserID])
+}
+
+/// SIGNATURE PLACEHOLDER TABLE
+model SignaturePlaceholder {
+  PlaceholderID Int      @id @default(autoincrement())
+  DocumentID    Int
+  Page          Int
+  X             Float
+  Y             Float
+  Width         Float
+  Height        Float
+  AssignedToID  Int
+  IsSigned      Boolean @default(false)
+  SignedAt      DateTime?
+  SignatureData String?
+  CreatedAt     DateTime @default(now())
+  IsDeleted     Boolean @default(false)
+  Document      Document @relation(fields: [DocumentID], references: [DocumentID])
+  AssignedTo    User     @relation(fields: [AssignedToID], references: [UserID])
 }
 
 /// DOCUMENT VERSION TABLE

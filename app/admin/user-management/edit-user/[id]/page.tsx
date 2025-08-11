@@ -187,7 +187,12 @@ export default function EditUserPage() {
 
     setUser({
       ...user,
-      [name]: name.match(/ID$/) ? Number(value) : value,
+      [name]:
+        name === "employeeID"
+          ? value
+          : name.match(/ID$/)
+            ? Number(value)
+            : value,
     });
 
     // Validation logic for firstName and lastName:
@@ -296,7 +301,8 @@ export default function EditUserPage() {
                 className={styles.input}
                 name="employeeID"
                 value={user.employeeID}
-                readOnly
+                onChange={handleChange}
+
               />
             </div>
 
