@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useImperativeHandle, useEffect, forwardRef } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
-import { PDFDocument, rgb } from "pdf-lib";
 import { Rnd } from "react-rnd";
-import { StandardFonts } from "pdf-lib";
-import { PDFViewerProps, Placeholder, PDFViewerRef } from "../../e-sign/types";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import styles from "./PDFViewer.module.css";
+import type { PDFViewerProps, PDFViewerRef, Placeholder } from "../types";
 import SignatureModal from "../signatureModal/SignatureModal";
-import React, { forwardRef, useImperativeHandle } from "react";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -27,6 +25,7 @@ function PDFViewer(
     viewMode,
     originalPdfUrl,
     hasSigned,
+    signees, // Add signees prop
   }: PDFViewerProps,
   ref: React.Ref<PDFViewerRef>
 ) {
@@ -39,6 +38,7 @@ function PDFViewer(
   useImperativeHandle(ref, () => ({
     applySignature,
     resetSignaturePreview,
+    generatePdfWithPlaceholders,
   }));
 
   const resetSignaturePreview = () => {
@@ -51,6 +51,7 @@ function PDFViewer(
     );
   };
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const BASE_WIDTH = 800;
   const [scale, setScale] = useState(1); // ← this is the original PDF width you expect
 
@@ -64,29 +65,23 @@ function PDFViewer(
         const containerWidth = entry.contentRect.width;
         const newScale = Math.min(containerWidth / BASE_WIDTH, 1);
         setScale(newScale);
+        
+        // Also update container dimensions
+        const { width, height } = entry.contentRect;
+        setContainerDims({ width, height });
       }, 100); // debounce time
     });
 
     resizeObserver.observe(containerRef.current);
+    
+    // Set initial dimensions
+    const rect = containerRef.current.getBoundingClientRect();
+    setContainerDims({ width: rect.width, height: rect.height });
+    
     return () => {
       resizeObserver.disconnect();
       clearTimeout(timeout);
     };
-  }, []);
-
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [pageWidth, setPageWidth] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const resizeObserver = new ResizeObserver(([entry]) => {
-      setPageWidth(entry.contentRect.width);
-    });
-
-    resizeObserver.observe(containerRef.current);
-
-    return () => resizeObserver.disconnect();
   }, []);
 
   const [pageDims, setPageDims] = useState<
@@ -129,17 +124,8 @@ function PDFViewer(
   const [selectedPlaceholder, setSelectedPlaceholder] =
     useState<Placeholder | null>(null);
 
-  const [dragRect, setDragRect] = useState<{
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  } | null>(null);
-
-  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(
-    null
-  );
-
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+  const [dragRect, setDragRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [dragPage, setDragPage] = useState<number | null>(null);
 
   const [assignModal, setAssignModal] = useState<{
@@ -155,22 +141,44 @@ function PDFViewer(
 
   const [search, setSearch] = useState("");
 
-  const signees = [
-    { id: "emp001", name: "Alice Mendoza" },
-    { id: "emp002", name: "Bob Santos" },
-    { id: "emp003", name: "Charlie Reyes" },
-    // etc.
-  ];
-
   const filteredSignees = signees.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Debug logging for signees
+  useEffect(() => {
+    console.log("Signees received:", signees);
+    console.log("Filtered signees:", filteredSignees);
+  }, [signees, filteredSignees]);
+
+  // Debug logging for modal state
+  useEffect(() => {
+    console.log("Assign modal state:", assignModal);
+  }, [assignModal]);
+
+  // Add click outside handler for modal
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (assignModal?.visible) {
+        const target = event.target as HTMLElement;
+        if (!target.closest(`.${styles.assignModalContainer}`)) {
+          setAssignModal(null);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [assignModal?.visible]);
 
   const handleMouseDown = (
     e: React.MouseEvent<HTMLDivElement>,
     page: number
   ) => {
     if (!draggingEnabled || role !== "sender" || modalOpen) return;
+    
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -194,6 +202,8 @@ function PDFViewer(
 
   const handleMouseUp = (e: React.MouseEvent) => {
     if (dragRect && dragPage !== null) {
+      console.log("Opening assign modal:", { dragRect, dragPage }); // Debug log
+      console.log("Available signees:", signees); // Debug log
       setAssignModal({
         visible: true,
         page: dragPage,
@@ -207,6 +217,8 @@ function PDFViewer(
     }
 
     setDragStart(null);
+    setDragRect(null);
+    setDragPage(null);
     setDraggingEnabled(false);
   };
 
@@ -215,6 +227,8 @@ function PDFViewer(
     signeeName: string,
     editingId?: number
   ) => {
+    console.log("assignSignee called with:", { signee, signeeName, editingId }); // Debug log
+    
     if (editingId) {
       setPlaceholders((prev) =>
         prev.map((ph) =>
@@ -253,11 +267,16 @@ function PDFViewer(
     }
 
     setSelectedAssignee({ signee, signeeName });
-
     setAssignModal(null);
   };
 
   const applySignature = async () => {
+    // Prevent senders from signing documents
+    if (role === "sender") {
+      alert("As the document sender, you cannot sign this document. You can only add signature placeholders for others to sign.");
+      return;
+    }
+
     if (!signatureImage) return;
 
     try {
@@ -402,6 +421,93 @@ function PDFViewer(
     } catch (err) {
       console.error("Error applying signature:", err);
       alert("Failed to apply signature. See console for details.");
+    }
+  };
+
+  // Function to generate PDF with placeholders visible (for sender to save)
+  const generatePdfWithPlaceholders = async (): Promise<string | null> => {
+    try {
+      if (!pdfUrl || !originalPdfUrl) {
+        console.error("No PDF URL provided");
+        return null;
+      }
+
+      const existingPdfBytes = await fetch(originalPdfUrl).then((r) =>
+        r.arrayBuffer()
+      );
+
+      const pdfDoc = await PDFDocument.load(existingPdfBytes);
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const pages = pdfDoc.getPages();
+
+      // Add all placeholders to the PDF
+      placeholders.forEach((ph) => {
+        const page = pages[ph.page];
+        if (!page) return; // Skip if page doesn't exist
+
+        // Convert from scaled screen space to actual PDF space
+        const pdfX = ph.x / scale;
+        // Adjust Y coordinate to account for PDF coordinate system offset
+        const pdfY = page.getSize().height - (ph.y + ph.height) / scale + 8;
+        const pdfWidth = ph.width / scale;
+        const pdfHeight = ph.height / scale;
+
+        // Draw placeholder rectangle with better visibility
+        page.drawRectangle({
+          x: pdfX,
+          y: pdfY,
+          width: pdfWidth,
+          height: pdfHeight,
+          borderColor: rgb(0, 0, 0),
+          borderWidth: 2,
+          borderDashArray: [5, 5],
+          color: rgb(0.95, 0.95, 1), // Light blue background
+        });
+
+        // Add placeholder text with better positioning
+        const signeeName = ph.signeeName || 'Unknown Signee';
+        const placeholderText = `Signature for: ${signeeName}`;
+        const textSize = Math.min(10, pdfHeight / 3); // Adaptive text size
+        const textWidth = font.widthOfTextAtSize(placeholderText, textSize);
+        
+        // Center text horizontally and vertically
+        const textX = pdfX + (pdfWidth - textWidth) / 2;
+        const textY = pdfY + pdfHeight / 2 + textSize / 3;
+
+        page.drawText(placeholderText, {
+          x: textX,
+          y: textY,
+          size: textSize,
+          font,
+          color: rgb(0, 0, 0),
+        });
+
+        // Add "Click to sign" instruction below
+        const instructionText = "Click to sign";
+        const instructionSize = Math.min(8, textSize * 0.8);
+        const instructionWidth = font.widthOfTextAtSize(instructionText, instructionSize);
+        const instructionX = pdfX + (pdfWidth - instructionWidth) / 2;
+        const instructionY = pdfY + pdfHeight / 2 - instructionSize;
+
+        page.drawText(instructionText, {
+          x: instructionX,
+          y: instructionY,
+          size: instructionSize,
+          font,
+          color: rgb(0.5, 0.5, 0.5),
+        });
+      });
+
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([new Uint8Array(pdfBytes)], {
+        type: "application/pdf",
+      });
+      const url = URL.createObjectURL(blob);
+      return url;
+    } catch (err) {
+      console.error("Error generating PDF with placeholders:", err);
+      alert("Failed to generate PDF with placeholders. See console for details.");
+      return null;
     }
   };
 
@@ -664,68 +770,6 @@ function PDFViewer(
                   }}
                 />
               )}
-
-              {/* Assign Modal (now inside the loop!) */}
-              {assignModal?.visible && assignModal.page === i && (
-                <div
-                  className={styles.assignModalContainer}
-                  style={{
-                    left:
-                      assignModal.x + MIN_WIDTH + 180 > containerDims.width
-                        ? Math.max(assignModal.x - 240, 10)
-                        : assignModal.x + MIN_WIDTH + 12, // 👈 narrower gap
-                    top: Math.min(assignModal.y, containerDims.height - 180),
-                  }}
-                >
-                  <h4 style={{ marginBottom: "8px" }}>Assign Signee</h4>
-
-                  <input
-                    type="text"
-                    placeholder="Search signee..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className={styles.assignSigneeSearchBar}
-                  />
-
-                  <div className={styles.signeeListContainer}>
-                    {filteredSignees.length === 0 && (
-                      <div
-                        style={{
-                          fontSize: "12px",
-                          padding: "4px",
-                          color: "#888",
-                        }}
-                      >
-                        No matches found.
-                      </div>
-                    )}
-
-                    {filteredSignees.map((sig) => (
-                      <div
-                        key={sig.id}
-                        onClick={() => {
-                          assignSignee(
-                            sig.id,
-                            sig.name,
-                            assignModal?.existingId
-                          );
-                        }}
-                        className={styles.signees}
-                      >
-                        {sig.name}
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setAssignModal(null)}
-                    className={styles.cancelAssignSigneeButton}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
             </div>
           ))}
 
@@ -768,6 +812,94 @@ function PDFViewer(
         </Document>
       </div>
 
+      {/* Assign Modal - moved outside the page loop */}
+      {assignModal?.visible && (
+        <div
+          key={`assign-modal-${assignModal.page}-${assignModal.x}-${assignModal.y}`}
+          className={styles.assignModalContainer}
+          style={{
+            position: 'fixed',
+            left: Math.min(
+              Math.max(
+                assignModal.x + MIN_WIDTH + 12,
+                10
+              ),
+              window.innerWidth - 220
+            ),
+            top: Math.min(
+              Math.max(assignModal.y, 10),
+              window.innerHeight - 200
+            ),
+            zIndex: 1000,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log("Modal container clicked"); // Debug log
+          }}
+        >
+          <h4 style={{ marginBottom: "8px" }}>Assign Signee</h4>
+          <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
+            Available signees: {filteredSignees.length}
+          </div>
+
+          <input
+            type="text"
+            placeholder="Search signee..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className={styles.assignSigneeSearchBar}
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          <div className={styles.signeeListContainer}>
+            {filteredSignees.length === 0 && (
+              <div
+                style={{
+                  fontSize: "12px",
+                  padding: "4px",
+                  color: "#888",
+                }}
+              >
+                No matches found.
+              </div>
+            )}
+
+            {filteredSignees.map((sig) => (
+              <div
+                key={sig.id}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log("Signee clicked:", sig); // Debug log
+                  assignSignee(
+                    sig.id,
+                    sig.name,
+                    assignModal?.existingId
+                  );
+                }}
+                className={styles.signees}
+                style={{ cursor: 'pointer' }}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                {sig.name}
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setAssignModal(null);
+            }}
+            className={styles.cancelAssignSigneeButton}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
       <SignatureModal
         modalOpen={modalOpen}
         setModalOpen={setModalOpen}
@@ -775,7 +907,7 @@ function PDFViewer(
         signatureImage={signatureImage}
         setSignatureImage={setSignatureImage}
         onApplyComplete={onApplyComplete}
-        uploadedSignature={uploadedSignature} // new
+        uploadedSignature={uploadedSignature}
         setUploadedSignature={setUploadedSignature}
       />
     </div>

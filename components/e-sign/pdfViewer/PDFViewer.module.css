@@ -1,10 +1,10 @@
+/* PDF Viewer Styles */
 .documentContainer {
-    height: 100vh;
-    padding: 10px;
-    padding-bottom: 100px;
-    width: 100%;
-    max-width: 100%;
-    overflow-y: auto;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: #f5f5f5;
 }
 
 .pageContainer {
@@ -18,8 +18,9 @@
 .actualSignaturePlaceholder {
     width: 100%;
     height: 100%;
-    background: #f0f0f0;
-    border: 2px dashed #555;
+    background: rgba(240, 240, 240, 0.9);
+    border: 2px dashed #007bff !important;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -27,6 +28,14 @@
     font-size: 10px;
     padding: 4px;
     position: relative;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.actualSignaturePlaceholder:hover {
+    border-color: #0056b3 !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    background: rgba(245, 245, 245, 0.95);
 }
 
 .sender {
@@ -64,10 +73,12 @@
     position: absolute;
     width: 150px;
     height: 40px;
-    background-color: rgba(255, 0, 0, 0.2);
-    border: 2px dashed red;
+    background-color: rgba(0, 123, 255, 0.2);
+    border: 2px dashed #007bff;
+    border-radius: 4px;
     z-index: 20;
     pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
 }
 
 
@@ -76,11 +87,14 @@
     color: #000;
     border: 1px solid #333;
     padding: 10px;
-    z-index: 999;
+    z-index: 1000;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     border-radius: 4px;
     width: 200px;
-    position: absolute;
+    position: fixed;
+    pointer-events: auto;
+    max-height: 300px;
+    overflow: hidden;
 }
 
 .assignSigneeSearchBar {
@@ -90,6 +104,7 @@
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 14px;
+    box-sizing: border-box;
 }
 
 .signeeListContainer {
@@ -98,25 +113,50 @@
     margin-bottom: 8px;
     border: 1px solid #eee;
     border-radius: 4px;
+    background: #fff;
 }
 
 .signees {
-    padding: 6px;
+    padding: 8px 6px;
     cursor: pointer;
     font-size: 14px;
     border-bottom: 1px solid #f0f0f0;
-    background-color: #f9f9f9;                   
+    background-color: #f9f9f9;
+    transition: background-color 0.2s ease;
+    user-select: none;
+    position: relative;
+    z-index: 1001;
+}
+
+.signees:hover {
+    background-color: #e3f2fd;
+    border-color: #2196f3;
+}
+
+.signees:active {
+    background-color: #bbdefb;
+    transform: translateY(1px);
+}
+
+.signees:last-child {
+    border-bottom: none;
 }
 
 .cancelAssignSigneeButton {
     margin-top: 4px;
     width: 100%;
-    padding: 6px;
+    padding: 8px 6px;
     font-size: 14px;
-    background: #eee;
-    border: 1px solid #ccc;
+    background: #f44336;
+    color: white;
+    border: none;
     border-radius: 4px;
     cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.cancelAssignSigneeButton:hover {
+    background: #d32f2f;
 }
 
 .editAssignedSigneeContainer {
@@ -132,5 +172,17 @@
 }
 
 .needsToSign {
-    
+    font-size: 8px;
+    color: #666;
+    text-align: center;
+    margin-top: 2px;
+    font-style: italic;
+}
+
+.signeeName {
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    margin-bottom: 2px;
+    font-size: 9px;
 }

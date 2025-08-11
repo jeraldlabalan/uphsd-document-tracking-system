@@ -2,7 +2,6 @@ import { useState } from "react";
 import styles from "./Sidebar.module.css";
 import { SidebarProps, Role } from "../types";
 
-
 export default function Sidebar({
   role,
   signees,
@@ -15,6 +14,11 @@ export default function Sidebar({
   hasSigned,
   resetSignaturePreview,
   setViewMode,
+  onSaveFile,
+  onSavePlaceholders,
+  onBackToDashboard,
+  documentId,
+  isDocumentCreator = false,
 }: SidebarProps) {
   console.log("All placeholders", placeholders);
   console.log("Current role:", role);
@@ -25,46 +29,67 @@ export default function Sidebar({
 
   console.log("Remaining placeholders", remainingPlaceholders);
 
-  const departmentOptions = [
-  "Engineering",
-  "Business",
-  "Information Technology",
-  "Human Resource",
-  "Medicine",
-];
+  const handleSavePlaceholders = async () => {
+    if (!onSavePlaceholders || !documentId) {
+      alert("Cannot save placeholders. Document ID is missing.");
+      return;
+    }
 
-const [selectedDepartment, setSelectedDepartment] = useState("Select");
+    if (placeholders.length === 0) {
+      alert("No signature placeholders to save. Please add at least one placeholder.");
+      return;
+    }
 
+    // Validate that all placeholders have assigned signees
+    const unassignedPlaceholders = placeholders.filter(p => !p.assignedToId && !p.signee);
+    if (unassignedPlaceholders.length > 0) {
+      alert("All signature placeholders must have assigned signees before saving.");
+      return;
+    }
+
+    try {
+      await onSavePlaceholders(placeholders);
+      alert("Signature placeholders saved successfully! Signees will be notified.");
+    } catch (error) {
+      console.error("Error saving placeholders:", error);
+      alert("Failed to save placeholders. Please try again.");
+    }
+  };
 
   return (
     <div className={styles.sidebar}>
       <div className={styles.sidebarHeader}>
-        <label htmlFor="">document</label>
+        <label htmlFor="">Document</label>
       </div>
 
-      <label>
-        Choose Role:
-        <select
-          value={role}
-          onChange={(e) => onRoleChange(e.target.value as Role)}
-        >
-          <option value="sender">Sender</option>
-          {signees.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className={styles.roleDisplay}>
+        <label>Current Role:</label>
+        <span className={styles.roleValue}>
+          {role === "sender" ? "Document Sender" : "Document Signee"}
+        </span>
+      </div>
 
-      <label>
-        Upload PDF:
-        <input type="file" accept="application/pdf" onChange={onFileChange} />
-      </label>
+      {/* File upload - only for sender when creating new document */}
+      {role === "sender" && isDocumentCreator && (
+        <label>
+          Upload PDF:
+          <input type="file" accept="application/pdf" onChange={onFileChange} />
+        </label>
+      )}
 
-      {/* Drag and Drop */}
+      {/* Sender Role: Can only add signature placeholders and assign signees */}
       {role === "sender" && (
         <div className={styles.senderButtons}>
+          <p className={styles.senderInstructions}>
+            As the document sender, you can:
+          </p>
+          <ul className={styles.senderInstructionsList}>
+            <li>• Add signature placeholders for others to sign</li>
+            <li>• Assign specific signees to each placeholder</li>
+            <li>• Position and resize placeholders as needed</li>
+            <li>• Save the document with placeholders</li>
+          </ul>
+          
           <button
             draggable
             onDragStart={(e) => {
@@ -73,14 +98,21 @@ const [selectedDepartment, setSelectedDepartment] = useState("Select");
             className={styles.dragAndDropButton}
             onMouseDown={() => setDraggingEnabled(true)}
           >
-            add signature
+            Add Signature Placeholder
           </button>
 
-          <button className={styles.saveFileButton}>save file</button>
+          <button 
+            className={styles.saveFileButton}
+            onClick={handleSavePlaceholders}
+            disabled={placeholders.length === 0}
+          >
+            Save Document with Placeholders
+          </button>
         </div>
       )}
 
-      {role !== "sender" && (
+      {/* Receiver Role: Can sign documents and jump to signatures */}
+      {role === "receiver" && (
         <div className={styles.receiverButtons}>
           <p className={styles.signatureCount}>
             You have {remainingPlaceholders.length} signature placeholder
@@ -90,6 +122,7 @@ const [selectedDepartment, setSelectedDepartment] = useState("Select");
           <button
             className={styles.jumpToSignature}
             onClick={jumpToNextSignature}
+            disabled={remainingPlaceholders.length === 0}
           >
             Jump to Signature
           </button>
@@ -101,18 +134,27 @@ const [selectedDepartment, setSelectedDepartment] = useState("Select");
               setModalOpen(true);
             }}
             className={styles.signDocument}
+            disabled={remainingPlaceholders.length === 0}
           >
             {hasSigned ? "Re-upload Signature" : "Sign Document"}
           </button>
 
-          <button className={styles.saveFileButton}>Save File</button>
+          <button 
+            className={styles.saveFileButton}
+            onClick={onSaveFile}
+            disabled={remainingPlaceholders.length === 0}
+          >
+            Save Signed Document
+          </button>
         </div>
       )}
 
-      <a href="" className={styles.backToDashboard}>
-        Back to dashboard
-      </a>        
-
+      <button 
+        onClick={onBackToDashboard}
+        className={styles.backToDashboard}
+      >
+        Back to Dashboard
+      </button>        
     </div>
   );
 }
