@@ -1,9 +1,9 @@
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { NextResponse } from "next/server";
+import { verify } from "jsonwebtoken";
 import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
 
-export async function GET(req: Request) {
+export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("session")?.value;
@@ -12,68 +12,99 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { UserID: number };
-    const userID = decoded.UserID;
+    const decoded = verify(token, process.env.JWT_SECRET!) as {
+      UserID: number;
+      Role: string;
+    };
 
-    // Step 1: Fetch document requests assigned to this user (Recipient)
-    const requests = await db.documentRequest.findMany({
-  where: {
-    RecipientUserID: userID,
-    IsDeleted: false,
-  },
-  include: {
-    Document: {
-      include: {
-        DocumentType: true,
-        Department: true,
-        Creator: {
-          select: {
-            FirstName: true,
-            LastName: true,
-          },
-        },
-        Versions: {
-          where: { IsDeleted: false },
-          orderBy: { CreatedAt: "desc" },
-          take: 1, // ✅ Only latest version
-          select: {
-            FilePath: true,
-          },
-        },
+    const userId = decoded.UserID;
+
+    // Get documents where the user is a recipient
+    const receivedDocuments = await db.documentRequest.findMany({
+      where: {
+        RecipientUserID: userId,
+        IsDeleted: false,
       },
-    },
-    Status: true,
-  },
-  orderBy: {
-    RequestedAt: "desc",
-  },
-});
-    if (!requests) {
-      return NextResponse.json({ error: "No documents found" }, { status: 404 });
-    }
+      include: {
+        Document: {
+          include: {
+            DocumentType: true,
+            Department: true,
+            Creator: {
+              select: {
+                UserID: true,
+                FirstName: true,
+                LastName: true,
+                Email: true,
+              },
+            },
+            Versions: {
+              where: { IsDeleted: false },
+              orderBy: { VersionNumber: "desc" },
+              take: 1, // Get only the latest version
+            },
+            SignaturePlaceholders: {
+              where: { IsDeleted: false },
+              include: {
+                AssignedTo: {
+                  select: {
+                    UserID: true,
+                    FirstName: true,
+                    LastName: true,
+                  },
+                },
+              },
+              orderBy: { CreatedAt: "asc" },
+            },
+          },
+        },
+        Status: true,
+      },
+      orderBy: {
+        RequestedAt: "desc",
+      },
+    });
 
-    // Step 2: Format response
-const docs = requests.map((req) => {
-  const latestFilePath = req.Document?.Versions[0]?.FilePath ?? "";
-  return {
-    id: req.RequestID,
-    name: req.Document?.Title ?? "Untitled",
-    type: req.Document?.DocumentType?.TypeName ?? "Unknown",
-    department: req.Document?.Department?.Name ?? "Unknown",
-    status: req.Status?.StatusName ?? "Unknown",
-    date: req.RequestedAt.toISOString().split("T")[0],
-    creator: `${req.Document?.Creator?.FirstName || "Unknown"} ${
-      req.Document?.Creator?.LastName || "Unknown"
-    }`,
-    preview: latestFilePath ? `/${latestFilePath}` : "",
-  };
-});
+    // Format the response
+    const formattedDocuments = receivedDocuments.map((request) => ({
+      requestID: request.RequestID,
+      documentID: request.Document.DocumentID,
+      title: request.Document.Title,
+      description: request.Document.Description,
+      type: request.Document.DocumentType.TypeName,
+      department: request.Document.Department?.Name,
+      creator: request.Document.Creator,
+      status: request.Status.StatusName,
+      documentStatus: request.Document.Status,
+      requestedAt: request.RequestedAt,
+      completedAt: request.CompletedAt,
+      priority: request.Priority,
+      remarks: request.Remarks,
+      latestVersion: request.Document.Versions[0] || null,
+      signaturePlaceholders: request.Document.SignaturePlaceholders.map((p) => ({
+        placeholderID: p.PlaceholderID,
+        page: p.Page,
+        x: p.X,
+        y: p.Y,
+        width: p.Width,
+        height: p.Height,
+        assignedToID: p.AssignedToID,
+        assignedTo: p.AssignedTo,
+        isSigned: p.IsSigned,
+        signedAt: p.SignedAt,
+        signatureData: p.SignatureData,
+      })),
+    }));
 
-
-    console.log("Received documents:", docs);
-    return NextResponse.json({docs}, { status: 200 });
+    return NextResponse.json({
+      receivedDocuments: formattedDocuments,
+      totalCount: formattedDocuments.length,
+    });
   } catch (error) {
-    console.error("Error loading received documents:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    console.error("Error fetching received documents:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

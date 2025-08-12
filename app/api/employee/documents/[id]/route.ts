@@ -1,11 +1,11 @@
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { NextResponse } from "next/server";
+import { verify } from "jsonwebtoken";
 import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
 
 export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  request: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
     const cookieStore = await cookies();
@@ -15,36 +15,60 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { UserID: number };
-    const userID = decoded.UserID;
+    const decoded = verify(token, process.env.JWT_SECRET!) as {
+      UserID: number;
+      Role: string;
+    };
 
-    const { id } = await params;
-    const documentId = Number(id);
-    if (!documentId || Number.isNaN(documentId)) {
-      return NextResponse.json({ error: "Invalid document id" }, { status: 400 });
+    const documentId = parseInt(params.id);
+
+    if (isNaN(documentId)) {
+      return NextResponse.json({ error: "Invalid document ID" }, { status: 400 });
     }
 
-    const document = await db.document.findFirst({
-      where: {
-        DocumentID: documentId,
-        IsDeleted: false,
-      },
+    // Get document with latest version and signature placeholders
+    const document = await db.document.findUnique({
+      where: { DocumentID: documentId, IsDeleted: false },
       include: {
         DocumentType: true,
         Department: true,
         Creator: {
-          select: { FirstName: true, LastName: true, UserID: true },
+          select: {
+            UserID: true,
+            FirstName: true,
+            LastName: true,
+            Email: true,
+          },
         },
         Versions: {
           where: { IsDeleted: false },
           orderBy: { VersionNumber: "desc" },
-          take: 1,
+          take: 1, // Get only the latest version
+        },
+        SignaturePlaceholders: {
+          where: { IsDeleted: false },
+          include: {
+            AssignedTo: {
+              select: {
+                UserID: true,
+                FirstName: true,
+                LastName: true,
+                Email: true,
+              },
+            },
+          },
+          orderBy: { CreatedAt: "asc" },
         },
         Requests: {
           where: { IsDeleted: false },
           include: {
             Recipient: {
-              select: { UserID: true, FirstName: true, LastName: true },
+              select: {
+                UserID: true,
+                FirstName: true,
+                LastName: true,
+                Email: true,
+              },
             },
             Status: true,
           },
@@ -56,52 +80,60 @@ export async function GET(
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
 
+    // Check if user has permission to view this document
     const hasPermission =
-      document.CreatedBy === userID ||
-      document.Requests.some((req) => req.RecipientUserID === userID || req.RequestedByID === userID);
+      document.CreatedBy === decoded.UserID ||
+      document.Requests.some((r) => r.RecipientUserID === decoded.UserID);
 
     if (!hasPermission) {
-      console.warn("Document access denied", {
-        userID,
-        documentId,
-        createdBy: document.CreatedBy,
-        requestRecipients: document.Requests.map(r => r.RecipientUserID),
-        requestCreators: document.Requests.map(r => r.RequestedByID),
-      });
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
-    const responseBody = {
-      id: document.DocumentID,
+    // Format the response
+    const formattedDocument = {
+      documentID: document.DocumentID,
       title: document.Title,
       description: document.Description,
       typeID: document.TypeID,
-      typeName: document.DocumentType?.TypeName ?? null,
+      typeName: document.DocumentType.TypeName,
       departmentID: document.DepartmentID,
-      departmentName: document.Department?.Name ?? null,
-      creator: `${document.Creator?.FirstName ?? ""} ${
-        document.Creator?.LastName ?? ""
-      }`.trim(),
+      departmentName: document.Department?.Name,
+      createdBy: document.CreatedBy,
+      creator: document.Creator,
+      status: document.Status,
       createdAt: document.CreatedAt,
-      currentVersion: document.Versions[0]
-        ? {
-            versionID: document.Versions[0].VersionID,
-            versionNumber: document.Versions[0].VersionNumber,
-            filePath: document.Versions[0].FilePath,
-          }
-        : null,
-      approvers:
-        document.Requests?.map((r) => ({
-          userID: r.Recipient?.UserID ?? 0,
-          firstName: r.Recipient?.FirstName ?? "",
-          lastName: r.Recipient?.LastName ?? "",
-          status: r.Status?.StatusName ?? "",
-        })) ?? [],
+      updatedAt: document.UpdatedAt,
+      latestVersion: document.Versions[0] || null,
+      signaturePlaceholders: document.SignaturePlaceholders.map((p) => ({
+        placeholderID: p.PlaceholderID,
+        page: p.Page,
+        x: p.X,
+        y: p.Y,
+        width: p.Width,
+        height: p.Height,
+        assignedToID: p.AssignedToID,
+        assignedTo: p.AssignedTo,
+        isSigned: p.IsSigned,
+        signedAt: p.SignedAt,
+        signatureData: p.SignatureData,
+      })),
+      requests: document.Requests.map((r) => ({
+        requestID: r.RequestID,
+        recipient: r.Recipient,
+        status: r.Status,
+        requestedAt: r.RequestedAt,
+        completedAt: r.CompletedAt,
+        priority: r.Priority,
+        remarks: r.Remarks,
+      })),
     };
 
-    return NextResponse.json(responseBody, { status: 200 });
-  } catch (err) {
-    console.error("Error fetching document by id:", err);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(formattedDocument);
+  } catch (error) {
+    console.error("Error fetching document:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

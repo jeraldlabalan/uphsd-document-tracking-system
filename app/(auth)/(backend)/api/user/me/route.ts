@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
     const user = await db.user.findUnique({
       where: { Email: decoded.email },
       select: {
+        UserID: true,
         FirstName: true,
         LastName: true,
         ProfilePicture: true,

@@ -23,15 +23,23 @@ export default function Sidebar({
   console.log("All placeholders", placeholders);
   console.log("Current role:", role);
 
-  const remainingPlaceholders = placeholders.filter(
-    (ph) => ph.signee === role && !ph.isSigned
-  );
+  // For receivers, count any unsigned placeholders. Comparing signee to role is incorrect
+  const remainingPlaceholders =
+    role === "receiver"
+      ? placeholders.filter((ph) => !ph.isSigned)
+      : placeholders.filter((ph) => !ph.isSigned);
+
+  // For receivers, also check if they have any signed placeholders
+  const signedPlaceholders = placeholders.filter((ph) => ph.isSigned);
+  const hasAnySignatures = signedPlaceholders.length > 0;
 
   console.log("Remaining placeholders", remainingPlaceholders);
+  console.log("Signed placeholders", signedPlaceholders);
+  console.log("Has any signatures", hasAnySignatures);
 
   const handleSavePlaceholders = async () => {
-    if (!onSavePlaceholders || !documentId) {
-      alert("Cannot save placeholders. Document ID is missing.");
+    if (!onSavePlaceholders) {
+      alert("Cannot save placeholders. Save function is not available.");
       return;
     }
 
@@ -142,7 +150,7 @@ export default function Sidebar({
           <button 
             className={styles.saveFileButton}
             onClick={onSaveFile}
-            disabled={remainingPlaceholders.length === 0}
+            disabled={!hasAnySignatures}
           >
             Save Signed Document
           </button>

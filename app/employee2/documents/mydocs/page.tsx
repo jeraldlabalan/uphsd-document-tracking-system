@@ -7,6 +7,7 @@ import Link from "next/link";
 
 type document = {
   id: number;
+  requestId: number | null;
   name: string;
   file: string;
   status: string;
@@ -87,7 +88,7 @@ export default function MyDocuments() {
       const res = await fetch("/api/employee/documents/mydocs/mark-complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requestId: selectedDoc?.id }), // Make sure id matches RequestID
+        body: JSON.stringify({ requestId: selectedDoc?.requestId }), // Use requestId instead of id
       });
 
       const data = await res.json();

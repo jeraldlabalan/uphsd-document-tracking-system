@@ -11,6 +11,11 @@ interface PendingDocument {
   creator: string;
   creatorEmail: string;
   createdAt: string;
+  latestVersion: {
+    versionID: number;
+    versionNumber: number;
+    filePath: string;
+  } | null;
   placeholders: Array<{
     placeholderId: number;
     page: number;
@@ -22,6 +27,7 @@ interface PendingDocument {
 }
 
 export default function PendingSignatures() {
+  console.log("PendingSignatures component rendering");
   const [pendingDocuments, setPendingDocuments] = useState<PendingDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +36,11 @@ export default function PendingSignatures() {
     fetchPendingSignatures();
   }, []);
 
+  // Debug: Log when pendingDocuments state changes
+  useEffect(() => {
+    console.log("PendingSignatures component - pendingDocuments updated:", pendingDocuments);
+  }, [pendingDocuments]);
+
   const fetchPendingSignatures = async () => {
     try {
       setLoading(true);
@@ -37,6 +48,8 @@ export default function PendingSignatures() {
       
       if (response.ok) {
         const data = await response.json();
+        console.log("Pending signatures API response:", data);
+        console.log("Pending documents:", data.pendingDocuments);
         setPendingDocuments(data.pendingDocuments);
       } else {
         throw new Error('Failed to fetch pending signatures');
@@ -50,6 +63,9 @@ export default function PendingSignatures() {
   };
 
   const handleSignDocument = (document: PendingDocument) => {
+    console.log("handleSignDocument called with document:", document);
+    console.log("latestVersion:", document.latestVersion);
+    
     // Navigate to e-sign document page with the document data
     const queryParams = new URLSearchParams({
       docId: document.documentId.toString(),
@@ -59,7 +75,17 @@ export default function PendingSignatures() {
       userRole: 'receiver',
     });
     
-    window.open(`/employee2/e-sign-document?${queryParams.toString()}`, '_blank');
+    // If we have a latest version, add the file URL
+    if (document.latestVersion?.filePath) {
+      console.log("Adding file path:", document.latestVersion.filePath);
+      queryParams.append('uploadedFile', document.latestVersion.filePath);
+    } else {
+      console.log("No file path found in latestVersion");
+    }
+    
+    const finalUrl = `/employee2/e-sign-document?${queryParams.toString()}`;
+    console.log("Opening URL:", finalUrl);
+    window.open(finalUrl, '_blank');
   };
 
   if (loading) {
@@ -112,7 +138,10 @@ export default function PendingSignatures() {
             
             <div className={styles.documentActions}>
               <button
-                onClick={() => handleSignDocument(document)}
+                onClick={() => {
+                  console.log("Sign Document button clicked for document:", document);
+                  handleSignDocument(document);
+                }}
                 className={styles.signDocumentButton}
               >
                 Sign Document

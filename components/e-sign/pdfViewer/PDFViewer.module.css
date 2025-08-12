@@ -93,8 +93,10 @@
     width: 200px;
     position: fixed;
     pointer-events: auto;
-    max-height: 300px;
-    overflow: hidden;
+    max-height: 400px;
+    overflow: visible;
+    min-width: 200px;
+    max-width: 250px;
 }
 
 .assignSigneeSearchBar {
@@ -108,7 +110,7 @@
 }
 
 .signeeListContainer {
-    max-height: 100px;
+    max-height: 200px;
     overflow-y: auto;
     margin-bottom: 8px;
     border: 1px solid #eee;

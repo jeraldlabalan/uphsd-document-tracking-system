@@ -34,7 +34,12 @@ export async function POST(req: NextRequest) {
       formData.get("ApproverIDs") as string
     ) as number[];
 
+    // Check if placeholders data is provided
+    const placeholdersData = formData.get("Placeholders") as string;
+    const placeholders = placeholdersData ? JSON.parse(placeholdersData) : null;
+
     console.log("fetched files: ", files)
+    console.log("placeholders: ", placeholders)
 
     if (!files.length || !Title || !Description || !TypeID || !approverIDs.length) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -151,6 +156,44 @@ export async function POST(req: NextRequest) {
     });
 
     await Promise.all([...requests, ...notifs]);
+
+    // Step 6: Create signature placeholders if provided
+    if (placeholders && placeholders.length > 0) {
+      const placeholderPromises = placeholders.map(async (placeholder: any) => {
+        const newPlaceholder = await db.signaturePlaceholder.create({
+          data: {
+            DocumentID: newDocument.DocumentID,
+            Page: placeholder.page,
+            X: placeholder.x,
+            Y: placeholder.y,
+            Width: placeholder.width,
+            Height: placeholder.height,
+            AssignedToID: placeholder.assignedToId,
+            IsSigned: false,
+          },
+        });
+
+        await db.activityLog.create({
+          data: {
+            PerformedBy: creatorID,
+            Action: "Created Signature Placeholder",
+            TargetType: "SignaturePlaceholder",
+            Remarks: `Signature placeholder created for user ${placeholder.assignedToId} on document ${newDocument.DocumentID}`,
+            TargetID: newPlaceholder.PlaceholderID,
+          },
+        });
+
+        return newPlaceholder;
+      });
+
+      await Promise.all(placeholderPromises);
+
+      // Update document status to "Awaiting Signatures"
+      await db.document.update({
+        where: { DocumentID: newDocument.DocumentID },
+        data: { Status: "Awaiting Signatures" },
+      });
+    }
 
     return NextResponse.json({
       message: "Document successfully created",

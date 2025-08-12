@@ -46,7 +46,15 @@ function PDFViewer(
     setUploadedSignature(null);
     setPlaceholders((prev) =>
       prev.map(
-        (p) => (p.signee === role ? { ...p, isSigned: false } : p) // make sure this signee's placeholder is always ready to re-sign
+        (p) => {
+          if (role === "receiver") {
+            // For receivers, reset all unsigned placeholders
+            return !p.isSigned ? { ...p, isSigned: false } : p;
+          } else {
+            // For senders, reset placeholders they created
+            return p.signee === role ? { ...p, isSigned: false } : p;
+          }
+        }
       )
     );
   };
@@ -145,16 +153,7 @@ function PDFViewer(
     s.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Debug logging for signees
-  useEffect(() => {
-    console.log("Signees received:", signees);
-    console.log("Filtered signees:", filteredSignees);
-  }, [signees, filteredSignees]);
 
-  // Debug logging for modal state
-  useEffect(() => {
-    console.log("Assign modal state:", assignModal);
-  }, [assignModal]);
 
   // Add click outside handler for modal
   useEffect(() => {
@@ -162,7 +161,7 @@ function PDFViewer(
       if (assignModal?.visible) {
         const target = event.target as HTMLElement;
         if (!target.closest(`.${styles.assignModalContainer}`)) {
-          setAssignModal(null);
+          clearDragState();
         }
       }
     };
@@ -202,8 +201,6 @@ function PDFViewer(
 
   const handleMouseUp = (e: React.MouseEvent) => {
     if (dragRect && dragPage !== null) {
-      console.log("Opening assign modal:", { dragRect, dragPage }); // Debug log
-      console.log("Available signees:", signees); // Debug log
       setAssignModal({
         visible: true,
         page: dragPage,
@@ -214,12 +211,19 @@ function PDFViewer(
       });
 
       setSelectedAssignee(null);
+      
+      // Don't clear drag state here - keep it until placeholder is created
+      // setDragStart(null);
+      // setDragRect(null);
+      // setDragPage(null);
+      setDraggingEnabled(false);
+    } else {
+      // Only clear drag state if we're not opening the modal
+      setDragStart(null);
+      setDragRect(null);
+      setDragPage(null);
+      setDraggingEnabled(false);
     }
-
-    setDragStart(null);
-    setDragRect(null);
-    setDragPage(null);
-    setDraggingEnabled(false);
   };
 
   const assignSignee = (
@@ -227,7 +231,9 @@ function PDFViewer(
     signeeName: string,
     editingId?: number
   ) => {
-    console.log("assignSignee called with:", { signee, signeeName, editingId }); // Debug log
+    // Find the selected signee to get the userId
+    const selectedSignee = signees.find(s => s.id === signee);
+    const userId = selectedSignee?.userId;
     
     if (editingId) {
       setPlaceholders((prev) =>
@@ -240,12 +246,20 @@ function PDFViewer(
                 isSigned: false,
                 signedAt: null,
                 initials: null,
+                assignedToId: userId,
               }
             : ph
         )
       );
     } else {
-      if (!dragRect || dragPage === null) return;
+      if (!dragRect || dragPage === null) {
+        console.error("No dragRect or dragPage available for new placeholder");
+        console.error("dragRect:", dragRect);
+        console.error("dragPage:", dragPage);
+        console.error("assignModal:", assignModal);
+        alert("Error: Could not create placeholder. Please try dragging again.");
+        return;
+      }
 
       const newPlaceholder: Placeholder = {
         id: Date.now(),
@@ -259,15 +273,28 @@ function PDFViewer(
         isSigned: false,
         signedAt: null,
         initials: null,
+        assignedToId: userId, // Set the database user ID
       };
 
-      setPlaceholders((prev) => [...prev, newPlaceholder]);
-      setDragRect(null);
-      setDragPage(null);
+      // Add the new placeholder to the state
+      setPlaceholders((prev) => {
+        const updated = [...prev, newPlaceholder];
+        return updated;
+      });
     }
 
     setSelectedAssignee({ signee, signeeName });
     setAssignModal(null);
+    
+    // Clear drag state after creating placeholder
+    if (!editingId) {
+      setDragRect(null);
+      setDragPage(null);
+      setDragStart(null);
+      setDraggingEnabled(false);
+    }
+    
+
   };
 
   const applySignature = async () => {
@@ -285,7 +312,12 @@ function PDFViewer(
         return;
       }
 
-      const existingPdfBytes = await fetch(originalPdfUrl!).then((r) =>
+      if (!originalPdfUrl) {
+        console.error("No original PDF URL available");
+        return;
+      }
+      
+      const existingPdfBytes = await fetch(originalPdfUrl).then((r) =>
         r.arrayBuffer()
       );
 
@@ -319,98 +351,95 @@ function PDFViewer(
       });
       const timestamp = now.toLocaleString();
 
-      const signeeName =
-        signees.find((s) => s.id === role)?.name || role.toUpperCase();
-      const initials = signeeName
-        .split(" ")
-        .map((w) => w[0])
-        .join("")
-        .toUpperCase();
+      // For receivers, sign ALL their unsigned placeholders
+      const receiverPlaceholders = placeholders.filter(p => !p.isSigned);
+      if (receiverPlaceholders.length === 0) {
+        alert("No placeholders found to sign.");
+        return;
+      }
 
-      const updatedPlaceholders: Placeholder[] = placeholders.map((ph) => {
-        if (ph.signee === role && !ph.isSigned) {
-          const page = pages[ph.page];
-          const { width: pdfPageWidth, height: pdfPageHeight } = page.getSize();
+      console.log(`Applying signature to ${receiverPlaceholders.length} placeholders`);
 
-          // 🔥 Fix coordinates: convert from scaled screen space → actual PDF space
-          const pdfX = ph.x / scale;
-          const pdfY = pdfPageHeight - (ph.y + ph.height) / scale;
-          const pdfWidth = ph.width / scale;
-          const pdfHeight = ph.height / scale;
-          const padding = 6;
+      // Sign all unsigned placeholders for the receiver
+      receiverPlaceholders.forEach(placeholderToSign => {
+        const page = pages[placeholderToSign.page];
+        const { width: pdfPageWidth, height: pdfPageHeight } = page.getSize();
 
-          page.drawRectangle({
-            x: pdfX,
-            y: pdfY,
-            width: pdfWidth,
-            height: pdfHeight,
-            borderColor: rgb(0, 0, 0),
-            borderWidth: 1,
-            borderDashArray: [3, 3],
+        // Convert from scaled screen space → actual PDF space
+        const pdfX = placeholderToSign.x / scale;
+        const pdfY = pdfPageHeight - (placeholderToSign.y + placeholderToSign.height) / scale;
+        const pdfWidth = placeholderToSign.width / scale;
+        const pdfHeight = placeholderToSign.height / scale;
+        const padding = 6;
+
+        page.drawRectangle({
+          x: pdfX,
+          y: pdfY,
+          width: pdfWidth,
+          height: pdfHeight,
+          borderColor: rgb(0, 0, 0),
+          borderWidth: 1,
+          borderDashArray: [3, 3],
+        });
+
+        const halfWidth = pdfWidth / 2;
+        const imgBoxWidth = halfWidth - padding * 2;
+        const imgBoxHeight = pdfHeight - padding * 2;
+
+        const scaled = embeddedImage.scale(1);
+        const originalWidth = scaled.width;
+        const originalHeight = scaled.height;
+
+        const imageScale = Math.min(
+          imgBoxWidth / originalWidth,
+          imgBoxHeight / originalHeight
+        );
+        const scaledWidth = originalWidth * imageScale;
+        const scaledHeight = originalHeight * imageScale;
+
+        const imgX = pdfX + padding + (imgBoxWidth - scaledWidth) / 2;
+        const imgY = pdfY + padding + (imgBoxHeight - scaledHeight) / 2;
+
+        page.drawImage(embeddedImage, {
+          x: imgX,
+          y: imgY,
+          width: scaledWidth,
+          height: scaledHeight,
+        });
+
+        const textBlockX = pdfX + halfWidth + padding;
+        const signeeName = placeholderToSign.signeeName || "Unknown Signee";
+        const textLines = [
+          { text: "Digitally signed by", size: 8 },
+          { text: signeeName, size: 10 },
+          { text: `Date: ${dateOnly}`, size: 7 },
+          { text: `Time: ${timeOnly}`, size: 7 },
+        ];
+        const lineHeight = 12;
+        const totalTextHeight = textLines.length * lineHeight;
+        const textStartY =
+          pdfY + (pdfHeight + totalTextHeight) / 2 - lineHeight;
+
+        textLines.forEach((line, i) => {
+          const textWidth = font.widthOfTextAtSize(line.text, line.size);
+          const textX =
+            textBlockX + (halfWidth - padding * 2 - textWidth) / 2;
+          page.drawText(line.text, {
+            x: textX,
+            y: textStartY - i * lineHeight,
+            size: line.size,
+            font,
+            color: rgb(0, 0, 0),
           });
-
-          const halfWidth = pdfWidth / 2;
-          const imgBoxWidth = halfWidth - padding * 2;
-          const imgBoxHeight = pdfHeight - padding * 2;
-
-          const scaled = embeddedImage.scale(1);
-          const originalWidth = scaled.width;
-          const originalHeight = scaled.height;
-
-          // 🔥 Rename to avoid shadowing `scale` from outer scope
-          const imageScale = Math.min(
-            imgBoxWidth / originalWidth,
-            imgBoxHeight / originalHeight
-          );
-          const scaledWidth = originalWidth * imageScale;
-          const scaledHeight = originalHeight * imageScale;
-
-          const imgX = pdfX + padding + (imgBoxWidth - scaledWidth) / 2;
-          const imgY = pdfY + padding + (imgBoxHeight - scaledHeight) / 2;
-
-          page.drawImage(embeddedImage, {
-            x: imgX,
-            y: imgY,
-            width: scaledWidth,
-            height: scaledHeight,
-          });
-
-          const textBlockX = pdfX + halfWidth + padding;
-          const textLines = [
-            { text: "Digitally signed by", size: 8 },
-            { text: signeeName, size: 10 },
-            { text: `Date: ${dateOnly}`, size: 7 },
-            { text: `Time: ${timeOnly}`, size: 7 },
-          ];
-          const lineHeight = 12;
-          const totalTextHeight = textLines.length * lineHeight;
-          const textStartY =
-            pdfY + (pdfHeight + totalTextHeight) / 2 - lineHeight;
-
-          textLines.forEach((line, i) => {
-            const textWidth = font.widthOfTextAtSize(line.text, line.size);
-            const textX =
-              textBlockX + (halfWidth - padding * 2 - textWidth) / 2;
-            page.drawText(line.text, {
-              x: textX,
-              y: textStartY - i * lineHeight,
-              size: line.size,
-              font,
-              color: rgb(0, 0, 0),
-            });
-          });
-
-          return {
-            ...ph,
-            isSigned: true,
-            signedAt: timestamp,
-            initials,
-          };
-        }
-        return ph;
+        });
       });
 
-      setPlaceholders(updatedPlaceholders);
+      // Update ALL placeholders as signed
+      setPlaceholders(prev => prev.map(p => 
+        !p.isSigned 
+          ? { ...p, isSigned: true, signedAt: timestamp }
+          : p
+      ));
 
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([new Uint8Array(pdfBytes)], {
@@ -518,6 +547,22 @@ function PDFViewer(
 
   const [resizingEnabled, setResizingEnabled] = useState(true);
 
+  // Function to open signature modal for receivers
+  const openSignatureModal = () => {
+    if (role === "receiver") {
+      setModalOpen(true);
+    }
+  };
+
+  // Function to clear drag state when modal is closed without creating placeholder
+  const clearDragState = () => {
+    setDragStart(null);
+    setDragRect(null);
+    setDragPage(null);
+    setDraggingEnabled(false);
+    setAssignModal(null);
+  };
+
   if (!pdfUrl) return <p>Please upload a PDF document.</p>;
 
   return (
@@ -552,6 +597,14 @@ function PDFViewer(
                   // Offset by half of the placeholder dimensions to center it
                   const centeredX = dropX - MIN_WIDTH / 2;
                   const centeredY = dropY - MIN_HEIGHT / 2;
+
+                  console.log("Drop event - setting drag state:", { 
+                    page: i, 
+                    x: centeredX, 
+                    y: centeredY, 
+                    width: MIN_WIDTH, 
+                    height: MIN_HEIGHT 
+                  });
 
                   setDragPage(i);
                   setDragRect({
@@ -591,15 +644,7 @@ function PDFViewer(
 
               {(!hasSigned && viewMode === "edit") &&
                 placeholders
-                  .filter((ph) => {
-                    if (ph.page !== i) return false;
-                    if (
-                      role === "signee" &&
-                      selectedAssignee?.signee !== ph.signee
-                    )
-                      return false;
-                    return true;
-                  })
+                  .filter((ph) => ph.page === i)
                   .map((ph) => (
                     <Rnd
                       size={{
@@ -821,25 +866,30 @@ function PDFViewer(
             position: 'fixed',
             left: Math.min(
               Math.max(
-                assignModal.x + MIN_WIDTH + 12,
+                (assignModal.x * scale) + 12,
                 10
               ),
               window.innerWidth - 220
             ),
             top: Math.min(
-              Math.max(assignModal.y, 10),
-              window.innerHeight - 200
+              Math.max((assignModal.y * scale), 10),
+              window.innerHeight - 300
             ),
             zIndex: 1000,
+            minWidth: '200px',
+            maxWidth: '250px',
           }}
           onClick={(e) => {
             e.stopPropagation();
-            console.log("Modal container clicked"); // Debug log
+          }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
           }}
         >
           <h4 style={{ marginBottom: "8px" }}>Assign Signee</h4>
+          
           <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
-            Available signees: {filteredSignees.length}
+            {filteredSignees.length} signee{filteredSignees.length !== 1 ? 's' : ''} available
           </div>
 
           <input
@@ -870,16 +920,18 @@ function PDFViewer(
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log("Signee clicked:", sig); // Debug log
+                  
                   assignSignee(
                     sig.id,
                     sig.name,
                     assignModal?.existingId
                   );
                 }}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                }}
                 className={styles.signees}
                 style={{ cursor: 'pointer' }}
-                onMouseDown={(e) => e.stopPropagation()}
               >
                 {sig.name}
               </div>
@@ -891,11 +943,37 @@ function PDFViewer(
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              setAssignModal(null);
+              clearDragState();
             }}
             className={styles.cancelAssignSigneeButton}
           >
             Cancel
+          </button>
+        </div>
+      )}
+
+      {/* Signature button for receivers */}
+      {role === "receiver" && placeholders.length > 0 && (
+        <div style={{ 
+          position: 'fixed', 
+          bottom: '20px', 
+          right: '20px', 
+          zIndex: 1000 
+        }}>
+          <button
+            onClick={() => setModalOpen(true)}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '16px',
+              cursor: 'pointer',
+              boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+            }}
+          >
+            Sign Document
           </button>
         </div>
       )}
