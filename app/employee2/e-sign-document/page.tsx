@@ -248,11 +248,25 @@ export default function ESignDocument() {
             
             if (uploadResponse.ok) {
               const uploadResult = await uploadResponse.json();
-              alert('Signature placeholders saved successfully! Document with placeholders has been saved. Signees will be notified.');
               
-              // Store the new file URL for CreateNewDocument to access
+              // Store the new file URL and additional information for the redirect
               localStorage.setItem('documentWithPlaceholdersUrl', uploadResult.fileUrl);
               localStorage.setItem('documentWithPlaceholdersTitle', documentTitle || 'Untitled Document');
+              localStorage.setItem('documentWithPlaceholdersId', documentId);
+              localStorage.setItem('documentWithPlaceholdersType', documentType || 'Unknown Type');
+              localStorage.setItem('documentWithPlaceholdersDepartment', department || 'Unknown Department');
+              localStorage.setItem('documentWithPlaceholdersApprovers', approvers || '');
+              localStorage.setItem('documentWithPlaceholdersDescription', ''); // No description in URL params
+              
+              // Store placeholder information for display
+              localStorage.setItem('documentWithPlaceholdersData', JSON.stringify(placeholdersToSave));
+              
+              alert('Signature placeholders saved successfully! Document with placeholders has been saved. Signees will be notified. Redirecting back to document page...');
+              
+              // Close the current tab and redirect back to the original page
+              setTimeout(() => {
+                window.close();
+              }, 2000);
             } else {
               throw new Error('Failed to save document with placeholders');
             }
