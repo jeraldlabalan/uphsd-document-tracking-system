@@ -1,93 +1,108 @@
-// import { verify } from "jsonwebtoken";
-// import { cookies } from "next/headers";
-// import { db } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { verify } from "jsonwebtoken";
+import { db } from "@/lib/db";
 
-// export async function fetchAdminDocumentOverview() {
-//   const cookieStore = await cookies();
-//   const token = cookieStore.get("session")?.value;
+const JWT_SECRET = process.env.JWT_SECRET!;
 
-//   if (!token) throw new Error("Not authenticated");
+type JwtPayload = {
+  UserID: number;
+  role?: string;
+  iat: number;
+  exp: number;
+};
 
-//   const decoded = verify(token, process.env.JWT_SECRET!) as { role: string };
+function requireAdmin(token?: string | null): JwtPayload {
+  if (!token) {
+    throw new Error("Not authenticated");
+  }
+  const decoded = verify(token, JWT_SECRET) as JwtPayload;
+  if (!decoded || decoded.role !== "Admin") {
+    throw new Error("Not authorized");
+  }
+  return decoded;
+}
 
-//   if (decoded.role !== "Admin") throw new Error("Not authorized");
+export async function GET(req: NextRequest) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("session")?.value || null;
+    requireAdmin(token);
 
-//   const [
-//     totalDocuments,
-//     documentsByType,
-//     recentDocuments,
-//     documentsPerDepartment,
-//     deletedDocuments,
-//     activeDocuments,
-//   ] = await Promise.all([
-//     db.document.count(),
+    // Summary and listing
+    const [totalDocuments, activeDocuments, deletedDocuments, recentDocuments] = await Promise.all([
+      db.document.count(),
+      db.document.count({ where: { IsDeleted: false } }),
+      db.document.count({ where: { IsDeleted: true } }),
+      db.document.findMany({
+        where: { IsDeleted: false },
+        orderBy: { CreatedAt: "desc" },
+        include: {
+          Creator: { select: { FirstName: true, LastName: true } },
+          Department: { select: { Name: true } },
+          DocumentType: { select: { TypeName: true } },
+        },
+      }),
+    ]);
 
-//     db.document.groupBy({
-//       by: ["DocumentType"],
-//       _count: true,
-//       where: { IsDeleted: false },
-//     }),
+    const docs = recentDocuments.map((doc) => ({
+      id: doc.DocumentID,
+      title: doc.Title,
+      type: doc.DocumentType?.TypeName ?? "Unknown",
+      department: doc.Department?.Name ?? "Unassigned",
+      creator: `${doc.Creator?.FirstName ?? ""} ${doc.Creator?.LastName ?? ""}`.trim(),
+      status: doc.Status ?? "Unknown",
+      dateCreated: doc.CreatedAt.toISOString().split("T")[0],
+    }));
 
-//     db.document.findMany({
-//       where: { IsDeleted: false },
-//       orderBy: { CreatedAt: "desc" },
-//       take: 5,
-//       include: {
-//         Creator: {
-//           select: {
-//             FirstName: true,
-//             LastName: true,
-//           },
-//         },
-//         Department: {
-//           select: {
-//             Name: true,
-//           },
-//         },
-//       },
-//     }),
+    return NextResponse.json({
+      summary: {
+        totalDocuments,
+        activeDocuments,
+        deletedDocuments,
+      },
+      documents: docs,
+    });
+  } catch (error: any) {
+    const message = error?.message || "Server error";
+    const status = message.includes("Not authenticated") ? 401 : message.includes("Not authorized") ? 403 : 500;
+    return NextResponse.json({ message }, { status });
+  }
+}
 
-//     db.document.groupBy({
-//       by: ["DepartmentID"],
-//       _count: { _all: true },
-//       where: { IsDeleted: false },
-//     }),
+export async function PATCH(req: NextRequest) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("session")?.value || null;
+    const decoded = requireAdmin(token);
 
-//     db.document.count({ where: { IsDeleted: true } }),
+    const body = await req.json();
+    const documentId = Number(body?.documentId);
+    if (!documentId) {
+      return NextResponse.json({ message: "documentId is required" }, { status: 400 });
+    }
 
-//     db.document.count({ where: { IsDeleted: false } }),
-//   ]);
+    // Soft delete the document
+    const updated = await db.document.update({
+      where: { DocumentID: documentId },
+      data: { IsDeleted: true },
+    });
 
-//   // Map departmentID to names (e.g. in a frontend or extend here by joining if needed)
-//   const departmentMap = await db.department.findMany({
-//     select: { DepartmentID: true, Name: true },
-//   });
+    // Log activity
+    await db.activityLog.create({
+      data: {
+        PerformedBy: decoded.UserID,
+        Action: "Deleted Document",
+        TargetType: "Document",
+        Remarks: `Soft-deleted document ID ${documentId} (${updated.Title}) from admin overview`,
+        TargetID: documentId,
+      },
+    });
 
-//   const departmentLookup = Object.fromEntries(
-//     departmentMap.map((dep) => [dep.DepartmentID, dep.Name])
-//   );
-
-//   return {
-//     totalDocuments,
-//     documentTypes: documentsByType.map((doc) => ({
-//       type: doc.DocumentType ?? "Unknown",
-//       count: doc._count,
-//     })),
-//     recentDocuments: recentDocuments.map((doc) => ({
-//       id: doc.DocumentID,
-//       title: doc.Title,
-//       type: doc.Type,
-//       department: doc.Department?.Name || "N/A",
-//       createdBy: `${doc.Creator.FirstName} ${doc.Creator.LastName}`,
-//       createdAt: doc.CreatedAt,
-//     })),
-//     documentsPerDepartment: documentsPerDepartment.map((entry) => ({
-//       department: entry.DepartmentID !== null ? (departmentLookup[entry.DepartmentID] || "Unassigned") : "Unassigned",
-//       count: entry._count._all,
-//     })),
-//     statusCount: {
-//       deleted: deletedDocuments,
-//       active: activeDocuments,
-//     },
-//   };
-// }
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    const message = error?.message || "Server error";
+    const status = message.includes("Not authenticated") ? 401 : message.includes("Not authorized") ? 403 : 500;
+    return NextResponse.json({ message }, { status });
+  }
+}

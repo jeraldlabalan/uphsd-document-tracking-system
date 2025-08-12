@@ -117,7 +117,8 @@ export default function ReceiveDocuments() {
       // ✅ Auto-close the modal
       setSelectedDoc(null);
       // ✅ Add to approved docs state
-      setApprovedDocs((prev) => [...prev, requestId]); 
+      setApprovedDocs((prev) => [...prev, requestId]);    
+      window.location.reload();
     } else {
       toast.error(data.error || "Failed to approve document.");
     }

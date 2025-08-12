@@ -15,61 +15,69 @@ export async function GET(req: Request) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { UserID: number };
     const userID = decoded.UserID;
 
-    // Step 1: Fetch document requests assigned to this user (Recipient)
-    const requests = await db.documentRequest.findMany({
+    // My Docs: only documents CREATED by this user
+    const documents = await db.document.findMany({
       where: {
-        RequestedByID: userID,
+        CreatedBy: userID,
         IsDeleted: false,
       },
       include: {
-        Document: {
-          include: {
-            DocumentType: true,
-            Department: true,
-            Creator: {
-              select: {
-                FirstName: true,
-                LastName: true,
-              },
-            },
-          },
-        },
-        Recipient: {
+        DocumentType: true,
+        Department: true,
+        Creator: {
           select: {
             FirstName: true,
             LastName: true,
           },
         },
-        Status: true,
+        Versions: {
+          where: { IsDeleted: false },
+          orderBy: { CreatedAt: "desc" },
+          take: 1, // latest version only
+          select: { FilePath: true },
+        },
+        Requests: {
+          where: { IsDeleted: false },
+          include: {
+            Recipient: { select: { FirstName: true, LastName: true } },
+            Status: true,
+          },
+          orderBy: { RequestedAt: "desc" },
+        },
       },
-      orderBy: {
-        RequestedAt: "desc",
-      },
+      orderBy: { CreatedAt: "desc" },
     });
 
-    if (!requests) {
-      return NextResponse.json({ error: "No documents found" }, { status: 404 });
+    if (!documents || documents.length === 0) {
+      return NextResponse.json({ docs: [] }, { status: 200 });
     }
 
-    // Step 2: Format response
-    const docs = requests.map((req) => ({
-      id: req.RequestID,
-      name: req.Document?.Title ?? "Untitled",
-      type: req.Document?.DocumentType?.TypeName ?? "Unknown",
-      department: req.Document?.Department?.Name ?? "Unknown",
-      status: req.Status?.StatusName ?? "Unknown",
-      date: req.RequestedAt.toISOString().split("T")[0],
-      creator: `${req.Document?.Creator?.FirstName || "Unknown"} ${req.Document?.Creator?.LastName || "Unknown"}`,
-      preview: `/public/uploads/files/${req.Document?.Title ?? ""}`,
-      recipient: `${req.Recipient?.FirstName || "Unknown"} ${req.Recipient?.LastName || "Unknown"}`,
-      remarks: req.Remarks ?? "No Remarks",
-    }));
+    // Map to unique docs (already unique per Document), derive status from latest request
+    const docs = documents.map((doc: any) => {
+      const latestFilepath = doc.Versions?.[0]?.FilePath ?? "";
+      const primaryRequest = doc.Requests?.[0]; // latest request
 
+      return {
+        id: doc.DocumentID, // for edit
+        requestId: primaryRequest?.RequestID ?? null,
+        documentId: doc.DocumentID,
+        name: doc.Title ?? "Untitled",
+        type: doc.DocumentType?.TypeName ?? "Unknown",
+        department: doc.Department?.Name ?? "Unknown",
+        status: primaryRequest?.Status?.StatusName ?? "Unknown",
+        date: doc.CreatedAt.toISOString().split("T")[0],
+        creator: `${doc.Creator?.FirstName || "Unknown"} ${doc.Creator?.LastName || "Unknown"}`,
+        preview: latestFilepath ? `/${latestFilepath}` : "",
+        recipient: primaryRequest?.Recipient
+          ? `${primaryRequest.Recipient.FirstName || "Unknown"} ${primaryRequest.Recipient.LastName || "Unknown"}`
+          : "N/A",
+        remarks: primaryRequest?.Remarks ?? "No Remarks",
+      };
+    });
 
-    console.log("My documents:", docs);
-    return NextResponse.json({docs}, { status: 200 });
+    return NextResponse.json({ docs }, { status: 200 });
   } catch (error) {
-    console.error("Error loading received documents:", error);
+    console.error("Error loading my documents:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

@@ -5,6 +5,8 @@ import { FileUp, Plus, X } from "lucide-react";
 import EmpHeader from "@/components/shared/empHeader";
 import Link from "next/link";
 import Select, { SingleValue } from "react-select";
+import { useRouter } from "next/navigation"; // ✅ Correct import for App Router
+
 
 type Approver = {
   UserID: number;
@@ -15,13 +17,12 @@ type Approver = {
 export default function CreateNewDocument() {
   const [openSelect1, setOpenSelect1] = useState(false); // Document Classification
   const [openSelect2, setOpenSelect2] = useState(false); // Department
-
+  const router = useRouter();
   const [selectedType, setSelectedType] = useState<string>(
     "Select Document Type"
   );
 
   const [selectedTypeID, setSelectedTypeID] = useState<number | null>(null);
-
 
   const [department, setDepartment] = useState<string>("Select Department");
 
@@ -45,7 +46,7 @@ export default function CreateNewDocument() {
     console.log("Selected Department:", name, "ID:", id); // Log selected department
     setDepartment(name); // Update department value
     setDepartmentID(id); // Update department ID
-
+  };
 
   useEffect(() => {
     console.log("Open Select2 Status:", openSelect2); // Log current state of the dropdown
@@ -81,9 +82,13 @@ export default function CreateNewDocument() {
   const [files, setFiles] = useState<{ file: File; requireEsign: boolean }[]>(
     []
   );
-
   const [approvalRequired, setApprovalRequired] = useState(false);
   const [showDocuments, setShowDocuments] = useState(false);
+
+  // Add loading, error, and success states for form submission
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const selectOptions = approvers.map((user) => ({
     value: user.UserID,
@@ -151,17 +156,17 @@ export default function CreateNewDocument() {
 
   // Check for e-signed documents when page loads
   useEffect(() => {
-    const eSignedUrl = localStorage.getItem('eSignedDocumentUrl');
-    const eSignedTitle = localStorage.getItem('eSignedDocumentTitle');
-    
+    const eSignedUrl = localStorage.getItem("eSignedDocumentUrl");
+    const eSignedTitle = localStorage.getItem("eSignedDocumentTitle");
+
     if (eSignedUrl && eSignedTitle) {
       // Show success message
       alert(`E-signed document "${eSignedTitle}" has been saved successfully!`);
-      
+
       // Clear localStorage
-      localStorage.removeItem('eSignedDocumentUrl');
-      localStorage.removeItem('eSignedTitle');
-      
+      localStorage.removeItem("eSignedDocumentUrl");
+      localStorage.removeItem("eSignedTitle");
+
       // In a real implementation, you would:
       // 1. Update the form to show the e-signed document
       // 2. Replace the original file with the e-signed version
@@ -171,23 +176,29 @@ export default function CreateNewDocument() {
 
   // Check for documents with placeholders when page loads
   useEffect(() => {
-    const savedDocumentUrl = localStorage.getItem('documentWithPlaceholdersUrl');
-    const savedDocumentTitle = localStorage.getItem('documentWithPlaceholdersTitle');
-    
+    const savedDocumentUrl = localStorage.getItem(
+      "documentWithPlaceholdersUrl"
+    );
+    const savedDocumentTitle = localStorage.getItem(
+      "documentWithPlaceholdersTitle"
+    );
+
     if (savedDocumentUrl && savedDocumentTitle) {
       // Clear the localStorage
-      localStorage.removeItem('documentWithPlaceholdersUrl');
-      localStorage.removeItem('documentWithPlaceholdersTitle');
-      
+      localStorage.removeItem("documentWithPlaceholdersUrl");
+      localStorage.removeItem("documentWithPlaceholdersTitle");
+
       // Set the saved document state to display in UI
       setSavedDocument({
         title: savedDocumentTitle,
         url: savedDocumentUrl,
-        status: "Awaiting Signatures"
+        status: "Awaiting Signatures",
       });
-      
+
       // Show success message with more details
-      alert(`Document "${savedDocumentTitle}" has been saved with signature placeholders!\n\nWhat happens next:\n1. The document is now ready for signees to review\n2. Signees will be notified automatically\n3. They can access the document through their dashboard\n4. Once all signatures are complete, the document will be fully processed`);
+      alert(
+        `Document "${savedDocumentTitle}" has been saved with signature placeholders!\n\nWhat happens next:\n1. The document is now ready for signees to review\n2. Signees will be notified automatically\n3. They can access the document through their dashboard\n4. Once all signatures are complete, the document will be fully processed`
+      );
     }
   }, []);
 
@@ -208,40 +219,64 @@ export default function CreateNewDocument() {
     setApproverIDs(newApproverIDs); // Update the state with the new array
   };
 
-  const handleSubmit = async (e: { preventDefault: () => void }) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const payload = {
-      Title: title,
-      Description: description,
-      TypeID: type, // Use document type ID
-      FilePath: filePath,
-      DepartmentID: departmentID, // Use department ID
-      ApproverIDs: approverIDs, // Array of approver IDs
-    };
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
 
     try {
-      // Make the POST request to the API
-      const res = await fetch("/api/employee/create-document", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json", // Set content type to JSON
-        },
-        body: JSON.stringify(payload), // Send data as JSON
+      if (!files) {
+        setError("File is required");
+        setLoading(false);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("Title", title);
+      formData.append("TypeID", selectedTypeID?.toString() ?? "");
+      formData.append("Description", description);
+      formData.append("DepartmentID", departmentID?.toString() ?? "");
+      formData.append(
+        "ApproverIDs",
+        JSON.stringify(approverIDs.filter((id) => id !== 0))
+      );
+
+      files.forEach((item) => {
+        formData.append("files", item.file);
       });
 
-      // Handle the response
-      const data = await res.json(); // Parse response as JSON
-
-      if (res.ok) {
-        alert("Document created successfully!");
-        // Optionally, clear the form or navigate elsewhere
-      } else {
-        alert(data.error || "Failed to create document"); // Show error from the response
+      if (approvalRequired) {
+        formData.append(
+          "ApproverIDs",
+          JSON.stringify(approverIDs.filter((id) => id !== 0))
+        );
       }
-    } catch (error) {
-      console.error("Error creating document:", error);
-      alert("An error occurred while creating the document. Please try again."); // Fallback error message
+
+      const res = await fetch("/api/employee/create-document", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to upload document");
+      }
+
+      setSuccess(true);
+      setTitle("");
+      setDescription("");
+      setSelectedTypeID(0);
+      setDepartmentID(0);
+      setFiles([]);
+      setApprovers([]);
+      console.log("document success")
+      alert("Document successfully created!");
+      router.push("/employee2/dashboard")
+    } catch (err: any) {
+      setError(err.message || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -254,41 +289,46 @@ export default function CreateNewDocument() {
 
   // Handle opening e-sign interface for a specific file
   const handleOpenESign = async (file: File, index: number) => {
-    if (file.type !== 'application/pdf') {
-      alert('Only PDF files are supported for e-signing');
+    if (file.type !== "application/pdf") {
+      alert("Only PDF files are supported for e-signing");
       return;
     }
 
     // Validate required fields before creating document
     if (!title.trim()) {
-      alert('Please enter a document title before proceeding with e-signing.');
+      alert("Please enter a document title before proceeding with e-signing.");
       return;
     }
 
     if (!selectedTypeID) {
-      alert('Please select a document type before proceeding with e-signing.');
+      alert("Please select a document type before proceeding with e-signing.");
       return;
     }
 
     if (!departmentID) {
-      alert('Please select a department before proceeding with e-signing.');
+      alert("Please select a department before proceeding with e-signing.");
       return;
     }
 
-    if (approverIDs.filter(id => id !== 0).length === 0) {
-      alert('Please select at least one approver before proceeding with e-signing.');
+    if (approverIDs.filter((id) => id !== 0).length === 0) {
+      alert(
+        "Please select at least one approver before proceeding with e-signing."
+      );
       return;
     }
 
     // First, create the document in the database
     try {
       const formData = new FormData();
-      formData.append("file", file);
-      formData.append("Title", title.trim());
-      formData.append("Description", description || '');
-      formData.append("TypeID", selectedTypeID.toString());
-      formData.append("DepartmentID", departmentID.toString());
-      formData.append("ApproverIDs", JSON.stringify(approverIDs.filter(id => id !== 0)));
+      files.forEach((item) =>
+        formData.append("files", item.file, item.file.name)
+      ); // "files" must match backend
+      formData.append("Title", title);
+      formData.append("Description", description);
+      formData.append("TypeID", type.toString());
+      formData.append("DepartmentID", departmentID?.toString() ?? "");
+      const filteredApprovers = approverIDs.filter((id) => id !== 0);
+      formData.append("ApproverIDs", JSON.stringify(filteredApprovers));
 
       const res = await fetch("/api/employee/create-document", {
         method: "POST",
@@ -305,15 +345,17 @@ export default function CreateNewDocument() {
 
       // Create blob URL for the file
       const fileUrl = URL.createObjectURL(file);
-      
+
       // Prepare approvers data with proper user IDs for database
-      const selectedApprovers = approverIDs.filter(id => id !== 0);
-      const approversData = selectedApprovers.map(id => {
-        const approver = approvers.find(a => a.UserID === id);
+      const filterApprovers = approverIDs.filter((id) => id !== 0);
+      const approversData = filterApprovers.map((id) => {
+        const approver = approvers.find((a) => a.UserID === id);
         return {
           id: id.toString(), // Use actual user ID
           userId: id, // Database user ID
-          name: approver ? `${approver.FirstName} ${approver.LastName}` : `Approver ${id}`
+          name: approver
+            ? `${approver.FirstName} ${approver.LastName}`
+            : `Approver ${id}`,
         };
       });
 
@@ -321,19 +363,20 @@ export default function CreateNewDocument() {
       const params = new URLSearchParams({
         docId: documentId.toString(),
         title: title.trim(),
-        type: selectedType || 'Unknown Type',
-        department: department || 'Unknown Department',
+        type: selectedType || "Unknown Type",
+        department: department || "Unknown Department",
         approvers: encodeURIComponent(JSON.stringify(approversData)),
         file: fileUrl,
-        userRole: 'sender', // The person creating the document is automatically the sender
+        userRole: "sender", // The person creating the document is automatically the sender
       });
 
       // Open e-sign interface in new tab with the document ID
-      window.open(`/employee2/e-sign-document?${params.toString()}`, '_blank');
-      
+      window.open(`/employee2/e-sign-document?${params.toString()}`, "_blank");
     } catch (error) {
-      console.error('Error creating document:', error);
-      alert(`Failed to create document: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error("Error creating document:", error);
+      alert(
+        `Failed to create document: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     }
   };
 
@@ -481,8 +524,9 @@ export default function CreateNewDocument() {
                   {departments.map((dep) => (
                     <li
                       key={dep.DepartmentID}
-                      onClick={() => handleDepartmentSelect(dep.Name, dep.DepartmentID)}
-
+                      onClick={() =>
+                        handleDepartmentSelect(dep.Name, dep.DepartmentID)
+                      }
                     >
                       {dep.Name} {/* Display department name */}
                     </li>
@@ -513,9 +557,13 @@ export default function CreateNewDocument() {
                   <div key={index} className={styles.inputGroup}>
                     <div className={styles.fileItem}>
                       <div className={styles.fileInfo}>
-                        <span className={styles.fileName}>{item.file.name}</span>
+                        <span className={styles.fileName}>
+                          {item.file.name}
+                        </span>
                         {item.requireEsign && (
-                          <span className={styles.eSignBadge}>E-Sign Required</span>
+                          <span className={styles.eSignBadge}>
+                            E-Sign Required
+                          </span>
                         )}
                       </div>
 
@@ -540,7 +588,7 @@ export default function CreateNewDocument() {
                         >
                           <X size={20} />
                         </button>
-                        
+
                         {item.requireEsign && (
                           <button
                             type="button"
@@ -575,7 +623,9 @@ export default function CreateNewDocument() {
                     <button
                       type="button"
                       onClick={() => {
-                        const input = document.querySelector(`.${styles.hiddenInput}`) as HTMLInputElement;
+                        const input = document.querySelector(
+                          `.${styles.hiddenInput}`
+                        ) as HTMLInputElement;
                         if (input) {
                           input.click();
                         }
@@ -709,8 +759,19 @@ export default function CreateNewDocument() {
             <h3>Document Status</h3>
             <div className={styles.statusCard}>
               <h4>{savedDocument.title}</h4>
-              <p><strong>Status:</strong> {savedDocument.status}</p>
-              <p><strong>File:</strong> <a href={savedDocument.url} target="_blank" rel="noopener noreferrer">View Document</a></p>
+              <p>
+                <strong>Status:</strong> {savedDocument.status}
+              </p>
+              <p>
+                <strong>File:</strong>{" "}
+                <a
+                  href={savedDocument.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View Document
+                </a>
+              </p>
               <div className={styles.statusInfo}>
                 <p>✅ Document has been saved with signature placeholders</p>
                 <p>📧 Signees have been notified automatically</p>

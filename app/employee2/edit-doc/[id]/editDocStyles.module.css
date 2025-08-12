@@ -65,13 +65,19 @@
 }
 
 .inputField,
-.selectField,
-.textareaField {
-  padding: 0.6rem;
-  border: 1px solid #800000;
-  border-radius: 5px;
+.selectField {
+  height: 40px;
+  padding-inline: min(3vw, 1rem);
+  border: 1px solid var(--color-maroon);
+  border-radius: 8px;
   font-size: 1rem;
   width: 100%;
+}
+
+.textareaField  {
+    padding: min(3vw, 1rem);
+    border-radius: 8px;
+    border: 1px solid var(--color-maroon);
 }
 
 .selectField option {
@@ -432,6 +438,23 @@
   word-break: break-word;
 }
 
+.fileInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-grow: 1;
+}
+
+.eSignBadge {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  align-self: flex-start;
+}
+
 .fileActions {
   display: flex;
   align-items: center;
@@ -617,4 +640,162 @@
     padding: 0.4rem;
     font-size: 0.9rem;
   }
+}
+
+
+/* CUSTOM SELECT */
+.wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.display {
+  height: 40px;
+  padding-inline: min(3%, 1rem);
+  border: 1px solid var(--color-maroon);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.display.active {
+  border: 2px solid var(--color-maroon);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom-left-radius: 0;
+  border-top-left-radius: 8px;
+  border-bottom-right-radius: 0;
+  border-top-right-radius: 8px;
+  border-bottom: none;
+}
+
+.arrow {
+  transition: transform 0.25s ease;
+  color: var(--color-maroon);
+}
+
+.arrow.open {
+  transform: rotate(180deg);
+}
+
+.dropdown {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  background: white;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  overflow: hidden;
+  transform-origin: top;
+  transform: scaleY(0);
+  opacity: 0;
+  max-height: 0;
+  transition: transform 0.25s ease, opacity 0.25s ease, max-height 0.25s ease;
+  z-index: 1000;
+  overflow-y: auto;
+  border: 2px solid var(--color-maroon);
+  border-top: none;
+}
+
+.dropdown.open {
+  transform: scaleY(1);
+  opacity: 1;
+  max-height: 250px;
+}
+
+.dropdown li {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.dropdown li:hover {
+  background-color: var(--color-maroon);
+  color: white;
+}
+
+/* E-Sign Button Styles */
+.eSignBtn {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.eSignBtn:hover {
+  background-color: #8b0000;
+  transform: translateY(-2px);
+}
+
+/* Document Status Section */
+.documentStatus {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 10px;
+  border: 1px solid #e9ecef;
+}
+
+.documentStatus h3 {
+  color: var(--color-maroon);
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.statusCard {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.statusCard h4 {
+  color: var(--color-maroon);
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+
+.statusCard p {
+  margin-bottom: 0.5rem;
+  color: #495057;
+}
+
+.statusCard a {
+  color: var(--color-maroon);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.statusCard a:hover {
+  text-decoration: underline;
+}
+
+.statusInfo {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #e8f5e8;
+  border-radius: 6px;
+  border-left: 4px solid #28a745;
+}
+
+.statusInfo p {
+  margin-bottom: 0.5rem;
+  color: #155724;
+  font-size: 0.9rem;
+}
+
+.statusInfo p:last-child {
+  margin-bottom: 0;
 }

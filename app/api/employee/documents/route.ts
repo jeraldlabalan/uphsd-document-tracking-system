@@ -17,52 +17,80 @@ export async function GET(req: Request) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { UserID: number };
     const userID = decoded.UserID;
 
-    // Step 3: Fetch document requests for the user
-    const requests = await db.documentRequest.findMany({
-
-      where: { RequestedByID: userID, IsDeleted: false },
+    // Step 3: Fetch documents where user is creator OR approver
+    const documents = await db.document.findMany({
+      where: {
+        OR: [
+          { CreatedBy: userID }, // User is the creator
+          {
+            Requests: {
+              some: {
+                RecipientUserID: userID, // User is an approver
+                IsDeleted: false,
+              },
+            },
+          },
+        ],
+        IsDeleted: false,
+      },
       include: {
-        Document: {
+        DocumentType: true,
+        Department: true,
+        Creator: {
+          select: {
+            FirstName: true,
+            LastName: true,
+          },
+        },
+        Versions: {
+          where: { IsDeleted: false },
+          orderBy: { VersionNumber: "desc" },
+          take: 1,
+        },
+        Requests: {
+          where: { IsDeleted: false },
           include: {
-            DocumentType: true,
-            Department: true,
-            Creator: {
+            Recipient: {
               select: {
                 FirstName: true,
                 LastName: true,
               },
             },
+            Status: true,
           },
+          orderBy: { RequestedAt: "desc" },
         },
-        Status: true,
       },
       orderBy: {
-        RequestedAt: "desc",
+        CreatedAt: "desc",
       },
     });
-    if (!requests) {
-      return NextResponse.json({ error: "No documents found" }, { status: 404 });
+
+    if (!documents || documents.length === 0) {
+      return NextResponse.json({ docs: [] }, { status: 200 });
     }
 
- const docs = requests.map((req) => ({
-  id: req.RequestID,
-  name: req.Document?.Title ?? "Unknown", // ✅ renamed to `name`
-  type: req.Document?.DocumentType?.TypeName ?? "Unknown", // ✅ renamed to `type`
-  status: req.Status?.StatusName ?? "Unknown",
-  date: req.RequestedAt.toISOString().split("T")[0],
-  creator: `${req.Document?.Creator?.FirstName || "Unknown"} ${req.Document?.Creator?.LastName || "Unknown"}`,
-  preview: `/uploads/${req.Document?.Title ?? ""}`, // ✅ optional
-}));
-
-    // Step 4: Format response data
-//     const docs = requests.map((req: any) => ({
-//       id: req.RequestID,
-//       title: req.Document?.Title ?? "Unknown",
-//       fileType: req.Document?.Type ?? "Unknown",
-//       status: req.Status?.StatusName ?? "Unknown",
-//       date: req.RequestedAt.toISOString(),
-//     }));
-
+    // Step 4: Format response - now each document appears only once
+    const docs = documents.map((doc: any) => {
+      const latestFilepath = doc.Versions?.[0]?.FilePath ?? "";
+      
+      // Find the user's role in this document (creator or approver)
+      const isCreator = doc.CreatedBy === userID;
+      const userRequest = doc.Requests?.find((req: any) => req.RecipientUserID === userID);
+      
+      return {
+        id: doc.DocumentID, // Use DocumentID for editing
+        documentId: doc.DocumentID, // Explicit DocumentID
+        requestId: userRequest?.RequestID, // Keep RequestID for other operations
+        name: doc.Title ?? "Untitled",
+        type: doc.DocumentType?.TypeName ?? "Unknown",
+        status: userRequest?.Status?.StatusName ?? "Unknown",
+        date: doc.CreatedAt.toISOString().split("T")[0],
+        creator: `${doc.Creator?.FirstName || "Unknown"} ${doc.Creator?.LastName || "Unknown"}`,
+        preview: latestFilepath ? `/${latestFilepath}` : "",
+        userRole: isCreator ? "creator" : "approver", // Track user's role
+      };
+    });
 
     const total = docs.length;
     const inProcess = docs.filter((doc) => doc.status === "In Process").length;
