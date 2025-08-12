@@ -85,15 +85,15 @@ export default function UserManagement() {
     const searchLower = search.toLowerCase();
 
     const searchableFields = [
-      user.id.toString(),
-      user.name.toLowerCase(),
-      user.email.toLowerCase(),
-      user.mobile.toLowerCase(),
-      user.sex.toLowerCase(),
-      user.employeeId.toLowerCase(),
-      user.department.toLowerCase(),
-      user.position.toLowerCase(),
-      user.role.toLowerCase(),
+      user.id?.toString() ?? "",
+      user.name?.toLowerCase?.() ?? "",
+      user.email?.toLowerCase?.() ?? "",
+      user.mobile?.toLowerCase?.() ?? "",
+      user.sex?.toLowerCase?.() ?? "",
+      user.employeeId?.toLowerCase?.() ?? "",
+      user.department?.toLowerCase?.() ?? "",
+      user.position?.toLowerCase?.() ?? "",
+      user.role?.toLowerCase?.() ?? "",
     ];
 
     const searchMatch = searchableFields.some((field) =>
@@ -293,14 +293,16 @@ export default function UserManagement() {
                     setDateFrom(newFrom);
 
                     if (dateTo && newFrom > dateTo) {
-                      setDateError('"From" date cannot be later than "To" date.');
+                      setDateError(
+                        '"From" date cannot be later than "To" date.'
+                      );
                     } else {
                       setDateError("");
                     }
                   }}
                   className={styles.dateInput}
                 />
-              <span className={styles.dateLabel}>To:</span>
+                <span className={styles.dateLabel}>To:</span>
                 <input
                   type="date"
                   value={dateTo}
@@ -309,7 +311,9 @@ export default function UserManagement() {
                     setDateTo(newTo);
 
                     if (dateFrom && newTo < dateFrom) {
-                      setDateError('"To" date cannot be earlier than "From" date.');
+                      setDateError(
+                        '"To" date cannot be earlier than "From" date.'
+                      );
                     } else {
                       setDateError("");
                     }
@@ -323,9 +327,9 @@ export default function UserManagement() {
 
           {loading ? (
             <div className={styles.loadingContainer}>
-            <div className={styles.spinner}></div>
-            <p>Loading users...</p>
-          </div>
+              <div className={styles.spinner}></div>
+              <p>Loading users...</p>
+            </div>
           ) : error ? (
             <p style={{ color: "red" }}>Error: {error}</p>
           ) : (
@@ -397,9 +401,7 @@ export default function UserManagement() {
                               }}
                             >
                               Edit
-                            </Link>
-                             {" "}
-
+                            </Link>{" "}
                             <button
                               className={`${styles.actionBtn} ${styles.deactivateBtn}`}
                               onClick={() => {
@@ -408,9 +410,7 @@ export default function UserManagement() {
                               }}
                             >
                               Deactivate
-                            </button>
-                             {" "}
-
+                            </button>{" "}
                             <button
                               className={`${styles.actionBtn} ${styles.terminateBtn}`}
                               onClick={() => {

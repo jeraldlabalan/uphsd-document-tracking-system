@@ -23,20 +23,20 @@ export async function GET() {
 
     const formatted = users.map((user) => ({
       id: user.UserID,
-      name: `${user.FirstName} ${user.LastName}`,
-      email: user.Email,
-      mobile: user.MobileNumber,
-      sex: user.Sex,
-      employeeId: user.EmployeeID,
-      department: user.Department?.Name ?? "N/A",
-      position: user.Position?.Name ?? "N/A",
-      role: user.Role?.RoleName ?? "N/A",
+      name: `${user.FirstName ?? ""} ${user.LastName ?? ""}`.trim(),
+      email: user.Email ?? "",
+      mobile: user.MobileNumber ?? "",
+      sex: user.Sex ?? "",
+      employeeId: user.EmployeeID ?? "",
+      department: user.Department?.Name ?? "",
+      position: user.Position?.Name ?? "",
+      role: user.Role?.RoleName ?? "",
       status: user.IsDeleted
         ? "Terminated"
         : user.IsActive
           ? "Active"
           : "Inactive",
-      dateCreated: user.CreatedAt.toISOString(),
+      dateCreated: user.CreatedAt?.toISOString?.() ?? "",
     }));
 
     return NextResponse.json(formatted);

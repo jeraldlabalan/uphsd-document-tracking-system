@@ -1,7 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import styles from "./ManagementStyles.module.css";
-import Modal from "../(modal)/Modal"; // Correct path if necessary
+import Modal from "../(modal)/Modal";
 
 interface InputRow {
   id: string | number;
@@ -9,23 +10,42 @@ interface InputRow {
 }
 
 interface ActiveItem {
-  id: string | number;
+  id: number;
   name: string;
   checked: boolean;
 }
 
 const PositionManagement: React.FC = () => {
-  const [rows, setRows] = useState<InputRow[]>([{ id: 1, value: "" }]);
-  const [activeItems, setActiveItems] = useState<ActiveItem[]>([
-    { id: 20, name: "Manager", checked: true },
-    { id: 21, name: "Assistant", checked: true },
-  ]);
+  const [rows, setRows] = useState<InputRow[]>([{ id: Date.now(), value: "" }]);
+  const [activeItems, setActiveItems] = useState<ActiveItem[]>([]);
 
-  // Modal state
   const [showModal, setShowModal] = useState(false);
-  const [rowToDelete, setRowToDelete] = useState<string | null>(null);
+  const [rowToDelete, setRowToDelete] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [success, setSuccess] = useState(false); // Success state for confirmation
+  const [success, setSuccess] = useState(false);
+
+  const [confirmAdd, setConfirmAdd] = useState(false);
+
+  useEffect(() => {
+    fetchPositions();
+  }, []);
+
+  const fetchPositions = async () => {
+    try {
+      const res = await fetch("/api/admin/settings/position-management");
+      if (!res.ok) throw new Error("Failed to fetch positions");
+      const data = await res.json();
+      setActiveItems(
+        data.map((pos: any) => ({
+          id: pos.PositionID,
+          name: pos.Name,
+          checked: true,
+        }))
+      );
+    } catch (error) {
+      console.error("Fetch error:", error);
+    }
+  };
 
   const handleAddRow = () => {
     setRows((prev) => [...prev, { id: Date.now(), value: "" }]);
@@ -39,34 +59,125 @@ const PositionManagement: React.FC = () => {
     setRows((prev) => prev.filter((r) => r.id !== id));
   };
 
-  const handleDeleteActiveItem = (id: number | string) => {
-    // Reset success state before opening the modal
-    setSuccess(false); // Reset success message
-    setRowToDelete(id.toString()); // Set the position to delete
-    setShowModal(true); // Show the confirmation modal
+  const hasDuplicates = (): boolean => {
+    const trimmedNewValues = rows
+      .map((r) => r.value.trim().toLowerCase())
+      .filter((val) => val !== "");
+    const activeNames = activeItems.map((item) => item.name.toLowerCase());
+
+    return trimmedNewValues.some((val) => activeNames.includes(val));
   };
 
-  // Modal confirmation handler
-  const handleConfirmDeletion = () => {
-    setIsLoading(true); // Show loading spinner
-    setTimeout(() => {
-      setActiveItems((prev) => prev.filter((item) => item.id !== rowToDelete));
-      setIsLoading(false); // Hide loading spinner
-      setSuccess(true); // Set success message
-      setRowToDelete(null); // Reset row to delete
-    }, 2000); // Simulate loading time of 2 seconds
+  const handleSaveClick = () => {
+    const validRows = rows.filter((r) => r.value.trim() !== "");
+
+    if (rows.some((r) => r.value.trim() === "")) {
+      toast.error("Please fill out all position fields before saving.");
+      return;
+    }
+
+    if (validRows.length === 0) return;
+
+    if (hasDuplicates()) {
+      toast.error("One or more positions already exist and cannot be added.");
+      return;
+    }
+
+    setConfirmAdd(true);
+    setShowModal(true);
   };
 
-  const handleCancelDeletion = () => {
-    setShowModal(false); // Close modal without deleting
-    setRowToDelete(null); // Reset row to delete
+  const handleConfirm = async () => {
+    if (confirmAdd) {
+      await savePositions();
+    } else {
+      await handleConfirmDeletion();
+    }
+  };
+
+  const savePositions = async () => {
+    const validRows = rows.filter((r) => r.value.trim() !== "");
+    if (validRows.length === 0) {
+      setShowModal(false);
+      setConfirmAdd(false);
+      return;
+    }
+    setIsLoading(true);
+    setSuccess(false);
+
+    try {
+      for (const row of validRows) {
+        const res = await fetch("/api/admin/settings/position-management", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: row.value.trim() }),
+        });
+        if (!res.ok) {
+          throw new Error("Failed to add position");
+        }
+      }
+
+      // Fetch updated positions list after save
+      await fetchPositions();
+
+      setRows([{ id: Date.now(), value: "" }]);
+      setSuccess(true);
+      toast.success("Positions added successfully!");
+    } catch (error) {
+      console.error("Error saving rows:", error);
+      toast.error("Error saving positions.");
+    } finally {
+      setIsLoading(false);
+      setShowModal(false);
+      setConfirmAdd(false);
+    }
+  };
+
+  const handleDeleteActiveItem = (id: number) => {
+    setSuccess(false);
+    setRowToDelete(id);
+    setConfirmAdd(false);
+    setShowModal(true);
+  };
+
+  const handleConfirmDeletion = async () => {
+    if (rowToDelete === null) return;
+    setIsLoading(true);
+    setSuccess(false);
+    try {
+      const res = await fetch("/api/admin/settings/position-management", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: rowToDelete }),
+      });
+      if (res.ok) {
+        setActiveItems((prev) =>
+          prev.filter((item) => item.id !== rowToDelete)
+        );
+        setSuccess(true);
+        toast.success("Position successfully deleted.");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("Error deleting position.");
+    } finally {
+      setIsLoading(false);
+      setRowToDelete(null);
+      setShowModal(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setShowModal(false);
+    setRowToDelete(null);
+    setConfirmAdd(false);
   };
 
   return (
     <div className={styles.managementContainer}>
       <p className={styles.sectionTitle}>Position Management</p>
       <div className={styles.managementContents}>
-        <p>Add New</p>
+        <p>Add new position(s)</p>
         <div className={styles.addNewContainer}>
           <table className={styles.addTable}>
             <tbody>
@@ -78,6 +189,8 @@ const PositionManagement: React.FC = () => {
                       value={row.value}
                       onChange={(e) => handleChangeRow(row.id, e.target.value)}
                       placeholder="Add Position"
+                      disabled={isLoading}
+                      required
                     />
                   </td>
                   <td>
@@ -85,13 +198,21 @@ const PositionManagement: React.FC = () => {
                       <button
                         className={styles.addRowButton}
                         onClick={handleAddRow}
+                        disabled={isLoading}
                       >
                         Add Row
                       </button>
                     ) : (
-                      <button onClick={() => handleRemoveRow(row.id)}>
+                      <button
+                        onClick={() => handleRemoveRow(row.id)}
+                        disabled={isLoading}
+                      >
                         <svg width="10" height="10" viewBox="0 0 10 10">
-                          <path d="M1 1L9 9M1 9L9 1" stroke="black" strokeWidth="2" />
+                          <path
+                            d="M1 1L9 9M1 9L9 1"
+                            stroke="black"
+                            strokeWidth="2"
+                          />
                         </svg>
                       </button>
                     )}
@@ -107,50 +228,68 @@ const PositionManagement: React.FC = () => {
           <div className={styles.activeList}>
             <div className={styles.scrollable}>
               <ul>
-                {activeItems.map((item) => (
-                  <li className={styles.entryItem} key={item.id}>
-                    <div className={styles.entryCheckbox}>
-                      <input
-                        title="position"
-                        type="checkbox"
-                        checked={item.checked}
-                        onChange={() => {}}
-                      />
-                      <label>{item.name}</label>
-                    </div>
-                    <button
-                      title="delete"
-                      className={styles.deleteButton}
-                      onClick={() => handleDeleteActiveItem(item.id)} // Trigger the delete action
-                    >
-                      <svg width="10" height="10" viewBox="0 0 10 10">
-                        <path d="M1 1L9 9M1 9L9 1" stroke="black" strokeWidth="2" />
-                      </svg>
-                    </button>
-                  </li>
-                ))}
+                {activeItems.length > 0 ? (
+                  activeItems.map((item) => (
+                    <li className={styles.entryItem} key={item.id}>
+                      <div className={styles.entryCheckbox}>
+                        <input
+                          title="position"
+                          type="checkbox"
+                          checked={item.checked}
+                          readOnly
+                        />
+                        <label>{item.name}</label>
+                      </div>
+                      <button
+                        title="delete"
+                        className={styles.deleteButton}
+                        onClick={() => handleDeleteActiveItem(item.id)}
+                        disabled={isLoading}
+                      >
+                        <svg width="10" height="10" viewBox="0 0 10 10">
+                          <path
+                            d="M1 1L9 9M1 9L9 1"
+                            stroke="black"
+                            strokeWidth="2"
+                          />
+                        </svg>
+                      </button>
+                    </li>
+                  ))
+                ) : (
+                  <li key="no-active">No active positions found.</li>
+                )}
               </ul>
-            </div>
-
-            <div className={styles.managementActionButtons}>
-              <button title="save">Save</button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modal for Confirmation */}
+      <div className={styles.managementActionButtons}>
+        <button
+          title="save"
+          onClick={handleSaveClick}
+          disabled={isLoading || rows.every((r) => r.value.trim() === "")}
+          className={styles.addRowButton}
+          style={{ marginTop: 12 }}
+        >
+          {isLoading ? "Saving..." : "Save"}
+        </button>
+      </div>
+
       <Modal
-        showModal={showModal} // Modal visibility state
-        setShowModal={setShowModal} // Function to toggle the modal
+        showModal={showModal}
+        setShowModal={setShowModal}
         description={
-          success
-            ? "Position successfully deleted." // Success message after deletion
-            : "Are you sure you want to delete this position?" // Default modal description
+          confirmAdd
+            ? "Are you sure you want to add these positions?"
+            : success
+              ? "Position successfully deleted."
+              : "Are you sure you want to delete this position?"
         }
-        onConfirm={handleConfirmDeletion} // Confirm deletion function
-        onCancel={handleCancelDeletion} // Cancel deletion function
-        isLoading={isLoading} // Show loading spinner during deletion
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+        isLoading={isLoading}
       />
     </div>
   );
