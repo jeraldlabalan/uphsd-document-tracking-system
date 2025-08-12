@@ -57,6 +57,7 @@ export default function CreateNewDocument() {
     console.log(id);
     setSelectedType(name);
     setSelectedTypeID(id);
+    setClassification(name); // Update classification display
     setOpenSelect1(false); // Close dropdown after selection
   };
 
@@ -76,7 +77,7 @@ export default function CreateNewDocument() {
   const [readReceipt, setReadReceipt] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [type, setType] = useState(0);
+  const [documentType, setDocumentType] = useState(0);
   const [filePath, setFilePath] = useState("");
   const [approverIDs, setApproverIDs] = useState<number[]>([]); // or []
   const [files, setFiles] = useState<{ file: File; requireEsign: boolean }[]>(
@@ -176,23 +177,61 @@ export default function CreateNewDocument() {
 
   // Check for documents with placeholders when page loads
   useEffect(() => {
-    const savedDocumentUrl = localStorage.getItem(
-      "documentWithPlaceholdersUrl"
-    );
-    const savedDocumentTitle = localStorage.getItem(
-      "documentWithPlaceholdersTitle"
-    );
+    // Check if we have a saved document with placeholders from e-sign
+    const savedDocumentTitle = localStorage.getItem("documentWithPlaceholdersTitle");
+    const savedDocumentDescription = localStorage.getItem("documentWithPlaceholdersDescription");
+    const savedDocumentType = localStorage.getItem("documentWithPlaceholdersType");
+    const savedDocumentDepartment = localStorage.getItem("documentWithPlaceholdersDepartment");
+    const savedDocumentApprovers = localStorage.getItem("documentWithPlaceholdersApprovers");
+    const savedDocumentPlaceholders = localStorage.getItem("documentWithPlaceholdersPlaceholders");
 
-    if (savedDocumentUrl && savedDocumentTitle) {
-      // Clear the localStorage
-      localStorage.removeItem("documentWithPlaceholdersUrl");
+    if (savedDocumentTitle && savedDocumentPlaceholders) {
+      // Clear localStorage immediately to prevent duplicate processing
       localStorage.removeItem("documentWithPlaceholdersTitle");
+      localStorage.removeItem("documentWithPlaceholdersDescription");
+      localStorage.removeItem("documentWithPlaceholdersType");
+      localStorage.removeItem("documentWithPlaceholdersDepartment");
+      localStorage.removeItem("documentWithPlaceholdersApprovers");
+      localStorage.removeItem("documentWithPlaceholdersPlaceholders");
+
+      // Update form fields with saved document data
+      if (savedDocumentTitle) setTitle(savedDocumentTitle);
+      if (savedDocumentDescription) setDescription(savedDocumentDescription);
+      if (savedDocumentType) setSelectedType(savedDocumentType);
+      if (savedDocumentDepartment) setDepartment(savedDocumentDepartment);
+
+      // Update document type ID if we can find a match
+      if (savedDocumentType) {
+        const typeMatch = documentTypes.find(t => t.TypeName === savedDocumentType);
+        if (typeMatch) setSelectedTypeID(typeMatch.TypeID);
+      }
+
+      // Update department ID if we can find a match
+      if (savedDocumentDepartment) {
+        const deptMatch = departments.find(d => d.Name === savedDocumentDepartment);
+        if (deptMatch) setDepartmentID(deptMatch.DepartmentID);
+      }
+
+      // Update approvers if we have the data
+      if (savedDocumentApprovers) {
+        try {
+          const approversData = JSON.parse(savedDocumentApprovers);
+          if (Array.isArray(approversData)) {
+            const approverIds = approversData.map((a: any) => a.userId || a.id);
+            setApproverIDs(approverIds);
+            setApprovalRequired(true);
+          }
+        } catch (error) {
+          console.error("Error parsing approvers data:", error);
+        }
+      }
 
       // Set the saved document state to display in UI
       setSavedDocument({
         title: savedDocumentTitle,
-        url: savedDocumentUrl,
+        url: "Document with placeholders ready for submission",
         status: "Awaiting Signatures",
+        placeholders: savedDocumentPlaceholders ? JSON.parse(savedDocumentPlaceholders) : [],
       });
 
       // Show success message with more details
@@ -200,13 +239,14 @@ export default function CreateNewDocument() {
         `Document "${savedDocumentTitle}" has been saved with signature placeholders!\n\nWhat happens next:\n1. The document is now ready for signees to review\n2. Signees will be notified automatically\n3. They can access the document through their dashboard\n4. Once all signatures are complete, the document will be fully processed`
       );
     }
-  }, []);
+  }, [documentTypes, departments]);
 
   // State for saved document display
   const [savedDocument, setSavedDocument] = useState<{
     title: string;
     url: string;
     status: string;
+    placeholders?: any[]; // Added placeholders to state
   } | null>(null);
 
   // Handle Approver Change (example of setting approver IDs)
@@ -226,53 +266,121 @@ export default function CreateNewDocument() {
     setSuccess(false);
 
     try {
-      if (!files) {
+      if (!files || files.length === 0) {
         setError("File is required");
         setLoading(false);
         return;
       }
 
-      const formData = new FormData();
-      formData.append("Title", title);
-      formData.append("TypeID", selectedTypeID?.toString() ?? "");
-      formData.append("Description", description);
-      formData.append("DepartmentID", departmentID?.toString() ?? "");
-      formData.append(
-        "ApproverIDs",
-        JSON.stringify(approverIDs.filter((id) => id !== 0))
-      );
+      // Check if we have a saved document with placeholders
+      const savedDocumentData = localStorage.getItem("documentWithPlaceholdersData");
+      const savedDocumentPlaceholders = localStorage.getItem("documentWithPlaceholdersPlaceholders");
+      const savedDocumentId = localStorage.getItem("documentWithPlaceholdersId");
 
-      files.forEach((item) => {
-        formData.append("files", item.file);
-      });
+      if (savedDocumentData && savedDocumentPlaceholders) {
+        // If we have a document with placeholders, use that instead of creating a new one
+        try {
+          const placeholders = JSON.parse(savedDocumentPlaceholders);
+          
+          // Create FormData for the document with placeholders
+          const formData = new FormData();
+          formData.append("Title", title);
+          formData.append("TypeID", selectedTypeID?.toString() ?? "");
+          formData.append("Description", description);
+          formData.append("DepartmentID", departmentID?.toString() ?? "");
+          formData.append(
+            "ApproverIDs",
+            JSON.stringify(approverIDs.filter((id) => id !== 0))
+          );
 
-      if (approvalRequired) {
+          // Convert base64 data back to a File object
+          const base64Response = await fetch(savedDocumentData);
+          const blob = await base64Response.blob();
+          const file = new File([blob], `document-with-placeholders.pdf`, { type: 'application/pdf' });
+          formData.append("files", file);
+
+          // Add placeholders data
+          formData.append("Placeholders", JSON.stringify(placeholders));
+
+          const res = await fetch("/api/employee/create-document", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || "Failed to upload document");
+          }
+
+          // Clear localStorage
+          localStorage.removeItem("documentWithPlaceholdersData");
+          localStorage.removeItem("documentWithPlaceholdersTitle");
+          localStorage.removeItem("documentWithPlaceholdersId");
+          localStorage.removeItem("documentWithPlaceholdersType");
+          localStorage.removeItem("documentWithPlaceholdersDepartment");
+          localStorage.removeItem("documentWithPlaceholdersApprovers");
+          localStorage.removeItem("documentWithPlaceholdersDescription");
+          localStorage.removeItem("documentWithPlaceholdersPlaceholders");
+
+          setSuccess(true);
+          setTitle("");
+          setDescription("");
+          setSelectedTypeID(0);
+          setDepartmentID(0);
+          setFiles([]);
+          setApprovers([]);
+          setSavedDocument(null);
+          console.log("document with placeholders success");
+          alert("Document with placeholders successfully created!");
+          router.push("/employee2/dashboard");
+        } catch (error) {
+          console.error("Error creating document with placeholders:", error);
+          throw new Error("Failed to create document with placeholders");
+        }
+      } else {
+        // Regular document creation without placeholders
+        const formData = new FormData();
+        formData.append("Title", title);
+        formData.append("TypeID", selectedTypeID?.toString() ?? "");
+        formData.append("Description", description);
+        formData.append("DepartmentID", departmentID?.toString() ?? "");
         formData.append(
           "ApproverIDs",
           JSON.stringify(approverIDs.filter((id) => id !== 0))
         );
+
+        files.forEach((item) => {
+          formData.append("files", item.file);
+        });
+
+        if (approvalRequired) {
+          formData.append(
+            "ApproverIDs",
+            JSON.stringify(approverIDs.filter((id) => id !== 0))
+          );
+        }
+
+        const res = await fetch("/api/employee/create-document", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || "Failed to upload document");
+        }
+
+        setSuccess(true);
+        setTitle("");
+        setDescription("");
+        setSelectedTypeID(0);
+        setDepartmentID(0);
+        setFiles([]);
+        setApprovers([]);
+        console.log("document success");
+        alert("Document successfully created!");
+        router.push("/employee2/dashboard");
       }
-
-      const res = await fetch("/api/employee/create-document", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to upload document");
-      }
-
-      setSuccess(true);
-      setTitle("");
-      setDescription("");
-      setSelectedTypeID(0);
-      setDepartmentID(0);
-      setFiles([]);
-      setApprovers([]);
-      console.log("document success")
-      alert("Document successfully created!");
-      router.push("/employee2/dashboard")
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -294,7 +402,7 @@ export default function CreateNewDocument() {
       return;
     }
 
-    // Validate required fields before creating document
+    // Validate required fields before opening e-sign interface
     if (!title.trim()) {
       alert("Please enter a document title before proceeding with e-signing.");
       return;
@@ -317,31 +425,7 @@ export default function CreateNewDocument() {
       return;
     }
 
-    // First, create the document in the database
     try {
-      const formData = new FormData();
-      files.forEach((item) =>
-        formData.append("files", item.file, item.file.name)
-      ); // "files" must match backend
-      formData.append("Title", title);
-      formData.append("Description", description);
-      formData.append("TypeID", type.toString());
-      formData.append("DepartmentID", departmentID?.toString() ?? "");
-      const filteredApprovers = approverIDs.filter((id) => id !== 0);
-      formData.append("ApproverIDs", JSON.stringify(filteredApprovers));
-
-      const res = await fetch("/api/employee/create-document", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to create document");
-      }
-
-      const data = await res.json();
-      const documentId = data.documentID;
 
       // Create blob URL for the file
       const fileUrl = URL.createObjectURL(file);
@@ -359,9 +443,8 @@ export default function CreateNewDocument() {
         };
       });
 
-      // Create URL parameters with the document ID
+      // Create URL parameters for the e-sign interface
       const params = new URLSearchParams({
-        docId: documentId.toString(),
         title: title.trim(),
         type: selectedType || "Unknown Type",
         department: department || "Unknown Department",
@@ -370,12 +453,12 @@ export default function CreateNewDocument() {
         userRole: "sender", // The person creating the document is automatically the sender
       });
 
-      // Open e-sign interface in new tab with the document ID
+      // Open e-sign interface in new tab
       window.open(`/employee2/e-sign-document?${params.toString()}`, "_blank");
     } catch (error) {
-      console.error("Error creating document:", error);
+      console.error("Error opening e-sign interface:", error);
       alert(
-        `Failed to create document: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to open e-sign interface: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     }
   };
@@ -769,13 +852,119 @@ export default function CreateNewDocument() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  View Document
+                  View Document with Placeholders
                 </a>
               </p>
+              
+              {/* Display Signature Placeholders */}
+              {savedDocument.placeholders && savedDocument.placeholders.length > 0 && (
+                <div className={styles.placeholdersSection}>
+                  <h5>Signature Placeholders</h5>
+                  <div className={styles.placeholdersList}>
+                    {savedDocument.placeholders.map((placeholder: any, index: number) => (
+                      <div key={index} className={styles.placeholderItem}>
+                        <div className={styles.placeholderInfo}>
+                          <span className={styles.placeholderLabel}>
+                            Placeholder {index + 1}
+                          </span>
+                          <span className={styles.placeholderSignee}>
+                            Assigned to: {placeholder.signeeName || `User ${placeholder.assignedToId || placeholder.signee}`}
+                          </span>
+                          <span className={styles.placeholderLocation}>
+                            Page {placeholder.page + 1}
+                          </span>
+                        </div>
+                        <div className={styles.placeholderStatus}>
+                          <span className={styles.statusPending}>⏳ Pending Signature</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Current Document File */}
+              {savedDocument.url && (
+                <div className={styles.currentDocumentSection}>
+                  <h5>Current Document</h5>
+                  <div className={styles.documentFileInfo}>
+                    <div className={styles.fileDetails}>
+                      <span className={styles.fileName}>
+                        📄 Document with Placeholders
+                      </span>
+                      <span className={styles.fileStatus}>
+                        Status: Ready for Signatures
+                      </span>
+                    </div>
+                    <div className={styles.fileActions}>
+                      <a
+                        href={savedDocument.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.viewDocumentBtn}
+                      >
+                        👁️ View Document
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div className={styles.statusInfo}>
                 <p>✅ Document has been saved with signature placeholders</p>
                 <p>📧 Signees have been notified automatically</p>
                 <p>⏳ Waiting for all signatures to be completed</p>
+                <p>🔄 You can continue editing this document or wait for signatures</p>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className={styles.actionButtons}>
+                <button
+                  type="button"
+                  className={styles.editPlaceholdersBtn}
+                  onClick={() => {
+                    // Open e-sign interface again for the same document
+                    const placeholders = savedDocument?.placeholders;
+                    if (placeholders && placeholders.length > 0) {
+                      // Create a new file object from the saved document URL
+                      fetch(savedDocument.url)
+                        .then(response => response.blob())
+                        .then(blob => {
+                          const file = new File([blob], `document-with-placeholders.pdf`, { type: 'application/pdf' });
+                          
+                          // Prepare approvers data
+                          const approversData = approverIDs.filter(id => id !== 0).map(id => {
+                            const approver = approvers.find(a => a.UserID === id);
+                            return {
+                              id: id.toString(),
+                              userId: id,
+                              name: approver ? `${approver.FirstName} ${approver.LastName}` : `Approver ${id}`,
+                            };
+                          });
+
+                          // Create URL parameters
+                          const params = new URLSearchParams({
+                            docId: placeholders[0]?.documentId || 'unknown',
+                            title: title,
+                            type: selectedType,
+                            department: department,
+                            approvers: encodeURIComponent(JSON.stringify(approversData)),
+                            file: URL.createObjectURL(file),
+                            userRole: "sender",
+                          });
+
+                          // Open e-sign interface in new tab
+                          window.open(`/employee2/e-sign-document?${params.toString()}`, "_blank");
+                        })
+                        .catch(error => {
+                          console.error("Error opening document for editing:", error);
+                          alert("Failed to open document for editing. Please try again.");
+                        });
+                    }
+                  }}
+                >
+                  ✏️ Edit Placeholders
+                </button>
               </div>
             </div>
           </div>

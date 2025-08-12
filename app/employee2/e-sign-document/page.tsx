@@ -52,18 +52,25 @@ export default function ESignDocument() {
     uploadedFile,
     userRole
   });
+  
+  // Debug: Log the full URL to see what parameters are actually being passed
+  useEffect(() => {
+    console.log("Full URL:", window.location.href);
+    console.log("Search params:", window.location.search);
+  }, []);
 
   // Parse approvers from URL parameter
   const parsedApprovers: Signee[] = approvers ? JSON.parse(decodeURIComponent(approvers)) : [];
 
-  // Create signees array including the sender
-  const SIGNEES: Signee[] = [
-    { id: "sender", name: "Document Sender" },
-    ...parsedApprovers
-  ];
+  // Create signees array (excluding the sender)
+  const SIGNEES: Signee[] = parsedApprovers.map(approver => ({
+    id: approver.id, // Keep the user ID as the signee ID
+    name: approver.name,
+    userId: approver.userId // Store the database user ID separately
+  }));
 
   // If no approvers, add some default signees for testing
-  if (SIGNEES.length === 1) {
+  if (SIGNEES.length === 0) {
     SIGNEES.push(
       { id: "default1", name: "Default Signee 1" },
       { id: "default2", name: "Default Signee 2" }
@@ -73,13 +80,65 @@ export default function ESignDocument() {
   // Debug logging for signees
   console.log("Parsed approvers:", parsedApprovers);
   console.log("Final SIGNEES:", SIGNEES);
+  console.log("Document ID:", documentId);
+  console.log("User Role:", userRole);
 
   // Determine user role and load existing placeholders
   useEffect(() => {
     const determineUserRole = async () => {
       try {
+        // First check if userRole is explicitly set in URL params
+        console.log("Checking userRole from URL params:", userRole);
+        if (userRole === "receiver") {
+          console.log("Setting role to receiver based on URL params");
+          setRole("receiver");
+          setIsDocumentCreator(false);
+          
+          // Load existing placeholders for receiver
+          if (documentId && documentId !== "unknown") {
+            console.log("Loading placeholders for receiver, documentId:", documentId);
+            const response = await fetch(`/api/employee/signature-placeholders?documentId=${documentId}`);
+            if (response.ok) {
+              const data = await response.json();
+              console.log("Placeholders loaded for receiver:", data.placeholders);
+              const existingPlaceholders = data.placeholders.map((p: {
+                PlaceholderID: number;
+                Page: number;
+                X: number;
+                Y: number;
+                Width: number;
+                Height: number;
+                AssignedTo: {
+                  UserID: number;
+                  FirstName: string;
+                  LastName: string;
+                };
+                IsSigned: boolean;
+                SignedAt: string | null;
+                AssignedToID: number;
+              }) => ({
+                id: p.PlaceholderID,
+                placeholderId: p.PlaceholderID,
+                page: p.Page,
+                x: p.X,
+                y: p.Y,
+                width: p.Width,
+                height: p.Height,
+                signee: p.AssignedTo.UserID.toString(),
+                signeeName: `${p.AssignedTo.FirstName} ${p.AssignedTo.LastName}`,
+                isSigned: p.IsSigned,
+                signedAt: p.SignedAt,
+                assignedToId: p.AssignedToID,
+              }));
+              
+              setPlaceholders(existingPlaceholders);
+            }
+          }
+          return;
+        }
+
         // Check if user is the document creator
-        if (documentId) {
+        if (documentId && documentId !== "unknown") {
           const response = await fetch(`/api/employee/signature-placeholders?documentId=${documentId}`);
           if (response.ok) {
             const data = await response.json();
@@ -118,14 +177,23 @@ export default function ESignDocument() {
             // If placeholders exist, user is a receiver
             if (existingPlaceholders.length > 0) {
               // Check if user has any unsigned placeholders
-              const userPlaceholders = existingPlaceholders.filter((p: Placeholder) => 
-                p.signee === "current-user-id" && !p.isSigned
-              );
-              
-              if (userPlaceholders.length > 0) {
-                setRole("receiver");
-                setIsDocumentCreator(false);
+              // We need to get the current user's ID to compare
+              const currentUserResponse = await fetch('/api/user/me');
+              if (currentUserResponse.ok) {
+                const currentUser = await currentUserResponse.json();
+                const userPlaceholders = existingPlaceholders.filter((p: Placeholder) => 
+                  p.assignedToId === currentUser.UserID && !p.isSigned
+                );
+                
+                if (userPlaceholders.length > 0) {
+                  setRole("receiver");
+                  setIsDocumentCreator(false);
+                } else {
+                  setRole("sender");
+                  setIsDocumentCreator(true);
+                }
               } else {
+                // Fallback: if we can't get current user, assume sender
                 setRole("sender");
                 setIsDocumentCreator(true);
               }
@@ -149,12 +217,25 @@ export default function ESignDocument() {
     };
 
     determineUserRole();
-  }, [documentId]);
+  }, [documentId, userRole]);
 
   const jumpToNextSignature = () => {
-    const remaining = placeholders.filter(
-      (ph) => ph.signee === role && !ph.isSigned
-    );
+    let remaining;
+    if (role === "receiver") {
+      // For receivers, show all unsigned placeholders assigned to them
+      remaining = placeholders.filter(
+        (ph) => !ph.isSigned
+      );
+    } else {
+      // For senders, show placeholders they created
+      remaining = placeholders.filter(
+        (ph) => ph.signee === role && !ph.isSigned
+      );
+    }
+    
+    console.log("jumpToNextSignature - remaining placeholders:", remaining);
+    console.log("jumpToNextSignature - nextScrollIndex:", nextScrollIndex);
+    
     const target = remaining[nextScrollIndex];
 
     if (target) {
@@ -163,6 +244,8 @@ export default function ESignDocument() {
         ref.scrollIntoView({ behavior: "smooth", block: "center" });
       }
       setNextScrollIndex((prev) => (prev + 1) % remaining.length);
+    } else {
+      console.log("No target placeholder found for jumping");
     }
   };
 
@@ -175,11 +258,64 @@ export default function ESignDocument() {
 
   // If we have a file URL from the search params, use it
   useEffect(() => {
-    if (uploadedFile && uploadedFile.startsWith('blob:')) {
-      setPdfUrl(uploadedFile);
-      setOriginalPdfUrl(uploadedFile);
-    }
-  }, [uploadedFile]);
+    console.log("File loading useEffect triggered with uploadedFile:", uploadedFile);
+    
+    const loadFile = async () => {
+      if (uploadedFile) {
+        console.log("Uploaded file param:", uploadedFile);
+        if (uploadedFile.startsWith('blob:')) {
+          // Local blob URL
+          console.log("Setting blob URL:", uploadedFile);
+          setPdfUrl(uploadedFile);
+          setOriginalPdfUrl(uploadedFile);
+        } else if (uploadedFile.startsWith('/uploads/')) {
+          // Server file path - convert to full URL
+          const fullUrl = `${window.location.origin}${uploadedFile}`;
+          console.log("Setting server file URL:", fullUrl);
+          setPdfUrl(fullUrl);
+          setOriginalPdfUrl(fullUrl);
+        } else if (uploadedFile.includes('uploads/documents/')) {
+          // File path without leading slash - add it
+          const fullUrl = `${window.location.origin}/${uploadedFile}`;
+          console.log("Setting documents file URL:", fullUrl);
+          setPdfUrl(fullUrl);
+          setOriginalPdfUrl(fullUrl);
+        } else {
+          // Try to construct the full URL
+          const fullUrl = `${window.location.origin}/uploads/documents/${uploadedFile}`;
+          console.log("Setting constructed file URL:", fullUrl);
+          setPdfUrl(fullUrl);
+          setOriginalPdfUrl(fullUrl);
+        }
+      } else if (documentId && documentId !== "unknown") {
+        // If no uploadedFile but we have a documentId, try to fetch the file path from the API
+        console.log("No uploadedFile provided, fetching from API for documentId:", documentId);
+        try {
+          const response = await fetch(`/api/employee/pending-signatures`);
+          if (response.ok) {
+            const data = await response.json();
+            const document = data.pendingDocuments.find((doc: any) => doc.documentId.toString() === documentId);
+            if (document?.latestVersion?.FilePath) {
+              const filePath = document.latestVersion.FilePath;
+              console.log("Found file path from API:", filePath);
+              const fullUrl = `${window.location.origin}${filePath}`;
+              console.log("Setting file URL from API:", fullUrl);
+              setPdfUrl(fullUrl);
+              setOriginalPdfUrl(fullUrl);
+            } else {
+              console.log("No file path found in API response for document:", documentId);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching file path from API:", error);
+        }
+      } else {
+        console.log("No uploadedFile parameter provided and no documentId to fetch from");
+      }
+    };
+
+    loadFile();
+  }, [uploadedFile, documentId]);
 
   // Handle saving signature placeholders (for sender)
   const handleSavePlaceholders = async (placeholdersToSave: Placeholder[]) => {
@@ -189,9 +325,63 @@ export default function ESignDocument() {
       placeholdersToSaveLength: placeholdersToSave.length
     });
     
-    if (!documentId) {
-      alert("Document ID is missing. Cannot save placeholders.");
-      return;
+    console.log("Current placeholders state:", placeholders);
+    console.log("Placeholders to save:", placeholdersToSave);
+    
+    // If no documentId or documentId is "unknown", this is a new document being created
+    if (!documentId || documentId === "unknown") {
+      console.log("No documentId - saving to localStorage for new document");
+      try {
+        // Generate PDF with placeholders and save to localStorage
+        if (viewerRef.current) {
+          const pdfWithPlaceholders = await viewerRef.current.generatePdfWithPlaceholders();
+          
+          if (pdfWithPlaceholders) {
+            console.log("PDF with placeholders generated successfully");
+            
+            // Convert blob URL to base64 data for localStorage storage
+            const response = await fetch(pdfWithPlaceholders);
+            const blob = await response.blob();
+            const reader = new FileReader();
+            
+            reader.onload = () => {
+              const base64Data = reader.result as string;
+              
+              // Store the base64 data and additional information for the redirect
+              localStorage.setItem('documentWithPlaceholdersData', base64Data);
+              localStorage.setItem('documentWithPlaceholdersTitle', documentTitle || 'Untitled Document');
+              localStorage.setItem('documentWithPlaceholdersId', 'new'); // Mark as new document
+              localStorage.setItem('documentWithPlaceholdersType', documentType || 'Unknown Type');
+              localStorage.setItem('documentWithPlaceholdersDepartment', department || 'Unknown Department');
+              localStorage.setItem('documentWithPlaceholdersApprovers', approvers || '');
+              localStorage.setItem('documentWithPlaceholdersDescription', ''); // No description in URL params
+              
+              // Store placeholder information for display
+              localStorage.setItem('documentWithPlaceholdersPlaceholders', JSON.stringify(placeholdersToSave));
+              
+              alert('Signature placeholders saved successfully! Document with placeholders has been saved. Redirecting back to document page...');
+              
+              // Close the current tab and redirect back to the original page
+              setTimeout(() => {
+                window.close();
+              }, 2000);
+            };
+            
+            reader.readAsDataURL(blob);
+          } else {
+            console.error("Failed to generate PDF with placeholders");
+            alert("Failed to generate PDF with placeholders. Please try again.");
+          }
+        } else {
+          console.error("PDFViewer ref is not available");
+          alert("PDF viewer is not available. Please try again.");
+        }
+        return;
+      } catch (error) {
+        console.error('Error saving placeholders for new document:', error);
+        alert('Failed to save placeholders. Please try again.');
+        return;
+      }
     }
 
     try {
@@ -248,11 +438,25 @@ export default function ESignDocument() {
             
             if (uploadResponse.ok) {
               const uploadResult = await uploadResponse.json();
-              alert('Signature placeholders saved successfully! Document with placeholders has been saved. Signees will be notified.');
               
-              // Store the new file URL for CreateNewDocument to access
+              // Store the new file URL and additional information for the redirect
               localStorage.setItem('documentWithPlaceholdersUrl', uploadResult.fileUrl);
               localStorage.setItem('documentWithPlaceholdersTitle', documentTitle || 'Untitled Document');
+              localStorage.setItem('documentWithPlaceholdersId', documentId);
+              localStorage.setItem('documentWithPlaceholdersType', documentType || 'Unknown Type');
+              localStorage.setItem('documentWithPlaceholdersDepartment', department || 'Unknown Department');
+              localStorage.setItem('documentWithPlaceholdersApprovers', approvers || '');
+              localStorage.setItem('documentWithPlaceholdersDescription', ''); // No description in URL params
+              
+              // Store placeholder information for display
+              localStorage.setItem('documentWithPlaceholdersPlaceholders', JSON.stringify(placeholdersToSave));
+              
+              alert('Signature placeholders saved successfully! Document with placeholders has been saved. Signees will be notified. Redirecting back to document page...');
+              
+              // Close the current tab and redirect back to the original page
+              setTimeout(() => {
+                window.close();
+              }, 2000);
             } else {
               throw new Error('Failed to save document with placeholders');
             }
@@ -270,8 +474,23 @@ export default function ESignDocument() {
 
   // Handle saving the e-signed file (for receiver)
   const handleSaveFile = async () => {
-    if (pdfUrl && pdfUrl !== originalPdfUrl) {
+    // Check if there are any signed placeholders
+    const signedPlaceholders = placeholders.filter(p => p.isSigned);
+    const hasAnySignatures = signedPlaceholders.length > 0;
+    
+    console.log("handleSaveFile called - signedPlaceholders:", signedPlaceholders);
+    console.log("handleSaveFile called - hasAnySignatures:", hasAnySignatures);
+    console.log("handleSaveFile called - pdfUrl:", pdfUrl);
+    console.log("handleSaveFile called - originalPdfUrl:", originalPdfUrl);
+    
+    if (hasAnySignatures || (pdfUrl && pdfUrl !== originalPdfUrl)) {
       try {
+        if (!pdfUrl) {
+          console.error("No PDF URL available for saving");
+          alert('No PDF available to save. Please try again.');
+          return;
+        }
+        
         // Convert blob URL to File object for upload
         const response = await fetch(pdfUrl);
         const blob = await response.blob();
@@ -410,7 +629,18 @@ export default function ESignDocument() {
               setModalOpen={setModalOpen}
               draggingEnabled={draggingEnabled}
               setDraggingEnabled={setDraggingEnabled}
-              onApplyComplete={handleSaveFile}
+              onApplyComplete={(signedUrl) => {
+                console.log("onApplyComplete called with signedUrl:", signedUrl);
+                setPdfUrl(signedUrl); // Update PDF URL with signed version
+                setHasSigned(true);
+                console.log("PDF URL updated and hasSigned set to true");
+                
+                // Force a re-render to update the UI state
+                setTimeout(() => {
+                  console.log("Current placeholders state after signature:", placeholders);
+                  console.log("hasSigned state:", true);
+                }, 100);
+              }}
               viewMode={viewMode}
               setViewMode={setViewMode}
               originalPdfUrl={originalPdfUrl}

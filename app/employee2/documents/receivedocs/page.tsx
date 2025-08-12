@@ -8,14 +8,46 @@ import { toast } from "react-hot-toast";
 
 
 type ReceivedDocument = {
-  id: number;
-  name: string;
-  file: string;
-  status: string;
-  date: string;
+  requestID: number;
+  documentID: number;
+  title: string;
+  description: string;
   type: string;
-  creator: string;
-  preview: string;
+  department: string;
+  creator: {
+    UserID: number;
+    FirstName: string;
+    LastName: string;
+    Email: string;
+  };
+  status: string;
+  documentStatus: string;
+  requestedAt: string;
+  completedAt: string | null;
+  priority: string;
+  remarks: string;
+  latestVersion: {
+    versionID: number;
+    versionNumber: number;
+    filePath: string;
+  } | null;
+  signaturePlaceholders: Array<{
+    placeholderID: number;
+    page: number;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    assignedToID: number;
+    assignedTo: {
+      UserID: number;
+      FirstName: string;
+      LastName: string;
+    };
+    isSigned: boolean;
+    signedAt: string | null;
+    signatureData: string | null;
+  }>;
 };
 
 export default function ReceiveDocuments() {
@@ -43,7 +75,7 @@ export default function ReceiveDocuments() {
         const res = await fetch("/api/employee/documents/received-docs");
         const data = await res.json();
         if (res.ok) {
-          setDocs(data.docs);
+          setDocs(data.receivedDocuments);
         } else {
           console.error(data.error || "Failed to fetch documents");
         }
@@ -83,11 +115,11 @@ export default function ReceiveDocuments() {
 
   const filteredDocs = docs.filter((doc) => {
     const matchesSearch =
-      doc.name.toLowerCase().includes(search.toLowerCase()) ||
-      doc.id.toString().includes(search);
+      doc.title.toLowerCase().includes(search.toLowerCase()) ||
+      doc.documentID.toString().includes(search);
     const matchesStatus = !statusFilter || doc.status === statusFilter;
     const matchesType = !typeFilter || doc.type === typeFilter;
-    const docDate = new Date(doc.date);
+    const docDate = new Date(doc.requestedAt);
     const fromDate = dateFrom ? new Date(dateFrom) : null;
     const toDate = dateTo ? new Date(dateTo) : null;
     const matchesDate =
@@ -131,10 +163,10 @@ export default function ReceiveDocuments() {
 };
 
   const handleDownload = () => {
-    if (!selectedDoc?.name) return;
+    if (!selectedDoc?.latestVersion?.filePath) return;
     const link = document.createElement("a");
-    link.href = `/path/to/files/${selectedDoc.file}`;
-    link.download = selectedDoc.file;
+    link.href = selectedDoc.latestVersion.filePath;
+    link.download = `document-${selectedDoc.documentID}.pdf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -185,7 +217,7 @@ const handleConfirmClick = async () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        requestId: selectedDoc.id,
+        requestId: selectedDoc.requestID,
         remark: remarks,
       }),
     });
@@ -203,7 +235,7 @@ const handleConfirmClick = async () => {
       // Optional: refresh docs after hold
       setDocs((prevDocs) =>
         prevDocs.map((doc) =>
-          doc.id === selectedDoc.id
+          doc.requestID === selectedDoc.requestID
             ? { ...doc, status: "On-Hold" }
             : doc
         )
@@ -373,8 +405,8 @@ const handleConfirmClick = async () => {
       ) : filteredDocs.length > 0 ? (
         filteredDocs.map((doc, i) => (
           <tr key={i}>
-            <td>{doc.id}</td>
-            <td>{doc.name}</td>
+            <td>{doc.documentID}</td>
+            <td>{doc.title}</td>
             <td>{doc.type}</td>
             <td>
               <span
@@ -395,7 +427,7 @@ const handleConfirmClick = async () => {
                 {doc.status}
               </span>
             </td>
-            <td>{doc.date}</td>
+            <td>{new Date(doc.requestedAt).toLocaleDateString()}</td>
             <td className={styles.actions}>
               <a href="#" onClick={() => setSelectedDoc(doc)}>View</a>
             </td>
@@ -422,9 +454,9 @@ const handleConfirmClick = async () => {
       </div>
     ) : filteredDocs.length > 0 ? (
       filteredDocs.map((doc) => (
-        <div key={doc.id} className={styles.cardItem}>
+        <div key={doc.documentID} className={styles.cardItem}>
           <div className={styles.cardTop}>
-            <h3 className={styles.highlighted}>{doc.name}</h3>
+            <h3 className={styles.highlighted}>{doc.title}</h3>
             <span
               className={`${styles.badge} 
                 ${doc.status === "In-Process" 
@@ -443,12 +475,12 @@ const handleConfirmClick = async () => {
               {doc.status}
             </span>
           </div>
-          <p><strong className={styles.highlighted}>File:</strong> {doc.file}</p>
           <p><strong className={styles.highlighted}>Type:</strong> {doc.type}</p>
-          <p><strong className={styles.highlighted}>Date:</strong> {doc.date}</p>
-          <p><strong className={styles.highlighted}>Creator:</strong> {doc.creator}</p>
+          <p><strong className={styles.highlighted}>Department:</strong> {doc.department}</p>
+          <p><strong className={styles.highlighted}>Date:</strong> {new Date(doc.requestedAt).toLocaleDateString()}</p>
+          <p><strong className={styles.highlighted}>Creator:</strong> {`${doc.creator.FirstName} ${doc.creator.LastName}`}</p>
           <div className={styles.cardActions}>
-            <button onClick={() => handleView(doc)}>View</button>
+            <button onClick={() => setSelectedDoc(doc)}>View</button>
           </div>
         </div>
       ))
@@ -471,7 +503,7 @@ const handleConfirmClick = async () => {
               </button>
 
               <div className={styles.modalTop}>
-                <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
+                <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
                 <span
                               className={`${styles.badge} 
                                 ${selectedDoc.status === "In-Process" 
@@ -495,32 +527,34 @@ const handleConfirmClick = async () => {
                 <div className={styles.metaLabelRow}>
                   <span>Creator:</span>
                   <span>Type:</span>
+                  <span>Department:</span>
                   <span>Date:</span>
                 </div>
                 <div className={styles.metaValueRow}>
-                  <p>{selectedDoc.creator}</p>
+                  <p>{`${selectedDoc.creator.FirstName} ${selectedDoc.creator.LastName}`}</p>
                   <p>{selectedDoc.type}</p>
-                  <p>{selectedDoc.date}</p>
+                  <p>{selectedDoc.department}</p>
+                  <p>{new Date(selectedDoc.requestedAt).toLocaleDateString()}</p>
                 </div>
               </div>
 
               <div className={styles.previewContainer}>
-                {selectedDoc.preview?.match(/\.pdf$/i) ? (
+                {selectedDoc.latestVersion?.filePath?.match(/\.pdf$/i) ? (
                   <iframe
-                    src={`${selectedDoc.preview}#toolbar=0&navpanes=0&scrollbar=0`}
+                    src={`${selectedDoc.latestVersion.filePath}#toolbar=0&navpanes=0&scrollbar=0`}
                     title="PDF Preview"
                     width="100%"
                     height="600px"
                     style={{ border: "none" }}
                   />
-                ) : selectedDoc.preview ? (
+                ) : selectedDoc.latestVersion?.filePath ? (
                   <p>
-                    <a href={selectedDoc.preview} target="_blank" rel="noopener noreferrer">
+                    <a href={selectedDoc.latestVersion.filePath} target="_blank" rel="noopener noreferrer">
                       Download File
                     </a>
                   </p>
                 ) : (
-                  <p>No file selected.</p>
+                  <p>No file available.</p>
                 )}
               </div>
 
@@ -528,7 +562,7 @@ const handleConfirmClick = async () => {
                 <button className={styles.download} onClick={handleDownload}>Download</button>
                 <button
                   className={styles.Approve}
-                  onClick={() => handleApprove(selectedDoc.id)}
+                  onClick={() => handleApprove(selectedDoc.requestID)}
                   disabled={isApproving}
                 >
                   {isApproving ? "Approving..." : "Approve"}

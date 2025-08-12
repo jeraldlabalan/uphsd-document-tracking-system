@@ -106,14 +106,26 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        // Update document status to completed
+        // Update document status to "Awaiting-Completion"
         await db.document.update({
           where: { DocumentID: documentID },
           data: {
-            Status: "Completed",
+            Status: "Awaiting-Completion",
             UpdatedAt: new Date(),
           },
         });
+
+        // Update all document requests to "Awaiting-Completion" status
+        const awaitingCompletionStatus = await db.status.findFirst({
+          where: { StatusName: "Awaiting-Completion" },
+        });
+
+        if (awaitingCompletionStatus) {
+          await db.documentRequest.updateMany({
+            where: { DocumentID: documentID },
+            data: { StatusID: awaitingCompletionStatus.StatusID },
+          });
+        }
       }
     } else {
       // Find next unsigned placeholder and notify that signee
