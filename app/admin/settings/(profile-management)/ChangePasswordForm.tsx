@@ -1,8 +1,9 @@
-// ChangePassword.tsx (with TypeScript)
-import React, { useState } from "react";
-import styles from "./ProfileManagement.module.css";  // Adjust path if necessary
+"use client";
 
-// Define types for the input fields (you could expand this to include more specific validation)
+import React, { useState } from "react";
+import styles from "./ProfileManagement.module.css"; // keep your styles
+import toast from "react-hot-toast";
+
 interface ChangePasswordForm {
   currentPassword: string;
   newPassword: string;
@@ -10,31 +11,20 @@ interface ChangePasswordForm {
 }
 
 const ChangePasswordForm: React.FC = () => {
-  // State to manage the form inputs
   const [formData, setFormData] = useState<ChangePasswordForm>({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
 
-  // Handle change in input fields
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ): void => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,  // Update the correct field based on the name attribute
+      [name]: value,
     }));
   };
 
-  // Handle form submission
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
-    e.preventDefault();  // Prevent default form submission
-    console.log(formData);  // You can replace this with actual logic (e.g., API call)
-  };
-
-  // Handle clearing the form
   const handleClear = (): void => {
     setFormData({
       currentPassword: "",
@@ -43,15 +33,54 @@ const ChangePasswordForm: React.FC = () => {
     });
   };
 
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
+    e.preventDefault();
+
+    // Confirm passwords match
+    if (formData.newPassword !== formData.confirmPassword) {
+      toast.error("New password and confirm password do not match.");
+      return;
+    }
+
+    // Confirm dialog
+    if (!window.confirm("Are you sure you want to change your password?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/admin/settings/change-password", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || "Failed to change password.");
+      } else {
+        toast.success(data.message || "Password updated successfully!");
+        handleClear();
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred.");
+    }
+  };
+
   return (
     <div className={styles.changePasswordWrapper}>
       <form className={styles.changePasswordContainer} onSubmit={handleSubmit}>
         <p className={styles.sectionTitle}>Change Password</p>
 
         <div className={styles.changePasswordContents}>
-            
           <div className={styles.changePasswordDataForm}>
-
             <div className={styles.dataForm}>
               <label htmlFor="currentPassword">Current Password</label>
               <input
@@ -60,6 +89,7 @@ const ChangePasswordForm: React.FC = () => {
                 type="password"
                 value={formData.currentPassword}
                 onChange={handleChange}
+                required
               />
             </div>
 
@@ -71,6 +101,7 @@ const ChangePasswordForm: React.FC = () => {
                 type="password"
                 value={formData.newPassword}
                 onChange={handleChange}
+                required
               />
             </div>
 
@@ -82,9 +113,9 @@ const ChangePasswordForm: React.FC = () => {
                 type="password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
+                required
               />
             </div>
-
           </div>
         </div>
         <div className={styles.changePasswordButtons}>
