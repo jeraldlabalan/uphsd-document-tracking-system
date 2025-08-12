@@ -19,30 +19,28 @@ export async function POST(req: NextRequest) {
       UserID: number;
       Role: string;
     };
-
     const creatorID = decoded.UserID;
 
     const formData = await req.formData();
 
-    const file = formData.get("file") as File;
+    const files = formData.getAll("files") as File[];
     const Title = formData.get("Title") as string;
     const Description = formData.get("Description") as string;
     const TypeID = Number(formData.get("TypeID"));
-    const DepartmentID = formData.get("DepartmentID") ? Number(formData.get("DepartmentID")) : null;
-    const approverIDs = JSON.parse(formData.get("ApproverIDs") as string) as number[];
+    const DepartmentID = formData.get("DepartmentID")
+      ? Number(formData.get("DepartmentID"))
+      : null;
+    const approverIDs = JSON.parse(
+      formData.get("ApproverIDs") as string
+    ) as number[];
 
-    if (!file || !Title || !Description || !TypeID || !approverIDs.length) {
+    console.log("fetched files: ", files)
+
+    if (!files.length || !Title || !Description || !TypeID || !approverIDs.length) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Save the uploaded file
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const filename = `${uuidv4()}-${file.name}`;
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "documents");
-    await writeFile(path.join(uploadDir, filename), buffer);
-    const FilePath = `/public/uploads/documents/${filename}`;
-
-    // Create document
+    // Step 1: Create Document
     const newDocument = await db.document.create({
       data: {
         Title,
@@ -63,26 +61,38 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const newVersion = await db.documentVersion.create({
-      data: {
-        DocumentID: newDocument.DocumentID,
-        VersionNumber: 1,
-        FilePath,
-        ChangedBy: creatorID,
-        ChangeDescription: "Initial version",
-      },
-    });
+    // Step 2: Save files and create DocumentVersion entries
+    const uploadDir = path.join(process.cwd(), "public", "uploads", "documents");
+    let versionNumber = 1;
 
-    await db.activityLog.create({
-      data: {
-        PerformedBy: creatorID,
-        Action: "Created Document Version",
-        TargetType: "DocumentVersion",
-        Remarks: `Initial version uploaded for document ID ${newDocument.DocumentID}`,
-        TargetID: newVersion.VersionID,
-      },
-    });
+    for (const file of files) {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const filename = `${uuidv4()}-${file.name}`;
+      await writeFile(path.join(uploadDir, filename), buffer);
+      const FilePath = `/uploads/documents/${filename}`;
 
+      const newVersion = await db.documentVersion.create({
+        data: {
+          DocumentID: newDocument.DocumentID,
+          VersionNumber: versionNumber++,
+          FilePath,
+          ChangedBy: creatorID,
+          ChangeDescription: "Initial version",
+        },
+      });
+
+      await db.activityLog.create({
+        data: {
+          PerformedBy: creatorID,
+          Action: "Created Document Version",
+          TargetType: "DocumentVersion",
+          Remarks: `Version ${newVersion.VersionNumber} uploaded for document ID ${newDocument.DocumentID}`,
+          TargetID: newVersion.VersionID,
+        },
+      });
+    }
+
+    // Step 3: Get In-Process status
     const pendingStatus = await db.status.findFirst({
       where: { StatusName: "In-Process" },
     });
@@ -94,6 +104,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Step 4: Create requests for approvers
     const requests = approverIDs.map(async (approverID: number) => {
       const request = await db.documentRequest.create({
         data: {
@@ -115,10 +126,9 @@ export async function POST(req: NextRequest) {
           TargetID: request.RequestID,
         },
       });
-
-      return request;
     });
 
+    // Step 5: Send notifications
     const notifs = approverIDs.map(async (approverID: number) => {
       const notif = await db.notification.create({
         data: {
@@ -138,8 +148,6 @@ export async function POST(req: NextRequest) {
           TargetID: notif.NotificationID,
         },
       });
-
-      return notif;
     });
 
     await Promise.all([...requests, ...notifs]);
@@ -148,7 +156,6 @@ export async function POST(req: NextRequest) {
       message: "Document successfully created",
       documentID: newDocument.DocumentID,
     });
-
   } catch (error) {
     console.error("Document creation error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

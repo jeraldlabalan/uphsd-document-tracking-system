@@ -11,35 +11,35 @@ datasource db {
 
 /// USER TABLE
 model User {
-  UserID         Int               @id @default(autoincrement())
-  FirstName      String?
-  LastName       String?
-  Email          String            @unique
-  Password       String
-  MobileNumber   String?
-  Sex            String?
-  RoleID         Int
-  DepartmentID   Int?
-  PositionID     Int?
-  EmployeeID     String?           @unique
-  ProfilePicture String?
-  IsActive       Boolean           @default(true)
-  IsDeleted      Boolean           @default(false)
-  CreatedAt      DateTime          @default(now())
-  UpdatedAt      DateTime?         @updatedAt
-  ActivityLogs   ActivityLog[]
-  Documents      Document[]        @relation("CreatedDocuments")
-  RequestsFor    DocumentRequest[] @relation("RequestsFor")
-  RequestsMade   DocumentRequest[] @relation("RequestsMade")
-  VersionChanges DocumentVersion[]
-  Signatures     ESignature[]
+  UserID                Int                    @id @default(autoincrement())
+  FirstName             String?
+  LastName              String?
+  Email                 String                 @unique
+  Password              String
+  MobileNumber          String?
+  Sex                   String?
+  RoleID                Int
+  DepartmentID          Int?
+  PositionID            Int?
+  EmployeeID            String?                @unique
+  ProfilePicture        String?
+  IsActive              Boolean                @default(true)
+  IsDeleted             Boolean                @default(false)
+  CreatedAt             DateTime               @default(now())
+  UpdatedAt             DateTime?              @updatedAt
+  ActivityLogs          ActivityLog[]
+  Documents             Document[]             @relation("CreatedDocuments")
+  RequestsFor           DocumentRequest[]      @relation("RequestsFor")
+  RequestsMade          DocumentRequest[]      @relation("RequestsMade")
+  VersionChanges        DocumentVersion[]
+  Signatures            ESignature[]
+  ReceivedNotifs        Notification[]         @relation("ReceivedNotifs")
+  SentNotifs            Notification[]         @relation("SentNotifs")
+  Session               Session[]
   SignaturePlaceholders SignaturePlaceholder[]
-  ReceivedNotifs Notification[]    @relation("ReceivedNotifs")
-  SentNotifs     Notification[]    @relation("SentNotifs")
-  Session        Session[]
-  Department     Department?       @relation(fields: [DepartmentID], references: [DepartmentID])
-  Position       Position?         @relation(fields: [PositionID], references: [PositionID])
-  Role           Role              @relation(fields: [RoleID], references: [RoleID])
+  Department            Department?            @relation(fields: [DepartmentID], references: [DepartmentID])
+  Position              Position?              @relation(fields: [PositionID], references: [PositionID])
+  Role                  Role                   @relation(fields: [RoleID], references: [RoleID])
 }
 
 /// ROLE TABLE
@@ -77,21 +77,21 @@ model DocumentType {
 
 /// DOCUMENT TABLE
 model Document {
-  DocumentID   Int               @id @default(autoincrement())
-  Title        String
-  Description  String
-  CreatedBy    Int
-  DepartmentID Int?
-  CreatedAt    DateTime          @default(now())
-  UpdatedAt    DateTime          @updatedAt
-  Status       String            @default("Active")
-  IsDeleted    Boolean           @default(false)
-  TypeID       Int
-  Creator      User              @relation("CreatedDocuments", fields: [CreatedBy], references: [UserID])
-  Department   Department?       @relation(fields: [DepartmentID], references: [DepartmentID])
-  DocumentType DocumentType      @relation(fields: [TypeID], references: [TypeID])
-  Requests     DocumentRequest[]
-  Versions     DocumentVersion[]
+  DocumentID            Int                    @id @default(autoincrement())
+  Title                 String
+  Description           String
+  CreatedBy             Int
+  DepartmentID          Int?
+  CreatedAt             DateTime               @default(now())
+  UpdatedAt             DateTime               @updatedAt
+  Status                String                 @default("Active")
+  IsDeleted             Boolean                @default(false)
+  TypeID                Int
+  Creator               User                   @relation("CreatedDocuments", fields: [CreatedBy], references: [UserID])
+  Department            Department?            @relation(fields: [DepartmentID], references: [DepartmentID])
+  DocumentType          DocumentType           @relation(fields: [TypeID], references: [TypeID])
+  Requests              DocumentRequest[]
+  Versions              DocumentVersion[]
   SignaturePlaceholders SignaturePlaceholder[]
 }
 
@@ -149,7 +149,7 @@ model ESignature {
 
 /// SIGNATURE PLACEHOLDER TABLE
 model SignaturePlaceholder {
-  PlaceholderID Int      @id @default(autoincrement())
+  PlaceholderID Int       @id @default(autoincrement())
   DocumentID    Int
   Page          Int
   X             Float
@@ -157,13 +157,13 @@ model SignaturePlaceholder {
   Width         Float
   Height        Float
   AssignedToID  Int
-  IsSigned      Boolean @default(false)
+  IsSigned      Boolean   @default(false)
   SignedAt      DateTime?
   SignatureData String?
-  CreatedAt     DateTime @default(now())
-  IsDeleted     Boolean @default(false)
-  Document      Document @relation(fields: [DocumentID], references: [DocumentID])
-  AssignedTo    User     @relation(fields: [AssignedToID], references: [UserID])
+  CreatedAt     DateTime  @default(now())
+  IsDeleted     Boolean   @default(false)
+  AssignedTo    User      @relation(fields: [AssignedToID], references: [UserID])
+  Document      Document  @relation(fields: [DocumentID], references: [DocumentID])
 }
 
 /// DOCUMENT VERSION TABLE

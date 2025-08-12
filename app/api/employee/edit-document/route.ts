@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verify } from "jsonwebtoken";
 import { cookies } from "next/headers";
+import { writeFile } from "fs/promises";
+import path from "path";
+import { v4 as uuidv4 } from "uuid";
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,139 +19,153 @@ export async function POST(req: NextRequest) {
       UserID: number;
       Role: string;
     };
+    const editorID = decoded.UserID;
 
-    const {
-      DocumentID,
-      Title,
-      Description,
-      TypeID,
-      FilePath,
-      DepartmentID,
-      ApproverIDs,
-    } = await req.json();
+    const formData = await req.formData();
+    const DocumentID = Number(formData.get("DocumentID"));
+    const Title = (formData.get("Title") as string) ?? "";
+    const Description = (formData.get("Description") as string) ?? "";
+    const TypeID = Number(formData.get("TypeID"));
+    const DepartmentID = formData.get("DepartmentID")
+      ? Number(formData.get("DepartmentID"))
+      : null;
+    const ApproverIDs = JSON.parse(
+      (formData.get("ApproverIDs") as string) || "[]"
+    ) as number[];
+    const files = formData.getAll("files") as File[];
 
-    // 1. Update the existing document info
-    await db.document.update({
-      where: { DocumentID },
-      data: {
-        Title,
-        Description,
-        TypeID,
-        DepartmentID,
-      },
-    });
-
-    // 2. Get the current max version number
-    const latestVersion = await db.documentVersion.findFirst({
-      where: { DocumentID },
-      orderBy: { VersionNumber: "desc" },
-    });
-
-    const newVersionNumber = (latestVersion?.VersionNumber || 0) + 1;
-
-    const newVersion = await db.documentVersion.create({
-      data: {
-        DocumentID,
-        VersionNumber: newVersionNumber,
-        FilePath,
-        ChangedBy: decoded.UserID,
-        ChangeDescription: "Updated version",
-      },
-    });
-
-    // 3. Log activity
-    await db.activityLog.createMany({
-      data: [
-        {
-          PerformedBy: decoded.UserID,
-          Action: "Updated Document",
-          TargetType: "Document",
-          Remarks: `Document "${Title}" (ID ${DocumentID}) updated.`,
-          TargetID: DocumentID,
-        },
-        {
-          PerformedBy: decoded.UserID,
-          Action: "Created Document Version",
-          TargetType: "DocumentVersion",
-          Remarks: `New version ${newVersionNumber} added to document ID ${DocumentID}.`,
-          TargetID: newVersion.VersionID,
-        },
-      ],
-    });
-
-    // 4. Update document requests and notifications
-    const pendingStatus = await db.status.findFirst({
-      where: { StatusName: "In-Process" },
-    });
-
-    if (!pendingStatus) {
-      return NextResponse.json(
-        { error: "Missing 'In-Process' status in DB" },
-        { status: 500 }
-      );
+    if (!DocumentID) {
+      return NextResponse.json({ error: "DocumentID is required" }, { status: 400 });
     }
 
-    // Optional: delete existing requests and notifs, if desired
+    // Check permissions and load existing document with relations
+    const existing = await db.document.findFirst({
+      where: { DocumentID, IsDeleted: false },
+      include: {
+        Versions: { where: { IsDeleted: false }, orderBy: { VersionNumber: "desc" }, take: 1 },
+        Requests: true,
+      },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: "Document not found or access denied" }, { status: 404 });
+    }
+
+    const hasPermission =
+      existing.CreatedBy === editorID ||
+      existing.Requests.some((r) => r.RecipientUserID === editorID);
+    if (!hasPermission) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    }
+
+    // 1) Update document metadata
+    await db.document.update({
+      where: { DocumentID },
+      data: { Title, Description, TypeID, DepartmentID },
+    });
+
+    // 2) Create new version(s) if files are provided (persist files similar to create-document)
+    let createdVersionId: number | null = null;
+    if (files && files.length > 0) {
+      // Find latest version number
+      const latest = await db.documentVersion.findFirst({
+        where: { DocumentID },
+        orderBy: { VersionNumber: "desc" },
+      });
+      let versionNumber = (latest?.VersionNumber || 0) + 1;
+
+      const uploadDir = path.join(process.cwd(), "public", "uploads", "documents");
+
+      for (const file of files) {
+        // Save file to disk
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const filename = `${uuidv4()}-${file.name}`;
+        await writeFile(path.join(uploadDir, filename), buffer);
+        const FilePath = `/uploads/documents/${filename}`;
+
+        const newVersion = await db.documentVersion.create({
+          data: {
+            DocumentID,
+            VersionNumber: versionNumber++,
+            FilePath: FilePath,
+            ChangedBy: editorID,
+            ChangeDescription: "Updated version",
+          },
+        });
+        createdVersionId = newVersion.VersionID;
+      }
+    }
+
+    // 3) Reset requests/notifications to match new approvers
     await db.documentRequest.deleteMany({ where: { DocumentID } });
     await db.notification.deleteMany({
       where: {
-        Title: "New Document for Review",
-        Message: {
-          contains: `"${Title}"`, // assuming consistent format
+        Title: {
+          in: ["New Document for Review", "Document Update"],
         },
       },
     });
 
-    // 5. Re-create requests and notifications
-    const requests = ApproverIDs.map(async (approverID: number) => {
-      const request = await db.documentRequest.create({
+    const inProcess = await db.status.findFirst({ where: { StatusName: "In-Process" } });
+    if (!inProcess) {
+      return NextResponse.json({ error: "Missing 'In-Process' status in DB" }, { status: 500 });
+    }
+
+    const createReqs = ApproverIDs.map(async (approverID) => {
+      const reqRec = await db.documentRequest.create({
         data: {
-          RequestedByID: decoded.UserID,
+          RequestedByID: editorID,
           RecipientUserID: approverID,
           DocumentID,
-          StatusID: pendingStatus.StatusID,
+          StatusID: inProcess.StatusID,
           Priority: "Normal",
           Remarks: "Awaiting review",
         },
       });
 
+      await db.notification.create({
+        data: {
+          SenderID: editorID,
+          ReceiverID: approverID,
+          Title: "Document Update",
+          Message: `A document "${Title}" has been updated and needs your review.`,
+        },
+      });
+
       await db.activityLog.create({
         data: {
-          PerformedBy: decoded.UserID,
+          PerformedBy: editorID,
           Action: "Updated Document Request",
           TargetType: "DocumentRequest",
           Remarks: `Request created for user ${approverID} on document ${DocumentID}`,
-          TargetID: request.RequestID,
+          TargetID: reqRec.RequestID,
         },
       });
-
-      return request;
     });
 
-    const notifs = ApproverIDs.map(async (approverID: number) => {
-      const notif = await db.notification.create({
-        data: {
-          SenderID: decoded.UserID,
-          ReceiverID: approverID,
-          Title: "New Document for Review",
-          Message: `A new version of "${Title}" requires your review.`,
-        },
-      });
+    await Promise.all(createReqs);
 
+    // 4) Activity logs
+    await db.activityLog.create({
+      data: {
+        PerformedBy: editorID,
+        Action: "Updated Document",
+        TargetType: "Document",
+        Remarks: `Document "${Title}" (ID ${DocumentID}) updated`,
+        TargetID: DocumentID,
+      },
+    });
+    if (createdVersionId) {
       await db.activityLog.create({
         data: {
-          PerformedBy: decoded.UserID,
-          Action: "Sent Notification",
-          TargetType: "Notification",
-          Remarks: `Notification sent to user ${approverID} for document ${DocumentID}`,
-          TargetID: notif.NotificationID,
+          PerformedBy: editorID,
+          Action: "Created Document Version",
+          TargetType: "DocumentVersion",
+          Remarks: `New version added to document ID ${DocumentID}`,
+          TargetID: createdVersionId,
         },
       });
-
-      return notif;
-    });
-
-    await Promise.all([...requests, ...notifs]);
+    }
 
     return NextResponse.json({ message: "Document successfully updated" });
   } catch (error) {

@@ -287,7 +287,7 @@ useEffect(() => {
           <a href="#" onClick={() => setSelectedDoc(doc)}>
             View
           </a>{" "}
-          | <Link href={`./edit-doc/${doc.id}`}>Edit</Link>
+          | <Link href={`/employee2/edit-doc/${doc.id}`}>Edit</Link>
         </td>
       </tr>
     ))

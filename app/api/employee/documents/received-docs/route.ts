@@ -17,45 +17,57 @@ export async function GET(req: Request) {
 
     // Step 1: Fetch document requests assigned to this user (Recipient)
     const requests = await db.documentRequest.findMany({
-      where: {
-        RecipientUserID: userID,
-        IsDeleted: false,
-      },
+  where: {
+    RecipientUserID: userID,
+    IsDeleted: false,
+  },
+  include: {
+    Document: {
       include: {
-        Document: {
-          include: {
-            DocumentType: true,
-            Department: true,
-            Creator: {
-              select: {
-                FirstName: true,
-                LastName: true,
-              },
-            },
+        DocumentType: true,
+        Department: true,
+        Creator: {
+          select: {
+            FirstName: true,
+            LastName: true,
           },
         },
-        Status: true,
+        Versions: {
+          where: { IsDeleted: false },
+          orderBy: { CreatedAt: "desc" },
+          take: 1, // ✅ Only latest version
+          select: {
+            FilePath: true,
+          },
+        },
       },
-      orderBy: {
-        RequestedAt: "desc",
-      },
-    });
-
+    },
+    Status: true,
+  },
+  orderBy: {
+    RequestedAt: "desc",
+  },
+});
     if (!requests) {
       return NextResponse.json({ error: "No documents found" }, { status: 404 });
     }
 
     // Step 2: Format response
-    const docs = requests.map((req) => ({
-      id: req.RequestID,
-      name: req.Document?.Title ?? "Untitled",
-      type: req.Document?.DocumentType?.TypeName ?? "Unknown",
-      department: req.Document?.Department?.Name ?? "Unknown",
-      status: req.Status?.StatusName ?? "Unknown",
-      date: req.RequestedAt.toISOString().split("T")[0],
-      creator: `${req.Document?.Creator?.FirstName || "Unknown"} ${req.Document?.Creator?.LastName || "Unknown"}`,
-      preview: `/public/uploads/files/${req.Document?.Title ?? ""}`,
-    }));
+const docs = requests.map((req) => {
+  const latestFilePath = req.Document?.Versions[0]?.FilePath ?? "";
+  return {
+    id: req.RequestID,
+    name: req.Document?.Title ?? "Untitled",
+    type: req.Document?.DocumentType?.TypeName ?? "Unknown",
+    department: req.Document?.Department?.Name ?? "Unknown",
+    status: req.Status?.StatusName ?? "Unknown",
+    date: req.RequestedAt.toISOString().split("T")[0],
+    creator: `${req.Document?.Creator?.FirstName || "Unknown"} ${
+      req.Document?.Creator?.LastName || "Unknown"
+    }`,
+    preview: latestFilePath ? `/${latestFilePath}` : "",
+  };
+});
 
 
     console.log("Received documents:", docs);

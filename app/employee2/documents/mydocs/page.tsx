@@ -247,7 +247,6 @@ export default function MyDocuments() {
                 <tr>
                   <th>ID</th>
                   <th>Document</th>
-                  <th>File</th>
                   <th>Status</th>
                   <th>Date</th>
                   <th>Actions</th>
@@ -268,7 +267,6 @@ export default function MyDocuments() {
                     <tr key={i}>
                       <td>{doc.id}</td>
                       <td>{doc.name}</td>
-                      <td>{doc.file}</td>
                       <td>
                         <span
                           className={`${styles.badge} 
@@ -455,11 +453,11 @@ export default function MyDocuments() {
                   </button>
                 </div>
                 <div className={styles.rightButton}>
-                  <Link href={`./edit-doc/`}>
-                    {" "}
+                  <Link
+                    href={`/employee2/edit-doc/${selectedDoc.id}`}
+                  >
                     <button className={styles.edit}>Edit</button>
                   </Link>
-
                   {selectedDoc.status === "Awaiting-Completion" && (
                     <button
                       className={styles.markCompleteBtn}
@@ -551,7 +549,6 @@ export default function MyDocuments() {
                 >
                   OK
                 </button>
-
               </div>
             </div>
           </div>
