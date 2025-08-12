@@ -16,7 +16,6 @@ const transporter = nodemailer.createTransport({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-
     console.log("📦 Received payload:", body);
 
     const {
@@ -58,20 +57,24 @@ export async function POST(req: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 10);
     console.log("🔐 Password hashed.");
 
-    // Insert user with "N/A" for missing string fields, null for nullable FK fields
+    // Helper to clean optional fields
+    const cleanField = (field: any) =>
+      field === undefined || field === "" ? null : field;
+
+    // Create user with null for optional fields
     const newUser = await db.user.create({
       data: {
         Email: email,
         Password: hashedPassword,
         RoleID: roleID,
-        FirstName: firstName || "N/A",
-        LastName: lastName || "N/A",
-        MobileNumber: mobileNumber || "N/A",
-        Sex: sex || "N/A",
-        DepartmentID: departmentID || null,
-        PositionID: positionID || null,
-        EmployeeID: employeeID || "N/A",
-        ProfilePicture: profilePicture || "N/A",
+        DepartmentID: departmentID ?? null,
+        FirstName: cleanField(firstName),
+        LastName: cleanField(lastName),
+        MobileNumber: cleanField(mobileNumber),
+        Sex: cleanField(sex),
+        PositionID: positionID ?? null,
+        EmployeeID: cleanField(employeeID),
+        ProfilePicture: cleanField(profilePicture),
       },
     });
 
@@ -84,17 +87,17 @@ export async function POST(req: NextRequest) {
       subject: "New Account Credentials",
       text: `Hello!
 
-            Your account (${email}) has been successfully created.
+Your account (${email}) has been successfully created.
 
-            Temporary password: ${password}
+Temporary password: ${password}
 
-            Please change your password upon first login to ensure your account's security.
+Please change your password upon first login to ensure your account's security.
 
-            Thank you!
+Thank you!
 
-            Best regards,
-            Administrator
-            Document Tracking System - UPHSD Las Piñas
+Best regards,
+Administrator
+Document Tracking System - UPHSD Las Piñas
 `,
       html: `
         <div>
@@ -122,7 +125,6 @@ export async function POST(req: NextRequest) {
     console.error("❌ Server error:", error);
     if (error.stack) console.error(error.stack);
 
-    // Optional debug info (can be removed in production)
     console.log("🔎 Environment variables:");
     console.log("EMAIL_USER:", process.env.EMAIL_USER ?? "❌ Not set");
     console.log(
@@ -134,7 +136,6 @@ export async function POST(req: NextRequest) {
       process.env.DATABASE_URL ? "✔️ Exists" : "❌ Missing"
     );
 
-    // Handle Prisma unique constraint violation on Email
     if (
       error.code === "P2002" &&
       Array.isArray(error.meta?.target) &&

@@ -59,6 +59,7 @@ const passwordRequirements = [
 ];
 
 const toLocalMobileFormat = (mobile: string) => {
+  if (!mobile) return "";
   if (mobile.startsWith("+63")) return "0" + mobile.slice(3);
   return mobile;
 };
@@ -77,6 +78,7 @@ export default function EditUserPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
 
   const fetchPositionsByRole = async (roleId: number) => {
     const res = await fetch(`/api/user/position?roleId=${roleId}`);
@@ -112,17 +114,17 @@ export default function EditUserPage() {
       setPositions(posData || []);
       setUser({
         id: userData.id,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        email: userData.email,
+        firstName: userData.firstName ?? "",
+        lastName: userData.lastName ?? "",
+        email: userData.email ?? "",
         password: "",
-        mobileNumber: toLocalMobileFormat(userData.mobile),
-        sex: userData.sex,
-        roleID: userData.roleId,
-        departmentID: userData.departmentId,
-        positionID: userData.positionId,
-        employeeID: userData.employeeId,
-        profilePicture: userData.profilePicture,
+        mobileNumber: toLocalMobileFormat(userData.mobile ?? ""),
+        sex: userData.sex ?? "",
+        roleID: userData.roleId ?? 0,
+        departmentID: userData.departmentId ?? null,
+        positionID: userData.positionId ?? 0,
+        employeeID: userData.employeeId ?? "",
+        profilePicture: userData.profilePicture ?? null,
       });
 
       fetchPositionsByRole(userData.roleId);
@@ -234,6 +236,12 @@ export default function EditUserPage() {
       return;
     }
 
+    // ✅ Add confirmation here
+    const confirmed = window.confirm(
+      "Are you sure you want to save these changes?"
+    );
+    if (!confirmed) return;
+
     const payload: UserUpdatePayload = {
       firstName: user.firstName,
       lastName: user.lastName,
@@ -287,7 +295,9 @@ export default function EditUserPage() {
                 className={styles.profileImage}
               />
             ) : (
-              <div className={styles.fallbackInitials}>{user.firstName[0]}</div>
+              <div className={styles.fallbackInitials}>
+                {user.firstName?.[0] ?? "?"}
+              </div>
             )}
             <p className={styles.userName}>
               {user.firstName} {user.lastName}
@@ -302,7 +312,6 @@ export default function EditUserPage() {
                 name="employeeID"
                 value={user.employeeID}
                 onChange={handleChange}
-
               />
             </div>
 
@@ -371,9 +380,11 @@ export default function EditUserPage() {
                 </div>
               )}
 
-              {errors.password && !validatePassword(user.password || "") && (
-                <p className={styles.error}>{errors.password}</p>
-              )}
+              {touched.password &&
+                errors.password &&
+                !validatePassword(user.password || "") && (
+                  <p className={styles.error}>{errors.password}</p>
+                )}
             </div>
 
             <div className={styles.formGroup}>
@@ -451,7 +462,7 @@ export default function EditUserPage() {
               <select
                 className={styles.input}
                 name="positionID"
-                value={user.positionID}
+                value={user.positionID || ""}
                 onChange={handleChange}
               >
                 <option value="" disabled hidden>
