@@ -84,7 +84,7 @@ model Document {
   DepartmentID          Int?
   CreatedAt             DateTime               @default(now())
   UpdatedAt             DateTime               @updatedAt
-  Status                String                 @default("Active")
+  Status                String                 @default("In-Process")
   IsDeleted             Boolean                @default(false)
   TypeID                Int
   Creator               User                   @relation("CreatedDocuments", fields: [CreatedBy], references: [UserID])

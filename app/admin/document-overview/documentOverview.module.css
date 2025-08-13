@@ -33,6 +33,29 @@
   align-items: center;
 }
 
+.statusUpdateBtn {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.statusUpdateBtn:hover {
+  background: linear-gradient(135deg, #ee5a52, #d63031);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.statusUpdateBtn:active {
+  transform: translateY(0);
+}
+
 .createButton {
   position: relative;
   background-color: var(--color-maroon);
@@ -284,7 +307,11 @@
   border: 1px solid #ffd59f;
 }
 
-/* Completed */
+.inProcess {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
 .completed {
   background-color: #d4edda;
   color: #155724;
@@ -525,6 +552,41 @@
   max-width: 400px;
   width: 100%;
   text-align: center;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.modalHeader h3 {
+  margin: 0;
+  color: #333;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.closeBtn:hover {
+  background-color: #f0f0f0;
+}
+
+.modalContent {
+  margin-bottom: 1rem;
+}
+
+.modalContent p {
+  margin: 0;
+  color: #666;
+  line-height: 1.5;
 }
 
 .modalActions {

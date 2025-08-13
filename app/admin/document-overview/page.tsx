@@ -16,9 +16,11 @@ export default function DocumentOverview() {
   const [dateError, setDateError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showStatusUpdateModal, setShowStatusUpdateModal] = useState(false);
+  const [statusUpdateMessage, setStatusUpdateMessage] = useState("");
 
   const [documents, setDocuments] = useState<any[]>([]);
-  const [summary, setSummary] = useState<{ totalDocuments: number; activeDocuments: number; deletedDocuments: number } | null>(null);
+  const [summary, setSummary] = useState<{ totalDocuments: number; inProcessDocuments: number; deletedDocuments: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function loadData() {
@@ -66,6 +68,32 @@ export default function DocumentOverview() {
 
   const handleCloseModal = () => setIsModalOpen(false);
   const handleCloseSuccess = () => setShowSuccessModal(false);
+  const handleCloseStatusUpdate = () => setShowStatusUpdateModal(false);
+
+  async function handleUpdateDocumentStatuses() {
+    try {
+      const res = await fetch("/api/admin/update-document-statuses", {
+        method: "POST",
+        credentials: "include",
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to update document statuses");
+      }
+      
+      const data = await res.json();
+      setStatusUpdateMessage(data.message);
+      setShowStatusUpdateModal(true);
+      
+      // Reload data to reflect changes
+      await loadData();
+    } catch (error: any) {
+      console.error("Error updating document statuses:", error);
+      setStatusUpdateMessage(`Error: ${error.message}`);
+      setShowStatusUpdateModal(true);
+    }
+  }
 
   async function handleConfirmDelete() {
     try {
@@ -93,14 +121,23 @@ export default function DocumentOverview() {
         <div className={styles.contentSection}>
           <div className={styles.headerRow}>
             <h2 className={styles.pageTitle}>Document Overview</h2>
+            <button 
+              onClick={handleUpdateDocumentStatuses}
+              className={styles.statusUpdateBtn}
+              title="Update any existing documents with 'Active' status to 'In-Process'"
+            >
+              Update Document Statuses
+            </button>
           </div>
           <hr className={styles.separator} />
 
           <div className={styles.summary}>
             <div className={`${styles.card} ${styles.green}`}>
-              <FileCheck className={styles.icon} />
-              <span className={styles.count}>{summary?.activeDocuments ?? 0}</span>
-              <span>Active</span>
+
+              <CheckCircle className={styles.icon} />
+              <span className={styles.count}>{summary?.inProcessDocuments ?? 0}</span>
+              <span>In-Process</span>
+
             </div>
 
             <div className={`${styles.card} ${styles.red}`}>
@@ -130,10 +167,11 @@ export default function DocumentOverview() {
 
             <select className={styles.dropdown} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="">All Status</option>
-              <option>Pending</option>
-              <option>In Process</option>
+              <option>In-Process</option>
+              <option>Awaiting Signatures</option>
+              <option>Awaiting-Completion</option>
               <option>Completed</option>
-              <option>Rejected</option>
+              <option>On Hold</option>
             </select>
 
             <select className={styles.dropdown} value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
@@ -194,22 +232,15 @@ export default function DocumentOverview() {
                     <td>{doc.title}</td>
                     <td>{doc.department}</td>
                     <td>
-                      <span
-                        className={`${styles.badge} 
-                ${
-                  doc.status === "In-Process"
-                    ? styles.inProcess
-                    : doc.status === "Completed"
-                      ? styles.completed
-                      : doc.status === "On-Hold"
-                        ? styles.onHold
-                        : doc.status === "Approved"
-                          ? styles.approved
-                          : doc.status === "Awaiting-Completion"
-                            ? styles.awaiting
-                            : ""
-                }`}
-                      >
+                      <span className={`${styles.badge} ${
+                        doc.status === "Completed" ? styles.completed : 
+                        doc.status === "In-Process" ? styles.inProcess : 
+                        doc.status === "Awaiting Signatures" ? styles.pending :
+                        doc.status === "Awaiting-Completion" ? styles.pending :
+                        doc.status === "On Hold" ? styles.onHold : 
+                        styles.pending
+                      }`}>
+
                         {doc.status}
                       </span>
 
@@ -252,25 +283,17 @@ export default function DocumentOverview() {
 
               <div className={styles.modalTop}>
                 <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
-                <span
-                                  className={`${styles.badge} 
-                                                ${
-                                                  selectedDoc.status === "In-Process"
-                                                    ? styles.inProcess
-                                                    : selectedDoc.status === "Completed"
-                                                      ? styles.completed
-                                                      : selectedDoc.status === "On-Hold"
-                                                        ? styles.onHold
-                                                        : selectedDoc.status === "Approved"
-                                                          ? styles.approved
-                                                          : selectedDoc.status ===
-                                                              "Awaiting-Completion"
-                                                            ? styles.awaiting
-                                                            : ""
-                                                }`}
-                                >
-                                  {selectedDoc.status}
-                                </span>
+                <span className={`${styles.badge} ${
+                  selectedDoc.status === "Completed" ? styles.completed : 
+                  selectedDoc.status === "In-Process" ? styles.inProcess : 
+                  selectedDoc.status === "Awaiting Signatures" ? styles.pending :
+                  selectedDoc.status === "Awaiting-Completion" ? styles.pending :
+                  selectedDoc.status === "On Hold" ? styles.onHold : 
+                  styles.pending
+                }`}>
+                  {selectedDoc.status}
+                </span>
+
               </div>
 
               <div className={styles.metaGrid}>
@@ -304,13 +327,35 @@ export default function DocumentOverview() {
           </div>
         )}
 
+        {/* Success Modal */}
         {showSuccessModal && (
-          <div className={styles.successmodalOverlay}>
+          <div className={styles.modalOverlay}>
             <div className={styles.modal}>
-              <h3 className={styles.successmodalTitle}>Success!</h3>
-              <p>Document has been successfully deleted.</p>
-              <div className={styles.modalActions}>
-                <button onClick={handleCloseSuccess} className={styles.closeButtonx}>Close</button>
+              <div className={styles.modalHeader}>
+                <h3>Success!</h3>
+                <button onClick={handleCloseSuccess} className={styles.closeBtn}>
+                  <X size={20} />
+                </button>
+              </div>
+              <div className={styles.modalContent}>
+                <p>Document deleted successfully!</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Status Update Modal */}
+        {showStatusUpdateModal && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.modal}>
+              <div className={styles.modalHeader}>
+                <h3>Status Update Result</h3>
+                <button onClick={handleCloseStatusUpdate} className={styles.closeBtn}>
+                  <X size={20} />
+                </button>
+              </div>
+              <div className={styles.modalContent}>
+                <p>{statusUpdateMessage}</p>
               </div>
             </div>
           </div>

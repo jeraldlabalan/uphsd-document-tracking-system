@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
         TypeID,
         CreatedBy: creatorID,
         DepartmentID,
+        Status: "In-Process", // Explicitly set status to In-Process
       },
     });
 
@@ -109,51 +110,92 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Step 4: Create requests for approvers
-    const requests = approverIDs.map(async (approverID: number) => {
-      const request = await db.documentRequest.create({
-        data: {
-          RequestedByID: creatorID,
-          RecipientUserID: approverID,
-          DocumentID: newDocument.DocumentID,
-          StatusID: pendingStatus.StatusID,
-          Priority: "Normal",
-          Remarks: "Awaiting review",
+    // Step 4: Create requests for approvers and send notifications
+    let requests: Promise<any>[] = [];
+    let notifs: Promise<any>[] = [];
+
+    if (approverIDs.length > 0) {
+      // Create requests for specific approvers
+      requests = approverIDs.map(async (approverID: number) => {
+        const request = await db.documentRequest.create({
+          data: {
+            RequestedByID: creatorID,
+            RecipientUserID: approverID,
+            DocumentID: newDocument.DocumentID,
+            StatusID: pendingStatus.StatusID,
+            Priority: "Normal",
+            Remarks: "Awaiting review",
+          },
+        });
+
+        await db.activityLog.create({
+          data: {
+            PerformedBy: creatorID,
+            Action: "Created Document Request",
+            TargetType: "DocumentRequest",
+            Remarks: `Request created for user ${approverID} on document ${newDocument.DocumentID}`,
+            TargetID: request.RequestID,
+          },
+        });
+      });
+
+      // Send notifications to specific approvers
+      notifs = approverIDs.map(async (approverID: number) => {
+        const notif = await db.notification.create({
+          data: {
+            SenderID: creatorID,
+            ReceiverID: approverID,
+            Title: "New Document for Review",
+            Message: `A new document "${Title}" requires your review.`,
+          },
+        });
+
+        await db.activityLog.create({
+          data: {
+            PerformedBy: creatorID,
+            Action: "Sent Notification",
+            TargetType: "Notification",
+            Remarks: `Notification sent to user ${approverID} for document ${newDocument.DocumentID}`,
+            TargetID: notif.NotificationID,
+          },
+        });
+      });
+    } else if (DepartmentID) {
+      // No approvers required, but send notifications to all department members
+      const departmentMembers = await db.user.findMany({
+        where: {
+          DepartmentID: DepartmentID,
+          UserID: { not: creatorID }, // Exclude the creator
+          IsActive: true,
+          IsDeleted: false,
+        },
+        select: {
+          UserID: true,
         },
       });
 
-      await db.activityLog.create({
-        data: {
-          PerformedBy: creatorID,
-          Action: "Created Document Request",
-          TargetType: "DocumentRequest",
-          Remarks: `Request created for user ${approverID} on document ${newDocument.DocumentID}`,
-          TargetID: request.RequestID,
-        },
-      });
-    });
+      // Send notifications to all department members
+      notifs = departmentMembers.map(async (member) => {
+        const notif = await db.notification.create({
+          data: {
+            SenderID: creatorID,
+            ReceiverID: member.UserID,
+            Title: "New Document Created",
+            Message: `A new document "${Title}" has been created in your department.`,
+          },
+        });
 
-    // Step 5: Send notifications
-    const notifs = approverIDs.map(async (approverID: number) => {
-      const notif = await db.notification.create({
-        data: {
-          SenderID: creatorID,
-          ReceiverID: approverID,
-          Title: "New Document for Review",
-          Message: `A new document "${Title}" requires your review.`,
-        },
+        await db.activityLog.create({
+          data: {
+            PerformedBy: creatorID,
+            Action: "Sent Department Notification",
+            TargetType: "Notification",
+            Remarks: `Department notification sent to user ${member.UserID} for document ${newDocument.DocumentID}`,
+            TargetID: notif.NotificationID,
+          },
+        });
       });
-
-      await db.activityLog.create({
-        data: {
-          PerformedBy: creatorID,
-          Action: "Sent Notification",
-          TargetType: "Notification",
-          Remarks: `Notification sent to user ${approverID} for document ${newDocument.DocumentID}`,
-          TargetID: notif.NotificationID,
-        },
-      });
-    });
+    }
 
     await Promise.all([...requests, ...notifs]);
 

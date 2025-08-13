@@ -342,41 +342,82 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Missing 'In-Process' status in DB" }, { status: 500 });
     }
 
-    const createReqs = ApproverIDs.map(async (approverID) => {
-      const reqRec = await db.documentRequest.create({
-        data: {
-          RequestedByID: editorID,
-          RecipientUserID: approverID,
-          DocumentID,
-          StatusID: inProcess.StatusID,
-          Priority: "Normal",
-          Remarks: "Awaiting review",
+    let createReqs: Promise<any>[] = [];
+    let notifications: Promise<any>[] = [];
+
+    if (ApproverIDs.length > 0) {
+      // Create requests for specific approvers
+      createReqs = ApproverIDs.map(async (approverID) => {
+        const reqRec = await db.documentRequest.create({
+          data: {
+            RequestedByID: editorID,
+            RecipientUserID: approverID,
+            DocumentID,
+            StatusID: inProcess.StatusID,
+            Priority: "Normal",
+            Remarks: "Awaiting review",
+          },
+        });
+
+        const notif = await db.notification.create({
+          data: {
+            SenderID: editorID,
+            ReceiverID: approverID,
+            Title: "Document Ready for Signature",
+            Message: `A document "${Title}" is ready for your signature. Please review and sign the document.`,
+          },
+        });
+        
+        console.log(`Notification created for user ${approverID} for document ${DocumentID}`);
+
+        await db.activityLog.create({
+          data: {
+            PerformedBy: editorID,
+            Action: "Updated Document Request",
+            TargetType: "DocumentRequest",
+            Remarks: `Request created for user ${approverID} on document ${DocumentID}`,
+            TargetID: reqRec.RequestID,
+          },
+        });
+      });
+    } else if (DepartmentID) {
+      // No approvers required, but send notifications to all department members
+      const departmentMembers = await db.user.findMany({
+        where: {
+          DepartmentID: DepartmentID,
+          UserID: { not: editorID }, // Exclude the editor
+          IsActive: true,
+          IsDeleted: false,
+        },
+        select: {
+          UserID: true,
         },
       });
 
-      await db.notification.create({
-        data: {
-          SenderID: editorID,
-          ReceiverID: approverID,
-          Title: "Document Ready for Signature",
-          Message: `A document "${Title}" is ready for your signature. Please review and sign the document.`,
-        },
-      });
-      
-      console.log(`Notification created for user ${approverID} for document ${DocumentID}`);
+      // Send notifications to all department members
+      notifications = departmentMembers.map(async (member) => {
+        const notif = await db.notification.create({
+          data: {
+            SenderID: editorID,
+            ReceiverID: member.UserID,
+            Title: "Document Updated",
+            Message: `A document "${Title}" has been updated in your department.`,
+          },
+        });
 
-      await db.activityLog.create({
-        data: {
-          PerformedBy: editorID,
-          Action: "Updated Document Request",
-          TargetType: "DocumentRequest",
-          Remarks: `Request created for user ${approverID} on document ${DocumentID}`,
-          TargetID: reqRec.RequestID,
-        },
+        await db.activityLog.create({
+          data: {
+            PerformedBy: editorID,
+            Action: "Sent Department Update Notification",
+            TargetType: "Notification",
+            Remarks: `Department update notification sent to user ${member.UserID} for document ${DocumentID}`,
+            TargetID: notif.NotificationID,
+          },
+        });
       });
-    });
+    }
 
-    await Promise.all(createReqs);
+    await Promise.all([...createReqs, ...notifications]);
 
     // 4) Handle signature placeholders if provided
     if (placeholders && placeholders.length > 0) {
