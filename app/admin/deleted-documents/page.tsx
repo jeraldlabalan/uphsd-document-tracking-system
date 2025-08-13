@@ -10,6 +10,7 @@ import Link from "next/link";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { CheckCircle, Clock, PauseCircle } from "lucide-react";
+import { fetchFilterData, FilterData } from "@/lib/filterData";
 
 // const cookieStore = await cookies();
 // const session = cookieStore.get("session");
@@ -37,6 +38,13 @@ export default function DeletedDocuments() {
       duration: 1000,
       once: true,
     });
+
+    // Load filter data
+    const loadFilterData = async () => {
+      const data = await fetchFilterData();
+      setFilterData(data);
+    };
+    loadFilterData();
   }, []);
 
   const [search, setSearch] = useState("");
@@ -56,6 +64,11 @@ export default function DeletedDocuments() {
     useState(false);
   const [showSuccessPermanentDelete, setShowSuccessPermanentDelete] =
     useState(false);
+  const [filterData, setFilterData] = useState<FilterData>({
+    documentTypes: [],
+    departments: [],
+    statuses: []
+  });
 
   const documents: Documents[] = [
     {
@@ -206,10 +219,11 @@ export default function DeletedDocuments() {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="">All Status</option>
-              <option>Pending</option>
-              <option>In Process</option>
-              <option>Completed</option>
-              <option>Rejected</option>
+              {filterData.statuses.map((status) => (
+                <option key={status.StatusID} value={status.StatusName}>
+                  {status.StatusName}
+                </option>
+              ))}
             </select>
 
             <select
@@ -218,10 +232,11 @@ export default function DeletedDocuments() {
               onChange={(e) => setTypeFilter(e.target.value)}
             >
               <option value="">All Types</option>
-              <option>Report</option>
-              <option>Request</option>
-              <option>Evaluation</option>
-              <option>Budget</option>
+              {filterData.documentTypes.map((type) => (
+                <option key={type.TypeID} value={type.TypeName}>
+                  {type.TypeName}
+                </option>
+              ))}
             </select>
             <div className={styles.dateFilterWrapper}>
               <div className={styles.dateGroup}>

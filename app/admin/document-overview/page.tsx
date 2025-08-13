@@ -5,6 +5,7 @@ import styles from "./documentOverview.module.css";
 import AdminHeader from "@/components/shared/adminHeader";
 import { Search as SearchIcon } from "lucide-react";
 import { X, FileCheck, FileText, Trash2, CheckCircle } from "lucide-react";
+import { fetchFilterData, FilterData } from "@/lib/filterData";
 
 export default function DocumentOverview() {
   const [search, setSearch] = useState("");
@@ -22,6 +23,11 @@ export default function DocumentOverview() {
   const [documents, setDocuments] = useState<any[]>([]);
   const [summary, setSummary] = useState<{ totalDocuments: number; inProcessDocuments: number; deletedDocuments: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [filterData, setFilterData] = useState<FilterData>({
+    documentTypes: [],
+    departments: [],
+    statuses: []
+  });
 
   async function loadData() {
     setLoading(true);
@@ -42,6 +48,12 @@ export default function DocumentOverview() {
 
   useEffect(() => {
     loadData();
+    // Load filter data
+    const loadFilterData = async () => {
+      const data = await fetchFilterData();
+      setFilterData(data);
+    };
+    loadFilterData();
   }, []);
 
   const filteredDocs = documents.filter((doc) => {
@@ -190,19 +202,20 @@ const handleNext = () => {
 
             <select className={styles.dropdown} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="">All Status</option>
-              <option>In-Process</option>
-              <option>Awaiting Signatures</option>
-              <option>Awaiting-Completion</option>
-              <option>Completed</option>
-              <option>On Hold</option>
+              {filterData.statuses.map((status) => (
+                <option key={status.StatusID} value={status.StatusName}>
+                  {status.StatusName}
+                </option>
+              ))}
             </select>
 
             <select className={styles.dropdown} value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
               <option value="">All Types</option>
-              <option>Report</option>
-              <option>Request</option>
-              <option>Evaluation</option>
-              <option>Budget</option>
+              {filterData.documentTypes.map((type) => (
+                <option key={type.TypeID} value={type.TypeName}>
+                  {type.TypeName}
+                </option>
+              ))}
             </select>
 
             <div className={styles.dateFilterWrapper}>

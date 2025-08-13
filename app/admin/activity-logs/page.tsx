@@ -11,6 +11,7 @@ import Link from "next/link";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { CheckCircle, Clock, PauseCircle } from "lucide-react";
+import { fetchFilterData, FilterData } from "@/lib/filterData";
 
 // const cookieStore = await cookies();
 
@@ -46,6 +47,11 @@ export default function ActivityLogs() {
   const [dateTo, setDateTo] = useState("");
   const [dateError, setDateError] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
+  const [filterData, setFilterData] = useState<FilterData>({
+    documentTypes: [],
+    departments: [],
+    statuses: []
+  });
   const [showConfirmRestore, setShowConfirmRestore] = useState(false);
   const [showRestoreLoading, setShowRestoreLoading] = useState(false);
   const [showConfirmSuccess, setShowConfirmSuccess] = useState(false);
@@ -80,7 +86,13 @@ export default function ActivityLogs() {
       }
     };
 
+    const loadFilterData = async () => {
+      const data = await fetchFilterData();
+      setFilterData(data);
+    };
+
     fetchLogs();
+    loadFilterData();
   }, [statusFilter, typeFilter, dateFrom]); // Re-fetch on filter change
 
   // const activityLogs = [
@@ -223,10 +235,11 @@ export default function ActivityLogs() {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="">All Status</option>
-              <option>Pending</option>
-              <option>In Process</option>
-              <option>Completed</option>
-              <option>Rejected</option>
+              {filterData.statuses.map((status) => (
+                <option key={status.StatusID} value={status.StatusName}>
+                  {status.StatusName}
+                </option>
+              ))}
             </select>
 
             <select 
@@ -235,10 +248,11 @@ export default function ActivityLogs() {
               onChange={(e) => setTypeFilter(e.target.value)}
             >
               <option value="">All Types</option>
-              <option>Report</option>
-              <option>Request</option>
-              <option>Evaluation</option>
-              <option>Budget</option>
+              {filterData.documentTypes.map((type) => (
+                <option key={type.TypeID} value={type.TypeName}>
+                  {type.TypeName}
+                </option>
+              ))}
             </select>
             <div className={styles.dateFilterWrapper}>
               <div className={styles.dateGroup}>
