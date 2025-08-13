@@ -119,6 +119,15 @@ export default function EditDocument() {
               isSigned: p.isSigned,
             })),
           });
+          
+          // Set esign required to true if document has placeholders
+          if (files.length > 0) {
+            const updatedFiles = files.map(file => ({
+              ...file,
+              requireEsign: true
+            }));
+            setFiles(updatedFiles);
+          }
         }
       } catch (e) {
         console.error(e);
@@ -206,7 +215,13 @@ export default function EditDocument() {
   useEffect(() => {
     async function fetchApprovers() {
       try {
-        const res = await fetch("/api/employee/create-document/approvers");
+        // Only fetch approvers if a department is selected
+        if (!departmentID) {
+          setApprovers([]);
+          return;
+        }
+
+        const res = await fetch(`/api/employee/create-document/approvers?departmentId=${departmentID}`);
         if (!res.ok) {
           throw new Error(`Failed to fetch: ${res.status}`);
         }
@@ -231,7 +246,7 @@ export default function EditDocument() {
     }
 
     fetchApprovers();
-  }, []);
+  }, [departmentID]); // Changed dependency to departmentID
 
   // Check for e-signed documents when page loads
   useEffect(() => {
@@ -769,6 +784,56 @@ export default function EditDocument() {
                             Open E-Sign
                           </button>
                         )}
+
+                        {/* Add Edit Placeholders button beside Open E-Sign */}
+                        {item.requireEsign && (
+                          <button
+                            type="button"
+                            className={styles.editPlaceholdersBtn}
+                            onClick={() => {
+                              // Open e-sign interface again for editing placeholders
+                              const placeholders = savedDocument?.placeholders;
+                              if (placeholders && placeholders.length > 0) {
+                                // Create a new file object from the saved document URL
+                                fetch(savedDocument.url)
+                                  .then(response => response.blob())
+                                  .then(blob => {
+                                    const file = new File([blob], `document-with-placeholders.pdf`, { type: 'application/pdf' });
+                                    
+                                    // Prepare approvers data
+                                    const approversData = approverIDs.filter(id => id !== 0).map(id => {
+                                      const approver = approvers.find(a => a.UserID === id);
+                                      return {
+                                        id: id.toString(),
+                                        userId: id,
+                                        name: approver ? `${approver.FirstName} ${approver.LastName}` : `Approver ${id}`,
+                                      };
+                                    });
+
+                                    // Create URL parameters
+                                    const params = new URLSearchParams({
+                                      docId: idStr || 'unknown',
+                                      title: title,
+                                      type: selectedType,
+                                      department: department,
+                                      approvers: encodeURIComponent(JSON.stringify(approversData)),
+                                      file: URL.createObjectURL(file),
+                                      userRole: "sender",
+                                    });
+
+                                    // Open e-sign interface in new tab
+                                    window.open(`/employee2/e-sign-document?${params.toString()}`, "_blank");
+                                  })
+                                  .catch(error => {
+                                    console.error("Error opening document for editing:", error);
+                                    alert("Failed to open document for editing. Please try again.");
+                                  });
+                              }
+                            }}
+                          >
+                            Edit Placeholders
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1002,56 +1067,6 @@ export default function EditDocument() {
                 <p>📧 Signees have been notified automatically</p>
                 <p>⏳ Waiting for all signatures to be completed</p>
                 <p>🔄 You can continue editing this document or wait for signatures</p>
-              </div>
-              
-              {/* Action Buttons */}
-              <div className={styles.actionButtons}>
-                <button
-                  type="button"
-                  className={styles.editPlaceholdersBtn}
-                  onClick={() => {
-                    // Open e-sign interface again for the same document
-                    const placeholders = savedDocument?.placeholders;
-                    if (placeholders && placeholders.length > 0) {
-                      // Create a new file object from the saved document URL
-                      fetch(savedDocument.url)
-                        .then(response => response.blob())
-                        .then(blob => {
-                          const file = new File([blob], `document-with-placeholders.pdf`, { type: 'application/pdf' });
-                          
-                          // Prepare approvers data
-                          const approversData = approverIDs.filter(id => id !== 0).map(id => {
-                            const approver = approvers.find(a => a.UserID === id);
-                            return {
-                              id: id.toString(),
-                              userId: id,
-                              name: approver ? `${approver.FirstName} ${approver.LastName}` : `Approver ${id}`,
-                            };
-                          });
-
-                          // Create URL parameters
-                          const params = new URLSearchParams({
-                            docId: placeholders[0]?.documentId || 'unknown',
-                            title: title,
-                            type: selectedType,
-                            department: department,
-                            approvers: encodeURIComponent(JSON.stringify(approversData)),
-                            file: URL.createObjectURL(file),
-                            userRole: "sender",
-                          });
-
-                          // Open e-sign interface in new tab
-                          window.open(`/employee2/e-sign-document?${params.toString()}`, "_blank");
-                        })
-                        .catch(error => {
-                          console.error("Error opening document for editing:", error);
-                          alert("Failed to open document for editing. Please try again.");
-                        });
-                    }
-                  }}
-                >
-                  ✏️ Edit Placeholders
-                </button>
               </div>
             </div>
           </div>

@@ -128,7 +128,13 @@ export default function CreateNewDocument() {
   useEffect(() => {
     async function fetchApprovers() {
       try {
-        const res = await fetch("/api/employee/create-document/approvers");
+        // Only fetch approvers if a department is selected
+        if (!departmentID) {
+          setApprovers([]);
+          return;
+        }
+
+        const res = await fetch(`/api/employee/create-document/approvers?departmentId=${departmentID}`);
         if (!res.ok) {
           throw new Error(`Failed to fetch: ${res.status}`);
         }
@@ -153,7 +159,7 @@ export default function CreateNewDocument() {
     }
 
     fetchApprovers();
-  }, []);
+  }, [departmentID]); // Changed dependency to departmentID
 
   // Check for e-signed documents when page loads
   useEffect(() => {

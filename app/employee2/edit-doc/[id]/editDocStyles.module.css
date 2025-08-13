@@ -738,6 +738,28 @@
   transform: translateY(-2px);
 }
 
+/* Edit Placeholders Button Styles */
+.editPlaceholdersBtn {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+}
+
+.editPlaceholdersBtn:hover {
+  background: linear-gradient(135deg, #f57c00, #e65100);
+  transform: translateY(-2px);
+}
+
 /* Document Status Section */
 .documentStatus {
   margin-top: 2rem;

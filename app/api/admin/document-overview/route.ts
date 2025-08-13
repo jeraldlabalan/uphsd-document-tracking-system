@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     requireAdmin(token);
 
     // Summary and listing
-    const [totalDocuments, activeDocuments, deletedDocuments, recentDocuments] = await Promise.all([
+    const [totalDocuments, inProcessDocuments, deletedDocuments, recentDocuments] = await Promise.all([
       db.document.count(),
       db.document.count({ where: { IsDeleted: false } }),
       db.document.count({ where: { IsDeleted: true } }),
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       summary: {
         totalDocuments,
-        activeDocuments,
+        inProcessDocuments,
         deletedDocuments,
       },
       documents: docs,
