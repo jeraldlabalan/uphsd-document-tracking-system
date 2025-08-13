@@ -323,10 +323,11 @@ const handleConfirmClick = async () => {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="">All Status</option>
-              <option>Pending</option>
-              <option>In Process</option>
+              <option>In-Process</option>
+              <option>Approved</option>
+              <option>Awaiting-Completion</option>
               <option>Completed</option>
-              <option>Rejected</option>
+              <option>On Hold</option>
             </select>
 
             <select
@@ -583,10 +584,11 @@ const handleConfirmClick = async () => {
               This file type cannot be previewed in the browser.
             </p>
             <a
-              href={selectedDoc.latestVersion.filePath}
+             
               target="_blank"
               rel="noopener noreferrer"
               className={styles.downloadLink}
+              href={selectedDoc.latestVersion.filePath} download
             >
               Download File
             </a>
@@ -614,7 +616,19 @@ const handleConfirmClick = async () => {
                   {isApproving ? "Approving..." : "Approve"}
                 </button>
                 <button className={styles.OnHold} onClick={() => setShowOnHoldModal(true)}>On Hold</button>
-                <button className={styles.print} onClick={handlePrint}>Print</button>
+                <button
+                className={styles.print}
+                onClick={() => {
+                  if (selectedDoc.latestVersion?.filePath) {
+                    window.open(selectedDoc.latestVersion.filePath, "_blank", "noopener,noreferrer");
+                  } else {
+                    alert("No file available to print.");
+                  }
+                }}
+              >
+                Print
+              </button>
+
               </div>
             </div>
           </div>

@@ -251,6 +251,7 @@ export default function MyDocuments() {
                 <tr>
                   <th>ID</th>
                   <th>Document</th>
+                  <th>File</th>
                   <th>Status</th>
                   <th>Date</th>
                   <th>Actions</th>
@@ -271,6 +272,7 @@ export default function MyDocuments() {
                     <tr key={i}>
                       <td>{doc.id}</td>
                       <td>{doc.name}</td>
+                      <td>{doc.type}</td>
                       <td>
                         <span
                           className={`${styles.badge} 

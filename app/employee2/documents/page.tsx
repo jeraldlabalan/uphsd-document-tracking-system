@@ -139,17 +139,22 @@ useEffect(() => {
   });
 
   const handleDownload = () => {
-    if (!selectedDoc?.file) return;
+    if (!selectedDoc?.preview) return;
     const link = document.createElement("a");
-    link.href = `/path/to/files/${selectedDoc.file}`; // Adjust file path accordingly
-    link.download = selectedDoc.file;
+    link.href = selectedDoc.preview;
+    link.download = selectedDoc.name || "document";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   const handlePrint = () => {
-    window.print();
+    if (selectedDoc?.preview) {
+      // Open the file in a new tab for printing
+      window.open(selectedDoc.preview, "_blank", "noopener,noreferrer");
+    } else {
+      alert("No file available to print.");
+    }
   };
 
   return (
@@ -270,13 +275,17 @@ useEffect(() => {
       <tr key={i}>
         <td>{doc.id}</td>
         <td>{doc.name}</td>
-        <td>{doc.file}</td>
+        <td>{doc.preview ? doc.preview.split('.').pop()?.toUpperCase() || 'File' : 'No file'}</td>
         <td>
           <span
             className={`${styles.badge} ${
               doc.status === "Completed"
                 ? styles.completed
-                : styles.pending
+                : doc.status === "In Process"
+                ? styles.inProcess
+                : doc.status === "Pending"
+                ? styles.pending
+                : ""
             }`}
           >
             {doc.status}
@@ -284,7 +293,11 @@ useEffect(() => {
         </td>
         <td>{doc.date}</td>
         <td className={styles.actions}>
-          <a href="#" onClick={() => setSelectedDoc(doc)}>
+          <a href="#" onClick={() => {
+            console.log("Selected document:", doc);
+            console.log("Document preview:", doc.preview);
+            setSelectedDoc(doc);
+          }}>
             View
           </a>{" "}
           | <Link href={`/employee2/edit-doc/${doc.id}`}>Edit</Link>
@@ -340,26 +353,61 @@ useEffect(() => {
               </div>
 
               <div className={styles.previewContainer}>
-                {selectedDoc.preview?.match(/\.pdf$/i) ? (
-                  <iframe
-                    src={`${selectedDoc.preview}#toolbar=0&navpanes=0&scrollbar=0`}
-                    title="PDF Preview"
-                    width="100%"
-                    height="600px"
-                    style={{ border: "none" }}
-                  ></iframe>
-                ) : selectedDoc.preview ? (
-                  <p>
-                    <a
-                      href={selectedDoc.preview}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      No file attached
-                    </a>
-                  </p>
+                {selectedDoc.preview ? (
+                  (() => {
+                    const isPDF = selectedDoc.preview.match(/\.pdf$/i);
+                    
+                    if (isPDF) {
+                      return (
+                        <div>
+                          <iframe
+                            src={`${selectedDoc.preview}#toolbar=0&navpanes=0&scrollbar=0`}
+                            title="PDF Preview"
+                            width="100%"
+                            height="600px"
+                            style={{ border: "none" }}
+                            onError={(e) => {
+                              console.error("Iframe error:", e);
+                            }}
+                            onLoad={() => {
+                              console.log("PDF loaded successfully");
+                            }}
+                          />
+                          <div style={{ marginTop: '10px', fontSize: '12px', color: '#666' }}>
+                            <p>If the preview doesn't load, you can:</p>
+                            <ul style={{ margin: '5px 0', paddingLeft: '20px' }}>
+                              <li><a href={selectedDoc.preview} target="_blank" rel="noopener noreferrer">Open the file in a new tab</a></li>
+                              <li><a href={selectedDoc.preview} download>Download the file directly</a></li>
+                            </ul>
+                          </div>
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div>
+                          <p>File type: {selectedDoc.preview.split('.').pop()?.toUpperCase()}</p>
+                          <p style={{ fontSize: '12px', color: '#666', marginBottom: '10px' }}>
+                            This file type cannot be previewed in the browser.
+                          </p>
+                          <a
+                            href={selectedDoc.preview}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.downloadLink}
+                          >
+                            Download File
+                          </a>
+                        </div>
+                      );
+                    }
+                  })()
                 ) : (
-                  <p>No file selected.</p>
+                  <div>
+                    <p>No file available.</p>
+                    <p style={{ fontSize: '12px', color: '#666' }}>
+                      This document may not have an attached file or the file path is missing.
+                    </p>
+                  </div>
                 )}
               </div>
 

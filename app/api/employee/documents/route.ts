@@ -87,7 +87,7 @@ export async function GET(req: Request) {
         status: userRequest?.Status?.StatusName ?? "Unknown",
         date: doc.CreatedAt.toISOString().split("T")[0],
         creator: `${doc.Creator?.FirstName || "Unknown"} ${doc.Creator?.LastName || "Unknown"}`,
-        preview: latestFilepath ? `/${latestFilepath}` : "",
+        preview: latestFilepath || "",
         userRole: isCreator ? "creator" : "approver", // Track user's role
       };
     });
