@@ -1,173 +1,7 @@
-// "use client";
-// import React, { useState } from "react";
-// import styles from "./ProfileManagement.module.css"; // change to your CSS module filename
-// import CustomSelect from "@/components/custom-select/CustomSelect";
-
-// /** Define the shape of our form data fields */
-// interface FormData {
-//   fname: string;
-//   lname: string;
-//   email: string;
-//   employeeId: string;
-//   contact: string;
-//   role: string;
-// }
-
-// /** Strict typing for dropdown options */
-// const departmentOptions: string[] = [
-//   "Human Resources",
-//   "Information Technology",
-//   "Business",
-//   "Marketing",
-// ];
-
-// const InformationForm: React.FC = () => {
-//   /** State for standard input fields */
-//   const [formData, setFormData] = useState<FormData>({
-//     fname: "",
-//     lname: "",
-//     email: "",
-//     employeeId: "",
-//     contact: "",
-//     role: "",
-//   });
-
-//   /** State for handling dropdown selection */
-//   const [selectedDepartment, setSelectedDepartment] = useState<string | null>("Select")
-
-//   /** Handles onChange for standard input fields */
-//   const handleChange = (
-//     e: React.ChangeEvent<HTMLInputElement>
-//   ): void => {
-//     const { name, value } = e.target;
-//     setFormData((prev) => ({ ...prev, [name]: value }));
-//   };
-
-//   /** Reset states to clear the form */
-//   const handleCancel = (): void => {
-//     setFormData({
-//       fname: "",
-//       lname: "",
-//       email: "",
-//       employeeId: "",
-//       contact: "",
-//       role: "",
-//     });
-//     setSelectedDepartment(null);
-//   };
-
-//   /** Demo save logic — replace with API request later */
-//   const handleSave = (): void => {
-//     console.log({
-//       ...formData,
-//       department: selectedDepartment,
-//     });
-//   };
-
-//   return (
-//     <div className={styles.informationContainer}>
-//       <p>information</p>
-
-//       <form action="" method="" className={styles.informationForm}>
-//         <div className={styles.formContainer}>
-//           {/* FIRST NAME */}
-//           <div className={styles.formData}>
-//             <label htmlFor="fname">first name</label>
-//             <input
-//               name="fname"
-//               placeholder="First Name"
-//               type="text"
-//               value={formData.fname}
-//               onChange={handleChange}
-//             />
-//           </div>
-
-//           {/* LAST NAME */}
-//           <div className={styles.formData}>
-//             <label htmlFor="lname">last name</label>
-//             <input
-//               name="lname"
-//               placeholder="Last Name"
-//               type="text"
-//               value={formData.lname}
-//               onChange={handleChange}
-//             />
-//           </div>
-
-//           {/* EMAIL */}
-//           <div className={styles.formData}>
-//             <label>email address</label>
-//             <input
-//               name="email"
-//               placeholder="email address"
-//               type="text"
-//               value={formData.email}
-//               onChange={handleChange}
-//             />
-//           </div>
-
-//           {/* EMPLOYEE ID */}
-//           <div className={styles.formData}>
-//             <label>employee id</label>
-//             <input
-//               name="employeeId"
-//               placeholder="employee id"
-//               type="text"
-//               value={formData.employeeId}
-//               onChange={handleChange}
-//             />
-//           </div>
-
-//           {/* CONTACT */}
-//           <div className={styles.formData}>
-//             <label htmlFor="contact">mobile number</label>
-//             <input
-//               name="contact"
-//               placeholder="contact number"
-//               type="text"
-//               value={formData.contact}
-//               onChange={handleChange}
-//             />
-//           </div>
-
-//           {/* ROLE */}
-//           <div className={styles.formData}>
-//             <label>role</label>
-//             <input
-//               name="role"
-//               placeholder="role"
-//               type="text"
-//               value={formData.role}
-//               onChange={handleChange}
-//             />
-//           </div>
-
-//           {/* DROPDOWN (Department) */}
-//           <div className={styles.formData}>
-//             <label>department</label>
-//             <CustomSelect options={departmentOptions} value={selectedDepartment } onChange={setSelectedDepartment}/>
-//           </div>
-//         </div>
-
-//         {/* ACTION BUTTONS AT BOTTOM */}
-//         <div className={styles.buttonsContainer}>
-//           <button type="button" onClick={handleCancel}>
-//             cancel
-//           </button>
-//           <button type="button" onClick={handleSave}>
-//             save changes
-//           </button>
-//         </div>
-//       </form>
-//     </div>
-//   );
-// };
-
-// export default InformationForm;
-
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import styles from "./ProfileManagement.module.css"; // your CSS module for this component
+import styles from "./ProfileManagement.module.css";
+import toast from "react-hot-toast";
 
 /** Define the shape of our form data fields */
 interface FormData {
@@ -176,18 +10,43 @@ interface FormData {
   email: string;
   employeeId: string;
   contact: string;
-  role: string;
+  sex: string;
+  position: string;
 }
 
-/** Strict typing for dropdown options */
-const departmentOptions: string[] = [
-  "Human Resources",
-  "Information Technology",
-  "Business",
-  "Marketing",
-];
+interface UserInfo {
+  FirstName: string | null;
+  LastName: string | null;
+  Email: string;
+  EmployeeID: string | null;
+  MobileNumber: string | null;
+  Sex: string | null;
+  Position: string | null;
+}
 
-const InformationForm: React.FC = () => {
+interface InformationFormProps {
+  userInfo: UserInfo | null;
+  onUserInfoUpdate: (updatedInfo: Partial<UserInfo>) => void;
+}
+
+const InformationForm: React.FC<InformationFormProps> = ({
+  userInfo,
+  onUserInfoUpdate,
+}) => {
+  // Helper function to transform mobile number from +63 to 09 format for display
+  const transformMobileForDisplay = (mobileNumber: string | null): string => {
+    if (!mobileNumber) return "";
+    if (mobileNumber.startsWith("+63")) {
+      return `0${mobileNumber.substring(3)}`; // Remove +63, add 0
+    }
+    return mobileNumber; // Keep as is if not in +63 format
+  };
+
+  // Helper function to transform mobile number from 09 to +63 format for database
+  const transformMobileForDB = (mobileNumber: string): string | null => {
+    if (!mobileNumber.trim()) return null;
+    return `+63${mobileNumber.trim().substring(1)}`; // Remove 0, add +63
+  };
   /** State for standard input fields */
   const [formData, setFormData] = useState<FormData>({
     fname: "",
@@ -195,13 +54,49 @@ const InformationForm: React.FC = () => {
     email: "",
     employeeId: "",
     contact: "",
-    role: "",
+    sex: "",
+    position: "",
   });
 
-  /** State for handling dropdown selection */
-  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(
-    "Select"
-  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Fetch available options from API
+  const [positionOptions, setPositionOptions] = useState<string[]>([]);
+  const sexOptions: string[] = ["Male", "Female"];
+
+  // Load user data into form when userInfo changes
+  useEffect(() => {
+    if (userInfo) {
+      setFormData({
+        fname: userInfo.FirstName || "",
+        lname: userInfo.LastName || "",
+        email: userInfo.Email || "",
+        employeeId: userInfo.EmployeeID || "",
+        contact: transformMobileForDisplay(userInfo.MobileNumber),
+        sex: userInfo.Sex || "",
+        position: userInfo.Position || "",
+      });
+    }
+  }, [userInfo]);
+
+  // Fetch position options
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const posRes = await fetch("/api/user/position");
+
+        if (posRes.ok) {
+          const posData = await posRes.json();
+          setPositionOptions(posData.map((pos: any) => pos.Name));
+        }
+      } catch (error) {
+        console.error("Error fetching options:", error);
+      }
+    };
+
+    fetchOptions();
+  }, []);
 
   /** Handles onChange for standard input fields */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -209,43 +104,138 @@ const InformationForm: React.FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  /** Reset states to clear the form */
+  /** Reset form to current user data */
   const handleCancel = (): void => {
-    setFormData({
-      fname: "",
-      lname: "",
-      email: "",
-      employeeId: "",
-      contact: "",
-      role: "",
-    });
-    setSelectedDepartment(null);
+    if (userInfo) {
+      setFormData({
+        fname: userInfo.FirstName || "",
+        lname: userInfo.LastName || "",
+        email: userInfo.Email || "",
+        employeeId: userInfo.EmployeeID || "",
+        contact: transformMobileForDisplay(userInfo.MobileNumber),
+        sex: userInfo.Sex || "",
+        position: userInfo.Position || "",
+      });
+    }
+    setIsEditing(false);
   };
 
-  /** Demo save logic — replace with API request later */
-  const handleSave = (): void => {
-    console.log({
-      ...formData,
-      department: selectedDepartment,
-    });
+  /** Save user information */
+  const handleSave = async (): Promise<void> => {
+    if (!userInfo) return;
+
+    // Basic validation
+    if (!formData.fname.trim() || !formData.lname.trim()) {
+      toast.error("Firstname and Lastname are required");
+      return;
+    }
+
+    if (!formData.email.trim()) {
+      toast.error("Email is required");
+      return;
+    }
+
+    // Mobile number validation (only when saving)
+    if (formData.contact.trim()) {
+      const mobileNumber = formData.contact.trim();
+      if (!/^09\d{9}$/.test(mobileNumber)) {
+        toast.error("Mobile number must be 11 digits starting with 09");
+        return;
+      }
+    }
+
+    // Confirmation dialog before saving
+    const isConfirmed = window.confirm(
+      "Are you sure you want to save these changes?"
+    );
+
+    if (!isConfirmed) return; // Exit if the user doesn't confirm
+
+    setIsLoading(true);
+
+    try {
+      // Transform mobile number to +63 format
+      let mobileNumberForDB = null;
+      if (formData.contact.trim()) {
+        const mobileNumber = formData.contact.trim();
+        mobileNumberForDB = `+63${mobileNumber.substring(1)}`; // Remove 0, add +63
+      }
+
+      const response = await fetch("/api/admin/settings/update-user-info", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstName: formData.fname.trim(),
+          lastName: formData.lname.trim(),
+          email: formData.email.trim(),
+          employeeId: formData.employeeId.trim() || null,
+          mobileNumber: mobileNumberForDB,
+          sex: formData.sex || null,
+          position: formData.position || null,
+        }),
+      });
+
+      if (response.ok) {
+        const updatedData = await response.json();
+        toast.success("Information updated successfully!");
+
+        // Update parent component immediately for instant display
+        onUserInfoUpdate({
+          FirstName: formData.fname.trim(),
+          LastName: formData.lname.trim(),
+          Email: formData.email.trim(),
+          EmployeeID: formData.employeeId.trim() || null,
+          MobileNumber: formData.contact.trim() || null,
+          Sex: formData.sex || null,
+          Position: formData.position || null,
+        });
+
+        setIsEditing(false);
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.message || "Failed to update information");
+      }
+    } catch (error) {
+      console.error("Error updating user info:", error);
+      toast.error("An error occurred while updating information");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  /** Handle dropdown visibility and selection */
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  /** Handle dropdown visibility and selection for each dropdown */
+  const [openDropdown, setOpenDropdown] = useState<null | "sex" | "position">(
+    null
+  );
 
-  const toggleOpen = () => setOpen((prev) => !prev);
+  const refSex = useRef<HTMLDivElement>(null);
+  const refPosition = useRef<HTMLDivElement>(null);
 
-  const handleSelect = (val: string) => {
-    setSelectedDepartment(val);
-    setOpen(false);
+  const toggleOpen = (dropdown: "sex" | "position") => {
+    if (!isEditing) return;
+    setOpenDropdown((prev) => (prev === dropdown ? null : dropdown));
+  };
+
+  const handleSelect = (dropdown: "sex" | "position", val: string) => {
+    if (dropdown === "sex") setFormData((prev) => ({ ...prev, sex: val }));
+    else if (dropdown === "position")
+      setFormData((prev) => ({ ...prev, position: val }));
+
+    setOpenDropdown(null);
   };
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
-        setOpen(false);
+      if (
+        refSex.current &&
+        !refSex.current.contains(event.target as Node) &&
+        refPosition.current &&
+        !refPosition.current.contains(event.target as Node)
+      ) {
+        setOpenDropdown(null);
       }
     };
     document.addEventListener("mousedown", handleClick);
@@ -254,31 +244,62 @@ const InformationForm: React.FC = () => {
 
   return (
     <div className={styles.informationContainer}>
-      <p>Information</p>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "20px",
+        }}
+      >
+        <p>Information</p>
+        {!isEditing ? (
+          <button
+            type="button"
+            onClick={() => setIsEditing(true)}
+            style={{
+              backgroundColor: "var(--color-maroon)",
+              color: "var(--color-yellow)",
+              border: "none",
+              padding: "8px 16px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontSize: "0.9rem",
+            }}
+          >
+            Edit Information
+          </button>
+        ) : null}
+      </div>
 
-      <form className={styles.informationForm}>
+      <form
+        className={styles.informationForm}
+        onSubmit={(e) => e.preventDefault()}
+      >
         <div className={styles.formContainer}>
           {/* Form fields */}
           <div className={styles.formData}>
-            <label htmlFor="fname">First Name</label>
+            <label htmlFor="fname">Firstname</label>
             <input
               name="fname"
-              placeholder="First Name"
+              placeholder="Firstname"
               type="text"
               value={formData.fname}
               onChange={handleChange}
+              disabled={!isEditing}
             />
           </div>
 
           {/* Last Name */}
           <div className={styles.formData}>
-            <label htmlFor="lname">Last Name</label>
+            <label htmlFor="lname">Lastname</label>
             <input
               name="lname"
-              placeholder="Last Name"
+              placeholder="Lastname"
               type="text"
               value={formData.lname}
               onChange={handleChange}
+              disabled={!isEditing}
             />
           </div>
 
@@ -287,10 +308,12 @@ const InformationForm: React.FC = () => {
             <label>Email Address</label>
             <input
               name="email"
-              placeholder="Email Address"
-              type="text"
+              placeholder="Email"
+              type="email"
               value={formData.email}
               onChange={handleChange}
+              disabled={!isEditing}
+              readOnly
             />
           </div>
 
@@ -303,6 +326,8 @@ const InformationForm: React.FC = () => {
               type="text"
               value={formData.employeeId}
               onChange={handleChange}
+              disabled={!isEditing}
+              readOnly
             />
           </div>
 
@@ -311,35 +336,31 @@ const InformationForm: React.FC = () => {
             <label htmlFor="contact">Mobile Number</label>
             <input
               name="contact"
-              placeholder="Contact Number"
-              type="text"
+              placeholder="Mobile Number"
+              type="tel"
               value={formData.contact}
               onChange={handleChange}
+              disabled={!isEditing}
+              maxLength={11}
             />
           </div>
 
-          {/* Role */}
+          {/* Sex Dropdown */}
           <div className={styles.formData}>
-            <label>Role</label>
-            <input
-              name="role"
-              placeholder="Role"
-              type="text"
-              value={formData.role}
-              onChange={handleChange}
-            />
-          </div>
-
-          {/* Custom Select for Department */}
-          <div className={styles.formData}>
-            <label>Department</label>
-            <div className={styles.wrapper} ref={ref}>
+            <label>Sex</label>
+            <div className={styles.wrapper} ref={refSex}>
               <div
-                className={`${styles.display} ${open ? styles.active : ""}`}
-                onClick={toggleOpen}
+                className={`${styles.display} ${
+                  openDropdown === "sex" ? styles.active : ""
+                } ${!isEditing ? styles.disabled : ""}`}
+                onClick={() => toggleOpen("sex")}
               >
-                {selectedDepartment || "Select Department"}
-                <span className={`${styles.arrow} ${open ? styles.open : ""}`}>
+                {formData.sex || "Select"}
+                <span
+                  className={`${styles.arrow} ${
+                    openDropdown === "sex" ? styles.open : ""
+                  }`}
+                >
                   <svg
                     width="12"
                     height="7"
@@ -355,26 +376,86 @@ const InformationForm: React.FC = () => {
                 </span>
               </div>
 
-              <ul className={`${styles.dropdown} ${open ? styles.open : ""}`}>
-                {departmentOptions.map((opt) => (
-                  <li key={opt} onClick={() => handleSelect(opt)}>
-                    {opt}
-                  </li>
-                ))}
+              <ul
+                className={`${styles.dropdown} ${
+                  openDropdown === "sex" ? styles.open : ""
+                }`}
+              >
+                {sexOptions
+                  .filter((opt) => opt !== formData.sex)
+                  .map((opt) => (
+                    <li key={opt} onClick={() => handleSelect("sex", opt)}>
+                      {opt}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Position Dropdown */}
+          <div className={styles.formData}>
+            <label>Position</label>
+            <div className={styles.wrapper} ref={refPosition}>
+              <div
+                className={`${styles.display} ${
+                  openDropdown === "position" ? styles.active : ""
+                } ${!isEditing ? styles.disabled : ""}`}
+                onClick={() => toggleOpen("position")}
+              >
+                {formData.position || "Select"}
+                <span
+                  className={`${styles.arrow} ${
+                    openDropdown === "position" ? styles.open : ""
+                  }`}
+                >
+                  <svg
+                    width="12"
+                    height="7"
+                    viewBox="0 0 12 7"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M6.19309 6.75194L0.983398 1.9257L2.71995 0.316895L6.19309 3.53444L9.66614 0.316895L11.4027 1.9257L6.19309 6.75194Z"
+                      fill="black"
+                    />
+                  </svg>
+                </span>
+              </div>
+
+              <ul
+                className={`${styles.dropdown} ${
+                  openDropdown === "position" ? styles.open : ""
+                }`}
+              >
+                {positionOptions
+                  .filter((opt) => opt !== formData.position)
+                  .map((opt) => (
+                    <li key={opt} onClick={() => handleSelect("position", opt)}>
+                      {opt}
+                    </li>
+                  ))}
               </ul>
             </div>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className={styles.buttonsContainer}>
-          <button type="button" onClick={handleCancel}>
-            Cancel
-          </button>
-          <button type="button" onClick={handleSave}>
-            Save Changes
-          </button>
-        </div>
+        {/* Action Buttons - Only show when editing */}
+        {isEditing && (
+          <div className={styles.buttonsContainer}>
+            <button type="button" onClick={handleCancel} disabled={isLoading}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={isLoading}
+              style={{ opacity: isLoading ? 0.6 : 1 }}
+            >
+              {isLoading ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        )}
       </form>
     </div>
   );

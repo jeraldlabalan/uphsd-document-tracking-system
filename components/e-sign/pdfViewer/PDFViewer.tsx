@@ -952,31 +952,6 @@ function PDFViewer(
         </div>
       )}
 
-      {/* Signature button for receivers */}
-      {role === "receiver" && placeholders.length > 0 && (
-        <div style={{ 
-          position: 'fixed', 
-          bottom: '20px', 
-          right: '20px', 
-          zIndex: 1000 
-        }}>
-          <button
-            onClick={() => setModalOpen(true)}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '16px',
-              cursor: 'pointer',
-              boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
-            }}
-          >
-            Sign Document
-          </button>
-        </div>
-      )}
 
       <SignatureModal
         modalOpen={modalOpen}

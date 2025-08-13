@@ -546,6 +546,7 @@ export default function ESignDocument() {
 
   return (
     <div className={styles.container}>
+      
       {isSidebarOpen && (
         <Sidebar
           hasSigned={hasSigned}

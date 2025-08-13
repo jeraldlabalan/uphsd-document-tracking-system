@@ -18,22 +18,21 @@ import {
 export default function AdminHeader() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
-  const userName = "Kai Sotto";
-
-  const router = useRouter();
-  const [user, setUser] = useState<{
-    FirstName: string;
-    LastName: string;
+  const [userInfo, setUserInfo] = useState<{
+    FirstName: string | null;
+    LastName: string | null;
     ProfilePicture?: string;
   } | null>(null);
+  const router = useRouter();
 
+  // Fetch user info
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const res = await fetch("/api/user/me");
         const data = await res.json();
         if (res.ok) {
-          setUser(data);
+          setUserInfo(data);
         } else {
           console.error(data.error);
           router.push("/login");
@@ -45,6 +44,33 @@ export default function AdminHeader() {
     };
     fetchUser();
   }, [router]);
+
+  // Function to refresh user info (can be called from other components)
+  const refreshUserInfo = async () => {
+    try {
+      const res = await fetch("/api/user/me");
+      const data = await res.json();
+      if (res.ok) {
+        setUserInfo(data);
+      }
+    } catch (err) {
+      console.error("Failed to refresh user info");
+    }
+  };
+
+  // Listen for custom events to automatically refresh user info
+  useEffect(() => {
+    const handleUserInfoUpdate = () => {
+      refreshUserInfo();
+    };
+
+    // Listen for custom event when user info is updated
+    window.addEventListener("userInfoUpdated", handleUserInfoUpdate);
+
+    return () => {
+      window.removeEventListener("userInfoUpdated", handleUserInfoUpdate);
+    };
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -62,7 +88,7 @@ export default function AdminHeader() {
     }
   };
 
-  const firstInitial = user?.FirstName?.charAt(0).toUpperCase() || "U";
+  const firstInitial = userInfo?.FirstName?.charAt(0).toUpperCase() || "U";
 
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
@@ -176,7 +202,8 @@ export default function AdminHeader() {
         <div className={styles.rightWrapper}>
           <div className={styles.userInfo}>
             <span className={styles.userName}>
-              Welcome, {user ? `${user.FirstName} ${user.LastName}!` : ""}
+              Welcome,{" "}
+              {userInfo ? `${userInfo.FirstName} ${userInfo.LastName}!` : ""}
             </span>
             <div className={styles.userIcon}>{firstInitial}</div>
           </div>
