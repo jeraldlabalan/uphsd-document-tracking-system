@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import styles from "./documentOverview.module.css";
 import AdminHeader from "@/components/shared/adminHeader";
 import { Search as SearchIcon } from "lucide-react";
-import { X, CheckCircle, Clock, PauseCircle } from "lucide-react";
+import { X, FileCheck, FileText, Trash2 } from "lucide-react";
 
 export default function DocumentOverview() {
   const [search, setSearch] = useState("");
@@ -98,19 +98,19 @@ export default function DocumentOverview() {
 
           <div className={styles.summary}>
             <div className={`${styles.card} ${styles.green}`}>
-              <CheckCircle className={styles.icon} />
+              <FileCheck className={styles.icon} />
               <span className={styles.count}>{summary?.activeDocuments ?? 0}</span>
               <span>Active</span>
             </div>
 
-            <div className={`${styles.card} ${styles.cyan}`}>
-              <Clock className={styles.icon} />
+            <div className={`${styles.card} ${styles.red}`}>
+              <Trash2 className={styles.icon} />
               <span className={styles.count}>{summary?.deletedDocuments ?? 0}</span>
               <span>Deleted</span>
             </div>
 
-            <div className={`${styles.card} ${styles.orange}`}>
-              <Clock className={styles.icon} />
+            <div className={`${styles.card} ${styles.cyan}`}>
+              <FileText className={styles.icon} />
               <span className={styles.count}>{summary?.totalDocuments ?? 0}</span>
               <span>Total</span>
             </div>
@@ -194,9 +194,26 @@ export default function DocumentOverview() {
                     <td>{doc.title}</td>
                     <td>{doc.department}</td>
                     <td>
-                      <span className={`${styles.badge} ${doc.status === "Completed" ? styles.completed : doc.status === "In Process" ? styles.inProcess : doc.status === "On Hold" ? styles.onHold : styles.pending}`}>
+                      <span
+                        className={`${styles.badge} 
+                ${
+                  doc.status === "In-Process"
+                    ? styles.inProcess
+                    : doc.status === "Completed"
+                      ? styles.completed
+                      : doc.status === "On-Hold"
+                        ? styles.onHold
+                        : doc.status === "Approved"
+                          ? styles.approved
+                          : doc.status === "Awaiting-Completion"
+                            ? styles.awaiting
+                            : ""
+                }`}
+                      >
                         {doc.status}
                       </span>
+
+
                     </td>
                     <td>{doc.dateCreated}</td>
                     <td>
@@ -235,9 +252,25 @@ export default function DocumentOverview() {
 
               <div className={styles.modalTop}>
                 <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
-                <span className={`${styles.badge} ${selectedDoc.status === "Completed" ? styles.completed : styles.pending}`}>
-                  {selectedDoc.status}
-                </span>
+                <span
+                                  className={`${styles.badge} 
+                                                ${
+                                                  selectedDoc.status === "In-Process"
+                                                    ? styles.inProcess
+                                                    : selectedDoc.status === "Completed"
+                                                      ? styles.completed
+                                                      : selectedDoc.status === "On-Hold"
+                                                        ? styles.onHold
+                                                        : selectedDoc.status === "Approved"
+                                                          ? styles.approved
+                                                          : selectedDoc.status ===
+                                                              "Awaiting-Completion"
+                                                            ? styles.awaiting
+                                                            : ""
+                                                }`}
+                                >
+                                  {selectedDoc.status}
+                                </span>
               </div>
 
               <div className={styles.metaGrid}>
