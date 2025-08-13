@@ -121,20 +121,14 @@ export default function DocumentOverview() {
         <div className={styles.contentSection}>
           <div className={styles.headerRow}>
             <h2 className={styles.pageTitle}>Document Overview</h2>
-            <button 
-              onClick={handleUpdateDocumentStatuses}
-              className={styles.statusUpdateBtn}
-              title="Update any existing documents with 'Active' status to 'In-Process'"
-            >
-              Update Document Statuses
-            </button>
+            
           </div>
           <hr className={styles.separator} />
 
           <div className={styles.summary}>
             <div className={`${styles.card} ${styles.green}`}>
 
-              <CheckCircle className={styles.icon} />
+              <FileCheck className={styles.icon} />
               <span className={styles.count}>{summary?.inProcessDocuments ?? 0}</span>
               <span>In-Process</span>
 
@@ -236,7 +230,7 @@ export default function DocumentOverview() {
                         doc.status === "Completed" ? styles.completed : 
                         doc.status === "In-Process" ? styles.inProcess : 
                         doc.status === "Awaiting Signatures" ? styles.pending :
-                        doc.status === "Awaiting-Completion" ? styles.pending :
+                        doc.status === "Awaiting-Completion" ? styles.awaiting :
                         doc.status === "On Hold" ? styles.onHold : 
                         styles.pending
                       }`}>
@@ -275,44 +269,66 @@ export default function DocumentOverview() {
         </div>
 
         {selectedDoc && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modalCard}>
-              <button className={styles.closeButton} onClick={() => setSelectedDoc(null)} aria-label="Close Modal">
-                <X size={20} />
-              </button>
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalCard}>
+      <button
+        className={styles.closeButton}
+        onClick={() => setSelectedDoc(null)}
+        aria-label="Close Modal"
+      >
+        <X size={20} />
+      </button>
 
-              <div className={styles.modalTop}>
-                <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
-                <span className={`${styles.badge} ${
+      {/* Top Section */}
+      <div className={styles.modalTop}>
+        <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
+        <span className={`${styles.badge} ${
                   selectedDoc.status === "Completed" ? styles.completed : 
                   selectedDoc.status === "In-Process" ? styles.inProcess : 
                   selectedDoc.status === "Awaiting Signatures" ? styles.pending :
-                  selectedDoc.status === "Awaiting-Completion" ? styles.pending :
-                  selectedDoc.status === "On Hold" ? styles.onHold : 
+                  selectedDoc.status === "Awaiting-Completion" ? styles.awaiting :
+                  selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold"
+                                                      ? styles.onHold :
+
                   styles.pending
                 }`}>
                   {selectedDoc.status}
                 </span>
+      </div>
 
-              </div>
+      {/* Meta Data */}
+      <div className={styles.metaGrid}>
+        <div className={styles.metaLabelRow}>
+          <span>Creator:</span>
+          <span>Department:</span>
+          <span>Type:</span>
+          <span>Date:</span>
+        </div>
+        <div className={styles.metaValueRow}>
+          <p>{selectedDoc.creator}</p>
+          <p>{selectedDoc.department}</p>
+          <p>{selectedDoc.type}</p>
+          <p>{selectedDoc.dateCreated}</p>
+        </div>
+      </div>
 
-              <div className={styles.metaGrid}>
-                <div className={styles.metaLabelRow}>
-                  <span>Creator:</span>
-                  <span>Department:</span>
-                  <span>Type:</span>
-                  <span>Date:</span>
-                </div>
-                <div className={styles.metaValueRow}>
-                  <p>{selectedDoc.creator}</p>
-                  <p>{selectedDoc.department}</p>
-                  <p>{selectedDoc.type}</p>
-                  <p>{selectedDoc.dateCreated}</p>
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* Preview Section */}
+      <div className={styles.previewSection}>
+        <h4>Document Preview</h4>
+        {selectedDoc.previewUrl ? (
+          <iframe
+            src={`${selectedDoc.preview}#toolbar=0&navpanes=0&scrollbar=0`}
+            title="Document Preview"
+            className={styles.previewFrame}
+          ></iframe>
+        ) : (
+          <p className={styles.noPreview}>No preview available</p>
         )}
+      </div>
+    </div>
+  </div>
+)}
+
 
         {isModalOpen && (
           <div className={styles.deletemodalOverlay}>

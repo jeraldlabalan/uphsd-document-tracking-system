@@ -369,7 +369,7 @@
 .viewBtn {
   background-color: white;
   color: var(--color-maroon);
-  border: var(--color-maroon) 1px solid;
+  border: var(--color-maroon) 2px solid;
   transition: background-color 0.3s ease;
 }
 
