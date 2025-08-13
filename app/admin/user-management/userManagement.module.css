@@ -240,23 +240,41 @@
   font-size: 0.9rem;
 }
 
+.noUserRow {
+  text-align: center;
+  padding: 1.5rem;
+  color: #666;
+  font-style: italic;
+}
+
+.noUserIcon {
+  width: 32px;
+  height: 32px;
+  color: #999;
+  display: block;
+  margin: 0 auto 0.5rem auto; 
+}
+
+
+
+
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto; 
+}
 
 .docTable {
   width: 100%;
   border-collapse: collapse;
   background-color: white;
-  display: block;
-  overflow-x: auto;
-  white-space: nowrap;
-
+  white-space: nowrap; /* prevent cell text from wrapping */
 }
 
 .docTable th {
   background-color: #e5e5e5;
-  text-align: left;
+  text-align: center;
   padding: 0.75rem;
   font-weight: 600;
-  width: auto;
 }
 
 .docTable tr:hover {
@@ -584,6 +602,34 @@
   width: 50%;
 }
 
+/* Deactivate Modal Styles */
+.deactivatemodalTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #AD191B;
+  margin-bottom: 1rem;
+}
+
+.deactivateButton {
+  background-color: #AD191B;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 50%;
+}
+
+.deactivatecancelButton {
+  background-color: #ffffff;
+  border: 2px solid #AD191B;
+  color: #AD191B;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 50%;
+}
+
 .reactivatecancelButton {
     background-color: #ffffff;
     border: 2px solid #0F72B8;
@@ -763,9 +809,11 @@
   }
 
   .headerRow {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
+    flex-direction: column; 
+    justify-content: center;
+    align-items: center; 
+    gap: 0.5rem; 
+    text-align: center; 
   }
 
   .createButton {

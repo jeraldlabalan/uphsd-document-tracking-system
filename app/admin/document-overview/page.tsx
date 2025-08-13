@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import styles from "./documentOverview.module.css";
 import AdminHeader from "@/components/shared/adminHeader";
 import { Search as SearchIcon } from "lucide-react";
-import { X, CheckCircle, Clock, PauseCircle } from "lucide-react";
+import { X, FileCheck, FileText, Trash2 } from "lucide-react";
 
 export default function DocumentOverview() {
   const [search, setSearch] = useState("");
@@ -133,19 +133,21 @@ export default function DocumentOverview() {
 
           <div className={styles.summary}>
             <div className={`${styles.card} ${styles.green}`}>
+
               <CheckCircle className={styles.icon} />
               <span className={styles.count}>{summary?.inProcessDocuments ?? 0}</span>
               <span>In-Process</span>
+
             </div>
 
-            <div className={`${styles.card} ${styles.cyan}`}>
-              <Clock className={styles.icon} />
+            <div className={`${styles.card} ${styles.red}`}>
+              <Trash2 className={styles.icon} />
               <span className={styles.count}>{summary?.deletedDocuments ?? 0}</span>
               <span>Deleted</span>
             </div>
 
-            <div className={`${styles.card} ${styles.orange}`}>
-              <Clock className={styles.icon} />
+            <div className={`${styles.card} ${styles.cyan}`}>
+              <FileText className={styles.icon} />
               <span className={styles.count}>{summary?.totalDocuments ?? 0}</span>
               <span>Total</span>
             </div>
@@ -238,8 +240,11 @@ export default function DocumentOverview() {
                         doc.status === "On Hold" ? styles.onHold : 
                         styles.pending
                       }`}>
+
                         {doc.status}
                       </span>
+
+
                     </td>
                     <td>{doc.dateCreated}</td>
                     <td>
@@ -288,6 +293,7 @@ export default function DocumentOverview() {
                 }`}>
                   {selectedDoc.status}
                 </span>
+
               </div>
 
               <div className={styles.metaGrid}>

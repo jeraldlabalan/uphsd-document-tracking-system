@@ -9,6 +9,7 @@ import {
   UserX,
   PauseCircle,
   Activity,
+  
 } from "lucide-react";
 import Link from "next/link";
 import AOS from "aos";
@@ -264,7 +265,7 @@ export default function UserManagement() {
               <SearchIcon className={styles.searchIcon} size={18} />
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search users..."
                 className={styles.searchInput}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -333,14 +334,12 @@ export default function UserManagement() {
           ) : error ? (
             <p style={{ color: "red" }}>Error: {error}</p>
           ) : (
+            <div className={styles.tableWrapper}>
             <table className={styles.docTable}>
               <thead>
                 <tr>
                   <th>ID</th>
                   <th>Name</th>
-                  <th>Email</th>
-                  <th>Mobile</th>
-                  <th>Sex</th>
                   <th>Employee ID</th>
                   <th>Department</th>
                   <th>Position</th>
@@ -351,96 +350,101 @@ export default function UserManagement() {
                 </tr>
               </thead>
               <tbody>
-                {sortedUsers.map((user, i) => (
-                  <tr key={i}>
-                    <td>{user.id}</td>
-                    <td>{user.name}</td>
-                    <td>{user.email}</td>
-                    <td>{user.mobile}</td>
-                    <td>{user.sex}</td>
-                    <td>{user.employeeId}</td>
-                    <td>{user.department}</td>
-                    <td>{user.position}</td>
-                    <td>{user.role}</td>
-                    <td>
-                      <span
-                        className={`${styles.badge} ${
-                          user.status === "Active"
-                            ? styles.active
-                            : user.status === "Terminated"
-                              ? styles.terminated
-                              : styles.pending
-                        }`}
-                      >
-                        {user.status}
-                      </span>
-                    </td>
-                    <td>{new Date(user.dateCreated).toLocaleDateString()}</td>
-                    <td>
-                      <>
-                        {user.status === "Active" && (
-                          <>
-                            <Link
-                              href={`/admin/user-management/edit-user/${user.id}`}
-                              className={`${styles.actionBtn} ${styles.editBtn}`}
-                              onClick={() => {
-                                if (typeof window !== "undefined") {
-                                  const [firstName, ...rest] =
-                                    user.name.split(" ");
-                                  const lastName = rest.join(" ");
-                                  const userWithNames = {
-                                    ...user,
-                                    firstName,
-                                    lastName,
-                                  };
-                                  localStorage.setItem(
-                                    "editUser",
-                                    JSON.stringify(userWithNames)
-                                  );
-                                }
-                              }}
-                            >
-                              Edit
-                            </Link>{" "}
-                            <button
-                              className={`${styles.actionBtn} ${styles.deactivateBtn}`}
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setShowDeactivateConfirm(true);
-                              }}
-                            >
-                              Deactivate
-                            </button>{" "}
-                            <button
-                              className={`${styles.actionBtn} ${styles.terminateBtn}`}
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setShowTerminateConfirm(true);
-                              }}
-                            >
-                              Terminate
-                            </button>
-                          </>
-                        )}
+  {sortedUsers.length === 0 ? (
+    <tr>
+  <td colSpan={12} className={styles.noUserRow}>
+    <UserX className={styles.noUserIcon} />
+    No user found
+  </td>
+</tr>
 
-                        {(user.status === "Inactive" ||
-                          user.status === "Terminated") && (
-                          <button
-                            className={`${styles.actionBtn} ${styles.reactivateBtn}`}
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setShowEditConfirm(true);
-                            }}
-                          >
-                            Reactivate
-                          </button>
-                        )}
-                      </>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+
+  ) : (
+    sortedUsers.map((user, i) => (
+      <tr key={i}>
+        <td>{user.id}</td>
+        <td>{user.name}</td>
+        <td>{user.employeeId}</td>
+        <td>{user.department}</td>
+        <td>{user.position}</td>
+        <td>{user.role}</td>
+        <td>
+          <span
+            className={`${styles.badge} ${
+              user.status === "Active"
+                ? styles.active
+                : user.status === "Terminated"
+                  ? styles.terminated
+                  : styles.pending
+            }`}
+          >
+            {user.status}
+          </span>
+        </td>
+        <td>{new Date(user.dateCreated).toLocaleDateString()}</td>
+        <td>
+          <>
+            {user.status === "Active" && (
+              <>
+                <Link
+                  href={`/admin/user-management/edit-user/${user.id}`}
+                  className={`${styles.actionBtn} ${styles.editBtn}`}
+                  onClick={() => {
+                    if (typeof window !== "undefined") {
+                      const [firstName, ...rest] = user.name.split(" ");
+                      const lastName = rest.join(" ");
+                      const userWithNames = { ...user, firstName, lastName };
+                      localStorage.setItem(
+                        "editUser",
+                        JSON.stringify(userWithNames)
+                      );
+                    }
+                  }}
+                >
+                  Edit
+                </Link>{" "}
+                <button
+                  className={`${styles.actionBtn} ${styles.deactivateBtn}`}
+                  onClick={() => {
+                    setSelectedUser(user);
+                    setShowDeactivateConfirm(true);
+                  }}
+                >
+                  Deactivate
+                </button>{" "}
+                <button
+                  className={`${styles.actionBtn} ${styles.terminateBtn}`}
+                  onClick={() => {
+                    setSelectedUser(user);
+                    setShowTerminateConfirm(true);
+                  }}
+                >
+                  Terminate
+                </button>
+              </>
+            )}
+
+            {(user.status === "Inactive" ||
+              user.status === "Terminated") && (
+              <button
+                className={`${styles.actionBtn} ${styles.reactivateBtn}`}
+                onClick={() => {
+                  setSelectedUser(user);
+                  setShowEditConfirm(true);
+                }}
+              >
+                Reactivate
+              </button>
+            )}
+          </>
+        </td>
+      </tr>
+    ))
+  )}
+</tbody>
+
             </table>
+            </div>
           )}
         </div>
 
@@ -556,7 +560,7 @@ export default function UserManagement() {
         {showDeactivateConfirm && (
           <div className={styles.modalOverlay}>
             <div className={styles.modalContent}>
-              <h3 className={styles.terminatemodalTitle}>
+              <h3 className={styles.deactivatemodalTitle}>
                 Confirm Deactivation
               </h3>
               <p>
@@ -565,7 +569,7 @@ export default function UserManagement() {
               </p>
               <div className={styles.modalActions}>
                 <button
-                  className={styles.terminatecancelButton}
+                  className={styles.deactivatecancelButton}
                   onClick={() => {
                     setShowDeactivateConfirm(false);
                     setSelectedUser(null);
@@ -574,7 +578,7 @@ export default function UserManagement() {
                   Cancel
                 </button>
                 <button
-                  className={styles.terminateButton}
+                  className={styles.deactivateButton}
                   onClick={handleDeactivate}
                 >
                   Continue
