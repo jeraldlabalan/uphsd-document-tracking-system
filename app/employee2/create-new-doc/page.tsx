@@ -454,7 +454,7 @@ export default function CreateNewDocument() {
         title: title.trim(),
         type: selectedType || "Unknown Type",
         department: department || "Unknown Department",
-        approvers: encodeURIComponent(JSON.stringify(approversData)),
+        approvers: JSON.stringify(approversData), // Don't double-encode
         file: fileUrl,
         userRole: "sender", // The person creating the document is automatically the sender
       });
@@ -948,14 +948,13 @@ export default function CreateNewDocument() {
                             };
                           });
 
-                          // Create URL parameters
+                          // Create URL parameters (don't pass file blob URL)
                           const params = new URLSearchParams({
                             docId: placeholders[0]?.documentId || 'unknown',
                             title: title,
                             type: selectedType,
                             department: department,
-                            approvers: encodeURIComponent(JSON.stringify(approversData)),
-                            file: URL.createObjectURL(file),
+                            approvers: JSON.stringify(approversData), // Don't double-encode
                             userRole: "sender",
                           });
 

@@ -291,12 +291,11 @@ export default function ESignDocument() {
         // If no uploadedFile but we have a documentId, try to fetch the file path from the API
         console.log("No uploadedFile provided, fetching from API for documentId:", documentId);
         try {
-          const response = await fetch(`/api/employee/pending-signatures`);
+          const response = await fetch(`/api/employee/documents/${documentId}`);
           if (response.ok) {
             const data = await response.json();
-            const document = data.pendingDocuments.find((doc: any) => doc.documentId.toString() === documentId);
-            if (document?.latestVersion?.FilePath) {
-              const filePath = document.latestVersion.FilePath;
+            if (data.latestVersion?.FilePath) {
+              const filePath = data.latestVersion.FilePath;
               console.log("Found file path from API:", filePath);
               const fullUrl = `${window.location.origin}${filePath}`;
               console.log("Setting file URL from API:", fullUrl);
@@ -305,6 +304,8 @@ export default function ESignDocument() {
             } else {
               console.log("No file path found in API response for document:", documentId);
             }
+          } else {
+            console.log("Failed to fetch document details from API");
           }
         } catch (error) {
           console.error("Error fetching file path from API:", error);
