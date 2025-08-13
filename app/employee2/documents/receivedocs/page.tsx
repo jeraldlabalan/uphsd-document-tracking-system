@@ -5,6 +5,7 @@ import EmpHeader from "@/components/shared/empHeader";
 import { Search as SearchIcon, X, FileText, Inbox, FileX } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
+import { fetchFilterData, FilterData } from "@/lib/filterData";
 
 
 type ReceivedDocument = {
@@ -64,6 +65,11 @@ export default function ReceiveDocuments() {
   const [remarks, setRemarks] = useState("");
   const [docs, setDocs] = useState<ReceivedDocument[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterData, setFilterData] = useState<FilterData>({
+    documentTypes: [],
+    departments: [],
+    statuses: []
+  });
   const [isApproving, setIsApproving] = useState(false);
   const [approvedDocs, setApprovedDocs] = useState<number[]>([]); // to track approved documents
 
@@ -87,7 +93,13 @@ export default function ReceiveDocuments() {
       }
     };
 
+    const loadFilterData = async () => {
+      const data = await fetchFilterData();
+      setFilterData(data);
+    };
+
     fetchDocs();
+    loadFilterData();
   }, []);
 
 
@@ -275,7 +287,7 @@ const handleConfirmClick = async () => {
           </div>
 
           <div className={styles.backLinkWrapper}>
-            <Link href="/documents" className={styles.backLink}>
+            <Link href="/employee2/documents" className={styles.backLink}>
               Back to Document Page
             </Link>
           </div>
@@ -323,11 +335,11 @@ const handleConfirmClick = async () => {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="">All Status</option>
-              <option>In-Process</option>
-              <option>Approved</option>
-              <option>Awaiting-Completion</option>
-              <option>Completed</option>
-              <option>On Hold</option>
+              {filterData.statuses.map((status) => (
+                <option key={status.StatusID} value={status.StatusName}>
+                  {status.StatusName}
+                </option>
+              ))}
             </select>
 
             <select
@@ -336,10 +348,11 @@ const handleConfirmClick = async () => {
               onChange={(e) => setTypeFilter(e.target.value)}
             >
               <option value="">All Types</option>
-              <option>Report</option>
-              <option>Request</option>
-              <option>Evaluation</option>
-              <option>Budget</option>
+              {filterData.documentTypes.map((type) => (
+                <option key={type.TypeID} value={type.TypeName}>
+                  {type.TypeName}
+                </option>
+              ))}
             </select>
 
             <div className={styles.dateFilterWrapper}>

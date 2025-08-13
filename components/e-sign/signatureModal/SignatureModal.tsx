@@ -13,6 +13,7 @@ const SignatureModal = ({
   setSignatureImage,
   onApplyComplete,
 }: SignatureModalProps) => {
+  const [isApplying, setIsApplying] = useState(false);
   const canvasRef = useRef<SignatureCanvas>(null);
 
   useEffect(() => {
@@ -231,14 +232,23 @@ const SignatureModal = ({
             alert("Please provide a signature first.");
             return;
           }
-          const signedUrl = await applySignature(signatureImage);
-          if (signedUrl) {
-            onApplyComplete(signedUrl); // updates PDF url in page.tsx
-            setModalOpen(false); // close modal
+          setIsApplying(true);
+          try {
+            const signedUrl = await applySignature(signatureImage);
+            if (signedUrl) {
+              onApplyComplete(signedUrl); // updates PDF url in page.tsx
+              // Modal will be closed by the PDFViewer after applying signature
+            }
+          } catch (error) {
+            console.error("Error applying signature:", error);
+            alert("Failed to apply signature. Please try again.");
+          } finally {
+            setIsApplying(false);
           }
         }}
+        disabled={isApplying}
       >
-        Apply Signature
+        {isApplying ? "Applying Signature..." : "Apply Signature"}
       </button>
     </Modal>
   );

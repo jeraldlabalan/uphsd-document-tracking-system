@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import styles from "./documentOverview.module.css";
 import AdminHeader from "@/components/shared/adminHeader";
 import { Search as SearchIcon } from "lucide-react";
-import { X, FileCheck, FileText, Trash2 } from "lucide-react";
+import { X, FileCheck, FileText, Trash2, CheckCircle } from "lucide-react";
+import { fetchFilterData, FilterData } from "@/lib/filterData";
 
 export default function DocumentOverview() {
   const [search, setSearch] = useState("");
@@ -22,6 +23,11 @@ export default function DocumentOverview() {
   const [documents, setDocuments] = useState<any[]>([]);
   const [summary, setSummary] = useState<{ totalDocuments: number; inProcessDocuments: number; deletedDocuments: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [filterData, setFilterData] = useState<FilterData>({
+    documentTypes: [],
+    departments: [],
+    statuses: []
+  });
 
   async function loadData() {
     setLoading(true);
@@ -42,6 +48,12 @@ export default function DocumentOverview() {
 
   useEffect(() => {
     loadData();
+    // Load filter data
+    const loadFilterData = async () => {
+      const data = await fetchFilterData();
+      setFilterData(data);
+    };
+    loadFilterData();
   }, []);
 
   const filteredDocs = documents.filter((doc) => {
@@ -142,6 +154,13 @@ const handleNext = () => {
         <div className={styles.contentSection}>
           <div className={styles.headerRow}>
             <h2 className={styles.pageTitle}>Document Overview</h2>
+            <button 
+              onClick={handleUpdateDocumentStatuses}
+              className={styles.statusUpdateBtn}
+              title="Update any existing documents with 'Active' status to 'In-Process'"
+            >
+              Update Document Statuses
+            </button>
             
           </div>
           <hr className={styles.separator} />
@@ -149,6 +168,7 @@ const handleNext = () => {
           <div className={styles.summary}>
             <div className={`${styles.card} ${styles.green}`}>
 
+              <CheckCircle className={styles.icon} />
               <FileCheck className={styles.icon} />
               <span className={styles.count}>{summary?.inProcessDocuments ?? 0}</span>
               <span>In-Process</span>
@@ -182,19 +202,20 @@ const handleNext = () => {
 
             <select className={styles.dropdown} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="">All Status</option>
-              <option>In-Process</option>
-              <option>Awaiting Signatures</option>
-              <option>Awaiting-Completion</option>
-              <option>Completed</option>
-              <option>On Hold</option>
+              {filterData.statuses.map((status) => (
+                <option key={status.StatusID} value={status.StatusName}>
+                  {status.StatusName}
+                </option>
+              ))}
             </select>
 
             <select className={styles.dropdown} value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
               <option value="">All Types</option>
-              <option>Report</option>
-              <option>Request</option>
-              <option>Evaluation</option>
-              <option>Budget</option>
+              {filterData.documentTypes.map((type) => (
+                <option key={type.TypeID} value={type.TypeName}>
+                  {type.TypeName}
+                </option>
+              ))}
             </select>
 
             <div className={styles.dateFilterWrapper}>
@@ -227,7 +248,7 @@ const handleNext = () => {
               </div>
             </div>
           </div>
-                   <div className={styles.tableWrapper}>
+
           <table className={styles.docTable}>
             <thead>
               <tr>
@@ -240,76 +261,54 @@ const handleNext = () => {
               </tr>
             </thead>
             <tbody>
-  {paginatedDocs.length > 0 ? (
-    paginatedDocs.map((doc, i) => (
-      <tr key={i}>
-        <td>{doc.id}</td>
-        <td>{doc.title}</td>
-        <td>{doc.department}</td>
-        <td>
-          <span
-            className={`${styles.badge} ${
-              doc.status === "Completed"
-                ? styles.completed
-                : doc.status === "In-Process"
-                ? styles.inProcess
-                : doc.status === "Awaiting Signatures"
-                ? styles.pending
-                : doc.status === "Awaiting-Completion"
-                ? styles.awaiting
-                : doc.status === "On Hold"
-                ? styles.onHold
-                : styles.pending
-            }`}
-          >
-            {doc.status}
-          </span>
-        </td>
-        <td>{doc.dateCreated}</td>
-        <td>
-          <a
-            href="#"
-            onClick={() => setSelectedDoc(doc)}
-            className={`${styles.actionBtn} ${styles.viewBtn}`}
-          >
-            View
-          </a>{" "}
-          <button
-            className={`${styles.actionBtn} ${styles.deleteBtn}`}
-            onClick={() => {
-              setSelectedDoc(doc);
-              setIsModalOpen(true);
-            }}
-          >
-            Delete
-          </button>
-        </td>
-      </tr>
-    ))
-  ) : (
-    <tr className={styles.noDataRow}>
-      <td colSpan={6} style={{ textAlign: "center", padding: "1rem" }}>
-        No documents found.
-      </td>
-    </tr>
-  )}
-</tbody>
+              {filteredDocs.length > 0 ? (
+                filteredDocs.map((doc, i) => (
+                  <tr key={i}>
+                    <td>{doc.id}</td>
+                    <td>{doc.title}</td>
+                    <td>{doc.department}</td>
+                    <td>
+                      <span className={`${styles.badge} ${
+                        doc.status === "Completed" ? styles.completed : 
+                        doc.status === "In-Process" ? styles.inProcess : 
+                        doc.status === "Awaiting Signatures" ? styles.pending :
+                        doc.status === "Awaiting-Completion" ? styles.awaiting :
+                        doc.status === "On Hold" ? styles.onHold : 
+                        styles.pending
+                      }`}>
 
+                        {doc.status}
+                      </span>
+
+
+                    </td>
+                    <td>{doc.dateCreated}</td>
+                    <td>
+                      <a href="#" onClick={() => setSelectedDoc(doc)} className={`${styles.actionBtn} ${styles.viewBtn}`}>
+                        View
+                      </a>{" "}
+                      <button
+                        className={`${styles.actionBtn} ${styles.deleteBtn}`}
+                        onClick={() => {
+                          setSelectedDoc(doc);
+                          setIsModalOpen(true);
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr className={styles.noDataRow}>
+                  <td colSpan={6} style={{ textAlign: "center", padding: "1rem" }}>
+                    No documents found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
           </table>
-          </div>
-        {/* Pagination controls */}
-      <div className={styles.pagination}>
-        <button onClick={handlePrev} disabled={currentPage === 1}>
-          Previous
-        </button>
-        <span>
-          Page {currentPage} of {totalPages}
-        </span>
-        <button onClick={handleNext} disabled={currentPage === totalPages}>
-          Next
-        </button>
-      </div>
-</div>
+        </div>
 
         {selectedDoc && (
   <div className={styles.modalOverlay}>
@@ -322,6 +321,20 @@ const handleNext = () => {
         <X size={20} />
       </button>
 
+              <div className={styles.modalTop}>
+                <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
+                <span className={`${styles.badge} ${
+                  selectedDoc.status === "Completed" ? styles.completed : 
+                  selectedDoc.status === "In-Process" ? styles.inProcess : 
+                  selectedDoc.status === "Awaiting Signatures" ? styles.pending :
+                  selectedDoc.status === "Awaiting-Completion" ? styles.pending :
+                  selectedDoc.status === "On Hold" ? styles.onHold : 
+                  styles.pending
+                }`}>
+                  {selectedDoc.status}
+                </span>
+
+              </div>
       {/* Top Section */}
       <div className={styles.modalTop}>
         <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
@@ -400,6 +413,9 @@ const handleNext = () => {
                 >
                   Close
                 </button>
+              </div>
+              <div className={styles.modalContent}>
+                <p>Document deleted successfully!</p>
               </div>
             </div>
           </div>

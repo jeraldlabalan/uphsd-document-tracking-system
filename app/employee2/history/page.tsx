@@ -6,6 +6,7 @@ import EmpHeader from "@/components/shared/empHeader";
 import { Search as SearchIcon, X } from "lucide-react";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import { fetchFilterData, FilterData } from "@/lib/filterData";
 
 type DocumentVersionHistory = {
   VersionID: number;
@@ -39,6 +40,11 @@ export default function History() {
   const [departmentFilter, setDepartmentFilter] = useState("");
   const [history, setHistory] = useState<DocumentVersionHistory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterData, setFilterData] = useState<FilterData>({
+    documentTypes: [],
+    departments: [],
+    statuses: []
+  });
 
   const [selectedDoc, setSelectedDoc] = useState<DocumentVersionHistory | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -91,7 +97,13 @@ export default function History() {
       }
     };
 
+    const loadFilterData = async () => {
+      const data = await fetchFilterData();
+      setFilterData(data);
+    };
+
     fetchHistory();
+    loadFilterData();
   }, []);
 
 const filtered = history.filter((item) => {
@@ -146,10 +158,11 @@ const filtered = history.filter((item) => {
               onChange={(e) => setTypeFilter(e.target.value)}
             >
               <option value="">All Types</option>
-              <option value="Report">Report</option>
-              <option value="Request">Request</option>
-              <option value="Evaluation">Evaluation</option>
-              <option value="Notice">Notice</option>
+              {filterData.documentTypes.map((type) => (
+                <option key={type.TypeID} value={type.TypeName}>
+                  {type.TypeName}
+                </option>
+              ))}
             </select>
 
             <select
@@ -158,10 +171,11 @@ const filtered = history.filter((item) => {
               onChange={(e) => setDepartmentFilter(e.target.value)}
             >
               <option value="">All Departments</option>
-              <option value="HR">HR</option>
-              <option value="Finance">Finance</option>
-              <option value="Learning & Dev">Learning & Dev</option>
-              <option value="IT">IT</option>
+              {filterData.departments.map((dept) => (
+                <option key={dept.DepartmentID} value={dept.Name}>
+                  {dept.Name}
+                </option>
+              ))}
             </select>
           </div>
 

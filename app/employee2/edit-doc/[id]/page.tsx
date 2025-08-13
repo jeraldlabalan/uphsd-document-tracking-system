@@ -92,12 +92,6 @@ export default function EditDocument() {
         // Handle document file from latest version
         if (data.latestVersion) {
           setFilePath(data.latestVersion.FilePath);
-          // Create a placeholder file object for display purposes
-          const fileName = data.latestVersion.FilePath.split('/').pop() || 'document.pdf';
-          const placeholderFile = new File([], fileName, { type: 'application/pdf' });
-          // Add a special property to indicate this is a server file
-          (placeholderFile as any).isServerFile = true;
-          setFiles([{ file: placeholderFile, requireEsign: false }]);
           setShowDocuments(true);
         }
         
@@ -130,7 +124,11 @@ export default function EditDocument() {
           }
         }
       } catch (e) {
-        console.error(e);
+        console.error("Error fetching document:", e);
+        console.error("Error details:", {
+          message: e instanceof Error ? e.message : 'Unknown error',
+          stack: e instanceof Error ? e.stack : 'No stack trace'
+        });
       }
     };
     fetchDoc();
@@ -341,6 +339,8 @@ export default function EditDocument() {
     placeholders?: any[]; // Added placeholders to state
   } | null>(null);
 
+
+
   // Handle Approver Change (example of setting approver IDs)
   const handleApproverChange = (
     selected: SingleValue<{ value: number; label: string }>,
@@ -352,24 +352,50 @@ export default function EditDocument() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log("handleSubmit called!");
     e.preventDefault();
+    console.log("Form submission prevented, setting loading state...");
     setLoading(true);
     setError(null);
     setSuccess(false);
 
     try {
-      if (!files || files.length === 0) {
-        setError("File is required");
-        setLoading(false);
-        return;
+      console.log("Starting file validation...");
+      console.log("Files array:", files);
+      console.log("Files length:", files?.length);
+      console.log("Document ID:", idStr);
+      console.log("Is editing existing document:", !!idStr);
+      
+      // For editing existing documents, files are optional
+      // For new documents, files are required
+      if (!idStr) {
+        // This is a new document creation
+        if (!files || files.length === 0) {
+          console.log("New document requires files, setting error...");
+          setError("File is required for new documents");
+          setLoading(false);
+          return;
+        }
+        console.log("New document file validation passed");
+      } else {
+        // This is editing an existing document
+        console.log("Editing existing document - files are optional");
       }
 
+      console.log("Checking localStorage for saved document...");
       // Check if we have a saved document with placeholders
       const savedDocumentData = localStorage.getItem("documentWithPlaceholdersData");
       const savedDocumentPlaceholders = localStorage.getItem("documentWithPlaceholdersPlaceholders");
       const savedDocumentId = localStorage.getItem("documentWithPlaceholdersId");
 
+      console.log("Retrieved from localStorage:", {
+        savedDocumentData: savedDocumentData ? savedDocumentData.substring(0, 100) + "..." : null,
+        savedDocumentPlaceholders,
+        savedDocumentId
+      });
+
       if (savedDocumentData && savedDocumentPlaceholders) {
+        console.log("Found saved document with placeholders, processing...");
         // If we have a document with placeholders, use that instead of creating a new one
         try {
           const placeholders = JSON.parse(savedDocumentPlaceholders);
@@ -384,9 +410,31 @@ export default function EditDocument() {
           formData.append("ApproverIDs", JSON.stringify(approverIDs.filter((id) => id !== 0)));
 
           // Convert base64 data back to a File object
-          const base64Response = await fetch(savedDocumentData);
-          const blob = await base64Response.blob();
+          // savedDocumentData is a base64 data URL, so we need to convert it directly
+          const base64Data = savedDocumentData;
+          console.log("Base64 data length:", base64Data.length);
+          
+          // Remove the data URL prefix (e.g., "data:application/pdf;base64,")
+          const base64String = base64Data.split(',')[1];
+          console.log("Base64 string length:", base64String.length);
+          
+          // Convert base64 to binary
+          const binaryString = atob(base64String);
+          console.log("Binary string length:", binaryString.length);
+          
+          // Convert binary string to Uint8Array
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          console.log("Bytes array length:", bytes.length);
+          
+          // Create blob and file
+          const blob = new Blob([bytes], { type: 'application/pdf' });
+          console.log("Blob size:", blob.size);
+          
           const file = new File([blob], `document-with-placeholders.pdf`, { type: 'application/pdf' });
+          console.log("File size:", file.size);
           formData.append("files", file);
 
           // Add placeholders data
@@ -433,6 +481,7 @@ export default function EditDocument() {
           throw new Error("Failed to update document with placeholders");
         }
       } else {
+        console.log("No saved document with placeholders, processing regular update...");
         // Regular document update without placeholders
       const formData = new FormData();
       formData.append("DocumentID", String(idStr ?? ""));
@@ -442,14 +491,44 @@ export default function EditDocument() {
       formData.append("DepartmentID", departmentID?.toString() ?? "");
       formData.append("ApproverIDs", JSON.stringify(approverIDs.filter((id) => id !== 0)));
 
-      files.forEach((item) => {
-        formData.append("files", item.file);
-      });
+              // Only append files if they exist and have content
+        console.log("Files array before submission:", files);
+        let validFilesCount = 0;
+        
+        if (files && files.length > 0) {
+          files.forEach((item, index) => {
+            console.log(`File ${index}:`, item.file.name, "Size:", item.file.size, "Type:", item.file.type);
+            // Check if the file has actual content (not a placeholder)
+            if (item.file && item.file.size > 0 && item.file.type === 'application/pdf') {
+              formData.append("files", item.file);
+              validFilesCount++;
+              console.log(`Added file ${item.file.name} to form data`);
+            } else {
+              console.log(`Skipped file ${item.file.name} - size is ${item.file.size}, type is ${item.file.type}`);
+            }
+          });
+        } else {
+          console.log("No new files to process");
+        }
+        
+        console.log(`Total valid files added: ${validFilesCount}`);
+        
+        // For editing existing documents, files are optional
+        // Only require files if this is a new document or if user wants to upload a new version
+        if (validFilesCount === 0 && !idStr) {
+          setError("Please upload a valid PDF file before submitting");
+          setLoading(false);
+          return;
+        }
+        
+        console.log("Proceeding with document update...");
 
-      const res = await fetch("/api/employee/edit-document", {
-        method: "POST",
-        body: formData,
-      });
+              console.log("Making API call to edit-document...");
+        const res = await fetch("/api/employee/edit-document", {
+          method: "POST",
+          body: formData,
+        });
+        console.log("API response received:", res.status, res.statusText);
 
       if (!res.ok) {
         const data = await res.json();
@@ -548,7 +627,7 @@ export default function EditDocument() {
         title: title.trim(),
         type: selectedType || "Unknown Type",
         department: department || "Unknown Department",
-        approvers: encodeURIComponent(JSON.stringify(approversData)),
+        approvers: JSON.stringify(approversData), // Don't double-encode
         file: fileUrl,
         userRole: "sender", // The person creating the document is automatically the sender
       });
@@ -598,7 +677,11 @@ export default function EditDocument() {
     setNotes("");
   };
 
-  if (!doc) return <p>Loading...</p>;
+  console.log("Render check - doc state:", doc);
+  if (!doc) {
+    console.log("Document not loaded yet, showing loading...");
+    return <p>Loading...</p>;
+  }
 
   return (
     <div className={styles.container}>
@@ -609,7 +692,7 @@ export default function EditDocument() {
           <hr className={styles.separator}></hr>
 
           <div className={styles.sectionTitle}>Information</div>
-          <form onSubmit={handleSubmit} className={styles.form}>
+          <form onSubmit={handleSubmit} className={styles.form} onClick={() => console.log("Form clicked")}>
             <div className={styles.formGroup}>
               <div className={styles.inputGroup}>
                 <label>Document Name</label>
@@ -738,6 +821,74 @@ export default function EditDocument() {
 
             {showDocuments && (
               <>
+                {/* Display current document if it exists */}
+                {filePath && (
+                  <div className={styles.inputGroup}>
+                    <div className={styles.fileItem}>
+                      <div className={styles.fileInfo}>
+                        <span className={styles.fileName}>
+                          {filePath.split('/').pop() || 'Current Document'}
+                        </span>
+                        <span className={styles.currentDocumentBadge}>
+                          Current Document
+                        </span>
+                      </div>
+
+                      <div className={styles.fileActions}>
+                        <button
+                          type="button"
+                          className={styles.viewDocumentBtn}
+                          onClick={() => {
+                            // Open the current document in a new tab
+                            window.open(`/uploads/documents/${filePath.split('/').pop()}`, '_blank');
+                          }}
+                        >
+                          View Document
+                        </button>
+
+                        {/* Show Edit Placeholders button if document has placeholders */}
+                        {savedDocument?.placeholders && savedDocument.placeholders.length > 0 && (
+                          <button
+                            type="button"
+                            className={styles.editPlaceholdersBtn}
+                            onClick={() => {
+                              // Open e-sign interface again for editing placeholders
+                              const placeholders = savedDocument?.placeholders;
+                              if (placeholders && placeholders.length > 0) {
+                                // Prepare approvers data
+                                const approversData = approverIDs.filter(id => id !== 0).map(id => {
+                                  const approver = approvers.find(a => a.UserID === id);
+                                  return {
+                                    id: id.toString(),
+                                    userId: id,
+                                    name: approver ? `${approver.FirstName} ${approver.LastName}` : `Approver ${id}`,
+                                  };
+                                });
+
+                                // Create URL parameters
+                                const params = new URLSearchParams({
+                                  docId: idStr || 'unknown',
+                                  title: title,
+                                  type: selectedType,
+                                  department: department,
+                                  approvers: JSON.stringify(approversData),
+                                  userRole: "sender",
+                                });
+
+                                // Open e-sign interface in new tab
+                                window.open(`/employee2/e-sign-document?${params.toString()}`, "_blank");
+                              }
+                            }}
+                          >
+                            Edit Placeholders
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Display uploaded files */}
                 {files.map((item, index) => (
                   <div key={index} className={styles.inputGroup}>
                     <div className={styles.fileItem}>
@@ -840,7 +991,7 @@ export default function EditDocument() {
                 ))}
 
                 <div className={styles.inputGroup}>
-                  <label>Upload Documents</label>
+                  <label>Upload New Version</label>
 
                   <label className={styles.uploadBox}>
                     <input
@@ -850,7 +1001,7 @@ export default function EditDocument() {
                     />
                     <div className={styles.uploadContent}>
                       <FileUp size={32} />
-                      <span>Click or drag to upload</span>
+                      <span>Click or drag to upload new version</span>
                     </div>
                   </label>
 
@@ -980,7 +1131,11 @@ export default function EditDocument() {
                 <button className={styles.clearBtn} onClick={handleClear}>
                   Clear
                 </button>
-                <button className={styles.submitBtn} type="submit">
+                <button 
+                  className={styles.submitBtn} 
+                  type="submit"
+                  onClick={() => console.log("Submit button clicked")}
+                >
                   Submit
                 </button>
               </div>

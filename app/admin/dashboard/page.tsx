@@ -30,6 +30,7 @@ export default function AdminDashboard() {
   const [activeChart, setActiveChart] = useState<"weekly" | "monthly" | "yearly" | null>(null);
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [selectedDetails, setSelectedDetails] = useState<string[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const summaryRef = useRef<HTMLDivElement>(null);
   const weeklyRef = useRef<HTMLDivElement>(null);
@@ -86,6 +87,18 @@ const prepareChartImages = () => {
   }
   if (yearlyChartRef.current) {
     setYearlyChartImg(yearlyChartRef.current.canvas.toDataURL());
+  }
+};
+
+const handleRefresh = async () => {
+  setIsRefreshing(true);
+  try {
+    // Force a page reload to refresh all data
+    window.location.reload();
+  } catch (error) {
+    console.error("Error refreshing dashboard:", error);
+  } finally {
+    setIsRefreshing(false);
   }
 };
 
@@ -424,6 +437,29 @@ const prepareChartImages = () => {
         <div data-aos="fade-up" className={styles.contentSection}>
           <div className={styles.headerRow}>
             <h2 className={styles.pageTitle}>Admin Dashboard</h2>
+            <div className={styles.headerButtons}>
+              <button 
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className={styles.refreshButton}
+                title="Refresh Dashboard"
+              >
+                {isRefreshing ? (
+                  <svg className={styles.spinner} width="20" height="20" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="31.416" strokeDashoffset="31.416">
+                      <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+                      <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+                    </circle>
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M1 4v6h6"/>
+                    <path d="M23 20v-6h-6"/>
+                    <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
           <hr className={styles.separator} />
 

@@ -219,12 +219,24 @@ export default function ESignDocument() {
     determineUserRole();
   }, [documentId, userRole]);
 
-  const jumpToNextSignature = () => {
+  const jumpToNextSignature = async () => {
     let remaining;
     if (role === "receiver") {
-      // For receivers, show all unsigned placeholders assigned to them
+      // Get current user's ID to filter placeholders assigned to them
+      let currentUserId: number | null = null;
+      try {
+        const userResponse = await fetch('/api/user/me');
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          currentUserId = userData.UserID;
+        }
+      } catch (error) {
+        console.error("Error fetching current user:", error);
+      }
+      
+      // For receivers, show only unsigned placeholders assigned to them
       remaining = placeholders.filter(
-        (ph) => !ph.isSigned
+        (ph) => !ph.isSigned && ph.assignedToId === currentUserId
       );
     } else {
       // For senders, show placeholders they created
@@ -291,12 +303,11 @@ export default function ESignDocument() {
         // If no uploadedFile but we have a documentId, try to fetch the file path from the API
         console.log("No uploadedFile provided, fetching from API for documentId:", documentId);
         try {
-          const response = await fetch(`/api/employee/pending-signatures`);
+          const response = await fetch(`/api/employee/documents/${documentId}`);
           if (response.ok) {
             const data = await response.json();
-            const document = data.pendingDocuments.find((doc: any) => doc.documentId.toString() === documentId);
-            if (document?.latestVersion?.FilePath) {
-              const filePath = document.latestVersion.FilePath;
+            if (data.latestVersion?.FilePath) {
+              const filePath = data.latestVersion.FilePath;
               console.log("Found file path from API:", filePath);
               const fullUrl = `${window.location.origin}${filePath}`;
               console.log("Setting file URL from API:", fullUrl);
@@ -305,6 +316,8 @@ export default function ESignDocument() {
             } else {
               console.log("No file path found in API response for document:", documentId);
             }
+          } else {
+            console.log("Failed to fetch document details from API");
           }
         } catch (error) {
           console.error("Error fetching file path from API:", error);
@@ -474,11 +487,25 @@ export default function ESignDocument() {
 
   // Handle saving the e-signed file (for receiver)
   const handleSaveFile = async () => {
-    // Check if there are any signed placeholders
-    const signedPlaceholders = placeholders.filter(p => p.isSigned);
-    const hasAnySignatures = signedPlaceholders.length > 0;
+    // Get current user's ID to check for their signatures
+    let currentUserId: number | null = null;
+    try {
+      const userResponse = await fetch('/api/user/me');
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        currentUserId = userData.UserID;
+      }
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+    }
     
-    console.log("handleSaveFile called - signedPlaceholders:", signedPlaceholders);
+    // Check if there are any signed placeholders assigned to the current user
+    const userSignedPlaceholders = placeholders.filter(p => 
+      p.isSigned && p.assignedToId === currentUserId
+    );
+    const hasAnySignatures = userSignedPlaceholders.length > 0;
+    
+    console.log("handleSaveFile called - userSignedPlaceholders:", userSignedPlaceholders);
     console.log("handleSaveFile called - hasAnySignatures:", hasAnySignatures);
     console.log("handleSaveFile called - pdfUrl:", pdfUrl);
     console.log("handleSaveFile called - originalPdfUrl:", originalPdfUrl);
@@ -630,18 +657,20 @@ export default function ESignDocument() {
               setModalOpen={setModalOpen}
               draggingEnabled={draggingEnabled}
               setDraggingEnabled={setDraggingEnabled}
-              onApplyComplete={(signedUrl) => {
-                console.log("onApplyComplete called with signedUrl:", signedUrl);
-                setPdfUrl(signedUrl); // Update PDF URL with signed version
-                setHasSigned(true);
-                console.log("PDF URL updated and hasSigned set to true");
-                
-                // Force a re-render to update the UI state
-                setTimeout(() => {
-                  console.log("Current placeholders state after signature:", placeholders);
-                  console.log("hasSigned state:", true);
-                }, 100);
-              }}
+                             onApplyComplete={(signedUrl) => {
+                 console.log("onApplyComplete called with signedUrl:", signedUrl);
+                 setPdfUrl(signedUrl); // Update PDF URL with signed version
+                 setHasSigned(true);
+                 console.log("PDF URL updated and hasSigned set to true");
+                 
+                 // Force a re-render to immediately update the UI and hide placeholders
+                 setTimeout(() => {
+                   console.log("Current placeholders state after signature:", placeholders);
+                   console.log("hasSigned state:", true);
+                   // Force re-render of placeholders
+                   setPlaceholders(prev => [...prev]);
+                 }, 100);
+               }}
               viewMode={viewMode}
               setViewMode={setViewMode}
               originalPdfUrl={originalPdfUrl}

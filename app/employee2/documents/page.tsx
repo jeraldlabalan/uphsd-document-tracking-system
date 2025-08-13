@@ -4,6 +4,7 @@ import styles from "./documentsStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
 import { useSearchParams } from "next/navigation";
 import { Search as SearchIcon, User } from "lucide-react";
+import { fetchFilterData, FilterData } from "@/lib/filterData";
 
 import Link from "next/link";
 import { X } from "lucide-react";
@@ -28,6 +29,11 @@ export default function Documents() {
   const [dateTo, setDateTo] = useState("");
   const [dateError, setDateError] = useState("");
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [filterData, setFilterData] = useState<FilterData>({
+    documentTypes: [],
+    departments: [],
+    statuses: []
+  });
   const searchParams = useSearchParams();
   const docId = searchParams.get("docId");
 
@@ -80,7 +86,13 @@ useEffect(() => {
     }
   };
 
+  const loadFilterData = async () => {
+    const data = await fetchFilterData();
+    setFilterData(data);
+  };
+
   fetchDocuments();
+  loadFilterData();
 }, []);
   // const documents = [
   //   {
@@ -201,10 +213,11 @@ useEffect(() => {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="">All Status</option>
-              <option>Pending</option>
-              <option>In Process</option>
-              <option>Completed</option>
-              <option>Rejected</option>
+              {filterData.statuses.map((status) => (
+                <option key={status.StatusID} value={status.StatusName}>
+                  {status.StatusName}
+                </option>
+              ))}
             </select>
 
             <select
@@ -213,10 +226,11 @@ useEffect(() => {
               onChange={(e) => setTypeFilter(e.target.value)}
             >
               <option value="">All Types</option>
-              <option>Report</option>
-              <option>Request</option>
-              <option>Evaluation</option>
-              <option>Budget</option>
+              {filterData.documentTypes.map((type) => (
+                <option key={type.TypeID} value={type.TypeName}>
+                  {type.TypeName}
+                </option>
+              ))}
             </select>
             <div className={styles.dateFilterWrapper}>
               <div className={styles.dateGroup}>

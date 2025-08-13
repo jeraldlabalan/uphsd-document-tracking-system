@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verify } from "jsonwebtoken";
 import { cookies } from "next/headers";
-import { writeFile } from "fs/promises";
+import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
@@ -87,24 +87,43 @@ export async function POST(req: NextRequest) {
       let versionNumber = (latest?.VersionNumber || 0) + 1;
 
       const uploadDir = path.join(process.cwd(), "public", "uploads", "documents");
+      
+      // Create directory if it doesn't exist
+      try {
+        await mkdir(uploadDir, { recursive: true });
+      } catch (err) {
+        console.error("Error creating upload directory:", err);
+        return NextResponse.json({ error: "Failed to create upload directory" }, { status: 500 });
+      }
 
       for (const file of files) {
-        // Save file to disk
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const filename = `${uuidv4()}-${file.name}`;
-        await writeFile(path.join(uploadDir, filename), buffer);
-        const FilePath = `/uploads/documents/${filename}`;
+        try {
+          // Save file to disk
+          const buffer = Buffer.from(await file.arrayBuffer());
+          // Extract only the file extension from the original name
+          const fileExtension = file.name.split('.').pop() || 'pdf';
+          const filename = `${uuidv4()}.${fileExtension}`;
+          const filePath = path.join(uploadDir, filename);
+          
+          await writeFile(filePath, buffer);
+          const FilePath = `/uploads/documents/${filename}`;
 
-        const newVersion = await db.documentVersion.create({
-          data: {
-            DocumentID,
-            VersionNumber: versionNumber++,
-            FilePath: FilePath,
-            ChangedBy: editorID,
-            ChangeDescription: "Updated version",
-          },
-        });
-        createdVersionId = newVersion.VersionID;
+          const newVersion = await db.documentVersion.create({
+            data: {
+              DocumentID,
+              VersionNumber: versionNumber++,
+              FilePath: FilePath,
+              ChangedBy: editorID,
+              ChangeDescription: "Updated version",
+            },
+          });
+          createdVersionId = newVersion.VersionID;
+        } catch (fileError) {
+          console.error("Error processing file:", file.name, fileError);
+          return NextResponse.json({ 
+            error: `Failed to process file ${file.name}: ${fileError instanceof Error ? fileError.message : 'Unknown error'}` 
+          }, { status: 500 });
+        }
       }
     }
 
@@ -153,6 +172,8 @@ export async function POST(req: NextRequest) {
           TargetID: reqRec.RequestID,
         },
       });
+      
+      return reqRec;
     });
 
     await Promise.all(createReqs);
@@ -305,24 +326,43 @@ export async function PUT(req: NextRequest) {
       let versionNumber = (latest?.VersionNumber || 0) + 1;
 
       const uploadDir = path.join(process.cwd(), "public", "uploads", "documents");
+      
+      // Create directory if it doesn't exist
+      try {
+        await mkdir(uploadDir, { recursive: true });
+      } catch (err) {
+        console.error("Error creating upload directory:", err);
+        return NextResponse.json({ error: "Failed to create upload directory" }, { status: 500 });
+      }
 
       for (const file of files) {
-        // Save file to disk
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const filename = `${uuidv4()}-${file.name}`;
-        await writeFile(path.join(uploadDir, filename), buffer);
-        const FilePath = `/uploads/documents/${filename}`;
+        try {
+          // Save file to disk
+          const buffer = Buffer.from(await file.arrayBuffer());
+          // Extract only the file extension from the original name
+          const fileExtension = file.name.split('.').pop() || 'pdf';
+          const filename = `${uuidv4()}.${fileExtension}`;
+          const filePath = path.join(uploadDir, filename);
+          
+          await writeFile(filePath, buffer);
+          const FilePath = `/uploads/documents/${filename}`;
 
-        const newVersion = await db.documentVersion.create({
-          data: {
-            DocumentID,
-            VersionNumber: versionNumber++,
-            FilePath: FilePath,
-            ChangedBy: editorID,
-            ChangeDescription: "Updated version with placeholders",
-          },
-        });
-        createdVersionId = newVersion.VersionID;
+                  const newVersion = await db.documentVersion.create({
+            data: {
+              DocumentID,
+              VersionNumber: versionNumber++,
+              FilePath: FilePath,
+              ChangedBy: editorID,
+              ChangeDescription: "Updated version with placeholders",
+            },
+          });
+          createdVersionId = newVersion.VersionID;
+        } catch (fileError) {
+          console.error("Error processing file:", file.name, fileError);
+          return NextResponse.json({ 
+            error: `Failed to process file ${file.name}: ${fileError instanceof Error ? fileError.message : 'Unknown error'}` 
+          }, { status: 500 });
+        }
       }
     }
 
@@ -379,6 +419,8 @@ export async function PUT(req: NextRequest) {
             TargetID: reqRec.RequestID,
           },
         });
+        
+        return { reqRec, notif };
       });
     } else if (DepartmentID) {
       // No approvers required, but send notifications to all department members
@@ -414,6 +456,8 @@ export async function PUT(req: NextRequest) {
             TargetID: notif.NotificationID,
           },
         });
+        
+        return notif;
       });
     }
 

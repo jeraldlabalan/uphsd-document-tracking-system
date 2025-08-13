@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./Sidebar.module.css";
 import { SidebarProps, Role } from "../types";
 
@@ -23,14 +23,47 @@ export default function Sidebar({
   console.log("All placeholders", placeholders);
   console.log("Current role:", role);
 
-  // For receivers, count any unsigned placeholders. Comparing signee to role is incorrect
-  const remainingPlaceholders =
-    role === "receiver"
-      ? placeholders.filter((ph) => !ph.isSigned)
-      : placeholders.filter((ph) => !ph.isSigned);
+  // For receivers, count only unsigned placeholders assigned to them
+  const [userPlaceholders, setUserPlaceholders] = useState<typeof placeholders>([]);
+  const [userSignedPlaceholders, setUserSignedPlaceholders] = useState<typeof placeholders>([]);
 
-  // For receivers, also check if they have any signed placeholders
-  const signedPlaceholders = placeholders.filter((ph) => ph.isSigned);
+  // Get current user's placeholders
+  useEffect(() => {
+    const fetchUserPlaceholders = async () => {
+      if (role === "receiver") {
+        try {
+          const userResponse = await fetch('/api/user/me');
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            const currentUserId = userData.UserID;
+            
+            const userUnsigned = placeholders.filter((ph) => 
+              !ph.isSigned && ph.assignedToId === currentUserId
+            );
+            const userSigned = placeholders.filter((ph) => 
+              ph.isSigned && ph.assignedToId === currentUserId
+            );
+            
+            setUserPlaceholders(userUnsigned);
+            setUserSignedPlaceholders(userSigned);
+          }
+        } catch (error) {
+          console.error("Error fetching user placeholders:", error);
+        }
+      } else {
+        // For senders, show all placeholders they created
+        const senderPlaceholders = placeholders.filter((ph) => !ph.isSigned);
+        const senderSignedPlaceholders = placeholders.filter((ph) => ph.isSigned);
+        setUserPlaceholders(senderPlaceholders);
+        setUserSignedPlaceholders(senderSignedPlaceholders);
+      }
+    };
+
+    fetchUserPlaceholders();
+  }, [role, placeholders]);
+
+  const remainingPlaceholders = userPlaceholders;
+  const signedPlaceholders = userSignedPlaceholders;
   const hasAnySignatures = signedPlaceholders.length > 0;
 
   console.log("Remaining placeholders", remainingPlaceholders);

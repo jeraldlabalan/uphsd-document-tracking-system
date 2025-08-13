@@ -78,13 +78,34 @@ export async function GET(req: Request) {
       const isCreator = doc.CreatedBy === userID;
       const userRequest = doc.Requests?.find((req: any) => req.RecipientUserID === userID);
       
+      // Determine document status based on user role and document state
+      let status = "Unknown";
+      
+      if (isCreator) {
+        // For creators, use the document's overall status or determine from requests
+        if (doc.Status) {
+          status = doc.Status;
+        } else if (doc.Requests && doc.Requests.length > 0) {
+          // Check if any requests are pending
+          const hasPendingRequests = doc.Requests.some((req: any) => 
+            req.Status?.StatusName === "In Process" || req.Status?.StatusName === "Pending"
+          );
+          status = hasPendingRequests ? "In Process" : "Completed";
+        } else {
+          status = "Draft"; // No requests means it's a draft
+        }
+      } else {
+        // For approvers, use their specific request status
+        status = userRequest?.Status?.StatusName ?? "Unknown";
+      }
+      
       return {
         id: doc.DocumentID, // Use DocumentID for editing
         documentId: doc.DocumentID, // Explicit DocumentID
         requestId: userRequest?.RequestID, // Keep RequestID for other operations
         name: doc.Title ?? "Untitled",
         type: doc.DocumentType?.TypeName ?? "Unknown",
-        status: userRequest?.Status?.StatusName ?? "Unknown",
+        status: status,
         date: doc.CreatedAt.toISOString().split("T")[0],
         creator: `${doc.Creator?.FirstName || "Unknown"} ${doc.Creator?.LastName || "Unknown"}`,
         preview: latestFilepath || "",
