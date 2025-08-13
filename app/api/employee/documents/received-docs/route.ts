@@ -66,35 +66,45 @@ export async function GET(request: NextRequest) {
     });
 
     // Format the response
-    const formattedDocuments = receivedDocuments.map((request) => ({
-      requestID: request.RequestID,
-      documentID: request.Document.DocumentID,
-      title: request.Document.Title,
-      description: request.Document.Description,
-      type: request.Document.DocumentType.TypeName,
-      department: request.Document.Department?.Name,
-      creator: request.Document.Creator,
-      status: request.Status.StatusName,
-      documentStatus: request.Document.Status,
-      requestedAt: request.RequestedAt,
-      completedAt: request.CompletedAt,
-      priority: request.Priority,
-      remarks: request.Remarks,
-      latestVersion: request.Document.Versions[0] || null,
-      signaturePlaceholders: request.Document.SignaturePlaceholders.map((p) => ({
-        placeholderID: p.PlaceholderID,
-        page: p.Page,
-        x: p.X,
-        y: p.Y,
-        width: p.Width,
-        height: p.Height,
-        assignedToID: p.AssignedToID,
-        assignedTo: p.AssignedTo,
-        isSigned: p.IsSigned,
-        signedAt: p.SignedAt,
-        signatureData: p.SignatureData,
-      })),
-    }));
+    const formattedDocuments = receivedDocuments.map((request) => {
+      const latestVersion = request.Document.Versions[0];
+      
+      const formattedDoc = {
+        requestID: request.RequestID,
+        documentID: request.Document.DocumentID,
+        title: request.Document.Title,
+        description: request.Document.Description,
+        type: request.Document.DocumentType.TypeName,
+        department: request.Document.Department?.Name,
+        creator: request.Document.Creator,
+        status: request.Status.StatusName,
+        documentStatus: request.Document.Status,
+        requestedAt: request.RequestedAt,
+        completedAt: request.CompletedAt,
+        priority: request.Priority,
+        remarks: request.Remarks,
+        latestVersion: latestVersion ? {
+          versionID: latestVersion.VersionID,
+          versionNumber: latestVersion.VersionNumber,
+          filePath: latestVersion.FilePath || null,
+        } : null,
+        signaturePlaceholders: request.Document.SignaturePlaceholders.map((p) => ({
+          placeholderID: p.PlaceholderID,
+          page: p.Page,
+          x: p.X,
+          y: p.Y,
+          width: p.Width,
+          height: p.Height,
+          assignedToID: p.AssignedToID,
+          assignedTo: p.AssignedTo,
+          isSigned: p.IsSigned,
+          signedAt: p.SignedAt,
+          signatureData: p.SignatureData,
+        })),
+      };
+      
+      return formattedDoc;
+    });
 
     return NextResponse.json({
       receivedDocuments: formattedDocuments,

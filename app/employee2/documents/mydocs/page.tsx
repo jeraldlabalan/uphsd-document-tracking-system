@@ -424,28 +424,31 @@ export default function MyDocuments() {
               </div>
 
               <div className={styles.previewContainer}>
-                {selectedDoc.latestVersion?.filePath?.match(/\.pdf$/i) ? (
-                  <iframe
-                    src={`${selectedDoc.latestVersion.filePath}#toolbar=0&navpanes=0&scrollbar=0`}
-                    title="PDF Preview"
-                    width="100%"
-                    height="600px"
-                    style={{ border: "none" }}
-                  />
-                ) : selectedDoc.latestVersion?.filePath ? (
-                  <p>
-                    <a
-                      href={selectedDoc.latestVersion.filePath}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Download File
-                    </a>
-                  </p>
-                ) : (
-                  <p>No file available.</p>
-                )}
-              </div>
+  {selectedDoc.latestVersion?.filePath ? (
+    selectedDoc.latestVersion.filePath.match(/\.pdf$/i) ? (
+      <iframe
+        src={`${selectedDoc.latestVersion.filePath}#toolbar=0&navpanes=0&scrollbar=0`}
+        title="PDF Preview"
+        width="100%"
+        height="600px"
+        style={{ border: "none" }}
+      />
+    ) : (
+      <p>
+        <a
+          href={selectedDoc.latestVersion.filePath}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Download File
+        </a>
+      </p>
+    )
+  ) : (
+    <p>No file available.</p>
+  )}
+</div>
+
 
               <div className={styles.modalFooter}>
                 <div className={styles.leftButtons}>
