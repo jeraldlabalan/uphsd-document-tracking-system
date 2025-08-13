@@ -9,11 +9,9 @@
   display: flex;
   flex-direction: column;
   transition: margin-left 0.3s ease;
+  gap: 1rem;
 }
 
-.withSidebar {
-  margin-left: 300px;
-}
 
 .fullWidth {
   margin-left: 0;
@@ -23,7 +21,7 @@
   display: flex;
   align-items: center;
   padding: 1rem 2rem;
-  background-color: #fff;
+  background-color: var(--color-maroon);
   border-bottom: 1px solid #e0e0e0;
   gap: 1rem;
 }
@@ -37,9 +35,6 @@
   transition: background-color 0.2s;
 }
 
-.header button:hover {
-  background-color: #f0f0f0;
-}
 
 .headerLogo {
   width: 40px;
@@ -55,17 +50,17 @@
 .documentInfo h3 {
   margin: 0;
   font-size: 1.2rem;
-  color: #333;
+    color: white;
 }
 
 .documentInfo p {
   margin: 0.25rem 0 0 0;
   font-size: 0.9rem;
-  color: #666;
+    color: white;
 }
 
 .pdfViewer {
   flex: 1;
-  overflow: hidden;
+  overflow-y: scroll;
   background-color: #fff;
 }
