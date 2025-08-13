@@ -1,6 +1,7 @@
-import React, { useState } from "react";
-import styles from "./ProfileManagement.module.css"; // Adjust path if necessary
+import React, { useState, useEffect } from "react";
+import styles from "./ProfileManagement.module.css";
 import Image from "next/image";
+import toast from "react-hot-toast";
 
 // Define types for the ProfileDisplay component
 interface ProfileDisplayProps {
@@ -8,6 +9,7 @@ interface ProfileDisplayProps {
   name: string; // User's name
   role: string; // User's role
   description: string; // Description or bio of the user
+  onProfileUpdate?: (newProfilePicture: string) => void;
 }
 
 const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
@@ -15,22 +17,99 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
   name,
   role,
   description,
+  onProfileUpdate,
 }) => {
-  const [image, setImage] = useState(profileImage); // State for the uploaded image
+  const [image, setImage] = useState(profileImage);
+  const [isUploading, setIsUploading] = useState(false);
 
+  // Update local image state when profileImage prop changes
+  useEffect(() => {
+    setImage(profileImage);
+  }, [profileImage]);
 
+  // Check if profile image exists and is not default
+  const hasProfileImage =
+    image &&
+    image !== "" &&
+    !image.includes("profile-placeholder") &&
+    !image.includes("default") &&
+    !image.includes("profile-placeholder.jpg") &&
+    image !== "/uploads/profiles/" &&
+    image !== "/uploads/profiles" &&
+    image !== "/profile-placeholder.jpg" &&
+    image !== "/default.jpg";
 
-  // Handle image upload (you can replace this with an actual file upload logic)
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Debug: log the values to see what's happening
+  console.log("ProfileDisplay Debug:");
+  console.log("- image:", image);
+  console.log("- profileImage prop:", profileImage);
+  console.log("- hasProfileImage:", hasProfileImage);
+  console.log("- name:", name);
+
+  // Get user initials from name (firstname only)
+  const getUserInitials = (fullName: string) => {
+    if (!fullName) return "U";
+    const names = fullName.trim().split(" ");
+    return names[0].charAt(0).toUpperCase(); // Only first letter of firstname
+  };
+
+  // Handle image upload
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (reader.result) {
-          setImage(reader.result as string); // Update the profile image with the uploaded file
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be less than 5MB");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("profilePicture", file);
+
+      const response = await fetch(
+        "/api/admin/settings/upload-profile-picture",
+        {
+          method: "POST",
+          body: formData,
         }
-      };
-      reader.readAsDataURL(file);
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+
+        // Update local state immediately
+        setImage(data.profilePicture);
+
+        // Update parent component if callback provided
+        if (onProfileUpdate) {
+          onProfileUpdate(data.profilePicture);
+        }
+
+        // Dispatch custom event to automatically update admin header
+        window.dispatchEvent(new CustomEvent("userInfoUpdated"));
+
+        toast.success("Profile picture updated successfully!");
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.message || "Failed to upload profile picture");
+      }
+    } catch (error) {
+      console.error("Error uploading profile picture:", error);
+      toast.error("An error occurred while uploading");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -39,14 +118,55 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
       {/* Section 1: Profile Photo */}
       <div className={styles.profileItem}>
         <div className={styles.imageContainer}>
-            <Image 
-        src={image} 
-        alt="Profile" 
-        className={styles.profileImage}
-        width={150} 
-        height={150} 
-        objectFit="cover"
-         />
+          {hasProfileImage ? (
+            <Image
+              src={image}
+              alt="Profile"
+              className={styles.profileImage}
+              width={150}
+              height={150}
+              objectFit="cover"
+            />
+          ) : (
+            <div
+              className={styles.profileImage}
+              style={{
+                width: "150px",
+                height: "150px",
+                borderRadius: "50%",
+                backgroundColor: "#FCCB0A", // Same yellow as header
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#7F1416", // Same maroon as header
+                fontSize: "4rem",
+                fontWeight: "bold",
+                boxShadow: "0 0 4px rgba(0, 0, 0, 0.2)", // Same shadow as header
+              }}
+            >
+              {getUserInitials(name)}
+            </div>
+          )}
+          {isUploading && (
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: "rgba(0,0,0,0.5)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "50%",
+              }}
+            >
+              <div style={{ color: "white", fontSize: "14px" }}>
+                Uploading...
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -58,8 +178,13 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
 
       {/* Section 3: Upload Photo Button */}
       <div className={styles.profileItem}>
-        
-        <label htmlFor="upload-photo">
+        <label
+          htmlFor="upload-photo"
+          style={{
+            opacity: isUploading ? 0.6 : 1,
+            cursor: isUploading ? "not-allowed" : "pointer",
+          }}
+        >
           <svg
             width="11"
             height="11"
@@ -73,7 +198,7 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
             />
           </svg>
 
-          <span>upload photo</span>
+          <span>{isUploading ? "Uploading..." : "upload photo"}</span>
         </label>
 
         <input
@@ -83,8 +208,8 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
           accept="image/*"
           onChange={handleImageUpload}
           className={styles.uploadButton}
+          disabled={isUploading}
         />
-
       </div>
 
       {/* Section 4: Description Text */}
