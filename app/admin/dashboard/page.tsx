@@ -42,24 +42,29 @@ export default function AdminDashboard() {
 
 
 const weeklyData = {
-  pending:    [5, 4, 6, 3, 7, 2, 1],
-  completed:  [10, 12, 9, 11, 13, 8, 6],
-  onHold:     [1, 0, 2, 1, 0, 1, 1],
+  inProcess:          [5, 4, 6, 3, 7, 2, 1],  
+  completed:          [10, 12, 9, 11, 13, 8, 6],
+  onHold:             [1, 0, 2, 1, 0, 1, 1],
+  approved:           [2, 3, 1, 4, 2, 3, 2],
+  awaitingCompletion: [1, 1, 2, 0, 1, 2, 1],
 };
-
 
 const monthlyData = {
-  pending:    [12, 14, 11, 13, 9, 15, 10, 12, 11, 13, 14, 10],
-  completed:  [30, 32, 28, 31, 26, 34, 29, 30, 31, 33, 32, 30],
-  onHold:     [3, 2, 4, 3, 5, 2, 4, 3, 2, 4, 3, 5],
+  inProcess:          [12, 14, 11, 13, 9, 15, 10, 12, 11, 13, 14, 10], 
+  completed:          [30, 32, 28, 31, 26, 34, 29, 30, 31, 33, 32, 30],
+  onHold:             [3, 2, 4, 3, 5, 2, 4, 3, 2, 4, 3, 5],
+  approved:           [5, 4, 6, 5, 7, 4, 6, 5, 4, 7, 6, 5],
+  awaitingCompletion: [2, 3, 1, 2, 3, 2, 1, 2, 3, 1, 2, 3],
 };
-
 
 const yearlyData = {
-  pending:    [120],
-  completed:  [340],
-  onHold:     [40],
+  inProcess:          [120], 
+  completed:          [340],
+  onHold:             [40],
+  approved:           [60],
+  awaitingCompletion: [25],
 };
+
 
 
 
@@ -206,7 +211,7 @@ const prepareChartImages = () => {
   </div>
 
   {/* Charts */}
- {selectedDetails.includes("weekly") && (
+{selectedDetails.includes("weekly") && (
   <div ref={weeklyRef} style={{ marginTop: "2rem" }}>
     <h3>Weekly Graph</h3>
     <Bar
@@ -214,8 +219,8 @@ const prepareChartImages = () => {
         labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
         datasets: [
           {
-            label: "Pending",
-            data: weeklyData.pending,
+            label: "In Process",
+            data: weeklyData.inProcess,
             backgroundColor: "#FFA500",
           },
           {
@@ -228,6 +233,16 @@ const prepareChartImages = () => {
             data: weeklyData.onHold,
             backgroundColor: "#808080",
           },
+          {
+            label: "Approved",
+            data: weeklyData.approved,
+            backgroundColor: "#0000FF",
+          },
+          {
+            label: "Awaiting Completion",
+            data: weeklyData.awaitingCompletion,
+            backgroundColor: "#800080",
+          },
         ],
       }}
       options={{
@@ -243,9 +258,7 @@ const prepareChartImages = () => {
   </div>
 )}
 
-
-
-  {selectedDetails.includes("monthly") && (
+{selectedDetails.includes("monthly") && (
   <div ref={monthlyRef} style={{ marginTop: "2rem" }}>
     <h3>Monthly Graph</h3>
     <Bar
@@ -256,8 +269,8 @@ const prepareChartImages = () => {
         ],
         datasets: [
           {
-            label: "Pending",
-            data: monthlyData.pending,
+            label: "In Process",
+            data: monthlyData.inProcess,
             backgroundColor: "#FFA500",
           },
           {
@@ -270,6 +283,16 @@ const prepareChartImages = () => {
             data: monthlyData.onHold,
             backgroundColor: "#808080",
           },
+          {
+            label: "Approved",
+            data: monthlyData.approved,
+            backgroundColor: "#0000FF",
+          },
+          {
+            label: "Awaiting Completion",
+            data: monthlyData.awaitingCompletion,
+            backgroundColor: "#800080",
+          },
         ],
       }}
       options={{
@@ -285,8 +308,7 @@ const prepareChartImages = () => {
   </div>
 )}
 
-
-  {selectedDetails.includes("yearly") && (
+{selectedDetails.includes("yearly") && (
   <div ref={yearlyRef} style={{ marginTop: "2rem" }}>
     <h3>Yearly Graph</h3>
     <Bar
@@ -294,8 +316,8 @@ const prepareChartImages = () => {
         labels: ["2025"],
         datasets: [
           {
-            label: "Pending",
-            data: yearlyData.pending,
+            label: "In Process",
+            data: yearlyData.inProcess,
             backgroundColor: "#FFA500",
           },
           {
@@ -307,6 +329,16 @@ const prepareChartImages = () => {
             label: "On Hold",
             data: yearlyData.onHold,
             backgroundColor: "#808080",
+          },
+          {
+            label: "Approved",
+            data: yearlyData.approved,
+            backgroundColor: "#0000FF",
+          },
+          {
+            label: "Awaiting Completion",
+            data: yearlyData.awaitingCompletion,
+            backgroundColor: "#800080",
           },
         ],
       }}
@@ -429,7 +461,10 @@ const prepareChartImages = () => {
       type === "weekly"
         ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
         : type === "monthly"
-        ? ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"]
+        ? [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+          ]
         : ["2025"];
 
     // Data sets
@@ -440,22 +475,32 @@ const prepareChartImages = () => {
         ? monthlyData
         : yearlyData;
 
-    // Build datasets array with three statuses
+    // Build datasets array with new statuses
     const datasets = [
       {
-        label: "Pending",
-        data: dataSet.pending,
-        backgroundColor: "#FFAC1C",
+        label: "In Process",
+        data: dataSet.inProcess,
+        backgroundColor: "#FFAC1C", // Orange
       },
       {
         label: "Completed",
         data: dataSet.completed,
-        backgroundColor: "#50C878",
+        backgroundColor: "#50C878", // Green
       },
       {
         label: "On Hold",
         data: dataSet.onHold,
-        backgroundColor: "#F08080",
+        backgroundColor: "#F08080", // Light red
+      },
+      {
+        label: "Approved",
+        data: dataSet.approved,
+        backgroundColor: "#1E90FF", // Dodger blue
+      },
+      {
+        label: "Awaiting Completion",
+        data: dataSet.awaitingCompletion,
+        backgroundColor: "#9370DB", // Purple
       },
     ];
 
@@ -519,18 +564,21 @@ const prepareChartImages = () => {
               activeChart === "weekly"
                 ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
                 : activeChart === "monthly"
-                ? ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"]
+                ? [
+                    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+                  ]
                 : ["2025"],
             datasets: [
               {
-                label: "Pending",
+                label: "In Process",
                 data:
                   activeChart === "weekly"
-                    ? weeklyData.pending
+                    ? weeklyData.inProcess
                     : activeChart === "monthly"
-                    ? monthlyData.pending
-                    : yearlyData.pending,
-                backgroundColor: "#FFAC1C",
+                    ? monthlyData.inProcess
+                    : yearlyData.inProcess,
+                backgroundColor: "#FFAC1C", // Orange
               },
               {
                 label: "Completed",
@@ -540,7 +588,7 @@ const prepareChartImages = () => {
                     : activeChart === "monthly"
                     ? monthlyData.completed
                     : yearlyData.completed,
-                backgroundColor: "#50C878",
+                backgroundColor: "#50C878", // Green
               },
               {
                 label: "On Hold",
@@ -550,7 +598,27 @@ const prepareChartImages = () => {
                     : activeChart === "monthly"
                     ? monthlyData.onHold
                     : yearlyData.onHold,
-                backgroundColor: "#F08080",
+                backgroundColor: "#F08080", // Light red
+              },
+              {
+                label: "Approved",
+                data:
+                  activeChart === "weekly"
+                    ? weeklyData.approved
+                    : activeChart === "monthly"
+                    ? monthlyData.approved
+                    : yearlyData.approved,
+                backgroundColor: "#1E90FF", // Blue
+              },
+              {
+                label: "Awaiting Completion",
+                data:
+                  activeChart === "weekly"
+                    ? weeklyData.awaitingCompletion
+                    : activeChart === "monthly"
+                    ? monthlyData.awaitingCompletion
+                    : yearlyData.awaitingCompletion,
+                backgroundColor: "#9370DB", // Purple
               },
             ],
           }}
@@ -565,11 +633,10 @@ const prepareChartImages = () => {
           }}
         />
       </div>
+    </div>
+  </div>
+)}
 
-            
-          </div>
-        </div>
-      )}
 
       {showPrintModal && (
   <div className={styles.modalOverlay}>
@@ -582,9 +649,35 @@ const prepareChartImages = () => {
         ×
       </button>
 <h3 className={styles.modalTitle}>Download</h3>
-      <h3>Select content to include:</h3>
+      <h3 style={{ textAlign: "center" }}>Select content to include:</h3>
+
 
       <div className={styles.checkboxGroup}>
+{/* ✅ Select All Checkbox */}
+  <label>
+    <input
+      type="checkbox"
+      checked={selectedDetails.length === 6} // 6 items total
+      onChange={(e) => {
+        if (e.target.checked) {
+          // Select all
+          setSelectedDetails([
+            "users",
+            "documents",
+            "departments",
+            "weekly",
+            "monthly",
+            "yearly",
+          ]);
+        } else {
+          // Deselect all
+          setSelectedDetails([]);
+        }
+      }}
+    />
+    Select All
+  </label>
+
         <label>
           <input
             type="checkbox"

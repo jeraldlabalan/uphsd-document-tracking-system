@@ -75,6 +75,7 @@ export default function ReceiveDocuments() {
         const res = await fetch("/api/employee/documents/received-docs");
         const data = await res.json();
         if (res.ok) {
+          console.log("Received documents data:", data);
           setDocs(data.receivedDocuments);
         } else {
           console.error(data.error || "Failed to fetch documents");
@@ -322,10 +323,11 @@ const handleConfirmClick = async () => {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="">All Status</option>
-              <option>Pending</option>
-              <option>In Process</option>
+              <option>In-Process</option>
+              <option>Approved</option>
+              <option>Awaiting-Completion</option>
               <option>Completed</option>
-              <option>Rejected</option>
+              <option>On Hold</option>
             </select>
 
             <select
@@ -429,7 +431,10 @@ const handleConfirmClick = async () => {
             </td>
             <td>{new Date(doc.requestedAt).toLocaleDateString()}</td>
             <td className={styles.actions}>
-              <a href="#" onClick={() => setSelectedDoc(doc)}>View</a>
+              <a href="#" onClick={() => {
+                console.log("Selected document:", doc);
+                setSelectedDoc(doc);
+              }}>View</a>
             </td>
           </tr>
         ))
@@ -480,7 +485,10 @@ const handleConfirmClick = async () => {
           <p><strong className={styles.highlighted}>Date:</strong> {new Date(doc.requestedAt).toLocaleDateString()}</p>
           <p><strong className={styles.highlighted}>Creator:</strong> {`${doc.creator.FirstName} ${doc.creator.LastName}`}</p>
           <div className={styles.cardActions}>
-            <button onClick={() => setSelectedDoc(doc)}>View</button>
+            <button onClick={() => {
+              console.log("Selected document (card):", doc);
+              setSelectedDoc(doc);
+            }}>View</button>
           </div>
         </div>
       ))
@@ -539,24 +547,64 @@ const handleConfirmClick = async () => {
               </div>
 
               <div className={styles.previewContainer}>
-                {selectedDoc.latestVersion?.filePath?.match(/\.pdf$/i) ? (
-                  <iframe
-                    src={`${selectedDoc.latestVersion.filePath}#toolbar=0&navpanes=0&scrollbar=0`}
-                    title="PDF Preview"
-                    width="100%"
-                    height="600px"
-                    style={{ border: "none" }}
-                  />
-                ) : selectedDoc.latestVersion?.filePath ? (
-                  <p>
-                    <a href={selectedDoc.latestVersion.filePath} target="_blank" rel="noopener noreferrer">
-                      Download File
-                    </a>
-                  </p>
-                ) : (
-                  <p>No file available.</p>
-                )}
-              </div>
+  {selectedDoc.latestVersion?.filePath ? (
+    (() => {
+      const isPDF = selectedDoc.latestVersion.filePath.match(/\.pdf$/i);
+      
+      if (isPDF) {
+        return (
+          <div>
+            <iframe
+              src={`${selectedDoc.latestVersion.filePath}#toolbar=0&navpanes=0&scrollbar=0`}
+              title="PDF Preview"
+              width="100%"
+              height="600px"
+              style={{ border: "none" }}
+              onError={(e) => {
+                console.error("Iframe error:", e);
+              }}
+              onLoad={() => {
+                console.log("PDF loaded successfully");
+              }}
+            />
+            <div style={{ marginTop: '10px', fontSize: '12px', color: '#666' }}>
+              <p>If the preview doesn't load, you can:</p>
+              <ul style={{ margin: '5px 0', paddingLeft: '20px' }}>
+                <li><a href={selectedDoc.latestVersion.filePath} target="_blank" rel="noopener noreferrer">Open the file in a new tab</a></li>
+                <li><a href={selectedDoc.latestVersion.filePath} download>Download the file directly</a></li>
+              </ul>
+            </div>
+          </div>
+        );
+      } else {
+        return (
+          <div>
+            <p>File type: {selectedDoc.latestVersion.filePath.split('.').pop()?.toUpperCase()}</p>
+            <p style={{ fontSize: '12px', color: '#666', marginBottom: '10px' }}>
+              This file type cannot be previewed in the browser.
+            </p>
+            <a
+             
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.downloadLink}
+              href={selectedDoc.latestVersion.filePath} download
+            >
+              Download File
+            </a>
+          </div>
+        );
+      }
+    })()
+  ) : (
+    <div>
+      <p>No file available.</p>
+      <p style={{ fontSize: '12px', color: '#666' }}>
+        This document may not have an attached file or the file path is missing.
+      </p>
+    </div>
+  )}
+</div>
 
               <div className={styles.modalFooter}>
                 <button className={styles.download} onClick={handleDownload}>Download</button>
@@ -568,7 +616,19 @@ const handleConfirmClick = async () => {
                   {isApproving ? "Approving..." : "Approve"}
                 </button>
                 <button className={styles.OnHold} onClick={() => setShowOnHoldModal(true)}>On Hold</button>
-                <button className={styles.print} onClick={handlePrint}>Print</button>
+                <button
+                className={styles.print}
+                onClick={() => {
+                  if (selectedDoc.latestVersion?.filePath) {
+                    window.open(selectedDoc.latestVersion.filePath, "_blank", "noopener,noreferrer");
+                  } else {
+                    alert("No file available to print.");
+                  }
+                }}
+              >
+                Print
+              </button>
+
               </div>
             </div>
           </div>

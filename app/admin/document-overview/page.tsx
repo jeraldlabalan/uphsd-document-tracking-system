@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import styles from "./documentOverview.module.css";
 import AdminHeader from "@/components/shared/adminHeader";
 import { Search as SearchIcon } from "lucide-react";
-import { X, FileCheck, FileText, Trash2 } from "lucide-react";
+import { X, FileCheck, FileText, Trash2, CheckCircle } from "lucide-react";
 
 export default function DocumentOverview() {
   const [search, setSearch] = useState("");
@@ -58,13 +58,7 @@ export default function DocumentOverview() {
     return statusMatch && typeMatch && searchMatch && dateMatch;
   });
 
-  const handleDownload = () => {
-    // optional
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
+  
 
   const handleCloseModal = () => setIsModalOpen(false);
   const handleCloseSuccess = () => setShowSuccessModal(false);
@@ -114,6 +108,33 @@ export default function DocumentOverview() {
     }
   }
 
+  // for pagination
+  const [currentPage, setCurrentPage] = useState(1);
+const docsPerPage = 5; // number of docs per page
+
+// Calculate total pages
+const totalPages = Math.ceil(filteredDocs.length / docsPerPage);
+
+// Calculate slicing indexes
+const startIndex = (currentPage - 1) * docsPerPage;
+const endIndex = startIndex + docsPerPage;
+
+// Slice the docs for the current page
+const paginatedDocs = filteredDocs.slice(startIndex, endIndex);
+
+// Pagination handlers
+const handlePrev = () => {
+  setCurrentPage((prev) => Math.max(prev - 1, 1));
+};
+
+const handleNext = () => {
+  setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+};
+
+
+
+
+
   return (
     <div>
       <AdminHeader />
@@ -128,6 +149,7 @@ export default function DocumentOverview() {
             >
               Update Document Statuses
             </button>
+            
           </div>
           <hr className={styles.separator} />
 
@@ -135,6 +157,7 @@ export default function DocumentOverview() {
             <div className={`${styles.card} ${styles.green}`}>
 
               <CheckCircle className={styles.icon} />
+              <FileCheck className={styles.icon} />
               <span className={styles.count}>{summary?.inProcessDocuments ?? 0}</span>
               <span>In-Process</span>
 
@@ -212,74 +235,99 @@ export default function DocumentOverview() {
               </div>
             </div>
           </div>
-
-          <table className={styles.docTable}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Title</th>
-                <th>Department</th>
-                <th>Status</th>
-                <th>Date Created</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredDocs.length > 0 ? (
-                filteredDocs.map((doc, i) => (
-                  <tr key={i}>
-                    <td>{doc.id}</td>
-                    <td>{doc.title}</td>
-                    <td>{doc.department}</td>
-                    <td>
-                      <span className={`${styles.badge} ${
-                        doc.status === "Completed" ? styles.completed : 
-                        doc.status === "In-Process" ? styles.inProcess : 
-                        doc.status === "Awaiting Signatures" ? styles.pending :
-                        doc.status === "Awaiting-Completion" ? styles.pending :
-                        doc.status === "On Hold" ? styles.onHold : 
-                        styles.pending
-                      }`}>
-
-                        {doc.status}
-                      </span>
-
-
-                    </td>
-                    <td>{doc.dateCreated}</td>
-                    <td>
-                      <a href="#" onClick={() => setSelectedDoc(doc)} className={`${styles.actionBtn} ${styles.viewBtn}`}>
-                        View
-                      </a>{" "}
-                      <button
-                        className={`${styles.actionBtn} ${styles.deleteBtn}`}
-                        onClick={() => {
-                          setSelectedDoc(doc);
-                          setIsModalOpen(true);
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr className={styles.noDataRow}>
-                  <td colSpan={6} style={{ textAlign: "center", padding: "1rem" }}>
-                    No documents found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+<div className={styles.tableWrapper}>
+  <table className={styles.docTable}>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Title</th>
+        <th>Department</th>
+        <th>Status</th>
+        <th>Date Created</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {paginatedDocs.length > 0 ? (
+        paginatedDocs.map((doc, i) => (
+          <tr key={i}>
+            <td>{doc.id}</td>
+            <td>{doc.title}</td>
+            <td>{doc.department}</td>
+            <td>
+              <span
+                className={`${styles.badge} ${
+                  doc.status === "Completed"
+                    ? styles.completed
+                    : doc.status === "In-Process"
+                    ? styles.inProcess
+                    : doc.status === "Awaiting Signatures"
+                    ? styles.pending
+                    : doc.status === "Awaiting-Completion"
+                    ? styles.awaiting
+                    : doc.status === "On Hold"
+                    ? styles.onHold
+                    : styles.pending
+                }`}
+              >
+                {doc.status}
+              </span>
+            </td>
+            <td>{doc.dateCreated}</td>
+            <td>
+              <a
+                href="#"
+                onClick={() => setSelectedDoc(doc)}
+                className={`${styles.actionBtn} ${styles.viewBtn}`}
+              >
+                View
+              </a>{" "}
+              <button
+                className={`${styles.actionBtn} ${styles.deleteBtn}`}
+                onClick={() => {
+                  setSelectedDoc(doc);
+                  setIsModalOpen(true);
+                }}
+              >
+                Delete
+              </button>
+            </td>
+          </tr>
+        ))
+      ) : (
+        <tr className={styles.noDataRow}>
+          <td colSpan={6} style={{ textAlign: "center", padding: "1rem" }}>
+            No documents found.
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
+        {/* Pagination controls */}
+      <div className={styles.pagination}>
+        <button onClick={handlePrev} disabled={currentPage === 1}>
+          Previous
+        </button>
+        <span>
+          Page {currentPage} of {totalPages}
+        </span>
+        <button onClick={handleNext} disabled={currentPage === totalPages}>
+          Next
+        </button>
+      </div>
+</div>
 
         {selectedDoc && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modalCard}>
-              <button className={styles.closeButton} onClick={() => setSelectedDoc(null)} aria-label="Close Modal">
-                <X size={20} />
-              </button>
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalCard}>
+      <button
+        className={styles.closeButton}
+        onClick={() => setSelectedDoc(null)}
+        aria-label="Close Modal"
+      >
+        <X size={20} />
+      </button>
 
               <div className={styles.modalTop}>
                 <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
@@ -295,33 +343,65 @@ export default function DocumentOverview() {
                 </span>
 
               </div>
+      {/* Top Section */}
+      <div className={styles.modalTop}>
+        <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
+        <span className={`${styles.badge} ${
+                  selectedDoc.status === "Completed" ? styles.completed : 
+                  selectedDoc.status === "In-Process" ? styles.inProcess : 
+                  selectedDoc.status === "Awaiting Signatures" ? styles.pending :
+                  selectedDoc.status === "Awaiting-Completion" ? styles.awaiting :
+                  selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold"
+                                                      ? styles.onHold :
 
-              <div className={styles.metaGrid}>
-                <div className={styles.metaLabelRow}>
-                  <span>Creator:</span>
-                  <span>Department:</span>
-                  <span>Type:</span>
-                  <span>Date:</span>
-                </div>
-                <div className={styles.metaValueRow}>
-                  <p>{selectedDoc.creator}</p>
-                  <p>{selectedDoc.department}</p>
-                  <p>{selectedDoc.type}</p>
-                  <p>{selectedDoc.dateCreated}</p>
-                </div>
-              </div>
-            </div>
-          </div>
+                  styles.pending
+                }`}>
+                  {selectedDoc.status}
+                </span>
+      </div>
+
+      {/* Meta Data */}
+      <div className={styles.metaGrid}>
+        <div className={styles.metaLabelRow}>
+          <span>Creator:</span>
+          <span>Department:</span>
+          <span>Type:</span>
+          <span>Date:</span>
+        </div>
+        <div className={styles.metaValueRow}>
+          <p>{selectedDoc.creator}</p>
+          <p>{selectedDoc.department}</p>
+          <p>{selectedDoc.type}</p>
+          <p>{selectedDoc.dateCreated}</p>
+        </div>
+      </div>
+
+      {/* Preview Section */}
+      <div className={styles.previewSection}>
+        <h4>Document Preview</h4>
+        {selectedDoc.previewUrl ? (
+          <iframe
+            src={`${selectedDoc.preview}#toolbar=0&navpanes=0&scrollbar=0`}
+            title="Document Preview"
+            className={styles.previewFrame}
+          ></iframe>
+        ) : (
+          <p className={styles.noPreview}>No preview available</p>
         )}
+      </div>
+    </div>
+  </div>
+)}
+
 
         {isModalOpen && (
-          <div className={styles.deletemodalOverlay}>
-            <div className={styles.modal}>
+          <div className={styles.modalOverlay}>
+            <div className={styles.deletemodalContent}>
               <h3 className={styles.deletemodalTitle}>Confirm Deletion</h3>
               <p>Are you sure you want to delete this document? This action can be undone by restore.</p>
               <div className={styles.modalActions}>
-                <button onClick={handleCloseModal} className={styles.cancelButton}>Cancel</button>
-                <button onClick={handleConfirmDelete} className={styles.confirmButton}>Confirm</button>
+                <button onClick={handleCloseModal} className={styles.deletecancelButton}>Cancel</button>
+                <button onClick={handleConfirmDelete} className={styles.deleteButton}>Continue</button>
               </div>
             </div>
           </div>
@@ -339,6 +419,17 @@ export default function DocumentOverview() {
               </div>
               <div className={styles.modalContent}>
                 <p>Document deleted successfully!</p>
+              </div>
+              <h3 className={styles.successmodalTitle}>Success!</h3>
+              <p>Document deleted successfully!</p>
+              <div className={styles.modalActions}>
+                <button
+                  onClick={handleCloseSuccess}
+            
+                  className={styles.closeButtonx}
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>

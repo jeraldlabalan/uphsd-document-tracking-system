@@ -57,6 +57,10 @@ export async function GET(req: Request) {
       const latestFilepath = doc.Versions?.[0]?.FilePath ?? "";
       const primaryRequest = doc.Requests?.[0]; // latest request
 
+
+
+
+
       return {
         id: doc.DocumentID, // for edit
         requestId: primaryRequest?.RequestID ?? null,
@@ -67,7 +71,11 @@ export async function GET(req: Request) {
         status: primaryRequest?.Status?.StatusName ?? "Unknown",
         date: doc.CreatedAt.toISOString().split("T")[0],
         creator: `${doc.Creator?.FirstName || "Unknown"} ${doc.Creator?.LastName || "Unknown"}`,
-        preview: latestFilepath ? `/${latestFilepath}` : "",
+        file: latestFilepath ? latestFilepath.split('/').pop() || "Unknown file" : "No file",
+        preview: latestFilepath ? latestFilepath : "",
+        latestVersion: {
+          filePath: latestFilepath || "",
+        },
         recipient: primaryRequest?.Recipient
           ? `${primaryRequest.Recipient.FirstName || "Unknown"} ${primaryRequest.Recipient.LastName || "Unknown"}`
           : "N/A",
@@ -75,6 +83,8 @@ export async function GET(req: Request) {
       };
     });
 
+
+    
     return NextResponse.json({ docs }, { status: 200 });
   } catch (error) {
     console.error("Error loading my documents:", error);

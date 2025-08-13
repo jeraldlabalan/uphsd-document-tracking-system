@@ -235,6 +235,34 @@
   font-size: 0.9rem;
 }
 
+/* pagination styles */
+.pagination {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pagination button {
+  padding: 6px 12px;
+  border: 2px solid var(--color-maroon);
+  background-color: var(--color-maroon);
+  color: white;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto; 
+}
 
 .docTable {
   width: 100%;
@@ -498,7 +526,7 @@ background-color: #ff0000;
 
   .headerRow {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     gap: 1rem;
   }
 

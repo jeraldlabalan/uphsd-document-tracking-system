@@ -15,6 +15,9 @@ type document = {
   type: string;
   creator: string;
   preview: string;
+  latestVersion: {
+    filePath: string;
+  };
   recipient: string;
   remarks: string;
 };
@@ -70,10 +73,10 @@ export default function MyDocuments() {
   });
 
   const handleDownload = () => {
-    if (!selectedDoc?.type) return;
+    if (!selectedDoc?.latestVersion?.filePath) return;
     const link = document.createElement("a");
-    link.href = `/path/to/files/${selectedDoc.file}`;
-    link.download = selectedDoc.file;
+    link.href = selectedDoc.latestVersion.filePath;
+    link.download = `document-${selectedDoc.id}.pdf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -248,6 +251,7 @@ export default function MyDocuments() {
                 <tr>
                   <th>ID</th>
                   <th>Document</th>
+                  <th>File</th>
                   <th>Status</th>
                   <th>Date</th>
                   <th>Actions</th>
@@ -268,6 +272,7 @@ export default function MyDocuments() {
                     <tr key={i}>
                       <td>{doc.id}</td>
                       <td>{doc.name}</td>
+                      <td>{doc.type}</td>
                       <td>
                         <span
                           className={`${styles.badge} 
@@ -421,28 +426,31 @@ export default function MyDocuments() {
               </div>
 
               <div className={styles.previewContainer}>
-                {selectedDoc.preview?.match(/\.pdf$/i) ? (
-                  <iframe
-                    src={`${selectedDoc.preview}#toolbar=0&navpanes=0&scrollbar=0`}
-                    title="PDF Preview"
-                    width="100%"
-                    height="600px"
-                    style={{ border: "none" }}
-                  />
-                ) : selectedDoc.preview ? (
-                  <p>
-                    <a
-                      href={selectedDoc.preview}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Download File
-                    </a>
-                  </p>
-                ) : (
-                  <p>No file selected.</p>
-                )}
-              </div>
+  {selectedDoc.latestVersion?.filePath ? (
+    selectedDoc.latestVersion.filePath.match(/\.pdf$/i) ? (
+      <iframe
+        src={`${selectedDoc.latestVersion.filePath}#toolbar=0&navpanes=0&scrollbar=0`}
+        title="PDF Preview"
+        width="100%"
+        height="600px"
+        style={{ border: "none" }}
+      />
+    ) : (
+      <p>
+        <a
+          href={selectedDoc.latestVersion.filePath}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Download File
+        </a>
+      </p>
+    )
+  ) : (
+    <p>No file available.</p>
+  )}
+</div>
+
 
               <div className={styles.modalFooter}>
                 <div className={styles.leftButtons}>

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "./adminSettings.module.css";
 import AdminHeader from "@/components/shared/adminHeader";
 import DepartmentManagement from "./(management-entities)/DepartmentManagement";
@@ -8,18 +8,81 @@ import DocumentManagement from "./(management-entities)/DocumentManagement";
 import InformationForm from "./(profile-management)/InformationForm";
 import ChangePasswordForm from "./(profile-management)/ChangePasswordForm";
 import ProfileDisplay from "./(profile-management)/ProfileDisplay";
-import profile from "../../../assets/profile-placeholder.jpg";
+
 import Modal from "./(modal)/Modal";
+
+interface UserInfo {
+  FirstName: string | null;
+  LastName: string | null;
+  Email: string;
+  EmployeeID: string | null;
+  MobileNumber: string | null;
+  Sex: string | null;
+  Position: string | null;
+  Role: string | null;
+  ProfilePicture: string | null;
+  CreatedAt: string;
+  UpdatedAt: string | null;
+}
 
 export default function Settings() {
   const [showModal, setShowModal] = useState(false); // Modal visibility state
   const [rowToDelete, setRowToDelete] = useState<string | null>(null); // Row to delete
   const [isLoading, setIsLoading] = useState(false); // For loading effect
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const response = await fetch("/api/admin/settings/user-info");
+        if (response.ok) {
+          const data = await response.json();
+          setUserInfo(data);
+        } else {
+          console.error("Failed to fetch user info");
+        }
+      } catch (error) {
+        console.error("Error fetching user info:", error);
+      }
+    };
+
+    fetchUserInfo();
+
+    // Listen for custom events to automatically refresh user info
+    const handleUserInfoUpdate = () => {
+      fetchUserInfo();
+    };
+
+    window.addEventListener("userInfoUpdated", handleUserInfoUpdate);
+
+    return () => {
+      window.removeEventListener("userInfoUpdated", handleUserInfoUpdate);
+    };
+  }, []);
+
+  const handleUserInfoUpdate = (updatedInfo: Partial<UserInfo>) => {
+    if (userInfo) {
+      // Update local state immediately for instant display
+      const newUserInfo = { ...userInfo, ...updatedInfo };
+      setUserInfo(newUserInfo);
+
+      // Also dispatch event to update admin header
+      window.dispatchEvent(new CustomEvent("userInfoUpdated"));
+    }
+  };
+
+  const handleProfileUpdate = (newProfilePicture: string) => {
+    if (userInfo) {
+      setUserInfo({ ...userInfo, ProfilePicture: newProfilePicture });
+    }
+  };
 
   const profileData = {
-    profileImage: profile, // This should be URL, imported sample photo
-    name: "John Doe",
-    role: "Software Developer",
+    profileImage: userInfo?.ProfilePicture || "", // Don't fallback to default image
+    name: userInfo
+      ? `${userInfo.FirstName || ""} ${userInfo.LastName || ""}`.trim() || ""
+      : "",
+    role: userInfo?.Role || "",
     description: "Upload a professional photo to personalize your account",
   };
 
@@ -43,28 +106,29 @@ export default function Settings() {
 
           <div className={styles.settingsContainer}>
             {/* Profile Section */}
-              <div className={styles.profileContainer}>
-                <ProfileDisplay
-                  profileImage={profileData.profileImage}
-                  name={profileData.name}
-                  role={profileData.role}
-                  description={profileData.description}
-                />
-                <InformationForm />
-                <ChangePasswordForm />
-              </div>
+            <div className={styles.profileContainer}>
+              <ProfileDisplay
+                profileImage={profileData.profileImage}
+                name={profileData.name}
+                role={profileData.role}
+                description={profileData.description}
+                onProfileUpdate={handleProfileUpdate}
+              />
+              <InformationForm
+                userInfo={userInfo}
+                onUserInfoUpdate={handleUserInfoUpdate}
+              />
+              <ChangePasswordForm />
+            </div>
 
-              {/* Document and Management Section */}
-              <div className={styles.documentContainer}>
-                <DocumentManagement />
-                <hr />
-                <DepartmentManagement
-                  setShowModal={setShowModal}
-                  setRowToDelete={setRowToDelete}
-                />
-                <hr />
-                <PositionManagement />
-              </div>
+            {/* Document and Management Section */}
+            <div className={styles.documentContainer}>
+              <DocumentManagement />
+              <hr />
+              <DepartmentManagement />
+              <hr />
+              <PositionManagement />
+            </div>
           </div>
         </div>
       </div>

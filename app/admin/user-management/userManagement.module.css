@@ -223,7 +223,7 @@
 
 .dateGroup {
   display: flex;
-  align-items: center;
+  align-items: center;;
   gap: 6px;
 }
 
@@ -253,6 +253,30 @@
   color: #999;
   display: block;
   margin: 0 auto 0.5rem auto; 
+}
+
+
+
+/* pagination styles */
+.pagination {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pagination button {
+  padding: 6px 12px;
+  border: 2px solid var(--color-maroon);
+  background-color: var(--color-maroon);
+  color: white;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 
@@ -340,9 +364,17 @@
   color: var(--color-maroon);
 }
 
+.editBtn:hover {
+  background-color: rgb(231, 231, 231);
+}
+
 .reactivateBtn {
   background-color: #0F72B8;
   color: white;
+}
+
+.reactivateBtn:hover {
+  background-color: #0c5a91; 
 }
 
 .deactivateBtn {
@@ -350,10 +382,19 @@
   color: white;
 }
 
+.deactivateBtn:hover {
+  background-color: #8a1416; 
+}
+
 .terminateBtn {
   background-color: black;
   color: white;
 }
+
+.terminateBtn:hover {
+  background-color: #333333; 
+}
+
 
 
 .modalOverlay {
@@ -717,6 +758,7 @@
     align-items: flex-start;
     gap: 4px;
   }
+  
 
   .docTable {
     width: 100%;

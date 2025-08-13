@@ -52,6 +52,8 @@ export default function UserManagement() {
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
   const [showDeactivateSuccess, setShowDeactivateSuccess] = useState(false);
 
+  
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -217,6 +219,28 @@ export default function UserManagement() {
     }
   };
 
+// for pagination
+const [currentPage, setCurrentPage] = useState(1);
+const usersPerPage = 5;
+
+
+const totalPages = Math.ceil(sortedUsers.length / usersPerPage);
+
+
+const startIndex = (currentPage - 1) * usersPerPage;
+const endIndex = startIndex + usersPerPage;
+const paginatedUsers = sortedUsers.slice(startIndex, endIndex);
+
+
+const handlePrev = () => {
+  setCurrentPage((prev) => Math.max(prev - 1, 1));
+};
+
+const handleNext = () => {
+  setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+};
+
+
   return (
     <div>
       <AdminHeader />
@@ -326,41 +350,39 @@ export default function UserManagement() {
             </div>
           </div>
 
-          {loading ? (
-            <div className={styles.loadingContainer}>
-              <div className={styles.spinner}></div>
-              <p>Loading users...</p>
-            </div>
-          ) : error ? (
-            <p style={{ color: "red" }}>Error: {error}</p>
-          ) : (
-            <div className={styles.tableWrapper}>
-            <table className={styles.docTable}>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Employee ID</th>
-                  <th>Department</th>
-                  <th>Position</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Date Created</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-  {sortedUsers.length === 0 ? (
+         {loading ? (
+  <div className={styles.loadingContainer}>
+    <div className={styles.spinner}></div>
+    <p>Loading users...</p>
+  </div>
+) : error ? (
+  <p style={{ color: "red" }}>Error: {error}</p>
+) : (
+  <div className={styles.tableWrapper}>
+    <table className={styles.docTable}>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Employee ID</th>
+          <th>Department</th>
+          <th>Position</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Date Created</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+  {paginatedUsers.length === 0 ? (
     <tr>
-  <td colSpan={12} className={styles.noUserRow}>
-    <UserX className={styles.noUserIcon} />
-    No user found
-  </td>
-</tr>
-
-
+      <td colSpan={12} className={styles.noUserRow}>
+        <UserX className={styles.noUserIcon} />
+        No user found
+      </td>
+    </tr>
   ) : (
-    sortedUsers.map((user, i) => (
+    paginatedUsers.map((user, i) => (
       <tr key={i}>
         <td>{user.id}</td>
         <td>{user.name}</td>
@@ -374,8 +396,8 @@ export default function UserManagement() {
               user.status === "Active"
                 ? styles.active
                 : user.status === "Terminated"
-                  ? styles.terminated
-                  : styles.pending
+                ? styles.terminated
+                : styles.pending
             }`}
           >
             {user.status}
@@ -383,70 +405,84 @@ export default function UserManagement() {
         </td>
         <td>{new Date(user.dateCreated).toLocaleDateString()}</td>
         <td>
-          <>
-            {user.status === "Active" && (
-              <>
-                <Link
-                  href={`/admin/user-management/edit-user/${user.id}`}
-                  className={`${styles.actionBtn} ${styles.editBtn}`}
-                  onClick={() => {
-                    if (typeof window !== "undefined") {
-                      const [firstName, ...rest] = user.name.split(" ");
-                      const lastName = rest.join(" ");
-                      const userWithNames = { ...user, firstName, lastName };
-                      localStorage.setItem(
-                        "editUser",
-                        JSON.stringify(userWithNames)
-                      );
-                    }
-                  }}
-                >
-                  Edit
-                </Link>{" "}
-                <button
-                  className={`${styles.actionBtn} ${styles.deactivateBtn}`}
-                  onClick={() => {
-                    setSelectedUser(user);
-                    setShowDeactivateConfirm(true);
-                  }}
-                >
-                  Deactivate
-                </button>{" "}
-                <button
-                  className={`${styles.actionBtn} ${styles.terminateBtn}`}
-                  onClick={() => {
-                    setSelectedUser(user);
-                    setShowTerminateConfirm(true);
-                  }}
-                >
-                  Terminate
-                </button>
-              </>
-            )}
+                <>
+                  {user.status === "Active" && (
+                    <>
+                      <Link
+                        href={`/admin/user-management/edit-user/${user.id}`}
+                        className={`${styles.actionBtn} ${styles.editBtn}`}
+                        onClick={() => {
+                          if (typeof window !== "undefined") {
+                            const [firstName, ...rest] = user.name.split(" ");
+                            const lastName = rest.join(" ");
+                            const userWithNames = { ...user, firstName, lastName };
+                            localStorage.setItem(
+                              "editUser",
+                              JSON.stringify(userWithNames)
+                            );
+                          }
+                        }}
+                      >
+                        Edit
+                      </Link>{" "}
+                      <button
+                        className={`${styles.actionBtn} ${styles.deactivateBtn}`}
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setShowDeactivateConfirm(true);
+                        }}
+                      >
+                        Deactivate
+                      </button>{" "}
+                      <button
+                        className={`${styles.actionBtn} ${styles.terminateBtn}`}
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setShowTerminateConfirm(true);
+                        }}
+                      >
+                        Terminate
+                      </button>
+                    </>
+                  )}
 
-            {(user.status === "Inactive" ||
-              user.status === "Terminated") && (
-              <button
-                className={`${styles.actionBtn} ${styles.reactivateBtn}`}
-                onClick={() => {
-                  setSelectedUser(user);
-                  setShowEditConfirm(true);
-                }}
-              >
-                Reactivate
-              </button>
-            )}
-          </>
-        </td>
-      </tr>
-    ))
-  )}
-</tbody>
+                  {(user.status === "Inactive" ||
+                    user.status === "Terminated") && (
+                    <button
+                      className={`${styles.actionBtn} ${styles.reactivateBtn}`}
+                      onClick={() => {
+                        setSelectedUser(user);
+                        setShowEditConfirm(true);
+                      }}
+                    >
+                      Reactivate
+                    </button>
+                  )}
+                </>
+              </td>
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
+  </div>
+)}
 
-            </table>
-            </div>
-          )}
-        </div>
+
+      {/* Pagination controls */}
+      <div className={styles.pagination}>
+        <button onClick={handlePrev} disabled={currentPage === 1}>
+          Previous
+        </button>
+        <span>
+          Page {currentPage} of {totalPages}
+        </span>
+        <button onClick={handleNext} disabled={currentPage === totalPages}>
+          Next
+        </button>
+      </div>
+</div>
+
 
         {/* Reactivate Modal */}
         {showEditConfirm && (

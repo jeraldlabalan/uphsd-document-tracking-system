@@ -115,7 +115,13 @@ export default function EditDocument() {
           });
           
           // Set esign required to true if document has placeholders
-          // Note: files will be empty initially, so we don't need to update them here
+          if (files.length > 0) {
+            const updatedFiles = files.map(file => ({
+              ...file,
+              requireEsign: true
+            }));
+            setFiles(updatedFiles);
+          }
         }
       } catch (e) {
         console.error("Error fetching document:", e);
@@ -927,6 +933,56 @@ export default function EditDocument() {
                             aria-label="Open e-sign interface"
                           >
                             Open E-Sign
+                          </button>
+                        )}
+
+                        {/* Add Edit Placeholders button beside Open E-Sign */}
+                        {item.requireEsign && (
+                          <button
+                            type="button"
+                            className={styles.editPlaceholdersBtn}
+                            onClick={() => {
+                              // Open e-sign interface again for editing placeholders
+                              const placeholders = savedDocument?.placeholders;
+                              if (placeholders && placeholders.length > 0) {
+                                // Create a new file object from the saved document URL
+                                fetch(savedDocument.url)
+                                  .then(response => response.blob())
+                                  .then(blob => {
+                                    const file = new File([blob], `document-with-placeholders.pdf`, { type: 'application/pdf' });
+                                    
+                                    // Prepare approvers data
+                                    const approversData = approverIDs.filter(id => id !== 0).map(id => {
+                                      const approver = approvers.find(a => a.UserID === id);
+                                      return {
+                                        id: id.toString(),
+                                        userId: id,
+                                        name: approver ? `${approver.FirstName} ${approver.LastName}` : `Approver ${id}`,
+                                      };
+                                    });
+
+                                    // Create URL parameters
+                                    const params = new URLSearchParams({
+                                      docId: idStr || 'unknown',
+                                      title: title,
+                                      type: selectedType,
+                                      department: department,
+                                      approvers: encodeURIComponent(JSON.stringify(approversData)),
+                                      file: URL.createObjectURL(file),
+                                      userRole: "sender",
+                                    });
+
+                                    // Open e-sign interface in new tab
+                                    window.open(`/employee2/e-sign-document?${params.toString()}`, "_blank");
+                                  })
+                                  .catch(error => {
+                                    console.error("Error opening document for editing:", error);
+                                    alert("Failed to open document for editing. Please try again.");
+                                  });
+                              }
+                            }}
+                          >
+                            Edit Placeholders
                           </button>
                         )}
                       </div>

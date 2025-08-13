@@ -7,6 +7,7 @@
   display: flex;
   flex-direction: column;
 }
+
 .informationContainer p {
   color: var(--color-maroon);
   text-transform: capitalize;
@@ -36,18 +37,43 @@
   font-size: 1.05rem;
 }
 
-.formData input[type="text"]{
+.formData input[type="text"],
+.formData input[type="email"],
+.formData input[type="tel"] {
   border: 2px solid rgba(0, 0, 0, 0.2);
   border-radius: 5px;
   height: 40px;
   font-size: 0.95rem;
-  text-transform: capitalize;
   padding-inline: min(1rem, 3vw);
+  transition: all 0.3s ease;
 }
 
-.formData input[type="text"]:focus {
+.formData input[type="text"] {
+  text-transform: capitalize;
+}
+
+.formData input[type="email"] {
+  text-transform: lowercase;
+}
+
+.formData input[type="email"]::placeholder {
+  text-transform: none;
+}
+
+.formData input[type="text"]:focus,
+.formData input[type="email"]:focus,
+.formData input[type="tel"]:focus {
   outline: 2px solid var(--color-maroon);
   border: none;
+}
+
+.formData input[type="text"]:disabled,
+.formData input[type="email"]:disabled,
+.formData input[type="tel"]:disabled {
+  background-color: #f5f5f5;
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .buttonsContainer {
@@ -78,11 +104,17 @@
   color: var(--color-yellow);
 }
 
-/* Information Form Custom Select Styles */
-.wrapper {
-  position: relative;
-  width: 100%;
-  cursor: pointer;
+.buttonsContainer > :first-child:hover:not(:disabled) {
+  background-color: #e0e0e0;
+}
+
+.buttonsContainer > :last-child:hover:not(:disabled) {
+  background-color: #8b0000;
+}
+
+.buttonsContainer button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .display {
@@ -97,16 +129,23 @@
 }
 
 .display.active {
-    border-radius: none;
-    border: 2px solid var(--color-maroon);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: none;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
+  border-radius: none;
+  border: 2px solid var(--color-maroon);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: none;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.display.disabled {
+  background-color: #f5f5f5;
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .arrow {
@@ -131,7 +170,10 @@
   transform: scaleY(0);
   opacity: 0;
   max-height: 0;
-  transition: transform 0.25s ease, opacity 0.25s ease, max-height 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease,
+    max-height 0.25s ease;
   z-index: 99;
   overflow-y: auto;
   border: 2px solid var(--color-maroon);
@@ -152,9 +194,12 @@
   background-color: var(--color-maroon);
   color: white;
 }
+.wrapper {
+  position: relative;
+}
+
 /* End of Information Form Custom Select Styles */
 /* End of Information Container */
-
 
 /* Profile Display */
 .profileGrid {
@@ -200,12 +245,11 @@
   width: 15px;
 }
 
-
 .profileItem:nth-of-type(3) .uploadButton {
   display: none;
 }
 
-.profileItem:last-of-type > p{
+.profileItem:last-of-type > p {
   text-align: center;
 }
 
@@ -228,23 +272,20 @@
   object-fit: cover;
 }
 
-
-
-
 /* Change Password */
 .changePasswordWrapper {
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    padding: 20px;
-    border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .changePasswordContainer {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .sectionTitle {
@@ -255,29 +296,27 @@
 }
 
 .changePasswordContents {
-    margin-left: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    
+  margin-left: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .changePasswordDataForm {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 10px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
 }
 
 .changePasswordDataForm .dataForm {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .changePasswordDataForm .dataForm > :first-child {
-    text-transform: capitalize;
-   
+  text-transform: capitalize;
 }
 
 .changePasswordDataForm .dataForm > :last-child {
@@ -289,18 +328,17 @@
 }
 
 .changePasswordDataForm .dataForm > :last-child:focus {
-    outline: 2px solid var(--color-maroon);
-    border: none;
+  outline: 2px solid var(--color-maroon);
+  border: none;
 }
 
 .changePasswordButtons {
-    align-self: flex-end;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 1rem;
-    width: 100%;
-   
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  width: 100%;
 }
 
 .changePasswordButtons > :first-child,
@@ -315,18 +353,16 @@
 }
 
 .changePasswordButtons > :first-child {
-    background-color: var(--color-grey);
-    color: var(--color-maroon);
-    border: 2px solid var(--color-maroon);
+  background-color: var(--color-grey);
+  color: var(--color-maroon);
+  border: 2px solid var(--color-maroon);
 }
 
 .changePasswordButtons > :last-child {
-    background-color: var(--color-maroon);
-    color: var(--color-yellow);
+  background-color: var(--color-maroon);
+  color: var(--color-yellow);
 }
 /* End of Change Password */
-
-
 
 /* Dropdown styles */
 
@@ -399,8 +435,6 @@
   .profileGrid {
     grid-template-columns: 1fr 1fr;
   }
-
-
 }
 
 @media (width <= 420px) {
