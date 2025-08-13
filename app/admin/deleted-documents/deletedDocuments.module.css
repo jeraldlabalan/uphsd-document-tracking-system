@@ -120,12 +120,23 @@
 
 
 .orange {
-  border-left: 10px solid #fac498;
+  border-left: 10px solid #FAC898;
 }
 .cyan {
   border-left: 10px solid #AFEEEE;
 }
-
+.green {
+  border-left: 10px solid #D0F0C0;
+}
+.yellow {
+  border-left: 10px solid #fffd91;
+}
+.purple {
+  border-left: 10px solid #e079fa;
+}
+.red {
+  border-left: 10px solid #F8D7DA;
+}
 
 .orange::before {
   background-color: #FAC898;
@@ -145,6 +156,10 @@
 
 .purple::before {
   background-color: #e079fa;
+}
+
+.red::before {
+  background-color: #F8D7DA;
 }
 
 
@@ -226,6 +241,34 @@
   font-size: 0.9rem;
 }
 
+/* pagination styles */
+.pagination {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pagination button {
+  padding: 6px 12px;
+  border: 2px solid var(--color-maroon);
+  background-color: var(--color-maroon);
+  color: white;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto; 
+}
 
 .docTable {
   width: 100%;
@@ -313,15 +356,12 @@ background-color: #ff0000;
 }
 
 .modalContent {
-    background: #fff;
-    padding: 60px 24px;
-    border-radius: 20px;
-    width: 90%;
-    max-width: 450px;
-    position: relative;
-    text-align: center;
-    height: 50%;
-    height: 300px;
+    background-color: #ffffff;
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 400px;
+    width: 100%;
+
 }
 
 /* confirm modal */
@@ -467,14 +507,15 @@ background-color: #ff0000;
 }
 
 .restoreBtn {
-  background-color: #177054;
+  background-color: #0F72B8;
   color: white;
   transition: background-color 0.3s ease;
 }
 
 .restoreBtn:hover {
-  background-color: #105C45; 
+  background-color: #005693; 
 }
+
 
 
 
@@ -503,6 +544,170 @@ background-color: #ff0000;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
+
+
+
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  padding: 1rem;
+}
+
+.restoremodalContent {
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+}
+
+.restoremodalTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #0F72B8;
+  margin-bottom: 1rem;
+}
+
+
+.modalActions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+
+.restoreButton {
+  background-color: #0F72B8;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 50%;
+}
+
+.restorecancelButton {
+  background-color: #ffffff;
+  border: 2px solid #0F72B8;
+  color: #0F72B8;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 50%;
+}
+
+
+.successmodalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.successModal {
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+}
+
+.successmodalTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #177054;
+  margin-bottom: 1rem;
+}
+
+.closeButtonx {
+  background-color: #177054;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 50%;
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  padding: 1rem;
+}
+
+.deletemodalContent {
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+}
+
+.deletemodalTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #AD191B;
+  margin-bottom: 1rem;
+}
+
+
+.modalActions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+
+.deleteButton {
+  background-color: #AD191B;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 50%;
+}
+
+.deletecancelButton {
+  background-color: #ffffff;
+  border: 2px solid #AD191B;
+  color: #AD191B;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 50%;
+}
+
+
+
 
 @keyframes spin {
   to {
@@ -584,7 +789,7 @@ background-color: #ff0000;
 
   .headerRow {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     gap: 1rem;
   }
 

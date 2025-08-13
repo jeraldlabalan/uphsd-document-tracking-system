@@ -154,6 +154,21 @@ export default function ActivityLogs() {
     }, 1000);
   };
 
+  // for pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const logsPerPage = 5; 
+
+  const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
+
+  const startIndex = (currentPage - 1) * logsPerPage;
+  const endIndex = startIndex + logsPerPage;
+  const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
+
+  const handlePrev = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
+  const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+
+
+
   return (
     <div>
       <AdminHeader />
@@ -263,6 +278,7 @@ export default function ActivityLogs() {
               </div>
             </div>
           </div>
+          <div className={styles.tableWrapper}>
           <table className={styles.docTable}>
             <thead>
               <tr>
@@ -275,19 +291,19 @@ export default function ActivityLogs() {
               </tr>
             </thead>
             <tbody>
-              {filteredLogs.length > 0 ? (
-    filteredLogs.map((log, i) => (
+  {paginatedLogs.length > 0 ? (
+    paginatedLogs.map((log, i) => (
       <tr key={i}>
         <td>{log.LogID}</td>
         <td>{log.Action}</td>
-        <td>{log.User?.FirstName +" "+ log.User?.LastName}</td>
+        <td>{log.User?.FirstName + " " + log.User?.LastName}</td>
         <td>{log.TargetType}</td>
         <td>{log.User?.Department?.Name}</td>
         <td>{log.Timestamp}</td>
       </tr>
     ))
   ) : (
-      <tr className={styles.noDataRow}>
+    <tr className={styles.noDataRow}>
       <td colSpan={6} style={{ textAlign: "center", padding: "1rem" }}>
         {search ? (
           <>No logs found for "<strong>{search}</strong>"</>
@@ -297,9 +313,23 @@ export default function ActivityLogs() {
       </td>
     </tr>
   )}
-            </tbody>
+</tbody>
+
           </table>
-        </div>
+          </div>
+        {/* Pagination controls */}
+      <div className={styles.pagination}>
+        <button onClick={handlePrev} disabled={currentPage === 1}>
+          Previous
+        </button>
+        <span>
+          Page {currentPage} of {totalPages}
+        </span>
+        <button onClick={handleNext} disabled={currentPage === totalPages}>
+          Next
+        </button>
+      </div>
+</div>
 
         {/* confirm restore modal */}
         {showConfirmRestore && (

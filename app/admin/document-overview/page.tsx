@@ -58,13 +58,7 @@ export default function DocumentOverview() {
     return statusMatch && typeMatch && searchMatch && dateMatch;
   });
 
-  const handleDownload = () => {
-    // optional
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
+  
 
   const handleCloseModal = () => setIsModalOpen(false);
   const handleCloseSuccess = () => setShowSuccessModal(false);
@@ -113,6 +107,33 @@ export default function DocumentOverview() {
       setIsModalOpen(false);
     }
   }
+
+  // for pagination
+  const [currentPage, setCurrentPage] = useState(1);
+const docsPerPage = 5; // number of docs per page
+
+// Calculate total pages
+const totalPages = Math.ceil(filteredDocs.length / docsPerPage);
+
+// Calculate slicing indexes
+const startIndex = (currentPage - 1) * docsPerPage;
+const endIndex = startIndex + docsPerPage;
+
+// Slice the docs for the current page
+const paginatedDocs = filteredDocs.slice(startIndex, endIndex);
+
+// Pagination handlers
+const handlePrev = () => {
+  setCurrentPage((prev) => Math.max(prev - 1, 1));
+};
+
+const handleNext = () => {
+  setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+};
+
+
+
+
 
   return (
     <div>
@@ -206,7 +227,7 @@ export default function DocumentOverview() {
               </div>
             </div>
           </div>
-
+                   <div className={styles.tableWrapper}>
           <table className={styles.docTable}>
             <thead>
               <tr>
@@ -219,54 +240,76 @@ export default function DocumentOverview() {
               </tr>
             </thead>
             <tbody>
-              {filteredDocs.length > 0 ? (
-                filteredDocs.map((doc, i) => (
-                  <tr key={i}>
-                    <td>{doc.id}</td>
-                    <td>{doc.title}</td>
-                    <td>{doc.department}</td>
-                    <td>
-                      <span className={`${styles.badge} ${
-                        doc.status === "Completed" ? styles.completed : 
-                        doc.status === "In-Process" ? styles.inProcess : 
-                        doc.status === "Awaiting Signatures" ? styles.pending :
-                        doc.status === "Awaiting-Completion" ? styles.awaiting :
-                        doc.status === "On Hold" ? styles.onHold : 
-                        styles.pending
-                      }`}>
+  {paginatedDocs.length > 0 ? (
+    paginatedDocs.map((doc, i) => (
+      <tr key={i}>
+        <td>{doc.id}</td>
+        <td>{doc.title}</td>
+        <td>{doc.department}</td>
+        <td>
+          <span
+            className={`${styles.badge} ${
+              doc.status === "Completed"
+                ? styles.completed
+                : doc.status === "In-Process"
+                ? styles.inProcess
+                : doc.status === "Awaiting Signatures"
+                ? styles.pending
+                : doc.status === "Awaiting-Completion"
+                ? styles.awaiting
+                : doc.status === "On Hold"
+                ? styles.onHold
+                : styles.pending
+            }`}
+          >
+            {doc.status}
+          </span>
+        </td>
+        <td>{doc.dateCreated}</td>
+        <td>
+          <a
+            href="#"
+            onClick={() => setSelectedDoc(doc)}
+            className={`${styles.actionBtn} ${styles.viewBtn}`}
+          >
+            View
+          </a>{" "}
+          <button
+            className={`${styles.actionBtn} ${styles.deleteBtn}`}
+            onClick={() => {
+              setSelectedDoc(doc);
+              setIsModalOpen(true);
+            }}
+          >
+            Delete
+          </button>
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr className={styles.noDataRow}>
+      <td colSpan={6} style={{ textAlign: "center", padding: "1rem" }}>
+        No documents found.
+      </td>
+    </tr>
+  )}
+</tbody>
 
-                        {doc.status}
-                      </span>
-
-
-                    </td>
-                    <td>{doc.dateCreated}</td>
-                    <td>
-                      <a href="#" onClick={() => setSelectedDoc(doc)} className={`${styles.actionBtn} ${styles.viewBtn}`}>
-                        View
-                      </a>{" "}
-                      <button
-                        className={`${styles.actionBtn} ${styles.deleteBtn}`}
-                        onClick={() => {
-                          setSelectedDoc(doc);
-                          setIsModalOpen(true);
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr className={styles.noDataRow}>
-                  <td colSpan={6} style={{ textAlign: "center", padding: "1rem" }}>
-                    No documents found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
           </table>
-        </div>
+          </div>
+        {/* Pagination controls */}
+      <div className={styles.pagination}>
+        <button onClick={handlePrev} disabled={currentPage === 1}>
+          Previous
+        </button>
+        <span>
+          Page {currentPage} of {totalPages}
+        </span>
+        <button onClick={handleNext} disabled={currentPage === totalPages}>
+          Next
+        </button>
+      </div>
+</div>
 
         {selectedDoc && (
   <div className={styles.modalOverlay}>
@@ -331,13 +374,13 @@ export default function DocumentOverview() {
 
 
         {isModalOpen && (
-          <div className={styles.deletemodalOverlay}>
-            <div className={styles.modal}>
+          <div className={styles.modalOverlay}>
+            <div className={styles.deletemodalContent}>
               <h3 className={styles.deletemodalTitle}>Confirm Deletion</h3>
               <p>Are you sure you want to delete this document? This action can be undone by restore.</p>
               <div className={styles.modalActions}>
-                <button onClick={handleCloseModal} className={styles.cancelButton}>Cancel</button>
-                <button onClick={handleConfirmDelete} className={styles.confirmButton}>Confirm</button>
+                <button onClick={handleCloseModal} className={styles.deletecancelButton}>Cancel</button>
+                <button onClick={handleConfirmDelete} className={styles.deleteButton}>Continue</button>
               </div>
             </div>
           </div>
@@ -345,16 +388,18 @@ export default function DocumentOverview() {
 
         {/* Success Modal */}
         {showSuccessModal && (
-          <div className={styles.modalOverlay}>
+          <div className={styles.successmodalOverlay}>
             <div className={styles.modal}>
-              <div className={styles.modalHeader}>
-                <h3>Success!</h3>
-                <button onClick={handleCloseSuccess} className={styles.closeBtn}>
-                  <X size={20} />
+              <h3 className={styles.successmodalTitle}>Success!</h3>
+              <p>Document deleted successfully!</p>
+              <div className={styles.modalActions}>
+                <button
+                  onClick={handleCloseSuccess}
+            
+                  className={styles.closeButtonx}
+                >
+                  Close
                 </button>
-              </div>
-              <div className={styles.modalContent}>
-                <p>Document deleted successfully!</p>
               </div>
             </div>
           </div>
