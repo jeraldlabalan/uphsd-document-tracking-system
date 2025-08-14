@@ -1,7 +1,6 @@
-
 .container {
   padding: 24px;
-  background-color: #D9D9D9; 
+  background-color: #d9d9d9;
   min-height: 100vh;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
@@ -97,7 +96,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background-color: var(--color-yellow); 
+  background-color: var(--color-yellow);
   transition: left 0.4s ease;
   z-index: -1;
   border-radius: 5px;
@@ -110,7 +109,6 @@
 .createButton:hover {
   color: black;
 }
-
 
 .summary {
   display: flex;
@@ -139,8 +137,8 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background-color: currentColor; 
-  
+  background-color: currentColor;
+
   z-index: -1;
   transition: left 0.4s ease;
 }
@@ -157,7 +155,7 @@
   width: 24px;
   height: 24px;
   margin-bottom: 8px;
-  color: #000000; 
+  color: #000000;
 }
 
 .cardLink {
@@ -167,11 +165,9 @@
   flex: 1;
 }
 
-
 .cardLink:hover {
   color: inherit;
 }
-
 
 .graphHeader {
   display: flex;
@@ -207,13 +203,12 @@
 }
 
 .printButton:hover::before {
-  left: 0; 
+  left: 0;
 }
 
 .printButton:hover {
-  color: #000;  
+  color: #000;
 }
-
 
 .checkboxGroup {
   display: flex;
@@ -257,60 +252,54 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background-color: var(--color-yellow); 
+  background-color: var(--color-yellow);
   transition: left 0.4s ease;
   z-index: -1;
   border-radius: 5px;
 }
 
 .actionButton:hover::before {
-  left: 0; 
+  left: 0;
 }
 
 .actionButton:hover {
-  color: black; 
+  color: black;
 }
-
-
-
-
-
 
 .orange {
-  border-left: 10px solid #FAC898;
+  border-left: 10px solid #fac898;
 }
 .cyan {
-  border-left: 10px solid #AFEEEE;
+  border-left: 10px solid #afeeee;
 }
 .green {
-  border-left: 10px solid #D0F0C0;
+  border-left: 10px solid #d0f0c0;
 }
 .yellow {
   border-left: 10px solid #fffd91;
 }
 .red {
-  border-left: 10px solid #F8D7DA;
+  border-left: 10px solid #f8d7da;
 }
 
 .orange::before {
-  background-color: #FAC898;
+  background-color: #fac898;
 }
 
 .cyan::before {
-  background-color: #AFEEEE;
+  background-color: #afeeee;
 }
 
 .green::before {
-  background-color: #D0F0C0;
+  background-color: #d0f0c0;
 }
 
 .yellow::before {
   background-color: #fffd91;
 }
 .red {
-  border-left: 10px solid #F8D7DA;
+  border-left: 10px solid #f8d7da;
 }
-
 
 .count {
   font-size: 2rem;
@@ -318,8 +307,6 @@
   color: var(--color-maroon);
   display: block;
 }
-
-
 
 .filters {
   display: flex;
@@ -348,13 +335,12 @@
 .searchInput {
   width: 100%;
   padding: 0.5rem 1rem;
-  padding-left: 2.2rem; 
+  padding-left: 2.2rem;
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 1rem;
   outline: none;
 }
-
 
 .dropdown {
   padding: 0.5rem;
@@ -390,7 +376,6 @@
   font-size: 0.9rem;
 }
 
-
 .docTable {
   width: 100%;
   border-collapse: collapse;
@@ -405,7 +390,7 @@
 }
 
 .docTable tr:hover {
-  background-color: rgba(122, 12, 27, 0.1); 
+  background-color: rgba(122, 12, 27, 0.1);
   transition: background-color 0.2s ease;
   cursor: pointer;
 }
@@ -446,7 +431,6 @@
   text-decoration: underline;
 }
 
-
 .graphContainer {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -466,8 +450,8 @@
 
 .chartCard canvas {
   width: 100% !important;
-  height: auto !important; 
-  max-height: 300px; 
+  height: auto !important;
+  max-height: 300px;
 }
 
 .chartTitle {
@@ -489,7 +473,6 @@
   align-items: center;
   padding: 1rem;
 }
-
 
 .modalCard {
   background: white;
@@ -536,10 +519,7 @@
   height: 300px;
 }
 
-
-
 @media (max-width: 768px) {
-  
   .pageTitle {
     font-size: 20px;
     text-align: center;
@@ -595,7 +575,7 @@
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    transform: scale(0.95); 
+    transform: scale(0.95);
     transform-origin: top center;
   }
 
@@ -619,14 +599,11 @@
   .graphHeader {
     justify-content: center;
   }
-
-
-  
 }
 
-
 @media print {
-  html, body {
+  html,
+  body {
     margin: 0;
     padding: 0;
     height: 100%;
@@ -665,3 +642,275 @@
   }
 }
 
+/* Add new styles after the existing .purple class */
+
+.purple {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+/* Status Overview Section */
+.statusOverview {
+  margin: 2rem 0;
+}
+
+.statusOverview h3 {
+  color: var(--color-maroon);
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.statusCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.statusCard {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.statusCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.statusCard.inProcess {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+  color: #d97706;
+}
+
+.statusCard.completed {
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  color: #059669;
+}
+
+.statusCard.onHold {
+  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+  color: #dc2626;
+}
+
+.statusCard.approved {
+  background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+  color: #0891b2;
+}
+
+.statusCard.awaiting {
+  background: linear-gradient(135deg, #e2d9f3 0%, #d4c4f7 100%);
+  color: #7c3aed;
+}
+
+.statusIcon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.statusCount {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.statusLabel {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+/* Recent Activity Section */
+.recentActivity {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin: 2rem 0;
+}
+
+.activitySection h3 {
+  color: var(--color-maroon);
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.activityItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.activityItem:hover {
+  background-color: #e9ecef;
+}
+
+.userAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.documentIcon {
+  width: 40px;
+  height: 40px;
+  color: var(--color-maroon);
+  flex-shrink: 0;
+}
+
+.activityDetails {
+  flex: 1;
+  min-width: 0;
+}
+
+.activityTitle {
+  display: block;
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activitySubtitle {
+  display: block;
+  font-size: 14px;
+  color: #6c757d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activityTime {
+  font-size: 12px;
+  color: #6c757d;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Loading and Error States */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.loadingContainer .spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid var(--color-maroon);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+.loadingContainer p {
+  color: #6c757d;
+  font-size: 16px;
+  margin: 0;
+}
+
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.errorIcon {
+  color: #dc3545;
+  margin-bottom: 1rem;
+}
+
+.errorContainer h3 {
+  color: #dc3545;
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.errorContainer p {
+  color: #6c757d;
+  font-size: 16px;
+  margin-bottom: 1.5rem;
+}
+
+.retryButton {
+  background-color: var(--color-maroon);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.retryButton:hover {
+  background-color: #8b0000;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .recentActivity {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .statusCards {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+
+  .activityItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .activityTime {
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .statusCards {
+    grid-template-columns: 1fr;
+  }
+
+  .container {
+    padding: 16px;
+  }
+
+  .contentSection {
+    padding: 16px;
+  }
+}
