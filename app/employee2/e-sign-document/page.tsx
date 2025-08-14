@@ -663,13 +663,14 @@ export default function ESignDocument() {
                  setHasSigned(true);
                  console.log("PDF URL updated and hasSigned set to true");
                  
-                 // Force a re-render to immediately update the UI and hide placeholders
-                 setTimeout(() => {
-                   console.log("Current placeholders state after signature:", placeholders);
-                   console.log("hasSigned state:", true);
-                   // Force re-render of placeholders
-                   setPlaceholders(prev => [...prev]);
-                 }, 100);
+                 // Update placeholders to mark them as signed
+                 setPlaceholders(prev => prev.map(p => ({
+                   ...p,
+                   isSigned: true,
+                   signedAt: new Date().toLocaleString()
+                 })));
+                 
+                 console.log("Placeholders updated to signed state");
                }}
               viewMode={viewMode}
               setViewMode={setViewMode}

@@ -33,6 +33,7 @@ export default function ProfileSettings() {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+
   const [loading, setLoading] = useState(true);
 
 
@@ -60,6 +61,7 @@ export default function ProfileSettings() {
       alert("Something went wrong while uploading.");
     }
   };
+
 
   interface ProfilePayload {
     firstName: string;
@@ -216,6 +218,7 @@ export default function ProfileSettings() {
           <hr className={styles.separator} />
           <div className={styles.profileContainer}>
             <div className={styles.leftColumn}>
+
               {/* Profile Photo + Name */}
               <div className={styles.profileInfo}>
                 <Image
@@ -233,19 +236,21 @@ export default function ProfileSettings() {
                   </h3>
                   <p className={styles.role}>{position}</p>
                 </div>
-              </div>
 
-              {/* Upload Photo Section */}
-              <div className={styles.uploadSection}>
-                <button
-                  className={styles.uploadBtn}
-                  onClick={() => setIsModalOpen(true)}
-                >
-                  Upload Photo
-                </button>
-                <p className={styles.photoNote}>
-                  Upload a professional photo to personalize your account.
-                </p>
+              </div>
+            </div>
+
+            {/* Upload Photo Section */}
+            <div className={styles.uploadSection}>
+              <button
+                className={styles.uploadBtn}
+                onClick={() => setIsModalOpen(true)}
+              >
+                Upload Photo
+              </button>
+              <p className={styles.photoNote}>
+                Upload a professional photo to personalize your account.
+              </p>
               </div>
 
               {/* Change Password Form */}
@@ -388,6 +393,7 @@ export default function ProfileSettings() {
           </div>
         </div>
 
+
         {/* ✅ Modern Profile Upload Modal */}
 {isModalOpen && (
   <div className={styles.modalOverlay}>
@@ -403,6 +409,7 @@ export default function ProfileSettings() {
             <p>No image selected</p>
           </div>
         )}
+
       </div>
 
       {/* File Input */}

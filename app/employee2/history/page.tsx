@@ -154,9 +154,11 @@ const handlePrev = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
 const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
 
+
 if (loading) {
     return <Loading />;
   }
+
   return (
     <div>
       <EmpHeader />

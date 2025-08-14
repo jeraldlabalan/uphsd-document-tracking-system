@@ -205,9 +205,11 @@ useEffect(() => {
   };
 
 
+
   if (loading) {
     return <Loading />;
   }
+
   return (
     <div>
       <EmpHeader />
@@ -333,10 +335,12 @@ useEffect(() => {
           <span className={`${styles.badge} ${
                   doc.status === "Completed" ? styles.completed : 
                   doc.status === "In-Process" ? styles.inProcess : 
+
                   doc.status === "Approved" ? styles.approved : 
                   doc.status === "Awaiting Signatures" ? styles.pending :
                   doc.status === "Awaiting-Completion" ? styles.awaiting :
                   doc.status === "On Hold" || doc.status === "On-Hold"
+
                                                       ? styles.onHold :
 
                   styles.pending
@@ -397,8 +401,10 @@ useEffect(() => {
                 <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
                 <span className={`${styles.badge} ${
                   selectedDoc.status === "Completed" ? styles.completed : 
+
                   selectedDoc.status === "In-Process" ? styles.inProcess :
                   selectedDoc.status === "Approved" ? styles.approved :
+
                   selectedDoc.status === "Awaiting Signatures" ? styles.pending :
                   selectedDoc.status === "Awaiting-Completion" ? styles.awaiting :
                   selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold"

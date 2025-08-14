@@ -224,9 +224,11 @@ const handleNext = () => {
   setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 };
 
+
 if (loadingNotifications) {
     return <Loading />;
   }
+
   return (
     <div>
       <EmpHeader />
