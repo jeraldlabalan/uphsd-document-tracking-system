@@ -8,6 +8,9 @@ import Select, { SingleValue } from "react-select";
 import { useRouter } from "next/navigation"; // ✅ Correct import for App Router
 import { useParams } from "next/navigation";
 import Loading from "@/app/loading";
+import AOS from "aos";
+import "aos/dist/aos.css";
+
 
 
 
@@ -53,6 +56,13 @@ export default function EditDocument() {
     setDepartment(name); // Update department value
     setDepartmentID(id); // Update department ID
   };
+
+  useEffect(() => {
+              AOS.init({
+                duration: 1000,
+                once: true,
+              });
+            }, []);
 
   useEffect(() => {
     const fetchDoc = async () => {
@@ -687,7 +697,7 @@ export default function EditDocument() {
   return (
     <div className={styles.container}>
       <EmpHeader />
-      <div className={styles.contentContainer}>
+      <div className={styles.contentContainer} data-aos="fade-up">
         <div className={styles.formWrapper}>
           <h2 className={styles.title}>Edit Document</h2>
           <hr className={styles.separator}></hr>

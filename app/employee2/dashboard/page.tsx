@@ -10,6 +10,7 @@ import Link from "next/link";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import PendingSignatures from "./pending-signatures";
+import Loading from "@/app/loading";
 
 export default function employeeDashboard() {
   useEffect(() => {
@@ -25,6 +26,7 @@ export default function employeeDashboard() {
   const [typeFilter, setTypeFilter] = useState("");
   const [search, setSearch] = useState("");
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState({
     total: 0,
     inProcess: 0,
@@ -44,41 +46,42 @@ export default function employeeDashboard() {
   };
 
   const fetchData = async () => {
-    try {
-      setIsRefreshing(true);
-      const res = await fetch("/api/employee/dashboard");
-      const data = await res.json();
+  try {
+    setLoading(true); // ✅ start loading
+    const res = await fetch("/api/employee/dashboard");
+    const data = await res.json();
 
-      const formattedDocs: Document[] = (data.recentDocuments || []).map(
-        (req: any) => ({
-          id: req.Document?.DocumentID,
-          name: req.Document?.Title || "Untitled",
-          type: req.Document?.DocumentType?.TypeName || "Unknown",
-          file: "PDF File",
-          status: req.Status?.StatusName || "Pending",
-          date: new Date(req.RequestedAt).toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          }),
-          creator: `${req.RequestedBy?.FirstName || "Unknown"} ${req.RequestedBy?.LastName || ""}`,
-          preview: req.Document?.FilePath || "",
-        })
-      );
+    const formattedDocs: Document[] = (data.recentDocuments || []).map(
+      (req: any) => ({
+        id: req.Document?.DocumentID,
+        name: req.Document?.Title || "Untitled",
+        type: req.Document?.DocumentType?.TypeName || "Unknown",
+        file: "PDF File",
+        status: req.Status?.StatusName || "Pending",
+        date: new Date(req.RequestedAt).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+        creator: `${req.RequestedBy?.FirstName || "Unknown"} ${req.RequestedBy?.LastName || ""}`,
+        preview: req.Document?.FilePath || "",
+      })
+    );
 
-      setDocuments(formattedDocs);
-      setSummary({
-        total: formattedDocs.length,
-        inProcess: data.inProcess,
-        completed: data.completed,
-        pending: data.pendingSignatures,
-      });
-    } catch (err) {
-      console.error("Failed to fetch document data", err);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
+    setDocuments(formattedDocs);
+    setSummary({
+      total: formattedDocs.length,
+      inProcess: data.inProcess,
+      completed: data.completed,
+      pending: data.pendingSignatures,
+    });
+  } catch (err) {
+    console.error("Failed to fetch document data", err);
+  } finally {
+    setLoading(false); // ✅ stop loading
+  }
+};
+
 
   useEffect(() => {
     AOS.init({ duration: 1000, once: true });
@@ -152,6 +155,10 @@ export default function employeeDashboard() {
     return statusMatch && typeMatch && searchMatch;
   });
 
+  
+if (loading) {
+  return <Loading />;
+}
   return (
     <div>
       <EmpHeader />

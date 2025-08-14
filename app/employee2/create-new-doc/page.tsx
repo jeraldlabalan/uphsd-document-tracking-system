@@ -6,6 +6,8 @@ import EmpHeader from "@/components/shared/empHeader";
 import Link from "next/link";
 import Select, { SingleValue } from "react-select";
 import { useRouter } from "next/navigation"; // ✅ Correct import for App Router
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 
 type Approver = {
@@ -95,6 +97,13 @@ export default function CreateNewDocument() {
     value: user.UserID,
     label: `${user.FirstName} ${user.LastName}`,
   }));
+
+   useEffect(() => {
+            AOS.init({
+              duration: 1000,
+              once: true,
+            });
+          }, []);
 
   useEffect(() => {
     async function fetchDepartments() {
@@ -507,7 +516,7 @@ export default function CreateNewDocument() {
   return (
     <div className={styles.container}>
       <EmpHeader />
-      <div className={styles.contentContainer}>
+      <div className={styles.contentContainer} data-aos="fade-up">
         <div className={styles.formWrapper}>
           <h2 className={styles.title}>Create New Document</h2>
           <hr className={styles.separator}></hr>
@@ -826,7 +835,7 @@ export default function CreateNewDocument() {
 
             <div className={styles.buttonGroup}>
               <div className={styles.leftButtons}>
-                <Link href="./my-documents">
+                <Link href="./dashboard">
                   <button className={styles.backBtn}>Back</button>{" "}
                 </Link>
               </div>
