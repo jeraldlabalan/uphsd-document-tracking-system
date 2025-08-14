@@ -372,6 +372,7 @@ function PDFViewer(
         const pdfHeight = placeholderToSign.height / scale;
         const padding = 6;
 
+        // Draw signature box with border
         page.drawRectangle({
           x: pdfX,
           y: pdfY,
@@ -400,6 +401,7 @@ function PDFViewer(
         const imgX = pdfX + padding + (imgBoxWidth - scaledWidth) / 2;
         const imgY = pdfY + padding + (imgBoxHeight - scaledHeight) / 2;
 
+        // Draw the signature image
         page.drawImage(embeddedImage, {
           x: imgX,
           y: imgY,
@@ -407,11 +409,12 @@ function PDFViewer(
           height: scaledHeight,
         });
 
+        // Draw signature information text
         const textBlockX = pdfX + halfWidth + padding;
         const signeeName = placeholderToSign.signeeName || "Unknown Signee";
         const textLines = [
-          { text: "Digitally signed by", size: 8 },
-          { text: signeeName, size: 10 },
+          { text: "Signed by:", size: 8, bold: true },
+          { text: signeeName, size: 10, bold: true },
           { text: `Date: ${dateOnly}`, size: 7 },
           { text: `Time: ${timeOnly}`, size: 7 },
         ];
@@ -424,12 +427,17 @@ function PDFViewer(
           const textWidth = font.widthOfTextAtSize(line.text, line.size);
           const textX =
             textBlockX + (halfWidth - padding * 2 - textWidth) / 2;
+          
+          // Use bold font for bold text
+          const textFont = line.bold ? font : font;
+          const textColor = line.bold ? rgb(0, 0, 0) : rgb(0.4, 0.4, 0.4);
+          
           page.drawText(line.text, {
             x: textX,
             y: textStartY - i * lineHeight,
             size: line.size,
-            font,
-            color: rgb(0, 0, 0),
+            font: textFont,
+            color: textColor,
           });
         });
       });
@@ -440,6 +448,33 @@ function PDFViewer(
           ? { ...p, isSigned: true, signedAt: timestamp }
           : p
       ));
+
+      // Update placeholders in the database
+      try {
+        await Promise.all(
+          receiverPlaceholders.map(async (placeholder) => {
+            if (placeholder.placeholderId) {
+              const response = await fetch('/api/employee/signature-placeholders', {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  placeholderId: placeholder.placeholderId,
+                  signatureData: signatureImage, // Store the signature image data
+                }),
+              });
+              
+              if (!response.ok) {
+                console.error(`Failed to update placeholder ${placeholder.placeholderId} in database`);
+              }
+            }
+          })
+        );
+      } catch (error) {
+        console.error('Error updating placeholders in database:', error);
+        // Continue with the signature process even if database update fails
+      }
 
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([new Uint8Array(pdfBytes)], {
@@ -598,14 +633,6 @@ function PDFViewer(
                   const centeredX = dropX - MIN_WIDTH / 2;
                   const centeredY = dropY - MIN_HEIGHT / 2;
 
-                  console.log("Drop event - setting drag state:", { 
-                    page: i, 
-                    x: centeredX, 
-                    y: centeredY, 
-                    width: MIN_WIDTH, 
-                    height: MIN_HEIGHT 
-                  });
-
                   setDragPage(i);
                   setDragRect({
                     x: centeredX,
@@ -642,10 +669,9 @@ function PDFViewer(
                 }
               />
 
-              {(!hasSigned && viewMode === "edit") &&
-                placeholders
-                  .filter((ph) => ph.page === i)
-                  .map((ph) => (
+              {placeholders
+                .filter((ph) => ph.page === i)
+                .map((ph) => (
                     <Rnd
                       size={{
                         width: ph.width * scale,
@@ -658,9 +684,9 @@ function PDFViewer(
                       minWidth={MIN_WIDTH * scale}
                       maxWidth={MAX_WIDTH * scale}
                       minHeight={MIN_HEIGHT * scale}
-                      maxHeight={MAX_HEIGHT * scale}
+                      maxHeight={MIN_HEIGHT * scale}
                       enableResizing={
-                        role === "sender"
+                        role === "sender" && !ph.isSigned
                           ? {
                               top: true,
                               right: true,
@@ -675,6 +701,7 @@ function PDFViewer(
                       }
                       key={ph.id}
                       onDragStop={(e, d) => {
+                        if (ph.isSigned) return; // Prevent dragging signed placeholders
                         setPlaceholders((prev) =>
                           prev.map((p) =>
                             p.id === ph.id
@@ -688,6 +715,7 @@ function PDFViewer(
                         );
                       }}
                       onResizeStop={(e, direction, ref, delta, position) => {
+                        if (ph.isSigned) return; // Prevent resizing signed placeholders
                         setPlaceholders((prev) =>
                           prev.map((p) =>
                             p.id === ph.id
@@ -702,7 +730,7 @@ function PDFViewer(
                           )
                         );
                       }}
-                      disableDragging={role !== "sender"}
+                      disableDragging={role !== "sender" || ph.isSigned}
                       bounds="parent"
                       style={{ zIndex: 10 }}
                     >
@@ -712,9 +740,9 @@ function PDFViewer(
                         }}
                         className={`${styles.actualSignaturePlaceholder} ${
                           role === "sender" ? styles.sender : styles.receiver
-                        }`}
+                        } ${ph.isSigned ? styles.signed : ''}`}
                         onMouseDown={(e) => {
-                          if (role !== "sender") return;
+                          if (role !== "sender" || ph.isSigned) return;
 
                           const clickTime = Date.now();
 
@@ -761,7 +789,7 @@ function PDFViewer(
                           window.addEventListener("mouseup", handleMouseUp);
                         }}
                       >
-                        {role === "sender" && (
+                        {role === "sender" && !ph.isSigned && (
                           <div
                             className={styles.removePlaceholderButton}
                             data-ignore-click
@@ -777,21 +805,26 @@ function PDFViewer(
                           </div>
                         )}
 
-                        <div style={{ color: "black" }}>
-                          <strong className={styles.signeeName}>
-                            {ph.signeeName || ph.signee}
-                          </strong>
-                        </div>
-
                         {ph.isSigned ? (
-                          <div className="text-center">
-                            <div className="text-[8px] text-gray-600">
-                              {ph.signedAt}
+                          // Show signed signature information
+                          <div className={styles.signedSignatureInfo}>
+                            <div className={styles.signedLabel}>Signed by:</div>
+                            <div className={styles.signedName}>
+                              {ph.signeeName || ph.signee}
+                            </div>
+                            <div className={styles.signedDate}>
+                              {ph.signedAt ? new Date(ph.signedAt).toLocaleDateString() : 'Unknown date'}
                             </div>
                           </div>
                         ) : (
-                          <div className={styles.needsToSign}>
-                            Needs to sign
+                          // Show unsigned placeholder information
+                          <div style={{ color: "black" }}>
+                            <strong className={styles.signeeName}>
+                              {ph.signeeName || ph.signee}
+                            </strong>
+                            <div className={styles.needsToSign}>
+                              Needs to sign
+                            </div>
                           </div>
                         )}
                       </div>
