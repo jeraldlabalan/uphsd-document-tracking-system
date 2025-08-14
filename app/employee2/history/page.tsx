@@ -7,6 +7,7 @@ import { Search as SearchIcon, X } from "lucide-react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { fetchFilterData, FilterData } from "@/lib/filterData";
+import Loading from "@/app/loading";
 
 type DocumentVersionHistory = {
   VersionID: number;
@@ -80,31 +81,38 @@ export default function History() {
   // ];
 
    useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const res = await fetch("/api/employee/history"); // <-- replace with your actual route
-        const data = await res.json();
-        console.log("Fetched history data:", data);
-        if (res.ok) {
-          setHistory(data);
-        } else {
-          console.error("Failed to fetch history:", data.error);
-        }
-      } catch (err) {
-        console.error("Fetch error:", err);
-      } finally {
-        setLoading(false);
+  const fetchAllData = async () => {
+    try {
+      setLoading(true); // ✅ start loader
+
+      // Fetch history
+      const resHistory = await fetch("/api/employee/history");
+      let historyData: any[] = [];
+      if (resHistory.ok) {
+        const dataHistory = await resHistory.json();
+        console.log("Fetched history data:", dataHistory);
+        historyData = dataHistory || [];
+      } else {
+        console.error("Failed to fetch history");
       }
-    };
+      setHistory(historyData);
 
-    const loadFilterData = async () => {
-      const data = await fetchFilterData();
-      setFilterData(data);
-    };
+      // Fetch filter data
+      const filterData = await fetchFilterData();
+      setFilterData(filterData);
 
-    fetchHistory();
-    loadFilterData();
-  }, []);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setHistory([]);
+      setFilterData([]);
+    } finally {
+      setLoading(false); // ✅ stop loader after both fetches
+    }
+  };
+
+  fetchAllData();
+}, []);
+
 
 const filtered = history.filter((item) => {
   const searchMatch =
@@ -146,6 +154,11 @@ const handlePrev = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
 const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
 
+
+if (loading) {
+    return <Loading />;
+  }
+
   return (
     <div>
       <EmpHeader />
@@ -169,31 +182,7 @@ const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages)
               />
             </div>
 
-            <select
-              className={styles.dropdown}
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="">All Types</option>
-              {filterData.documentTypes.map((type) => (
-                <option key={type.TypeID} value={type.TypeName}>
-                  {type.TypeName}
-                </option>
-              ))}
-            </select>
-
-            <select
-              className={styles.dropdown}
-              value={departmentFilter}
-              onChange={(e) => setDepartmentFilter(e.target.value)}
-            >
-              <option value="">All Departments</option>
-              {filterData.departments.map((dept) => (
-                <option key={dept.DepartmentID} value={dept.Name}>
-                  {dept.Name}
-                </option>
-              ))}
-            </select>
+            
           </div>
 
           <table className={styles.docTable}>
@@ -253,7 +242,7 @@ const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages)
       </div>
      {showModal && selectedDoc && (
         <div className={styles.modalOverlay}>
-          <div className={styles.modalCard}>
+          <div className={styles.modalCard} data-aos="zoom-in">
             <button className={styles.closeButton} onClick={closeModal}>
               <X size={20} />
             </button>

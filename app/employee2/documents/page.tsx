@@ -5,6 +5,9 @@ import EmpHeader from "@/components/shared/empHeader";
 import { useSearchParams } from "next/navigation";
 import { Search as SearchIcon, User } from "lucide-react";
 import { fetchFilterData, FilterData } from "@/lib/filterData";
+import Loading from "@/app/loading";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 import Link from "next/link";
 import { X } from "lucide-react";
@@ -36,6 +39,9 @@ export default function Documents() {
   });
   const searchParams = useSearchParams();
   const docId = searchParams.get("docId");
+  const [loading, setLoading] = useState(true);
+
+  
 
   // const documents = [
   //   {
@@ -62,38 +68,49 @@ export default function Documents() {
   //   },
   // ];
 
+  useEffect(() => {
+      AOS.init({
+        duration: 1000,
+        once: true,
+      });
+    }, []);
 
 useEffect(() => {
-  const fetchDocuments = async () => {
+  const fetchAllData = async () => {
     try {
-      const res = await fetch("/api/employee/documents");
-      const data = await res.json();
+      setLoading(true); // ✅ start loading
 
-      // Log to verify shape
-      console.log("API response:", data);
+      // Fetch documents
+      const resDocs = await fetch("/api/employee/documents");
+      const dataDocs = await resDocs.json();
 
-      // Make sure to access the array correctly
-      if (Array.isArray(data)) {
-        setDocuments(data);
-      } else if (Array.isArray(data.docs)) {
-        setDocuments(data.docs); // ✅ most likely this
+      console.log("API response:", dataDocs);
+
+      if (Array.isArray(dataDocs)) {
+        setDocuments(dataDocs);
+      } else if (Array.isArray(dataDocs.docs)) {
+        setDocuments(dataDocs.docs);
       } else {
-        console.error("❌ Invalid documents data:", data);
-        setDocuments([]); // fallback to prevent crashes
+        console.error("❌ Invalid documents data:", dataDocs);
+        setDocuments([]);
       }
+
+      // Fetch filter data
+      const filterData = await fetchFilterData();
+      setFilterData(filterData);
+
     } catch (err) {
-      console.error("Failed to fetch documents", err);
+      console.error("Failed to fetch data", err);
+      setDocuments([]);
+      setFilterData([]);
+    } finally {
+      setLoading(false); // ✅ stop loading after both fetches
     }
   };
 
-  const loadFilterData = async () => {
-    const data = await fetchFilterData();
-    setFilterData(data);
-  };
-
-  fetchDocuments();
-  loadFilterData();
+  fetchAllData();
 }, []);
+
   // const documents = [
   //   {
   //     id: 1,
@@ -186,6 +203,12 @@ useEffect(() => {
   const handleNext = () => {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   };
+
+
+
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <div>
@@ -312,9 +335,12 @@ useEffect(() => {
           <span className={`${styles.badge} ${
                   doc.status === "Completed" ? styles.completed : 
                   doc.status === "In-Process" ? styles.inProcess : 
+
+                  doc.status === "Approved" ? styles.approved : 
                   doc.status === "Awaiting Signatures" ? styles.pending :
                   doc.status === "Awaiting-Completion" ? styles.awaiting :
-                  doc.status === "On Hold" || selectedDoc.status === "On-Hold"
+                  doc.status === "On Hold" || doc.status === "On-Hold"
+
                                                       ? styles.onHold :
 
                   styles.pending
@@ -362,7 +388,7 @@ useEffect(() => {
         </div>
         {selectedDoc && (
           <div className={styles.modalOverlay}>
-            <div className={styles.modalCard}>
+            <div data-aos="zoom-in" className={styles.modalCard} >
               <button
                 className={styles.closeButton}
                 onClick={() => setSelectedDoc(null)}
@@ -375,7 +401,10 @@ useEffect(() => {
                 <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
                 <span className={`${styles.badge} ${
                   selectedDoc.status === "Completed" ? styles.completed : 
-                  selectedDoc.status === "In-Process" ? styles.inProcess : 
+
+                  selectedDoc.status === "In-Process" ? styles.inProcess :
+                  selectedDoc.status === "Approved" ? styles.approved :
+
                   selectedDoc.status === "Awaiting Signatures" ? styles.pending :
                   selectedDoc.status === "Awaiting-Completion" ? styles.awaiting :
                   selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold"

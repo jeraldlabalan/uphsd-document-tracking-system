@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import styles from "./notificationStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
 import { Bell } from "lucide-react";
+import Loading from "@/app/loading";
 
 type Notification = {
   id: number;
@@ -65,43 +66,51 @@ export default function NotificationPage() {
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
+  const [loadingNotifications, setLoadingNotifications] = useState(true);
+
 
   
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const response = await fetch("/api/employee/notification");
-        const data = await response.json();
+  const fetchNotifications = async () => {
+    try {
+      setLoadingNotifications(true); // ✅ start loader
+      const response = await fetch("/api/employee/notification");
+      const data = await response.json();
 
-        console.log("Raw notifications:", data); // 👀 Check the exact structure
+      console.log("Raw notifications:", data);
 
-        const mapped = data
-          .map((notif: any) => {
-            const id = Number(notif.NotificationID ?? notif.id);
+      const mapped = (data || [])
+        .map((notif: any) => {
+          const id = Number(notif.NotificationID ?? notif.id);
 
-            if (isNaN(id)) {
-              console.error("❌ Invalid ID detected:", notif);
-              return null; // skip this entry
-            }
+          if (isNaN(id)) {
+            console.error("❌ Invalid ID detected:", notif);
+            return null; // skip invalid entry
+          }
 
-            return {
-              ...notif,
-              id,
-              status: notif.status,
-            };
-          })
-          .filter((notif: any) => notif !== null); // filter out any null entries
-        console.log("Mapped notifications:", mapped); // ✅ Check the final structure
+          return {
+            ...notif,
+            id,
+            status: notif.status,
+          };
+        })
+        .filter((notif: any) => notif !== null);
 
-        setNotifications(mapped);
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
-      }
-    };
+      console.log("Mapped notifications:", mapped);
 
-    fetchNotifications();
-  }, []);
+      setNotifications(mapped);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      setNotifications([]);
+    } finally {
+      setLoadingNotifications(false); // ✅ stop loader
+    }
+  };
+
+  fetchNotifications();
+}, []);
+
 
   const toggleAll = () => {
     setSelected(
@@ -214,6 +223,11 @@ const handlePrev = () => {
 const handleNext = () => {
   setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 };
+
+
+if (loadingNotifications) {
+    return <Loading />;
+  }
 
   return (
     <div>

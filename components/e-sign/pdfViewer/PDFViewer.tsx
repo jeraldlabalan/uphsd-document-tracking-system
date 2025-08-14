@@ -508,6 +508,33 @@ function PDFViewer(
         // Continue with the signature process even if database update fails
       }
 
+      // Update placeholders in the database
+      try {
+        await Promise.all(
+          receiverPlaceholders.map(async (placeholder) => {
+            if (placeholder.placeholderId) {
+              const response = await fetch('/api/employee/signature-placeholders', {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  placeholderId: placeholder.placeholderId,
+                  signatureData: signatureImage, // Store the signature image data
+                }),
+              });
+              
+              if (!response.ok) {
+                console.error(`Failed to update placeholder ${placeholder.placeholderId} in database`);
+              }
+            }
+          })
+        );
+      } catch (error) {
+        console.error('Error updating placeholders in database:', error);
+        // Continue with the signature process even if database update fails
+      }
+
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([new Uint8Array(pdfBytes)], {
         type: "application/pdf",

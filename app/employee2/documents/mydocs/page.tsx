@@ -5,6 +5,9 @@ import EmpHeader from "@/components/shared/empHeader";
 import { Search as SearchIcon, X, FileText, Inbox, FileX } from "lucide-react";
 import Link from "next/link";
 import { fetchFilterData, FilterData } from "@/lib/filterData";
+import Loading from "@/app/loading";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 type document = {
   id: number;
@@ -34,6 +37,7 @@ export default function MyDocuments() {
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [documents, setDocuments] = useState<document[]>([]);
   const [loading, setLoading] = useState(true);
+  
   const [filterData, setFilterData] = useState<FilterData>({
     documentTypes: [],
     departments: [],
@@ -43,32 +47,45 @@ export default function MyDocuments() {
   const [showMarkCompletedSuccess, setShowMarkCompletedSuccess] =
     useState(false);
 
+    useEffect(() => {
+          AOS.init({
+            duration: 1000,
+            once: true,
+          });
+        }, []);
+
   useEffect(() => {
-    const fetchDocuments = async () => {
-      try {
-        const res = await fetch("/api/employee/documents/mydocs");
-        if (res.ok) {
-          const data = await res.json();
-          setDocuments(data.docs || []);
-        } else {
-          console.error("Failed to load documents");
-          setDocuments([]); // fallback to avoid undefined
-        }
-      } catch (error) {
-        console.error("Error fetching documents:", error);
-      } finally {
-        setLoading(false);
+  const fetchAllData = async () => {
+    try {
+      setLoading(true); // ✅ start loader
+
+      // Fetch documents
+      const resDocs = await fetch("/api/employee/documents/mydocs");
+      let docs: any[] = [];
+      if (resDocs.ok) {
+        const dataDocs = await resDocs.json();
+        docs = dataDocs.docs || [];
+      } else {
+        console.error("Failed to load documents");
       }
-    };
+      setDocuments(docs);
 
-    const loadFilterData = async () => {
-      const data = await fetchFilterData();
-      setFilterData(data);
-    };
+      // Fetch filter data
+      const filterData = await fetchFilterData();
+      setFilterData(filterData);
 
-    fetchDocuments();
-    loadFilterData();
-  }, []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setDocuments([]);
+      setFilterData([]);
+    } finally {
+      setLoading(false); // ✅ stop loader after both fetches
+    }
+  };
+
+  fetchAllData();
+}, []);
+
 
   const filteredDocs = documents.filter((doc) => {
     const matchesSearch =
@@ -140,12 +157,16 @@ const handleNext = () => {
 
 
 
+if (loading) {
+  return <Loading />;
+}
+
   return (
     <div>
       <EmpHeader />
       <div className={styles.container}>
         {/* Sidebar */}
-        <div className={styles.sidebarContainer}>
+        <div className={styles.sidebarContainer} data-aos="fade-up">
           <div className={styles.sidebar}>
             <h2 className={styles.sidebarHeader}>Documents</h2>
             <ul className={styles.sidebarMenu}>
@@ -280,7 +301,7 @@ const handleNext = () => {
 
           {/* Table or Card View */}
           {viewMode === "table" ? (
-            <table className={styles.docTable}>
+            <table data-aos="fade-up" className={styles.docTable}>
               <thead>
                 <tr>
                   <th>ID</th>
@@ -350,7 +371,7 @@ const handleNext = () => {
               </tbody>
             </table>
           ) : (
-            <div className={styles.cardGrid}>
+            <div data-aos="fade-up" className={styles.cardGrid}>
               {loading ? (
                 <div className={styles.loadingContainer}>
                   <div className={styles.spinner}></div>
@@ -432,7 +453,7 @@ const handleNext = () => {
         {/* Modal */}
         {selectedDoc && (
           <div className={styles.modalOverlay}>
-            <div className={styles.modalCard}>
+            <div className={styles.modalCard} data-aos="zoom-in">
               <button
                 className={styles.closeButton}
                 onClick={() => setSelectedDoc(null)}
@@ -548,7 +569,7 @@ const handleNext = () => {
 
         {isRemarksModalOpen && (
           <div className={styles.modalOverlay}>
-            <div className={styles.modalCardRemarks}>
+            <div className={styles.modalCardRemarks} data-aos="zoom-in">
               <button
                 className={styles.closeButton}
                 onClick={() => setIsRemarksModalOpen(false)}
@@ -601,7 +622,7 @@ const handleNext = () => {
             className={styles.modal}
             onClick={() => setShowMarkCompletedSuccess(false)}
           >
-            <div className={styles.modalContent}>
+            <div className={styles.modalContent} data-aos="zoom-in">
               <div className={styles.confirmSuccessContainer}>
                 <h1>success!</h1>
                 <p>Document successfully completed.</p>
