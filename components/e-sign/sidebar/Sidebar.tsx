@@ -64,7 +64,7 @@ export default function Sidebar({
 
   const remainingPlaceholders = userPlaceholders;
   const signedPlaceholders = userSignedPlaceholders;
-  const hasAnySignatures = signedPlaceholders.length > 0;
+  const hasAnySignatures = hasSigned; // Use hasSigned prop directly since placeholders are cleared after signing
 
   console.log("Remaining placeholders", remainingPlaceholders);
   console.log("Signed placeholders", signedPlaceholders);

@@ -80,8 +80,14 @@ export type SidebarProps = {
   isDocumentCreator?: boolean;
 }
 
-export type PDFViewerRef = {
-  applySignature: () => void;
+export interface PDFViewerRef {
+  applySignature: (signatureImage: string) => Promise<string | undefined>;
+  generatePdfWithoutPlaceholders: () => Promise<string | null>; // Generates PDF WITHOUT embedding placeholders
+  generateCleanPdf: () => Promise<string | null>; // Generates clean PDF without placeholders
+  addPlaceholder: (placeholder: Placeholder) => void;
+  removePlaceholder: (id: number) => void;
+  updatePlaceholder: (id: number, updates: Partial<Placeholder>) => void;
+  getPlaceholders: () => Placeholder[];
+  setPlaceholders: React.Dispatch<React.SetStateAction<Placeholder[]>>;
   resetSignaturePreview: () => void;
-  generatePdfWithPlaceholders: () => Promise<string | null>;
-};
+}
