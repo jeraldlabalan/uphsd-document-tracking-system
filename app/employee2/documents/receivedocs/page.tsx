@@ -6,6 +6,9 @@ import { Search as SearchIcon, X, FileText, Inbox, FileX } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 import { fetchFilterData, FilterData } from "@/lib/filterData";
+import Loading from "@/app/loading";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 
 type ReceivedDocument = {
@@ -73,34 +76,45 @@ export default function ReceiveDocuments() {
   const [isApproving, setIsApproving] = useState(false);
   const [approvedDocs, setApprovedDocs] = useState<number[]>([]); // to track approved documents
 
-
+useEffect(() => {
+    AOS.init({
+      duration: 1000,
+      once: true,
+    });
+  }, []);
 
   useEffect(() => {
-    const fetchDocs = async () => {
-      try {
-        const res = await fetch("/api/employee/documents/received-docs");
-        const data = await res.json();
-        if (res.ok) {
-          console.log("Received documents data:", data);
-          setDocs(data.receivedDocuments);
-        } else {
-          console.error(data.error || "Failed to fetch documents");
-        }
-      } catch (err) {
-        console.error("Error fetching documents:", err);
-      } finally {
-        setLoading(false);
+  const fetchAllData = async () => {
+    try {
+      setLoading(true); // ✅ start loader
+
+      // Fetch received documents
+      const resDocs = await fetch("/api/employee/documents/received-docs");
+      let receivedDocs: any[] = [];
+      if (resDocs.ok) {
+        const dataDocs = await resDocs.json();
+        console.log("Received documents data:", dataDocs);
+        receivedDocs = dataDocs.receivedDocuments || [];
+      } else {
+        console.error("Failed to fetch received documents");
       }
-    };
+      setDocs(receivedDocs);
 
-    const loadFilterData = async () => {
-      const data = await fetchFilterData();
-      setFilterData(data);
-    };
+      // Fetch filter data
+      const filterData = await fetchFilterData();
+      setFilterData(filterData);
 
-    fetchDocs();
-    loadFilterData();
-  }, []);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setDocs([]);
+      setFilterData([]);
+    } finally {
+      setLoading(false); // ✅ stop loader after both fetches
+    }
+  };
+
+  fetchAllData();
+}, []);
 
 
   // const documents = [
@@ -281,13 +295,15 @@ const handleNext = () => {
 };
 
 
-
+if (loading) {
+    return <Loading />;
+  }
   return (
     <div>
       <EmpHeader />
       <div className={styles.container}>
         {/* Sidebar */}
-        <div className={styles.sidebarContainer}>
+        <div className={styles.sidebarContainer} data-aos="fade-up">
           <div className={styles.sidebar}>
             <h2 className={styles.sidebarHeader}>Documents</h2>
             <ul className={styles.sidebarMenu}>
@@ -416,7 +432,7 @@ const handleNext = () => {
 
          {/* Table or Card View */}
 {viewMode === "table" ? (
-  <table className={styles.docTable}>
+  <table data-aos="fade-up" className={styles.docTable}>
     <thead>
       <tr>
         <th>ID</th>
@@ -484,7 +500,7 @@ const handleNext = () => {
     </tbody>
   </table>
 ) : (
-  <div className={styles.cardGrid}>
+  <div data-aos="fade-up" className={styles.cardGrid}>
     {loading ? ( // 👈 Loading state for card view
       <div className={styles.loadingContainer}>
         <div className={styles.spinner}></div>
@@ -557,7 +573,7 @@ const handleNext = () => {
         {/* Modal */}
         {selectedDoc && (
           <div className={styles.modalOverlay}>
-            <div className={styles.modalCard}>
+            <div className={styles.modalCard} data-aos="zoom-in">
               <button className={styles.closeButton} onClick={() => setSelectedDoc(null)} aria-label="Close">
                 <X size={20} />
               </button>
@@ -709,7 +725,7 @@ const handleNext = () => {
         {showOnHoldModal && (
 
           <div className={styles.modal}>
-            <div className={styles.modalContent}>
+            <div className={styles.modalContent} data-aos="zoom-in">
               <div className={styles.confirmRestoreContainer}>
                 <h2>ON HOLD</h2>
 
