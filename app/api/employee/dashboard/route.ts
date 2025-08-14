@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifyEmployeeAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { cookies } from "next/headers";
-import { verify } from "jsonwebtoken";
 
 export async function GET(req: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("session")?.value;
-
-    if (!token) {
+    // Use the new auth utility function
+    const authResult = await verifyEmployeeAuth(req);
+    
+    if (!authResult) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded: any = verify(token, process.env.JWT_SECRET!);
-    const userID = decoded.UserID;
+    const { user } = authResult;
+    const userID = user.UserID;
 
     // ✅ Count by StatusName (via relation)
     const pendingSignatures = await db.documentRequest.count({ //on hold
