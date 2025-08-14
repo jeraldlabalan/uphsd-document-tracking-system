@@ -6,6 +6,7 @@ import AdminHeader from "@/components/shared/adminHeader";
 import { Search as SearchIcon } from "lucide-react";
 import { X, FileCheck, FileText, Trash2, CheckCircle } from "lucide-react";
 import { fetchFilterData, FilterData } from "@/lib/filterData";
+import Loading from "@/app/loading";
 
 export default function DocumentOverview() {
   const [search, setSearch] = useState("");
@@ -30,21 +31,26 @@ export default function DocumentOverview() {
   });
 
   async function loadData() {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/admin/document-overview", { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to load");
-      const data = await res.json();
-      setDocuments(Array.isArray(data.documents) ? data.documents : []);
-      setSummary(data.summary || null);
-    } catch (e) {
-      console.error(e);
-      setDocuments([]);
-      setSummary(null);
-    } finally {
-      setLoading(false);
-    }
+  setLoading(true); // ✅ start loader
+  try {
+    const res = await fetch("/api/admin/document-overview", { credentials: "include" });
+    if (!res.ok) throw new Error("Failed to load");
+
+    const data = await res.json();
+
+    // Ensure documents is always an array
+    setDocuments(Array.isArray(data.documents) ? data.documents : []);
+    setSummary(data.summary || null);
+
+  } catch (e) {
+    console.error("Error loading data:", e);
+    setDocuments([]);
+    setSummary(null);
+  } finally {
+    setLoading(false); // ✅ stop loader
   }
+}
+
 
   useEffect(() => {
     loadData();
@@ -124,7 +130,9 @@ const handleNext = () => {
 
 
 
-
+if (loading) {
+    return <Loading />;
+  }
   return (
     <div>
       <AdminHeader />

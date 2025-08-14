@@ -12,6 +12,7 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import { CheckCircle, Clock, PauseCircle } from "lucide-react";
 import { fetchFilterData, FilterData } from "@/lib/filterData";
+import Loading from "@/app/loading";
 
 // const cookieStore = await cookies();
 
@@ -63,37 +64,46 @@ export default function ActivityLogs() {
     useState(false);
 
      useEffect(() => {
-    const fetchLogs = async () => {
-      try {
-        const params = new URLSearchParams();
-        if (statusFilter) params.append("action", statusFilter);
-        if (typeFilter) params.append("documentType", typeFilter);
-        if (dateFrom) params.append("date", dateFrom); // Your backend only supports single date
+  const fetchAllData = async () => {
+    try {
+      setLoading(true); // ✅ start loader
 
-        const res = await fetch(`/api/admin/activity-logs?${params.toString()}`, {
-          method: "GET",
-          credentials: "include", // IMPORTANT: send cookies
-        });
+      // Fetch activity logs
+      const params = new URLSearchParams();
+      if (statusFilter) params.append("action", statusFilter);
+      if (typeFilter) params.append("documentType", typeFilter);
+      if (dateFrom) params.append("date", dateFrom);
 
-        if (!res.ok) throw new Error("Failed to fetch logs");
+      const resLogs = await fetch(`/api/admin/activity-logs?${params.toString()}`, {
+        method: "GET",
+        credentials: "include",
+      });
 
-        const data = await res.json();
-        setLogs(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+      let logsData: any[] = [];
+      if (resLogs.ok) {
+        const dataLogs = await resLogs.json();
+        logsData = dataLogs || [];
+      } else {
+        console.error("Failed to fetch logs");
       }
-    };
+      setLogs(logsData);
 
-    const loadFilterData = async () => {
-      const data = await fetchFilterData();
-      setFilterData(data);
-    };
+      // Fetch filter data
+      const filterData = await fetchFilterData();
+      setFilterData(filterData);
 
-    fetchLogs();
-    loadFilterData();
-  }, [statusFilter, typeFilter, dateFrom]); // Re-fetch on filter change
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setLogs([]);
+      setFilterData([]);
+    } finally {
+      setLoading(false); // ✅ stop loader after both fetches
+    }
+  };
+
+  fetchAllData();
+}, [statusFilter, typeFilter, dateFrom]);
+ // Re-fetch on filter change
 
   // const activityLogs = [
   //   {
@@ -180,7 +190,9 @@ export default function ActivityLogs() {
   const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
 
-
+if (loading) {
+    return <Loading />;
+  }
   return (
     <div>
       <AdminHeader />

@@ -5,6 +5,8 @@ import styles from "./notificationStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
 import { Bell } from "lucide-react";
 import Loading from "@/app/loading";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 type Notification = {
   id: number;
@@ -69,6 +71,12 @@ export default function NotificationPage() {
   const [loadingNotifications, setLoadingNotifications] = useState(true);
 
 
+  useEffect(() => {
+    AOS.init({
+      duration: 1000,
+      once: true,
+    });
+  }, []);
   
 
   useEffect(() => {
@@ -329,7 +337,7 @@ if (loadingNotifications) {
         {/* View Modal Styles */}
 {selectedNotification && (
   <div className={styles.modalOverlay}>
-    <div className={styles.modalContent}>
+    <div className={styles.modalContent} data-aos="zoom-in">
       <button
         className={styles.closeButton}
         onClick={() => setSelectedNotification(null)}
