@@ -28,6 +28,16 @@ export default function ProfileSettings() {
   const [mobileNumber, setMobileNumber] = useState("");
   const [position, setPosition] = useState("");
   const [department, setDepartment] = useState("");
+
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
+
+const handleUpload = (file) => {
+  // TODO: Upload to server logic here
+  console.log("Uploading file:", file);
+};
+
   interface ProfilePayload {
     firstName: string;
     lastName: string;
@@ -173,36 +183,37 @@ export default function ProfileSettings() {
           <hr className={styles.separator} />
           <div className={styles.profileContainer}>
             <div className={styles.leftColumn}>
-              {/* Profile Photo + Name */}
-              <div className={styles.profileInfo}>
-                <Image
-                    src={tempPreview || "/placeholder.png"}
-                    alt="Profile"
-                    className={styles.avatar}
-                    width={150}
-                    height={150}
-                    onClick={() => setIsModalOpen(true)}
-                    style={{ cursor: "pointer" }}
-                  />
-                <div className={styles.profileDetails}>
-                  <h3 className={styles.name}>
-                    {firstName} {lastName}
-                  </h3>
-                  <p className={styles.role}>{position}</p>
-                </div>
+          
+            {/* Profile Photo + Name */}
+            <div className={styles.profileInfo}>
+              <Image
+                src={tempPreview || "/placeholder.png"}
+                alt="Profile"
+                className={styles.avatar}
+                width={150}
+                height={150}
+                onClick={() => setIsModalOpen(true)}
+                style={{ cursor: "pointer" }}
+              />
+              <div className={styles.profileDetails}>
+                <h3 className={styles.name}>
+                  {firstName} {lastName}
+                </h3>
+                <p className={styles.role}>{position}</p>
               </div>
+            </div>
 
-              {/* Upload Photo Section */}
-              <div className={styles.uploadSection}>
-                <button
-                  className={styles.uploadBtn}
-                  onClick={() => setIsModalOpen(true)}
-                >
-                  Upload Photo
-                </button>
-                <p className={styles.photoNote}>
-                  Upload a professional photo to personalize your account.
-                </p>
+            {/* Upload Photo Section */}
+            <div className={styles.uploadSection}>
+              <button
+                className={styles.uploadBtn}
+                onClick={() => setIsModalOpen(true)}
+              >
+                Upload Photo
+              </button>
+              <p className={styles.photoNote}>
+                Upload a professional photo to personalize your account.
+              </p>
               </div>
 
               {/* Change Password Form */}
@@ -345,17 +356,78 @@ export default function ProfileSettings() {
           </div>
         </div>
 
-        {/* ✅ Modal */}
-        {isModalOpen && (
-          <UploadPhotoModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            onUploadSuccess={(filename: string) => {
-              setTempPreview(`/uploads/${filename}`);
-              setIsModalOpen(false);
+        {/* ✅ Profile Upload Modal */}
+    {isModalOpen && (
+      <div className={styles.modalOverlay}>
+        <div className={styles.modal}>
+          <h2>Upload Profile Picture</h2>
+
+          {/* Preview */}
+          {previewImage ? (
+            <img src={previewImage} alt="Preview" className={styles.preview} />
+          ) : (
+            <div className={styles.placeholder}>No image selected</div>
+          )}
+
+          {/* File Input */}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              if (file) {
+                setSelectedFile(file);
+                setPreviewImage(URL.createObjectURL(file));
+              }
             }}
           />
-        )}
+
+          {/* Actions */}
+          <div className={styles.actions}>
+            <button
+              onClick={() => {
+                if (selectedFile) {
+                  handleUpload(selectedFile); // Your upload logic
+                  setIsModalOpen(false);
+                }
+              }}
+              className={styles.uploadBtn}
+            >
+              Upload
+            </button>
+            <button
+              onClick={() => {
+                setIsModalOpen(false);
+                setPreviewImage(null);
+                setSelectedFile(null);
+              }}
+              className={styles.cancelBtn}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* ✅ Success Modal */}
+    {isSuccessModalOpen && (
+      <div className={styles.modalOverlay}>
+        <div className={styles.modal}>
+          <h2>✅ Upload Successful!</h2>
+          <p>Your profile picture has been updated.</p>
+          <button
+            onClick={() => {
+              setIsSuccessModalOpen(false);
+              window.location.reload();
+            }}
+            className={styles.okBtn}
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    )}
       </div>
     </div>
   );

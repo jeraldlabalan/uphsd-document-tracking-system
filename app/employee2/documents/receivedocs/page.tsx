@@ -262,6 +262,26 @@ const handleConfirmClick = async () => {
   }
 };
 
+  // Pagination state
+const [currentPage, setCurrentPage] = useState(1);
+const docsPerPage = 6;
+
+const totalPages = Math.ceil(filteredDocs.length / docsPerPage);
+
+const startIndex = (currentPage - 1) * docsPerPage;
+const endIndex = startIndex + docsPerPage;
+const paginatedDocs = filteredDocs.slice(startIndex, endIndex);
+
+const handlePrev = () => {
+  setCurrentPage((prev) => Math.max(prev - 1, 1));
+};
+
+const handleNext = () => {
+  setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+};
+
+
+
   return (
     <div>
       <EmpHeader />
@@ -418,8 +438,8 @@ const handleConfirmClick = async () => {
           </td>
         </tr>
       ) : filteredDocs.length > 0 ? (
-        filteredDocs.map((doc, i) => (
-          <tr key={i}>
+  paginatedDocs.map((doc, i) => (
+    <tr key={i}>
             <td>{doc.documentID}</td>
             <td>{doc.title}</td>
             <td>{doc.type}</td>
@@ -471,7 +491,7 @@ const handleConfirmClick = async () => {
         <p>Loading documents...</p>
       </div>
     ) : filteredDocs.length > 0 ? (
-      filteredDocs.map((doc) => (
+              paginatedDocs.map((doc) => (
         <div key={doc.documentID} className={styles.cardItem}>
           <div className={styles.cardTop}>
             <h3 className={styles.highlighted}>{doc.title}</h3>
@@ -513,7 +533,26 @@ const handleConfirmClick = async () => {
     )}
   </div>
 )}
+{/* Pagination controls */}
+<div className={styles.pagination}>
+  <button onClick={handlePrev} disabled={currentPage === 1}>
+    Previous
+  </button>
+  
+  <span>
+    Page {currentPage} of {totalPages}
+  </span>
+  
+  <button onClick={handleNext} disabled={currentPage === totalPages}>
+    Next
+  </button>
 </div>
+
+
+
+
+        </div>
+
 
         {/* Modal */}
         {selectedDoc && (
@@ -620,29 +659,48 @@ const handleConfirmClick = async () => {
 </div>
 
               <div className={styles.modalFooter}>
-                <button className={styles.download} onClick={handleDownload}>Download</button>
-                <button
-                  className={styles.Approve}
-                  onClick={() => handleApprove(selectedDoc.requestID)}
-                  disabled={isApproving}
-                >
-                  {isApproving ? "Approving..." : "Approve"}
-                </button>
-                <button className={styles.OnHold} onClick={() => setShowOnHoldModal(true)}>On Hold</button>
-                <button
-                className={styles.print}
-                onClick={() => {
-                  if (selectedDoc.latestVersion?.filePath) {
-                    window.open(selectedDoc.latestVersion.filePath, "_blank", "noopener,noreferrer");
-                  } else {
-                    alert("No file available to print.");
-                  }
-                }}
-              >
-                Print
-              </button>
+  {/* Left side buttons */}
+  <div className={styles.footerLeft}>
+    <button className={styles.download} onClick={handleDownload}>
+      Download
+    </button>
+    <button
+      className={styles.print}
+      onClick={() => {
+        if (selectedDoc.latestVersion?.filePath) {
+          window.open(selectedDoc.latestVersion.filePath, "_blank", "noopener,noreferrer");
+        } else {
+          alert("No file available to print.");
+        }
+      }}
+    >
+      Print
+    </button>
+  </div>
 
-              </div>
+  {/* Right side buttons */}
+  <div className={styles.footerRight}>
+    {!["Approved", "Awaiting-Completion", "Completed", "On-Hold"].includes(selectedDoc.status) && (
+      <>
+        <button
+          className={styles.Approve}
+          onClick={() => handleApprove(selectedDoc.requestID)}
+          disabled={isApproving}
+        >
+          {isApproving ? "Approving..." : "Approve"}
+        </button>
+        <button
+          className={styles.OnHold}
+          onClick={() => setShowOnHoldModal(true)}
+        >
+          On Hold
+        </button>
+      </>
+    )}
+  </div>
+</div>
+
+
             </div>
           </div>
         )}

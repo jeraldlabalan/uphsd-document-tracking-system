@@ -196,6 +196,25 @@ const handleBackdropClick = (
   const markRead = (id: number) => updateNotificationStatus(id, "Read");
   const markUnread = (id: number) => updateNotificationStatus(id, "Unread");
 
+  // Pagination state
+const [currentPage, setCurrentPage] = useState(1);
+const itemsPerPage = 5; // number of notifications per page
+
+// Calculate indexes
+const totalPages = Math.ceil(notifications.length / itemsPerPage);
+const startIndex = (currentPage - 1) * itemsPerPage;
+const endIndex = startIndex + itemsPerPage;
+const paginatedNotifications = notifications.slice(startIndex, endIndex);
+
+// Pagination handlers
+const handlePrev = () => {
+  setCurrentPage((prev) => Math.max(prev - 1, 1));
+};
+
+const handleNext = () => {
+  setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+};
+
   return (
     <div>
       <EmpHeader />
@@ -210,7 +229,7 @@ const handleBackdropClick = (
           <div className={styles.main}>
            
 
-            {notifications.map((notification, index) => (
+            {paginatedNotifications.map((notification, index) => (
               <div
                 key={index}
                 className={styles.notification}
@@ -255,7 +274,7 @@ const handleBackdropClick = (
                     </button>
                     {notification.status === "Unread" && (
                       <button
-                        className={styles.markAsRead}
+                        className={styles.markRead}
                         onClick={() =>
                           updateNotificationStatus(notification.id, "Read")
                         }
@@ -278,6 +297,19 @@ const handleBackdropClick = (
               </div>
             ))}
           </div>
+
+          <div className={styles.pagination}>
+  <button onClick={handlePrev} disabled={currentPage === 1}>
+    Previous
+  </button>
+  <span>
+    Page {currentPage} of {totalPages}
+  </span>
+  <button onClick={handleNext} disabled={currentPage === totalPages}>
+    Next
+  </button>
+</div>
+
         </div>
 
         {/* View Modal Styles */}
@@ -339,48 +371,29 @@ const handleBackdropClick = (
 
        {/* Delete Modal - using same style as permanent delete modal */}
 {showDeleteModal && notificationToDelete && (
-  <div
-    className={styles.modalDelete}
-    onClick={(e) =>
+          <div className={styles.deletemodalOverlay} onClick={(e) =>
       handleBackdropClick(e, () => {
         setShowDeleteModal(false);
         setNotificationToDelete(null);
       })
-    }
-  >
-    <div className={styles.modalContentDelete}>
-      <div className={styles.confirmPermanentDeleteContainer}>
-        <h1>Confirm Deletion</h1>
-
-        <p>
-          Are you sure you want to delete{" "}
-          <strong>{notificationToDelete.title}</strong>?
-        </p>
-
-        <div className={styles.confirmPermanentDeleteActionButton}>
-          <button
-            onClick=
-              {handleCancelButtonClick}
-              
-            
-          >
-            Cancel
-          </button>
-          <button
-            onClick={async () => {
+    }>
+            <div className={styles.deletemodalContent} >
+              <h3 className={styles.deletemodalTitle}>Confirm Deletion</h3>
+              <p>Are you sure you want to delete{" "}
+          <strong>{notificationToDelete.title}</strong>?</p>
+              <div className={styles.modalActions}>
+                <button onClick=
+              {handleCancelButtonClick} className={styles.deletecancelButton}>Cancel</button>
+                <button onClick={async () => {
               if (!notificationToDelete) return;
               await handleDeleteNotification(notificationToDelete.id);
               setShowDeleteModal(false);
               setNotificationToDelete(null);
-            }}
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+            }} className={styles.deleteButton}>Continue</button>
+              </div>
+            </div>
+          </div>
+        )}
 
 
       </div>

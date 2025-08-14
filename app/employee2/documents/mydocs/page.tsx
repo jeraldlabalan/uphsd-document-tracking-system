@@ -119,6 +119,27 @@ export default function MyDocuments() {
     }
   };
 
+  
+  // Pagination state
+const [currentPage, setCurrentPage] = useState(1);
+const docsPerPage = 6;
+
+const totalPages = Math.ceil(filteredDocs.length / docsPerPage);
+
+const startIndex = (currentPage - 1) * docsPerPage;
+const endIndex = startIndex + docsPerPage;
+const paginatedDocs = filteredDocs.slice(startIndex, endIndex);
+
+const handlePrev = () => {
+  setCurrentPage((prev) => Math.max(prev - 1, 1));
+};
+
+const handleNext = () => {
+  setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+};
+
+
+
   return (
     <div>
       <EmpHeader />
@@ -281,8 +302,8 @@ export default function MyDocuments() {
                     </td>
                   </tr>
                 ) : filteredDocs.length > 0 ? (
-                  filteredDocs.map((doc, i) => (
-                    <tr key={i}>
+  paginatedDocs.map((doc, i) => (
+    <tr key={i}>
                       <td>{doc.id}</td>
                       <td>{doc.name}</td>
                       <td>{doc.type}</td>
@@ -336,7 +357,7 @@ export default function MyDocuments() {
                   <p>Loading documents...</p>
                 </div>
               ) : filteredDocs.length > 0 ? (
-                filteredDocs.map((doc) => (
+              paginatedDocs.map((doc) => (
                   <div key={doc.id} className={styles.cardItem}>
                     <div className={styles.cardTop}>
                       <h3 className={styles.highlighted}>{doc.name}</h3>
@@ -388,6 +409,24 @@ export default function MyDocuments() {
               )}
             </div>
           )}
+          {/* Pagination controls */}
+<div className={styles.pagination}>
+  <button onClick={handlePrev} disabled={currentPage === 1}>
+    Previous
+  </button>
+  
+  <span>
+    Page {currentPage} of {totalPages}
+  </span>
+  
+  <button onClick={handleNext} disabled={currentPage === totalPages}>
+    Next
+  </button>
+</div>
+
+
+
+
         </div>
 
         {/* Modal */}
@@ -466,39 +505,43 @@ export default function MyDocuments() {
 
 
               <div className={styles.modalFooter}>
-                <div className={styles.leftButtons}>
-                  <button className={styles.download} onClick={handleDownload}>
-                    Download
-                  </button>
-                  <button className={styles.print} onClick={handlePrint}>
-                    Print
-                  </button>
-                </div>
-                <div className={styles.rightButton}>
-                  <Link
-                    href={`/employee2/edit-doc/${selectedDoc.id}`}
-                  >
-                    <button className={styles.edit}>Edit</button>
-                  </Link>
-                  {selectedDoc.status === "Awaiting-Completion" && (
-                    <button
-                      className={styles.markCompleteBtn}
-                      onClick={handleMarkAsComplete}
-                    >
-                      Mark as Completed
-                    </button>
-                  )}
+  <div className={styles.leftButtons}>
+    <button className={styles.download} onClick={handleDownload}>
+      Download
+    </button>
+    <button className={styles.print} onClick={handlePrint}>
+      Print
+    </button>
+  </div>
 
-                  {selectedDoc.status === "On-Hold" && (
-                    <button
-                      className={styles.RemarksBtn}
-                      onClick={() => setIsRemarksModalOpen(true)}
-                    >
-                      Remarks
-                    </button>
-                  )}
-                </div>
-              </div>
+  <div className={styles.rightButton}>
+    {!["Completed", "Awaiting-Completion", "On-Hold"].includes(selectedDoc.status) && (
+  <Link href={`/employee2/edit-doc/${selectedDoc.id}`}>
+    <button className={styles.edit}>Edit</button>
+  </Link>
+)}
+
+
+    {selectedDoc.status === "Awaiting-Completion" && (
+      <button
+        className={styles.markCompleteBtn}
+        onClick={handleMarkAsComplete}
+      >
+        Mark as Completed
+      </button>
+    )}
+
+    {selectedDoc.status === "On-Hold" && (
+      <button
+        className={styles.RemarksBtn}
+        onClick={() => setIsRemarksModalOpen(true)}
+      >
+        Remarks
+      </button>
+    )}
+  </div>
+</div>
+
             </div>
           </div>
         )}

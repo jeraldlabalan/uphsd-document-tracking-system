@@ -129,6 +129,23 @@ const filtered = history.filter((item) => {
     setSelectedDoc(null);
   };
 
+  // Pagination state
+const [currentPage, setCurrentPage] = useState(1);
+const itemsPerPage = 5; // how many rows per page
+
+// Calculate total pages
+const totalPages = Math.ceil(filtered.length / itemsPerPage);
+
+// Get current page's data
+const startIndex = (currentPage - 1) * itemsPerPage;
+const endIndex = startIndex + itemsPerPage;
+const paginatedData = filtered.slice(startIndex, endIndex);
+
+// Handlers
+const handlePrev = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
+const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+
+
   return (
     <div>
       <EmpHeader />
@@ -192,7 +209,7 @@ const filtered = history.filter((item) => {
             </thead>
             <tbody>
   {filtered.length > 0 ? (
-    filtered.map((entry, index) => (
+    paginatedData.map((entry, index) => (
       <tr key={index}>
         <td>{entry.Document?.Title || "Untitled"}</td>
         <td>{entry.ChangedByName || "Unknown"}</td>
@@ -219,7 +236,20 @@ const filtered = history.filter((item) => {
 </tbody>
 
           </table>
-        </div>
+       
+        {totalPages > 1 && (
+  <div className={styles.pagination}>
+    <button onClick={handlePrev} disabled={currentPage === 1}>
+      Previous
+    </button>
+    <span>Page {currentPage} of {totalPages}</span>
+    <button onClick={handleNext} disabled={currentPage === totalPages}>
+      Next
+    </button>
+  </div>
+  
+)}
+ </div>
       </div>
      {showModal && selectedDoc && (
         <div className={styles.modalOverlay}>

@@ -7,6 +7,7 @@ import Link from "next/link";
 import Select, { SingleValue } from "react-select";
 import { useRouter } from "next/navigation"; // ✅ Correct import for App Router
 import { useParams } from "next/navigation";
+import Loading from "@/app/loading";
 
 
 
@@ -680,7 +681,7 @@ export default function EditDocument() {
   console.log("Render check - doc state:", doc);
   if (!doc) {
     console.log("Document not loaded yet, showing loading...");
-    return <p>Loading...</p>;
+    return <Loading/>;
   }
 
   return (

@@ -307,7 +307,89 @@
 }
 
 
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  width: 320px;
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.preview {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  margin: 10px auto;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+}
+
+.placeholder {
+  width: 120px;
+  height: 120px;
+  margin: 10px auto;
+  border-radius: 50%;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.uploadBtn {
+  background: var(--color-maroon);
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.uploadBtn:hover {
+  background: #a52a2a;
+}
+
+.cancelBtn {
+  background: #ccc;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cancelBtn:hover {
+  background: #999;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
 @media (max-width: 768px) {
+
+
+  .contentSection{
+    justify-items: center;
+  }
 
   .contentContainer {
     padding: 40px 5%;
@@ -324,6 +406,10 @@
 
   .leftColumn, .rightColumn {
     padding: 0%;
+  }
+
+  .photoNote {
+    text-align: center;
   }
 
   .buttonGroup {

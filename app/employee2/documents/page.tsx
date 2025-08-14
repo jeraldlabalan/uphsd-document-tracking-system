@@ -169,6 +169,24 @@ useEffect(() => {
     }
   };
 
+    // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const docsPerPage = 6;
+  
+  const totalPages = Math.ceil(filteredDocs.length / docsPerPage);
+  
+  const startIndex = (currentPage - 1) * docsPerPage;
+  const endIndex = startIndex + docsPerPage;
+  const paginatedDocs = filteredDocs.slice(startIndex, endIndex);
+  
+  const handlePrev = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
+  
+  const handleNext = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  };
+
   return (
     <div>
       <EmpHeader />
@@ -285,25 +303,24 @@ useEffect(() => {
             </thead>
             <tbody>
   {filteredDocs.length > 0 ? (
-    filteredDocs.map((doc, i) => (
-      <tr key={i}>
+  paginatedDocs.map((doc, i) => (
+    <tr key={i}>
         <td>{doc.id}</td>
         <td>{doc.name}</td>
         <td>{doc.preview ? doc.preview.split('.').pop()?.toUpperCase() || 'File' : 'No file'}</td>
         <td>
-          <span
-            className={`${styles.badge} ${
-              doc.status === "Completed"
-                ? styles.completed
-                : doc.status === "In Process"
-                ? styles.inProcess
-                : doc.status === "Pending"
-                ? styles.pending
-                : ""
-            }`}
-          >
-            {doc.status}
-          </span>
+          <span className={`${styles.badge} ${
+                  doc.status === "Completed" ? styles.completed : 
+                  doc.status === "In-Process" ? styles.inProcess : 
+                  doc.status === "Awaiting Signatures" ? styles.pending :
+                  doc.status === "Awaiting-Completion" ? styles.awaiting :
+                  doc.status === "On Hold" || selectedDoc.status === "On-Hold"
+                                                      ? styles.onHold :
+
+                  styles.pending
+                }`}>
+                  {doc.status}
+                </span>
         </td>
         <td>{doc.date}</td>
         <td className={styles.actions}>
@@ -328,6 +345,20 @@ useEffect(() => {
 </tbody>
 
           </table>
+                    {/* Pagination controls */}
+<div className={styles.pagination}>
+  <button onClick={handlePrev} disabled={currentPage === 1}>
+    Previous
+  </button>
+  
+  <span>
+    Page {currentPage} of {totalPages}
+  </span>
+  
+  <button onClick={handleNext} disabled={currentPage === totalPages}>
+    Next
+  </button>
+</div>
         </div>
         {selectedDoc && (
           <div className={styles.modalOverlay}>
@@ -342,13 +373,16 @@ useEffect(() => {
 
               <div className={styles.modalTop}>
                 <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
-                <span
-                  className={`${styles.badge} ${
-                    selectedDoc.status === "Completed"
-                      ? styles.completed
-                      : styles.pending
-                  }`}
-                >
+                <span className={`${styles.badge} ${
+                  selectedDoc.status === "Completed" ? styles.completed : 
+                  selectedDoc.status === "In-Process" ? styles.inProcess : 
+                  selectedDoc.status === "Awaiting Signatures" ? styles.pending :
+                  selectedDoc.status === "Awaiting-Completion" ? styles.awaiting :
+                  selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold"
+                                                      ? styles.onHold :
+
+                  styles.pending
+                }`}>
                   {selectedDoc.status}
                 </span>
               </div>

@@ -127,30 +127,97 @@
 }
 
 .pendingSignaturesContainer {
-  background: #f8f9fa;
+  background: #ffffff;
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 1rem;
 }
+
+.scrollWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pendingDocumentsList {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  max-height: 400px;
+  padding: 0.5rem 0;
+}
+
+.pendingDocumentCard {
+  min-width: 250px;
+  flex: 0 0 auto;
+  background: #f4f4f4;
+  border-radius: 6px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  /* Shadow */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Hover effect */
+.pendingDocumentCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.scrollButtonLeft,
+.scrollButtonRight {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--color-maroon);
+  border: none;
+  color: white;
+  cursor: pointer;
+  z-index: 10;
+  padding: 0.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.scrollButtonLeft:hover,
+.scrollButtonRight:hover {
+  background: darkred;
+}
+
+
+.scrollButtonLeft {
+  left: -20px;
+}
+
+.scrollButtonRight {
+  right: -20px;
+}
+
+.pendingDocumentsList::-webkit-scrollbar {
+  display: none;
+}
+
+/* Optional: hide scrollbar for Firefox */
+.pendingDocumentsList {
+  scrollbar-width: none; /* Firefox */
+}
+
+
+
 
 .pendingSignaturesContainer h3 {
   color: var(--color-maroon);
   margin-bottom: 1rem;
   font-size: 1.25rem;
   font-weight: 600;
-}
-
-.pendingDocumentsList {
-  display: grid;
-  gap: 1rem;
-}
-
-.pendingDocumentCard {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 1rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .documentHeader {
@@ -167,9 +234,15 @@
   font-weight: 600;
 }
 
+.highlight {
+  color: var(--color-maroon);
+  font-weight: bold;
+}
+
 .documentType {
-  background: var(--color-maroon);
-  color: white;
+  background: white;
+  color: var(--color-maroon);
+  border: 2px solid var(--color-maroon);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-size: 0.8rem;
@@ -186,12 +259,11 @@
   font-size: 0.9rem;
 }
 
-.documentDetails strong {
-  color: #333;
-}
+
 
 .documentActions {
   display: flex;
+  justify-content: center;
   gap: 0.5rem;
 }
 
@@ -611,6 +683,10 @@
   margin-right: 0;
 }
 
+.pendingDocumentsList {
+    grid-template-columns: 1fr; /* 1 column on mobile */
+  }
+
 }
 
 
@@ -637,7 +713,10 @@
     grid-template-columns: 1fr; 
     grid-template-rows: auto;
   }
-
+.pendingDocumentCard {
+    min-width: 100%; /* take full width */
+    flex: 0 0 auto;
+  }
 
 
   .filters {
