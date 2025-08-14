@@ -1,21 +1,14 @@
-import { verify } from "jsonwebtoken";
-import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
+import { verifyAdminAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { NextResponse } from "next/server";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("session")?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
-
-    const decoded = verify(token, process.env.JWT_SECRET!) as { role: string };
-
-    if (decoded.role !== "Admin") {
-      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    // Use the new auth utility function
+    const authResult = await verifyAdminAuth(request);
+    
+    if (!authResult) {
+      return NextResponse.json({ error: "Not authorized" }, { status: 401 });
     }
 
     // Get current date and calculate date ranges

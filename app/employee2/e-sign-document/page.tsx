@@ -101,7 +101,52 @@ export default function ESignDocument() {
             if (response.ok) {
               const data = await response.json();
               console.log("Placeholders loaded for receiver:", data.placeholders);
-              const existingPlaceholders = data.placeholders.map((p: {
+              const existingPlaceholders = data.placeholders
+                .filter((p: any) => !p.IsSigned && !p.IsDeleted) // Only load unsigned and non-deleted placeholders
+                .map((p: {
+                  PlaceholderID: number;
+                  Page: number;
+                  X: number;
+                  Y: number;
+                  Width: number;
+                  Height: number;
+                  AssignedTo: {
+                    UserID: number;
+                    FirstName: string;
+                    LastName: string;
+                  };
+                  IsSigned: boolean;
+                  SignedAt: string | null;
+                  AssignedToID: number;
+                }) => ({
+                  id: p.PlaceholderID,
+                  placeholderId: p.PlaceholderID,
+                  page: p.Page,
+                  x: p.X,
+                  y: p.Y,
+                  width: p.Width,
+                  height: p.Height,
+                  signee: p.AssignedTo.UserID.toString(),
+                  signeeName: `${p.AssignedTo.FirstName} ${p.AssignedTo.LastName}`,
+                  isSigned: p.IsSigned,
+                  signedAt: p.SignedAt,
+                  assignedToId: p.AssignedToID,
+                }));
+              
+              setPlaceholders(existingPlaceholders);
+            }
+          }
+          return;
+        }
+
+        // Check if user is the document creator
+        if (documentId && documentId !== "unknown") {
+          const response = await fetch(`/api/employee/signature-placeholders?documentId=${documentId}`);
+          if (response.ok) {
+            const data = await response.json();
+            const existingPlaceholders = data.placeholders
+              .filter((p: any) => !p.IsSigned && !p.IsDeleted) // Only load unsigned and non-deleted placeholders
+              .map((p: {
                 PlaceholderID: number;
                 Page: number;
                 X: number;
@@ -130,47 +175,6 @@ export default function ESignDocument() {
                 signedAt: p.SignedAt,
                 assignedToId: p.AssignedToID,
               }));
-              
-              setPlaceholders(existingPlaceholders);
-            }
-          }
-          return;
-        }
-
-        // Check if user is the document creator
-        if (documentId && documentId !== "unknown") {
-          const response = await fetch(`/api/employee/signature-placeholders?documentId=${documentId}`);
-          if (response.ok) {
-            const data = await response.json();
-            const existingPlaceholders = data.placeholders.map((p: {
-              PlaceholderID: number;
-              Page: number;
-              X: number;
-              Y: number;
-              Width: number;
-              Height: number;
-              AssignedTo: {
-                UserID: number;
-                FirstName: string;
-                LastName: string;
-              };
-              IsSigned: boolean;
-              SignedAt: string | null;
-              AssignedToID: number;
-            }) => ({
-              id: p.PlaceholderID,
-              placeholderId: p.PlaceholderID,
-              page: p.Page,
-              x: p.X,
-              y: p.Y,
-              width: p.Width,
-              height: p.Height,
-              signee: p.AssignedTo.UserID.toString(),
-              signeeName: `${p.AssignedTo.FirstName} ${p.AssignedTo.LastName}`,
-              isSigned: p.IsSigned,
-              signedAt: p.SignedAt,
-              assignedToId: p.AssignedToID,
-            }));
             
             setPlaceholders(existingPlaceholders);
             
@@ -345,15 +349,15 @@ export default function ESignDocument() {
     if (!documentId || documentId === "unknown") {
       console.log("No documentId - saving to localStorage for new document");
       try {
-        // Generate PDF with placeholders and save to localStorage
+        // Generate PDF WITHOUT embedding placeholders and save to localStorage
         if (viewerRef.current) {
-          const pdfWithPlaceholders = await viewerRef.current.generatePdfWithPlaceholders();
+          const pdfWithoutPlaceholders = await viewerRef.current.generatePdfWithoutPlaceholders();
           
-          if (pdfWithPlaceholders) {
-            console.log("PDF with placeholders generated successfully");
+          if (pdfWithoutPlaceholders) {
+            console.log("PDF without embedded placeholders generated successfully");
             
             // Convert blob URL to base64 data for localStorage storage
-            const response = await fetch(pdfWithPlaceholders);
+            const response = await fetch(pdfWithoutPlaceholders);
             const blob = await response.blob();
             const reader = new FileReader();
             
@@ -372,7 +376,7 @@ export default function ESignDocument() {
               // Store placeholder information for display
               localStorage.setItem('documentWithPlaceholdersPlaceholders', JSON.stringify(placeholdersToSave));
               
-              alert('Signature placeholders saved successfully! Document with placeholders has been saved. Redirecting back to document page...');
+              alert('Signature placeholders saved successfully! Document saved with placeholders stored in database. Signees will be notified. Redirecting back to document page...');
               
               // Close the current tab and redirect back to the original page
               setTimeout(() => {
@@ -427,13 +431,13 @@ export default function ESignDocument() {
           placeholderId: result.placeholders[index]?.PlaceholderID || p.placeholderId,
         })));
 
-        // Now generate PDF with placeholders and save it
+        // Now generate PDF WITHOUT embedding placeholders and save it
         if (viewerRef.current) {
-          const pdfWithPlaceholders = await viewerRef.current.generatePdfWithPlaceholders();
+          const pdfWithoutPlaceholders = await viewerRef.current.generatePdfWithoutPlaceholders();
           
-          if (pdfWithPlaceholders) {
+          if (pdfWithoutPlaceholders) {
             // Convert blob URL to File object for upload
-            const response2 = await fetch(pdfWithPlaceholders);
+            const response2 = await fetch(pdfWithoutPlaceholders);
             const blob = await response2.blob();
             const file = new File([blob], `with-placeholders-${documentTitle || 'document'}.pdf`, { type: 'application/pdf' });
             
@@ -663,14 +667,17 @@ export default function ESignDocument() {
                  setHasSigned(true);
                  console.log("PDF URL updated and hasSigned set to true");
                  
-                 // Update placeholders to mark them as signed
-                 setPlaceholders(prev => prev.map(p => ({
-                   ...p,
-                   isSigned: true,
-                   signedAt: new Date().toLocaleString()
-                 })));
+                 // Remove all placeholders from UI state immediately
+                 console.log("Removing all placeholders from UI state");
+                 setPlaceholders([]);
                  
-                 console.log("Placeholders updated to signed state");
+                 console.log("Placeholders removed from UI state");
+                 
+                 // Additional debugging
+                 console.log("State after signature application:");
+                 console.log("- hasSigned:", true);
+                 console.log("- placeholders count:", 0);
+                 console.log("- pdfUrl updated to:", signedUrl);
                }}
               viewMode={viewMode}
               setViewMode={setViewMode}

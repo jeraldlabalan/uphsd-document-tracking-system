@@ -237,7 +237,7 @@ const SignatureModal = ({
             const signedUrl = await applySignature(signatureImage);
             if (signedUrl) {
               onApplyComplete(signedUrl); // updates PDF url in page.tsx
-              // Modal will be closed by the PDFViewer after applying signature
+              setModalOpen(false); // Explicitly close the modal after successful signature
             }
           } catch (error) {
             console.error("Error applying signature:", error);

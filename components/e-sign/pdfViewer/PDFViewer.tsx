@@ -37,8 +37,22 @@ function PDFViewer(
 
   useImperativeHandle(ref, () => ({
     applySignature,
+    generatePdfWithoutPlaceholders,
+    generateCleanPdf,
+    addPlaceholder: (placeholder: Placeholder) => {
+      setPlaceholders((prev) => [...prev, placeholder]);
+    },
+    removePlaceholder: (id: number) => {
+      setPlaceholders((prev) => prev.filter((p) => p.id !== id));
+    },
+    updatePlaceholder: (id: number, updates: Partial<Placeholder>) => {
+      setPlaceholders((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
+      );
+    },
+    getPlaceholders: () => placeholders,
+    setPlaceholders,
     resetSignaturePreview,
-    generatePdfWithPlaceholders,
   }));
 
   const resetSignaturePreview = () => {
@@ -351,11 +365,12 @@ function PDFViewer(
       });
       const timestamp = now.toLocaleString();
 
-      // For receivers, sign ALL their unsigned placeholders
-      const receiverPlaceholders = placeholders.filter(p => !p.isSigned);
+      // For receivers, sign ALL their available placeholders (they're already filtered to be unsigned)
+      const receiverPlaceholders = placeholders; // All placeholders are already unsigned
+      console.log("Available placeholders for signing:", receiverPlaceholders);
       if (receiverPlaceholders.length === 0) {
         alert("No placeholders found to sign.");
-        return;
+        return undefined;
       }
 
       console.log(`Applying signature to ${receiverPlaceholders.length} placeholders`);
@@ -442,12 +457,56 @@ function PDFViewer(
         });
       });
 
-      // Update ALL placeholders as signed
-      setPlaceholders(prev => prev.map(p => 
-        !p.isSigned 
-          ? { ...p, isSigned: true, signedAt: timestamp }
-          : p
-      ));
+      // Don't update placeholders as signed - they're filtered out when loading
+      // setPlaceholders(prev => prev.map(p => 
+      //   !p.isSigned 
+      //     ? { ...p, isSigned: true, signedAt: timestamp }
+      //     : p
+      // ));
+
+      // Update placeholders in the database
+      try {
+        console.log("Updating placeholders in database:", receiverPlaceholders);
+        await Promise.all(
+          receiverPlaceholders.map(async (placeholder) => {
+            if (placeholder.placeholderId) {
+              console.log(`Updating placeholder ${placeholder.placeholderId} with isDeleted: true`);
+              const response = await fetch('/api/employee/signature-placeholders', {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  placeholderId: placeholder.placeholderId,
+                  signatureData: signatureImage, // Store the signature image data
+                  isSigned: true, // Mark as signed in database
+                  signedAt: timestamp, // Add timestamp
+                  isDeleted: true, // Mark as deleted so it won't show up anymore
+                }),
+              });
+              
+              if (!response.ok) {
+                console.error(`Failed to update placeholder ${placeholder.placeholderId} in database`);
+                const errorText = await response.text();
+                console.error("Error response:", errorText);
+              } else {
+                console.log(`Successfully updated placeholder ${placeholder.placeholderId} in database`);
+              }
+            }
+          })
+        );
+        
+        // Remove signed placeholders from UI state immediately
+        console.log("Removing placeholders from UI state:", receiverPlaceholders.map(p => p.id));
+        setPlaceholders(prev => {
+          const filtered = prev.filter(p => !receiverPlaceholders.some(rp => rp.id === p.id));
+          console.log("Placeholders after filtering:", filtered);
+          return filtered;
+        });
+      } catch (error) {
+        console.error('Error updating placeholders in database:', error);
+        // Continue with the signature process even if database update fails
+      }
 
       // Update placeholders in the database
       try {
@@ -485,11 +544,12 @@ function PDFViewer(
     } catch (err) {
       console.error("Error applying signature:", err);
       alert("Failed to apply signature. See console for details.");
+      return undefined; // Return undefined on error so modal can handle it
     }
   };
 
-  // Function to generate PDF with placeholders visible (for sender to save)
-  const generatePdfWithPlaceholders = async (): Promise<string | null> => {
+  // Function to generate PDF WITHOUT embedding placeholders (placeholders exist in database only)
+  const generatePdfWithoutPlaceholders = async (): Promise<string | null> => {
     try {
       if (!pdfUrl || !originalPdfUrl) {
         console.error("No PDF URL provided");
@@ -504,73 +564,38 @@ function PDFViewer(
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
       const pages = pdfDoc.getPages();
 
-      // Add all placeholders to the PDF
-      placeholders.forEach((ph) => {
-        const page = pages[ph.page];
-        if (!page) return; // Skip if page doesn't exist
-
-        // Convert from scaled screen space to actual PDF space
-        const pdfX = ph.x / scale;
-        // Adjust Y coordinate to account for PDF coordinate system offset
-        const pdfY = page.getSize().height - (ph.y + ph.height) / scale + 8;
-        const pdfWidth = ph.width / scale;
-        const pdfHeight = ph.height / scale;
-
-        // Draw placeholder rectangle with better visibility
-        page.drawRectangle({
-          x: pdfX,
-          y: pdfY,
-          width: pdfWidth,
-          height: pdfHeight,
-          borderColor: rgb(0, 0, 0),
-          borderWidth: 2,
-          borderDashArray: [5, 5],
-          color: rgb(0.95, 0.95, 1), // Light blue background
-        });
-
-        // Add placeholder text with better positioning
-        const signeeName = ph.signeeName || 'Unknown Signee';
-        const placeholderText = `Signature for: ${signeeName}`;
-        const textSize = Math.min(10, pdfHeight / 3); // Adaptive text size
-        const textWidth = font.widthOfTextAtSize(placeholderText, textSize);
-        
-        // Center text horizontally and vertically
-        const textX = pdfX + (pdfWidth - textWidth) / 2;
-        const textY = pdfY + pdfHeight / 2 + textSize / 3;
-
-        page.drawText(placeholderText, {
-          x: textX,
-          y: textY,
-          size: textSize,
-          font,
-          color: rgb(0, 0, 0),
-        });
-
-        // Add "Click to sign" instruction below
-        const instructionText = "Click to sign";
-        const instructionSize = Math.min(8, textSize * 0.8);
-        const instructionWidth = font.widthOfTextAtSize(instructionText, instructionSize);
-        const instructionX = pdfX + (pdfWidth - instructionWidth) / 2;
-        const instructionY = pdfY + pdfHeight / 2 - instructionSize;
-
-        page.drawText(instructionText, {
-          x: instructionX,
-          y: instructionY,
-          size: instructionSize,
-          font,
-          color: rgb(0.5, 0.5, 0.5),
-        });
-      });
-
+      // DON'T embed placeholders in the PDF - they're already saved in the database
+      // This prevents duplicate placeholders from appearing
+      console.log("NOT embedding placeholders in PDF - they exist in database only");
+      
+      // Just return the original PDF without any placeholder modifications
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([new Uint8Array(pdfBytes)], {
         type: "application/pdf",
       });
       const url = URL.createObjectURL(blob);
       return url;
-    } catch (err) {
-      console.error("Error generating PDF with placeholders:", err);
-      alert("Failed to generate PDF with placeholders. See console for details.");
+    } catch (error) {
+      console.error("Error generating PDF with placeholders:", error);
+      return null;
+    }
+  };
+
+  // Function to generate a clean PDF without any placeholders (for signed documents)
+  const generateCleanPdf = async (): Promise<string | null> => {
+    try {
+      if (!pdfUrl || !originalPdfUrl) {
+        console.error("No PDF URL provided");
+        return null;
+      }
+
+      console.log("Generating clean PDF without placeholders");
+      
+      // Just return the original PDF without any modifications
+      // This ensures no placeholders are embedded
+      return originalPdfUrl;
+    } catch (error) {
+      console.error("Error generating clean PDF:", error);
       return null;
     }
   };

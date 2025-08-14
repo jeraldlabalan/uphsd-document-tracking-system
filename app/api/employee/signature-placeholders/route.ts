@@ -172,12 +172,21 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update the placeholder with signature data
+    console.log("Updating placeholder with data:", {
+      placeholderId,
+      isSigned: true,
+      signedAt: new Date(),
+      signatureData: signatureData,
+      isDeleted: body.isDeleted || false,
+    });
+    
     const updatedPlaceholder = await db.signaturePlaceholder.update({
       where: { PlaceholderID: parseInt(placeholderId) },
       data: {
         IsSigned: true,
         SignedAt: new Date(),
         SignatureData: signatureData,
+        IsDeleted: body.isDeleted || false, // Handle isDeleted field
       },
       include: {
         AssignedTo: {
@@ -190,6 +199,8 @@ export async function PUT(request: NextRequest) {
         },
       },
     });
+    
+    console.log("Placeholder updated successfully:", updatedPlaceholder);
 
     return NextResponse.json({
       message: "Signature applied successfully",
