@@ -189,10 +189,20 @@ export default function EditDocument() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const selectOptions = approvers.map((user) => ({
-    value: user.UserID,
-    label: `${user.FirstName} ${user.LastName}`,
-  }));
+  // Get available approvers for a specific dropdown index (excluding already selected ones)
+  const getAvailableApprovers = (currentIndex: number) => {
+    return approvers
+      .filter((user) => {
+        // Include the user if they're not selected anywhere, or if they're selected at the current index
+        const userSelectedAtIndex = approverIDs[currentIndex] === user.UserID;
+        const userSelectedElsewhere = approverIDs.some((id, index) => id === user.UserID && index !== currentIndex);
+        return !userSelectedElsewhere || userSelectedAtIndex;
+      })
+      .map((user) => ({
+        value: user.UserID,
+        label: `${user.FirstName} ${user.LastName}`,
+      }));
+  };
 
   useEffect(() => {
     async function fetchDepartments() {
@@ -495,12 +505,7 @@ export default function EditDocument() {
 };
 
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newFile = e.target.files ? e.target.files[0] : null;
-    if (newFile) {
-      setFiles((prev) => [...prev, { file: newFile, requireEsign: false }]);
-    }
-  };
+
 
   // Handle opening e-sign interface for a specific file
   const handleOpenESign = async (file: File, index: number) => {
@@ -591,17 +596,7 @@ export default function EditDocument() {
     }
   };
 
-  const handleToggleEsign = (index: number) => {
-    const updatedFiles = [...files];
-    updatedFiles[index].requireEsign = !updatedFiles[index].requireEsign;
-    setFiles(updatedFiles);
-  };
 
-  const handleRemoveFile = (index: number) => {
-    const updatedFiles = [...files];
-    updatedFiles.splice(index, 1);
-    setFiles(updatedFiles);
-  };
 
   const addApprover = () => {
     setApproverIDs([...approverIDs, 0]); // 0 means no selection yet
@@ -611,6 +606,25 @@ export default function EditDocument() {
     const updated = [...approverIDs];
     updated.splice(index, 1);
     setApproverIDs(updated);
+  };
+
+  // File handling functions
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newFile = e.target.files ? e.target.files[0] : null;
+    if (newFile) {
+      // Only allow one file - replace any existing file
+      setFiles([{ file: newFile, requireEsign: false }]);
+    }
+  };
+
+  const handleToggleEsign = (index: number) => {
+    const updatedFiles = [...files];
+    updatedFiles[index].requireEsign = !updatedFiles[index].requireEsign;
+    setFiles(updatedFiles);
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setFiles([]); // Remove all files since we only allow one
   };
 
   const handleClear = () => {
@@ -765,14 +779,19 @@ export default function EditDocument() {
                   Select the people who need to review and approve this document
                   in order, or leave empty for department-wide notification.
                 </p>
+                <div className={styles.approverStats}>
+                  <span>
+                    {approverIDs.filter(id => id !== 0).length} of {approvers.length} approvers selected
+                  </span>
+                </div>
               </div>
 
               {approverIDs.map((id, index) => (
                 <div className={styles.approverRow} key={index}>
                   <span className={styles.approverNumber}>{index + 1}</span>
                   <Select
-                    options={selectOptions}
-                    value={selectOptions.find((option) => option.value === id)}
+                    options={getAvailableApprovers(index)}
+                    value={getAvailableApprovers(index).find((option) => option.value === id)}
                     onChange={(selected) =>
                       handleApproverChange(selected, index)
                     }
@@ -795,15 +814,22 @@ export default function EditDocument() {
                 type="button"
                 className={styles.addBtn}
                 onClick={addApprover}
+                disabled={approvers.length === approverIDs.filter(id => id !== 0).length}
+                title={approvers.length === approverIDs.filter(id => id !== 0).length ? "All available approvers have been selected" : "Add another approver"}
               >
                 + Add New Approver
+                {approvers.length === approverIDs.filter(id => id !== 0).length && (
+                  <span style={{ fontSize: '0.8rem', marginLeft: '0.5rem', opacity: 0.7 }}>
+                    (All selected)
+                  </span>
+                )}
               </button>
             </div>
 
             <div className={styles.sectionHeader}>
               <div className={styles.sectionTitle}>Document Files</div>
               <div className={styles.sectionDescription}>
-                Upload PDF files for digital documents, or leave empty for hardcopy documents.
+                Upload a PDF file for digital documents, or leave empty for hardcopy documents.
                 Document requests will be created for all department members so they can track status,
                 take actions, and add remarks about any issues.
               </div>
@@ -979,7 +1005,7 @@ export default function EditDocument() {
             ))}
 
             <div className={styles.inputGroup}>
-              <label>Upload New Version</label>
+              <label>Upload New File Version</label>
 
               <label className={styles.uploadBox}>
                 <input
@@ -989,7 +1015,7 @@ export default function EditDocument() {
                 />
                 <div className={styles.uploadContent}>
                   <FileUp size={32} />
-                  <span>Click or drag to upload new version</span>
+                  <span>Click or drag to upload a new version</span>
                 </div>
               </label>
 
@@ -1006,7 +1032,7 @@ export default function EditDocument() {
                   }}
                   className={styles.addFileBtn}
                 >
-                  <Plus size={20} /> Add another file
+                  <Plus size={20} /> Replace file
                 </button>
               )}
             </div>

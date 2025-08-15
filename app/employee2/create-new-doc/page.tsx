@@ -97,10 +97,20 @@ export default function CreateNewDocument() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const selectOptions = approvers.map((user) => ({
-    value: user.UserID,
-    label: `${user.FirstName} ${user.LastName}`,
-  }));
+  // Get available approvers for a specific dropdown index (excluding already selected ones)
+  const getAvailableApprovers = (currentIndex: number) => {
+    return approvers
+      .filter((user) => {
+        // Include the user if they're not selected anywhere, or if they're selected at the current index
+        const userSelectedAtIndex = approverIDs[currentIndex] === user.UserID;
+        const userSelectedElsewhere = approverIDs.some((id, index) => id === user.UserID && index !== currentIndex);
+        return !userSelectedElsewhere || userSelectedAtIndex;
+      })
+      .map((user) => ({
+        value: user.UserID,
+        label: `${user.FirstName} ${user.LastName}`,
+      }));
+  };
 
    useEffect(() => {
             AOS.init({
@@ -418,7 +428,8 @@ export default function CreateNewDocument() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newFile = e.target.files ? e.target.files[0] : null;
     if (newFile) {
-      setFiles((prev) => [...prev, { file: newFile, requireEsign: false }]);
+      // Only allow one file - replace any existing file
+      setFiles([{ file: newFile, requireEsign: false }]);
     }
   };
 
@@ -658,14 +669,19 @@ export default function CreateNewDocument() {
                   Select the people who need to review and approve this document
                   in order, or leave empty for department-wide notification.
                 </p>
+                <div className={styles.approverStats}>
+                  <span>
+                    {approverIDs.filter(id => id !== 0).length} of {approvers.length} approvers selected
+                  </span>
+                </div>
               </div>
 
               {approverIDs.map((id, index) => (
                 <div className={styles.approverRow} key={index}>
                   <span className={styles.approverNumber}>{index + 1}</span>
                   <Select
-                    options={selectOptions}
-                    value={selectOptions.find((option) => option.value === id)}
+                    options={getAvailableApprovers(index)}
+                    value={getAvailableApprovers(index).find((option) => option.value === id)}
                     onChange={(selected) =>
                       handleApproverChange(selected, index)
                     }
@@ -688,15 +704,22 @@ export default function CreateNewDocument() {
                 type="button"
                 className={styles.addBtn}
                 onClick={addApprover}
+                disabled={approvers.length === approverIDs.filter(id => id !== 0).length}
+                title={approvers.length === approverIDs.filter(id => id !== 0).length ? "All available approvers have been selected" : "Add another approver"}
               >
                 + Add New Approver
+                {approvers.length === approverIDs.filter(id => id !== 0).length && (
+                  <span style={{ fontSize: '0.8rem', marginLeft: '0.5rem', opacity: 0.7 }}>
+                    (All selected)
+                  </span>
+                )}
               </button>
             </div>
 
             <div className={styles.sectionHeader}>
   <div className={styles.sectionTitle}>Document Files</div>
   <div className={styles.sectionDescription}>
-    Upload PDF files for digital documents, or leave empty for hardcopy documents.
+    Upload a PDF file for digital documents, or leave empty for hardcopy documents.
     Document requests will be created for all department members so they can track status,
     take actions, and add remarks about any issues.
   </div>
@@ -704,23 +727,36 @@ export default function CreateNewDocument() {
 
 <div className={styles.inputGroup}>
   <label htmlFor="file" className={styles.label}>
-    Document Files (Optional)
+    Document File (Optional)
   </label>
 
-  {/* Only show upload container if no files */}
-  {files.length === 0 && (
+  {/* Show upload container if no files, or show replace option if file exists */}
+  {files.length === 0 ? (
     <div className={styles.fileUpload}>
       <input
         type="file"
         id="file"
         accept=".pdf"
         onChange={handleFileChange}
-        multiple
         className={styles.fileInput}
       />
       <label htmlFor="file" className={styles.fileLabel}>
         <FileUp size={20} />
-        <span>Choose files or drag and drop</span>
+        <span>Choose a PDF file or drag and drop</span>
+      </label>
+    </div>
+  ) : (
+    <div className={styles.fileUpload}>
+      <input
+        type="file"
+        id="replaceFile"
+        accept=".pdf"
+        onChange={handleFileChange}
+        className={styles.fileInput}
+      />
+      <label htmlFor="replaceFile" className={styles.fileLabel}>
+        <FileUp size={20} />
+        <span>Replace current file</span>
       </label>
     </div>
   )}
@@ -776,7 +812,7 @@ export default function CreateNewDocument() {
   {/* Message if no files */}
   {files.length === 0 && (
     <div className={styles.noFilesMessage}>
-      <p>No files uploaded. This will be treated as a hardcopy document requiring wet signatures.</p>
+      <p>No file uploaded. This will be treated as a hardcopy document requiring wet signatures.</p>
     </div>
   )}
 </div>

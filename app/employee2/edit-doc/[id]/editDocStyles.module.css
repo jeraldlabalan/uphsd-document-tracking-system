@@ -390,6 +390,15 @@
   padding-bottom: 1rem;
 }
 
+.approverStats {
+  font-size: 0.9rem;
+  color: #666;
+  background-color: #f8f9fa;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+
 .toggleContainer {
   display: flex;
   align-items: center;
@@ -1263,6 +1272,98 @@
   border-radius: 8px;
   cursor: pointer;
   width: 50%;
+}
+
+/* Approver-related styles */
+.approvalContainer {
+  border: 1px solid #ccc;
+  padding: 1rem;
+  border-radius: 10px;
+  padding-top: 1.5rem;
+  background-color: #fff;
+  margin-bottom: 1.5rem;
+}
+
+.approvalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1rem;
+}
+
+.approvalHeader p {
+  color: #666;
+  margin: 0;
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
+.approverRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.approverNumber {
+  background-color: var(--color-maroon);
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.addBtn {
+  background-color: var(--color-yellow);
+  color: #333;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.addBtn:hover {
+  background-color: #e6c200;
+}
+
+.addBtn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.addBtn:disabled:hover {
+  background-color: #6c757d;
+}
+
+.removeBtn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+  flex-shrink: 0;
+}
+
+.removeBtn:hover {
+  background-color: #c82333;
 }
 
 
