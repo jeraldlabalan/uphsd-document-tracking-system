@@ -150,7 +150,7 @@ if (loading) {
 
               <FileCheck className={styles.icon} />
               <span className={styles.count}>{summary?.inProcessDocuments ?? 0}</span>
-              <span>In-Process</span>
+              <span>All Documents</span>
 
             </div>
 
@@ -163,7 +163,7 @@ if (loading) {
             <div className={`${styles.card} ${styles.cyan}`}>
               <FileText className={styles.icon} />
               <span className={styles.count}>{summary?.totalDocuments ?? 0}</span>
-              <span>Total</span>
+              <span>Active Documents</span>
             </div>
           </div>
 

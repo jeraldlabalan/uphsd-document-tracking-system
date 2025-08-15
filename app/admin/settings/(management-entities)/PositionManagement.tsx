@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import styles from "./ManagementStyles.module.css";
-import Modal from "../(modal)/Modal";
 
 interface InputRow {
   id: string | number;
@@ -15,11 +14,19 @@ interface ActiveItem {
   checked: boolean;
 }
 
-const PositionManagement: React.FC = () => {
+interface PositionManagementProps {
+  showModal: (data: {
+    description: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+    isLoading: boolean;
+  }) => void;
+}
+
+const PositionManagement: React.FC<PositionManagementProps> = ({ showModal }) => {
   const [rows, setRows] = useState<InputRow[]>([{ id: Date.now(), value: "" }]);
   const [activeItems, setActiveItems] = useState<ActiveItem[]>([]);
 
-  const [showModal, setShowModal] = useState(false);
   const [rowToDelete, setRowToDelete] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -84,7 +91,12 @@ const PositionManagement: React.FC = () => {
     }
 
     setConfirmAdd(true);
-    setShowModal(true);
+    showModal({
+      description: "Are you sure you want to add these positions?",
+      onConfirm: handleConfirm,
+      onCancel: handleCancel,
+      isLoading: isLoading,
+    });
   };
 
   const handleConfirm = async () => {
@@ -98,7 +110,12 @@ const PositionManagement: React.FC = () => {
   const savePositions = async () => {
     const validRows = rows.filter((r) => r.value.trim() !== "");
     if (validRows.length === 0) {
-      setShowModal(false);
+      showModal({
+        description: "Position successfully deleted.",
+        onConfirm: handleCancel,
+        onCancel: handleCancel,
+        isLoading: false,
+      });
       setConfirmAdd(false);
       return;
     }
@@ -128,7 +145,12 @@ const PositionManagement: React.FC = () => {
       toast.error("Error saving positions.");
     } finally {
       setIsLoading(false);
-      setShowModal(false);
+      showModal({
+        description: "Position successfully deleted.",
+        onConfirm: handleCancel,
+        onCancel: handleCancel,
+        isLoading: false,
+      });
       setConfirmAdd(false);
     }
   };
@@ -137,7 +159,12 @@ const PositionManagement: React.FC = () => {
     setSuccess(false);
     setRowToDelete(id);
     setConfirmAdd(false);
-    setShowModal(true);
+    showModal({
+      description: "Are you sure you want to delete this position?",
+      onConfirm: handleConfirmDeletion,
+      onCancel: handleCancel,
+      isLoading: isLoading,
+    });
   };
 
   const handleConfirmDeletion = async () => {
@@ -163,14 +190,22 @@ const PositionManagement: React.FC = () => {
     } finally {
       setIsLoading(false);
       setRowToDelete(null);
-      setShowModal(false);
+      showModal({
+        description: "Position successfully deleted.",
+        onConfirm: handleCancel,
+        onCancel: handleCancel,
+        isLoading: false,
+      });
     }
   };
 
   const handleCancel = () => {
-    setShowModal(false);
-    setRowToDelete(null);
-    setConfirmAdd(false);
+    showModal({
+      description: "Position successfully deleted.",
+      onConfirm: handleCancel,
+      onCancel: handleCancel,
+      isLoading: false,
+    });
   };
 
   return (
@@ -277,20 +312,7 @@ const PositionManagement: React.FC = () => {
         </button>
       </div>
 
-      <Modal
-        showModal={showModal}
-        setShowModal={setShowModal}
-        description={
-          confirmAdd
-            ? "Are you sure you want to add these positions?"
-            : success
-              ? "Position successfully deleted."
-              : "Are you sure you want to delete this position?"
-        }
-        onConfirm={handleConfirm}
-        onCancel={handleCancel}
-        isLoading={isLoading}
-      />
+              {/* Modal is now handled by the parent page */}
     </div>
   );
 };
