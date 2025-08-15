@@ -15,7 +15,19 @@ const transporter = nodemailer.createTransport({
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body: {
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+      password?: string;
+      mobileNumber?: string | null;
+      sex?: string | null;
+      roleID?: number;
+      departmentID?: number | null;
+      positionID?: number | null;
+      employeeID?: string | null;
+      profilePicture?: string | null;
+    } = await req.json();
     console.log("📦 Received payload:", body);
 
     const {
@@ -58,7 +70,7 @@ export async function POST(req: NextRequest) {
     console.log("🔐 Password hashed.");
 
     // Helper to clean optional fields
-    const cleanField = (field: any) =>
+    const cleanField = (field: string | null | undefined): string | null =>
       field === undefined || field === "" ? null : field;
 
     // Create user with null for optional fields
@@ -121,9 +133,9 @@ Document Tracking System - UPHSD Las Piñas
       { message: "User created and email sent", user: newUser },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("❌ Server error:", error);
-    if (error.stack) console.error(error.stack);
+    if (error instanceof Error && error.stack) console.error(error.stack);
 
     console.log("🔎 Environment variables:");
     console.log("EMAIL_USER:", process.env.EMAIL_USER ?? "❌ Not set");
@@ -136,10 +148,15 @@ Document Tracking System - UPHSD Las Piñas
       process.env.DATABASE_URL ? "✔️ Exists" : "❌ Missing"
     );
 
+    interface PrismaUniqueError {
+      code?: string;
+      meta?: { target?: unknown };
+    }
+    const e = error as PrismaUniqueError;
     if (
-      error.code === "P2002" &&
-      Array.isArray(error.meta?.target) &&
-      error.meta.target.includes("Email")
+      e.code === "P2002" &&
+      Array.isArray(e.meta?.target) &&
+      (e.meta!.target as unknown[]).includes("Email")
     ) {
       return NextResponse.json(
         { message: "Email already exists. Please use a different email." },
@@ -148,7 +165,10 @@ Document Tracking System - UPHSD Las Piñas
     }
 
     return NextResponse.json(
-      { message: "Server error", error: error.message },
+      {
+        message: "Server error",
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }

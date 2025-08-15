@@ -14,6 +14,11 @@ interface ActiveItem {
   checked: boolean;
 }
 
+interface DocumentTypeDTO {
+  TypeID: number;
+  TypeName: string;
+}
+
 interface DocumentTypeManagementProps {
   showModal: (data: {
     description: string;
@@ -23,7 +28,9 @@ interface DocumentTypeManagementProps {
   }) => void;
 }
 
-const DocumentTypeManagement: React.FC<DocumentTypeManagementProps> = ({ showModal }) => {
+const DocumentTypeManagement: React.FC<DocumentTypeManagementProps> = ({
+  showModal,
+}) => {
   const [rows, setRows] = useState<InputRow[]>([{ id: Date.now(), value: "" }]);
   const [activeItems, setActiveItems] = useState<ActiveItem[]>([]);
 
@@ -41,9 +48,9 @@ const DocumentTypeManagement: React.FC<DocumentTypeManagementProps> = ({ showMod
     try {
       const res = await fetch("/api/admin/settings/document-management");
       if (!res.ok) throw new Error("Failed to fetch document types");
-      const data = await res.json();
+      const data: DocumentTypeDTO[] = await res.json();
       setActiveItems(
-        data.map((dt: any) => ({
+        data.map((dt: DocumentTypeDTO) => ({
           id: dt.TypeID,
           name: dt.TypeName,
           checked: true,
@@ -80,11 +87,14 @@ const DocumentTypeManagement: React.FC<DocumentTypeManagementProps> = ({ showMod
     const validRows = rows.filter((r) => r.value.trim() !== "");
 
     if (rows.some((r) => r.value.trim() === "")) {
-      toast.error("Please fill out all document type fields before saving.");
+      toast.error("Please complete all Document Type fields before saving.");
       return;
     }
 
-    if (validRows.length === 0) return;
+    if (validRows.length === 0) {
+      toast.error("Please complete all Document Type fields before saving.");
+      return;
+    }
 
     if (hasDuplicates()) {
       toast.error(
@@ -98,7 +108,7 @@ const DocumentTypeManagement: React.FC<DocumentTypeManagementProps> = ({ showMod
       description: "Are you sure you want to add these document types?",
       onConfirm: handleConfirm,
       onCancel: handleCancel,
-      isLoading: isLoading,
+      isLoading: false,
     });
   };
 
@@ -113,12 +123,7 @@ const DocumentTypeManagement: React.FC<DocumentTypeManagementProps> = ({ showMod
   const saveDocumentTypes = async () => {
     const validRows = rows.filter((r) => r.value.trim() !== "");
     if (validRows.length === 0) {
-      showModal({
-        description: "Document type successfully deleted.",
-        onConfirm: handleCancel,
-        onCancel: handleCancel,
-        isLoading: false,
-      });
+      toast.success("No changes to save.");
       setConfirmAdd(false);
       return;
     }
@@ -147,13 +152,12 @@ const DocumentTypeManagement: React.FC<DocumentTypeManagementProps> = ({ showMod
       toast.error("Error saving document types.");
     } finally {
       setIsLoading(false);
-      showModal({
-        description: "Document type successfully deleted.",
-        onConfirm: handleCancel,
-        onCancel: handleCancel,
-        isLoading: false,
-      });
       setConfirmAdd(false);
+      // Close modal after action completes
+      if (typeof window !== "undefined") {
+        const event = new CustomEvent("closeModal");
+        window.dispatchEvent(event);
+      }
     }
   };
 
@@ -165,7 +169,7 @@ const DocumentTypeManagement: React.FC<DocumentTypeManagementProps> = ({ showMod
       description: "Are you sure you want to delete this document type?",
       onConfirm: handleConfirmDeletion,
       onCancel: handleCancel,
-      isLoading: isLoading,
+      isLoading: false,
     });
   };
 
@@ -192,23 +196,15 @@ const DocumentTypeManagement: React.FC<DocumentTypeManagementProps> = ({ showMod
     } finally {
       setIsLoading(false);
       setRowToDelete(null);
-      showModal({
-        description: "Document type successfully deleted.",
-        onConfirm: handleCancel,
-        onCancel: handleCancel,
-        isLoading: false,
-      });
+      // Close modal after action completes
+      if (typeof window !== "undefined") {
+        const event = new CustomEvent("closeModal");
+        window.dispatchEvent(event);
+      }
     }
   };
 
-  const handleCancel = () => {
-    showModal({
-      description: "Document type successfully deleted.",
-      onConfirm: handleCancel,
-      onCancel: handleCancel,
-      isLoading: false,
-    });
-  };
+  const handleCancel = () => {};
 
   return (
     <div className={styles.managementContainer}>
@@ -314,7 +310,7 @@ const DocumentTypeManagement: React.FC<DocumentTypeManagementProps> = ({ showMod
         </button>
       </div>
 
-              {/* Modal is now handled by the parent page */}
+      {/* Modal is now handled by the parent page */}
     </div>
   );
 };

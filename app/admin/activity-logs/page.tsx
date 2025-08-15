@@ -10,12 +10,11 @@ import { X } from "lucide-react";
 import Link from "next/link";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { CheckCircle, Clock, PauseCircle } from "lucide-react";
+import { Activity, FileText, Users } from "lucide-react";
 import { fetchFilterData, FilterData } from "@/lib/filterData";
 import Loading from "@/app/loading";
 
 // const cookieStore = await cookies();
-
 
 type Log = {
   LogID: number; // Adjust to match your DB column
@@ -43,15 +42,15 @@ export default function ActivityLogs() {
   const [search, setSearch] = useState("");
   const [targetFilter, setTargetFilter] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
-  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [selectedDoc, setSelectedDoc] = useState<Log | null>(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [dateError, setDateError] = useState("");
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState<Log["User"] | null>(null);
   const [filterData, setFilterData] = useState<FilterData>({
     documentTypes: [],
     departments: [],
-    statuses: []
+    statuses: [],
   });
   const [showConfirmRestore, setShowConfirmRestore] = useState(false);
   const [showRestoreLoading, setShowRestoreLoading] = useState(false);
@@ -73,21 +72,21 @@ export default function ActivityLogs() {
   // Common target types for activity logs
   const targetTypes = [
     "Document",
-    "DocumentVersion", 
+    "DocumentVersion",
     "DocumentRequest",
     "SignaturePlaceholder",
     "User",
     "Department",
     "Role",
-    "Notification"
+    "Notification",
   ];
 
   // Fetch summary statistics
   const fetchSummaryStats = async () => {
     try {
-      const summaryRes = await fetch('/api/admin/activity-logs?summary=true', {
-        method: 'GET',
-        credentials: 'include',
+      const summaryRes = await fetch("/api/admin/activity-logs?summary=true", {
+        method: "GET",
+        credentials: "include",
       });
 
       if (summaryRes.ok) {
@@ -95,7 +94,7 @@ export default function ActivityLogs() {
         setSummaryStats(summaryData);
       }
     } catch (error) {
-      console.error('Error fetching summary stats:', error);
+      console.error("Error fetching summary stats:", error);
     }
   };
 
@@ -104,50 +103,52 @@ export default function ActivityLogs() {
     fetchSummaryStats();
   }, [targetFilter, departmentFilter, dateFrom]);
 
-     useEffect(() => {
-  const fetchAllData = async () => {
-    try {
-      setLoading(true); // ✅ start loader
+  useEffect(() => {
+    const fetchAllData = async () => {
+      try {
+        setLoading(true); // ✅ start loader
 
-      // Fetch activity logs
-      const params = new URLSearchParams();
-      if (targetFilter) params.append("targetType", targetFilter);
-      if (departmentFilter) params.append("department", departmentFilter);
-      if (dateFrom) params.append("date", dateFrom);
+        // Fetch activity logs
+        const params = new URLSearchParams();
+        if (targetFilter) params.append("targetType", targetFilter);
+        if (departmentFilter) params.append("department", departmentFilter);
+        if (dateFrom) params.append("date", dateFrom);
 
-      const resLogs = await fetch(`/api/admin/activity-logs?${params.toString()}`, {
-        method: "GET",
-        credentials: "include",
-      });
+        const resLogs = await fetch(
+          `/api/admin/activity-logs?${params.toString()}`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
 
-      let logsData: any[] = [];
-      if (resLogs.ok) {
-        const dataLogs = await resLogs.json();
-        logsData = dataLogs || [];
-      } else {
-        console.error("Failed to fetch logs");
+        let logsData: Log[] = [];
+        if (resLogs.ok) {
+          const dataLogs = await resLogs.json();
+          logsData = (dataLogs || []) as Log[];
+        } else {
+          console.error("Failed to fetch logs");
+        }
+        setLogs(logsData);
+
+        // Fetch filter data
+        const filterData = await fetchFilterData();
+        setFilterData(filterData);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setLogs([]);
+        setFilterData({
+          documentTypes: [],
+          departments: [],
+          statuses: [],
+        });
+      } finally {
+        setLoading(false); // ✅ stop loader after both fetches
       }
-      setLogs(logsData);
+    };
 
-      // Fetch filter data
-      const filterData = await fetchFilterData();
-      setFilterData(filterData);
-
-    } catch (err) {
-      console.error("Error fetching data:", err);
-      setLogs([]);
-      setFilterData({
-        documentTypes: [],
-        departments: [],
-        statuses: []
-      });
-    } finally {
-      setLoading(false); // ✅ stop loader after both fetches
-    }
-  };
-
-  fetchAllData();
-}, [targetFilter, departmentFilter, dateFrom]); // Re-fetch on filter change
+    fetchAllData();
+  }, [targetFilter, departmentFilter, dateFrom]); // Re-fetch on filter change
 
   // const activityLogs = [
   //   {
@@ -222,7 +223,7 @@ export default function ActivityLogs() {
 
   // for pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const logsPerPage = 5; 
+  const logsPerPage = 5;
 
   const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
 
@@ -231,10 +232,10 @@ export default function ActivityLogs() {
   const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
 
   const handlePrev = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
-  const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  const handleNext = () =>
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
-
-if (loading) {
+  if (loading) {
     return <Loading />;
   }
   return (
@@ -249,21 +250,27 @@ if (loading) {
 
           <div className={styles.summary}>
             <div className={`${styles.card} ${styles.orange}`}>
-              <CheckCircle className={styles.icon} />
-              <span className={styles.count}>{summaryStats.totalActivityToday}</span>
-              <span>Total Activity Today</span>
+              <Activity className={styles.icon} />
+              <span className={styles.count}>
+                {summaryStats.totalActivityToday}
+              </span>
+              <span>Total Activities Today</span>
             </div>
 
             <div className={`${styles.card} ${styles.cyan}`}>
-              <Clock className={styles.icon} />
-              <span className={styles.count}>{summaryStats.documentActivityToday}</span>
-              <span>Document Activity Today</span>
+              <FileText className={styles.icon} />
+              <span className={styles.count}>
+                {summaryStats.documentActivityToday}
+              </span>
+              <span>Document Activities Today</span>
             </div>
 
             <div className={`${styles.card} ${styles.green}`}>
-              <Clock className={styles.icon} />
-              <span className={styles.count}>{summaryStats.userActivityToday}</span>
-              <span>User Activity Today</span>
+              <Users className={styles.icon} />
+              <span className={styles.count}>
+                {summaryStats.userActivityToday}
+              </span>
+              <span>User Activities Today</span>
             </div>
           </div>
 
@@ -292,7 +299,7 @@ if (loading) {
               ))}
             </select>
 
-            <select 
+            <select
               className={styles.dropdown}
               value={departmentFilter}
               onChange={(e) => setDepartmentFilter(e.target.value)}
@@ -315,7 +322,9 @@ if (loading) {
                     setDateFrom(newFrom);
 
                     if (dateTo && newFrom > dateTo) {
-                      setDateError('"From" date cannot be later than "To" date.');
+                      setDateError(
+                        '"From" date cannot be later than "To" date.'
+                      );
                     } else {
                       setDateError("");
                     }
@@ -331,7 +340,9 @@ if (loading) {
                     setDateTo(newTo);
 
                     if (dateFrom && newTo < dateFrom) {
-                      setDateError('"To" date cannot be earlier than "From" date.');
+                      setDateError(
+                        '"To" date cannot be earlier than "From" date.'
+                      );
                     } else {
                       setDateError("");
                     }
@@ -343,57 +354,62 @@ if (loading) {
             </div>
           </div>
           <div className={styles.tableWrapper}>
-          <table className={styles.docTable}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Activity</th>
-                <th>User</th>
-                <th>Target</th>
-                <th>Department</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-  {paginatedLogs.length > 0 ? (
-    paginatedLogs.map((log, i) => (
-      <tr key={i}>
-        <td>{log.LogID}</td>
-        <td>{log.Action}</td>
-        <td>{log.User?.FirstName + " " + log.User?.LastName}</td>
-        <td>{log.TargetType}</td>
-        <td>{log.User?.Department?.Name}</td>
-        <td>{log.Timestamp}</td>
-      </tr>
-    ))
-  ) : (
-    <tr className={styles.noDataRow}>
-      <td colSpan={6} style={{ textAlign: "center", padding: "1rem" }}>
-        {search ? (
-          <>No logs found for "<strong>{search}</strong>"</>
-        ) : (
-          <>No logs available.</>
-        )}
-      </td>
-    </tr>
-  )}
-</tbody>
-
-          </table>
+            <table className={styles.docTable}>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Activity</th>
+                  <th>User</th>
+                  <th>Target</th>
+                  <th>Department</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedLogs.length > 0 ? (
+                  paginatedLogs.map((log, i) => (
+                    <tr key={i}>
+                      <td>{log.LogID}</td>
+                      <td>{log.Action}</td>
+                      <td>{log.User?.FirstName + " " + log.User?.LastName}</td>
+                      <td>{log.TargetType}</td>
+                      <td>{log.User?.Department?.Name}</td>
+                      <td>{log.Timestamp}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr className={styles.noDataRow}>
+                    <td
+                      colSpan={6}
+                      style={{ textAlign: "center", padding: "1rem" }}
+                    >
+                      {search ? (
+                        <>
+                          No logs found for &quot;<strong>{search}</strong>
+                          &quot;
+                        </>
+                      ) : (
+                        <>No logs available.</>
+                      )}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-        {/* Pagination controls */}
-      <div className={styles.pagination}>
-        <button onClick={handlePrev} disabled={currentPage === 1}>
-          Previous
-        </button>
-        <span>
-          Page {currentPage} of {totalPages}
-        </span>
-        <button onClick={handleNext} disabled={currentPage === totalPages}>
-          Next
-        </button>
-      </div>
-</div>
+          {/* Pagination controls */}
+          <div className={styles.pagination}>
+            <button onClick={handlePrev} disabled={currentPage === 1}>
+              Previous
+            </button>
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
+            <button onClick={handleNext} disabled={currentPage === totalPages}>
+              Next
+            </button>
+          </div>
+        </div>
 
         {/* confirm restore modal */}
         {showConfirmRestore && (

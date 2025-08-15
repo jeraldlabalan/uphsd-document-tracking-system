@@ -21,6 +21,7 @@ type Document = {
   type: string;
   creator: string;
   preview: string;
+  department: string;
 };
 
 export default function Documents() {
@@ -96,9 +97,25 @@ useEffect(() => {
         setDocuments([]);
       }
 
+      // Debug: Log department information for each document
+      if (dataDocs.docs && Array.isArray(dataDocs.docs)) {
+        console.log("📋 Document departments:", dataDocs.docs.map(doc => ({
+          id: doc.id,
+          name: doc.name,
+          department: doc.department
+        })));
+      }
+
       // Fetch filter data
       const filterData = await fetchFilterData();
       setFilterData(filterData);
+      
+      // Debug: Log filter data
+      console.log("🔍 Filter data loaded:", {
+        departments: filterData.departments?.length || 0,
+        statuses: filterData.statuses?.length || 0,
+        documentTypes: filterData.documentTypes?.length || 0
+      });
 
     } catch (err) {
       console.error("Failed to fetch data", err);
@@ -282,8 +299,37 @@ useEffect(() => {
                   </option>
                 ))}
               </select>
+
+            <select
+              className={styles.dropdown}
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+            >
+              <option value="">All Types</option>
+              {filterData.documentTypes.map((type) => (
+                <option key={type.TypeID} value={type.TypeName}>
+                  {type.TypeName}
+                </option>
+              ))}
+            </select>
               
-            <div className={styles.dateFilterWrapper}>
+                          <button
+                className={styles.resetButton}
+                onClick={() => {
+                  setSearch("");
+                  setStatusFilter("");
+                  setTypeFilter("");
+                  setDepartmentFilter("");
+                  setDateFrom("");
+                  setDateTo("");
+                  setDateError("");
+                  setCurrentPage(1);
+                }}
+              >
+                Reset Filters
+              </button>
+
+              <div className={styles.dateFilterWrapper}>
               <div className={styles.dateGroup}>
                 <span className={styles.dateLabel}>From:</span>
                 <input
@@ -329,6 +375,7 @@ useEffect(() => {
                 <th>ID</th>
                 <th>Document</th>
                 <th>File</th>
+                <th>Department</th>
                 <th>Status</th>
                 <th>Date</th>
                 <th>Actions</th>
@@ -341,6 +388,7 @@ useEffect(() => {
         <td>{doc.id}</td>
         <td>{doc.name}</td>
         <td>{doc.preview ? doc.preview.split('.').pop()?.toUpperCase() || 'File' : 'No file'}</td>
+        <td>{doc.department}</td>
         <td>
           <span className={`${styles.badge} ${
                   doc.status === "Completed" ? styles.completed : 
@@ -373,7 +421,7 @@ useEffect(() => {
     ))
   ) : (
     <tr className={styles.noDataRow}>
-      <td colSpan={6} style={{ textAlign: "center" }}>
+      <td colSpan={7} style={{ textAlign: "center" }}>
         No documents found.
       </td>
     </tr>

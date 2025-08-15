@@ -53,35 +53,34 @@ export default function UserManagement() {
   const [showDeactivateSuccess, setShowDeactivateSuccess] = useState(false);
 
   useEffect(() => {
-  const fetchUsers = async () => {
-    try {
-      setLoading(true); // ✅ start loader
-      const res = await fetch("/api/admin/user-management/users");
-      const data = await res.json();
+    const fetchUsers = async () => {
+      try {
+        setLoading(true); // ✅ start loader
+        const res = await fetch("/api/admin/user-management/users");
+        const data = await res.json();
 
-      if (Array.isArray(data)) {
-        setUsers(data);
-        setError(null);
-      } else if (data && typeof data === "object" && "error" in data) {
-        setError(data.error || "Unknown API error");
+        if (Array.isArray(data)) {
+          setUsers(data);
+          setError(null);
+        } else if (data && typeof data === "object" && "error" in data) {
+          setError(data.error || "Unknown API error");
+          setUsers([]);
+        } else {
+          setError("Unexpected API response");
+          setUsers([]);
+          console.error("API did not return an array:", data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch users", err);
+        setError("Failed to fetch users");
         setUsers([]);
-      } else {
-        setError("Unexpected API response");
-        setUsers([]);
-        console.error("API did not return an array:", data);
+      } finally {
+        setLoading(false); // ✅ stop loader
       }
-    } catch (err) {
-      console.error("Failed to fetch users", err);
-      setError("Failed to fetch users");
-      setUsers([]);
-    } finally {
-      setLoading(false); // ✅ stop loader
-    }
-  };
+    };
 
-  fetchUsers();
-}, []);
-
+    fetchUsers();
+  }, []);
 
   const filteredUsers = users.filter((user) => {
     const statusMatch = !statusFilter || user.status === statusFilter;
@@ -238,8 +237,8 @@ export default function UserManagement() {
   };
 
   if (loading) {
-      return <Loading />;
-    }
+    return <Loading />;
+  }
   return (
     <div>
       <AdminHeader />
@@ -260,7 +259,7 @@ export default function UserManagement() {
               <span className={styles.count}>
                 {loading ? "..." : users.length}
               </span>
-              <span>Total User</span>
+              <span>Total Users</span>
             </div>
             <div className={`${styles.card} ${styles.green}`}>
               <Activity className={styles.icon} />
@@ -269,7 +268,7 @@ export default function UserManagement() {
                   ? "..."
                   : users.filter((u) => u.status === "Active").length}
               </span>
-              <span>Active User</span>
+              <span>Active Users</span>
             </div>
             <div className={`${styles.card} ${styles.orange}`}>
               <PauseCircle className={styles.icon} />
@@ -278,7 +277,7 @@ export default function UserManagement() {
                   ? "..."
                   : users.filter((u) => u.status === "Inactive").length}
               </span>
-              <span>Inactive User</span>
+              <span>Inactive Users</span>
             </div>
             <div className={`${styles.card} ${styles.red}`}>
               <UserX className={styles.icon} />
@@ -287,7 +286,7 @@ export default function UserManagement() {
                   ? "..."
                   : users.filter((u) => u.status === "Terminated").length}
               </span>
-              <span>Terminated User</span>
+              <span>Terminated Users</span>
             </div>
           </div>
 

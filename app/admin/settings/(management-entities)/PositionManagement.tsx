@@ -14,6 +14,11 @@ interface ActiveItem {
   checked: boolean;
 }
 
+interface PositionDTO {
+  PositionID: number;
+  Name: string;
+}
+
 interface PositionManagementProps {
   showModal: (data: {
     description: string;
@@ -23,7 +28,9 @@ interface PositionManagementProps {
   }) => void;
 }
 
-const PositionManagement: React.FC<PositionManagementProps> = ({ showModal }) => {
+const PositionManagement: React.FC<PositionManagementProps> = ({
+  showModal,
+}) => {
   const [rows, setRows] = useState<InputRow[]>([{ id: Date.now(), value: "" }]);
   const [activeItems, setActiveItems] = useState<ActiveItem[]>([]);
 
@@ -41,9 +48,9 @@ const PositionManagement: React.FC<PositionManagementProps> = ({ showModal }) =>
     try {
       const res = await fetch("/api/admin/settings/position-management");
       if (!res.ok) throw new Error("Failed to fetch positions");
-      const data = await res.json();
+      const data: PositionDTO[] = await res.json();
       setActiveItems(
-        data.map((pos: any) => ({
+        data.map((pos: PositionDTO) => ({
           id: pos.PositionID,
           name: pos.Name,
           checked: true,
@@ -79,11 +86,14 @@ const PositionManagement: React.FC<PositionManagementProps> = ({ showModal }) =>
     const validRows = rows.filter((r) => r.value.trim() !== "");
 
     if (rows.some((r) => r.value.trim() === "")) {
-      toast.error("Please fill out all position fields before saving.");
+      toast.error("Please complete all Position fields before saving.");
       return;
     }
 
-    if (validRows.length === 0) return;
+    if (validRows.length === 0) {
+      toast.error("Please complete all Position fields before saving.");
+      return;
+    }
 
     if (hasDuplicates()) {
       toast.error("One or more positions already exist and cannot be added.");
@@ -95,7 +105,7 @@ const PositionManagement: React.FC<PositionManagementProps> = ({ showModal }) =>
       description: "Are you sure you want to add these positions?",
       onConfirm: handleConfirm,
       onCancel: handleCancel,
-      isLoading: isLoading,
+      isLoading: false,
     });
   };
 
@@ -110,12 +120,7 @@ const PositionManagement: React.FC<PositionManagementProps> = ({ showModal }) =>
   const savePositions = async () => {
     const validRows = rows.filter((r) => r.value.trim() !== "");
     if (validRows.length === 0) {
-      showModal({
-        description: "Position successfully deleted.",
-        onConfirm: handleCancel,
-        onCancel: handleCancel,
-        isLoading: false,
-      });
+      toast.success("No changes to save.");
       setConfirmAdd(false);
       return;
     }
@@ -145,13 +150,12 @@ const PositionManagement: React.FC<PositionManagementProps> = ({ showModal }) =>
       toast.error("Error saving positions.");
     } finally {
       setIsLoading(false);
-      showModal({
-        description: "Position successfully deleted.",
-        onConfirm: handleCancel,
-        onCancel: handleCancel,
-        isLoading: false,
-      });
       setConfirmAdd(false);
+      // Close modal after action completes
+      if (typeof window !== "undefined") {
+        const event = new CustomEvent("closeModal");
+        window.dispatchEvent(event);
+      }
     }
   };
 
@@ -163,7 +167,7 @@ const PositionManagement: React.FC<PositionManagementProps> = ({ showModal }) =>
       description: "Are you sure you want to delete this position?",
       onConfirm: handleConfirmDeletion,
       onCancel: handleCancel,
-      isLoading: isLoading,
+      isLoading: false,
     });
   };
 
@@ -190,23 +194,15 @@ const PositionManagement: React.FC<PositionManagementProps> = ({ showModal }) =>
     } finally {
       setIsLoading(false);
       setRowToDelete(null);
-      showModal({
-        description: "Position successfully deleted.",
-        onConfirm: handleCancel,
-        onCancel: handleCancel,
-        isLoading: false,
-      });
+      // Close modal after action completes
+      if (typeof window !== "undefined") {
+        const event = new CustomEvent("closeModal");
+        window.dispatchEvent(event);
+      }
     }
   };
 
-  const handleCancel = () => {
-    showModal({
-      description: "Position successfully deleted.",
-      onConfirm: handleCancel,
-      onCancel: handleCancel,
-      isLoading: false,
-    });
-  };
+  const handleCancel = () => {};
 
   return (
     <div className={styles.managementContainer}>
@@ -312,7 +308,7 @@ const PositionManagement: React.FC<PositionManagementProps> = ({ showModal }) =>
         </button>
       </div>
 
-              {/* Modal is now handled by the parent page */}
+      {/* Modal is now handled by the parent page */}
     </div>
   );
 };

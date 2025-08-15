@@ -2,11 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
-
 export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAdminAuth(request);
-    
+
     if (!authResult) {
       return NextResponse.json({ error: "Not authorized" }, { status: 401 });
     }
@@ -32,7 +31,7 @@ export async function GET(request: NextRequest) {
             Status: {
               in: [
                 "In-Process",
-                "On Hold",
+                "On-Hold",
                 "Approved",
                 "Completed",
                 "Awaiting-Completion",
@@ -75,7 +74,6 @@ export async function GET(request: NextRequest) {
     const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
     const totalDays = lastDayOfMonth.getDate();
 
-
     // Each week is approximately 7-8 days
     const daysPerWeek = Math.ceil(totalDays / 4);
 
@@ -100,35 +98,32 @@ export async function GET(request: NextRequest) {
       }
 
       // Count documents CREATED in this week of the month
-      const weeklyStats = await db.document.groupBy({
+      const weeklyStats = (await db.document.groupBy({
         by: ["Status"],
         where: {
           IsDeleted: false,
           Status: {
             in: [
               "In-Process",
-              "On Hold",
+              "On-Hold",
               "Approved",
               "Completed",
               "Awaiting-Completion",
             ],
           },
           CreatedAt: { gte: weekStart, lte: weekEnd },
-
-
         },
         _count: { Status: true },
-      });
+      })) as Array<{ Status: string; _count: { Status: number } }>;
 
-
-      weeklyStats.forEach((stat: any) => {
+      weeklyStats.forEach((stat) => {
         const status = stat.Status;
         // Use exact status matching for accurate counting
         if (status === "In-Process")
           weeklyData.inProcess[week] = stat._count.Status;
         else if (status === "Completed")
           weeklyData.completed[week] = stat._count.Status;
-        else if (status === "On Hold")
+        else if (status === "On-Hold")
           weeklyData.onHold[week] = stat._count.Status;
         else if (status === "Approved")
           weeklyData.approved[week] = stat._count.Status;
@@ -151,15 +146,14 @@ export async function GET(request: NextRequest) {
       const monthStart = new Date(now.getFullYear(), i, 1);
       const monthEnd = new Date(now.getFullYear(), i + 1, 0, 23, 59, 59);
 
-      const monthlyStats = await db.document.groupBy({
-
+      const monthlyStats = (await db.document.groupBy({
         by: ["Status"],
         where: {
           IsDeleted: false,
           Status: {
             in: [
               "In-Process",
-              "On Hold",
+              "On-Hold",
               "Approved",
               "Completed",
               "Awaiting-Completion",
@@ -167,19 +161,18 @@ export async function GET(request: NextRequest) {
           },
 
           CreatedAt: { gte: monthStart, lte: monthEnd },
-
         },
         _count: { Status: true },
-      });
+      })) as Array<{ Status: string; _count: { Status: number } }>;
 
-      monthlyStats.forEach((stat: any) => {
+      monthlyStats.forEach((stat) => {
         const status = stat.Status;
         // Use exact status matching for accurate counting
         if (status === "In-Process")
           monthlyData.inProcess[i] = stat._count.Status;
         else if (status === "Completed")
           monthlyData.completed[i] = stat._count.Status;
-        else if (status === "On Hold")
+        else if (status === "On-Hold")
           monthlyData.onHold[i] = stat._count.Status;
         else if (status === "Approved")
           monthlyData.approved[i] = stat._count.Status;
@@ -204,14 +197,14 @@ export async function GET(request: NextRequest) {
       const yearStart = new Date(year, 0, 1);
       const yearEnd = new Date(year, 11, 31, 23, 59, 59);
 
-      const yearlyStats = await db.document.groupBy({
+      const yearlyStats = (await db.document.groupBy({
         by: ["Status"],
         where: {
           IsDeleted: false,
           Status: {
             in: [
               "In-Process",
-              "On Hold",
+              "On-Hold",
               "Approved",
               "Completed",
               "Awaiting-Completion",
@@ -220,8 +213,7 @@ export async function GET(request: NextRequest) {
           CreatedAt: { gte: yearStart, lte: yearEnd },
         },
         _count: { Status: true },
-      });
-
+      })) as Array<{ Status: string; _count: { Status: number } }>;
 
       // Initialize counts for this year
       let inProcess = 0,
@@ -230,12 +222,12 @@ export async function GET(request: NextRequest) {
         approved = 0,
         awaitingCompletion = 0;
 
-      yearlyStats.forEach((stat: any) => {
+      yearlyStats.forEach((stat) => {
         const status = stat.Status;
         // Use exact status matching instead of includes() to avoid false matches
         if (status === "In-Process") inProcess = stat._count.Status;
         else if (status === "Completed") completed = stat._count.Status;
-        else if (status === "On Hold") onHold = stat._count.Status;
+        else if (status === "On-Hold") onHold = stat._count.Status;
         else if (status === "Approved") approved = stat._count.Status;
         else if (status === "Awaiting-Completion")
           awaitingCompletion = stat._count.Status;
@@ -271,11 +263,10 @@ export async function GET(request: NextRequest) {
         },
       }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Dashboard API error:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
-    );
+    const message =
+      error instanceof Error ? error.message : "Internal server error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

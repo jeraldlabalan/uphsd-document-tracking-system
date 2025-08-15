@@ -838,9 +838,59 @@ export default function EditDocument() {
             </div>
 
             <div className={styles.sectionHeader}>
+              <div className={styles.sectionTitle}>Approvers (Optional)</div>
+              <div className={styles.sectionDescription}>
+                Select specific approvers for digital review, or leave empty to create document requests for all department members. All department members will receive document requests and can take actions like approve, hold, reject, or add remarks about issues.
+              </div>
+            </div>
+
+            <div className={styles.approvalContainer}>
+              <div className={styles.approvalHeader}>
+                <p>
+                  Select the people who need to review and approve this document
+                  in order, or leave empty for department-wide notification.
+                </p>
+              </div>
+
+              {approverIDs.map((id, index) => (
+                <div className={styles.approverRow} key={index}>
+                  <span className={styles.approverNumber}>{index + 1}</span>
+                  <Select
+                    options={selectOptions}
+                    value={selectOptions.find((option) => option.value === id)}
+                    onChange={(selected) =>
+                      handleApproverChange(selected, index)
+                    }
+                    placeholder="Select approver"
+                    className={styles.selectField}
+                  />
+                  {approverIDs.length > 1 && (
+                    <button
+                      type="button"
+                      className={styles.removeBtn}
+                      onClick={() => removeApprover(index)}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              <button
+                type="button"
+                className={styles.addBtn}
+                onClick={addApprover}
+              >
+                + Add New Approver
+              </button>
+            </div>
+
+            <div className={styles.sectionHeader}>
               <div className={styles.sectionTitle}>Document Files</div>
               <div className={styles.sectionDescription}>
-                Upload PDF files for digital documents, or leave empty for hardcopy documents. Document requests will be created for all department members so they can track status, take actions, and add remarks about any issues.
+                Upload PDF files for digital documents, or leave empty for hardcopy documents.
+                Document requests will be created for all department members so they can track status,
+                take actions, and add remarks about any issues.
               </div>
             </div>
 
@@ -1044,54 +1094,6 @@ export default function EditDocument() {
                   <Plus size={20} /> Add another file
                 </button>
               )}
-            </div>
-
-            <div className={styles.sectionHeader}>
-              <div className={styles.sectionTitle}>Approvers (Optional)</div>
-              <div className={styles.sectionDescription}>
-                Select specific approvers for digital review, or leave empty to create document requests for all department members. All department members will receive document requests and can take actions like approve, hold, reject, or add remarks about issues.
-              </div>
-            </div>
-
-            <div className={styles.approvalContainer}>
-              <div className={styles.approvalHeader}>
-                <p>
-                  Select the people who need to review and approve this document
-                  in order, or leave empty for department-wide notification.
-                </p>
-              </div>
-
-              {approverIDs.map((id, index) => (
-                <div className={styles.approverRow} key={index}>
-                  <span className={styles.approverNumber}>{index + 1}</span>
-                  <Select
-                    options={selectOptions}
-                    value={selectOptions.find((option) => option.value === id)}
-                    onChange={(selected) =>
-                      handleApproverChange(selected, index)
-                    }
-                    placeholder="Select approver"
-                    className={styles.selectField}
-                  />
-                  {approverIDs.length > 1 && (
-                    <button
-                      type="button"
-                      className={styles.removeBtn}
-                      onClick={() => removeApprover(index)}
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-              ))}
-
-              <button
-                type="button"
-                className={styles.addBtn}
-                onClick={addApprover}
-              >
-                + Add New Approver
-              </button>
             </div>
 
             <div className={styles.inputGroup}>

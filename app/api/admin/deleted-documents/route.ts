@@ -18,7 +18,10 @@ export async function GET(req: NextRequest) {
     console.log("Token Retrieved:" + token);
 
     if (!token) {
-      return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+      return NextResponse.json(
+        { message: "Not authenticated" },
+        { status: 401 }
+      );
     }
 
     let decoded: JwtPayload;
@@ -91,7 +94,10 @@ export async function PATCH(req: NextRequest) {
     const token = cookieStore.get("session")?.value;
 
     if (!token) {
-      return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+      return NextResponse.json(
+        { message: "Not authenticated" },
+        { status: 401 }
+      );
     }
 
     let decoded: JwtPayload;
@@ -107,9 +113,9 @@ export async function PATCH(req: NextRequest) {
       // Restore the document
       const restoredDocument = await db.document.update({
         where: { DocumentID: parseInt(documentId) },
-        data: { 
+        data: {
           IsDeleted: false,
-          UpdatedAt: new Date()
+          UpdatedAt: new Date(),
         },
       });
 
@@ -125,7 +131,10 @@ export async function PATCH(req: NextRequest) {
         },
       });
 
-      return NextResponse.json({ message: "Document restored successfully", document: restoredDocument });
+      return NextResponse.json({
+        message: "Document restored successfully",
+        document: restoredDocument,
+      });
     }
 
     if (action === "permanent-delete") {
@@ -170,7 +179,9 @@ export async function PATCH(req: NextRequest) {
           },
         });
 
-        return NextResponse.json({ message: "Document permanently deleted successfully" });
+        return NextResponse.json({
+          message: "Document permanently deleted successfully",
+        });
       }
     }
 

@@ -141,6 +141,23 @@
   color: #fff;
 }
 
+.resetButton {
+  padding: 0.5rem 1rem;
+  border: 2px solid var(--color-maroon);
+  border-radius: 6px;
+  background-color: white;
+  color: var(--color-maroon);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.resetButton:hover {
+  background-color: var(--color-maroon);
+  color: white;
+}
+
 .dateFilterWrapper {
   display: flex;
   gap: 1rem;

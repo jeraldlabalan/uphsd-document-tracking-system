@@ -40,9 +40,9 @@ export async function GET(req: NextRequest) {
                 TypeName: true,
               },
             }
-            // ❌ remove CreatedByUser here
           },
         },
+        FilePath: true,
       },
       orderBy: {
         CreatedAt: "desc",
