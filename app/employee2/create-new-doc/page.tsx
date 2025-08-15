@@ -646,90 +646,6 @@ export default function CreateNewDocument() {
             </div>
 
             <div className={styles.sectionHeader}>
-              <div className={styles.sectionTitle}>Document Files</div>
-              <div className={styles.sectionDescription}>
-                Upload PDF files for digital documents, or leave empty for hardcopy documents. Document requests will be created for all department members so they can track status, take actions, and add remarks about any issues.
-              </div>
-            </div>
-
-            <div className={styles.inputGroup}>
-              <label htmlFor="file" className={styles.label}>
-                Document Files (Optional)
-              </label>
-              <div className={styles.fileUpload}>
-                <input
-                  type="file"
-                  id="file"
-                  accept=".pdf"
-                  onChange={handleFileChange}
-                  multiple
-                  className={styles.fileInput}
-                />
-                <label htmlFor="file" className={styles.fileLabel}>
-                  <FileUp size={20} />
-                  <span>Choose files or drag and drop</span>
-                </label>
-              </div>
-              {files.length > 0 && (
-                <div className={styles.fileList}>
-                  {files.map((item, index) => (
-                    <div key={index} className={styles.fileItem}>
-                      <div className={styles.fileInfo}>
-                        <span className={styles.fileName}>
-                          {item.file.name}
-                        </span>
-                        {item.requireEsign && (
-                          <span className={styles.eSignBadge}>
-                            E-Sign Required
-                          </span>
-                        )}
-                      </div>
-
-                      <div className={styles.fileActions}>
-                        <label className={styles.switchContainer}>
-                          <input
-                            type="checkbox"
-                            checked={item.requireEsign}
-                            onChange={() => handleToggleEsign(index)}
-                          />
-                          <span className={styles.switchSlider}></span>
-                          <span className={styles.switchLabel}>
-                            Require E-sign
-                          </span>
-                        </label>
-
-                        <button
-                          type="button"
-                          className={styles.removeBtn}
-                          onClick={() => handleRemoveFile(index)}
-                          aria-label="Remove file"
-                        >
-                          <X size={20} />
-                        </button>
-
-                        {item.requireEsign && (
-                          <button
-                            type="button"
-                            className={styles.eSignBtn}
-                            onClick={() => handleOpenESign(item.file, index)}
-                            aria-label="Open e-sign interface"
-                          >
-                            Open E-Sign
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {files.length === 0 && (
-                <div className={styles.noFilesMessage}>
-                  <p>No files uploaded. This will be treated as a hardcopy document requiring wet signatures.</p>
-                </div>
-              )}
-            </div>
-
-            <div className={styles.sectionHeader}>
               <div className={styles.sectionTitle}>Approvers (Optional)</div>
               <div className={styles.sectionDescription}>
                 Select specific approvers for digital review, or leave empty to create document requests for all department members. All department members will receive document requests and can take actions like approve, hold, reject, or add remarks about issues.
@@ -776,6 +692,97 @@ export default function CreateNewDocument() {
                 + Add New Approver
               </button>
             </div>
+
+            <div className={styles.sectionHeader}>
+  <div className={styles.sectionTitle}>Document Files</div>
+  <div className={styles.sectionDescription}>
+    Upload PDF files for digital documents, or leave empty for hardcopy documents.
+    Document requests will be created for all department members so they can track status,
+    take actions, and add remarks about any issues.
+  </div>
+</div>
+
+<div className={styles.inputGroup}>
+  <label htmlFor="file" className={styles.label}>
+    Document Files (Optional)
+  </label>
+
+  {/* Only show upload container if no files */}
+  {files.length === 0 && (
+    <div className={styles.fileUpload}>
+      <input
+        type="file"
+        id="file"
+        accept=".pdf"
+        onChange={handleFileChange}
+        multiple
+        className={styles.fileInput}
+      />
+      <label htmlFor="file" className={styles.fileLabel}>
+        <FileUp size={20} />
+        <span>Choose files or drag and drop</span>
+      </label>
+    </div>
+  )}
+
+  {/* Show file list if files exist */}
+  {files.length > 0 && (
+    <div className={styles.fileList}>
+      {files.map((item, index) => (
+        <div key={index} className={styles.fileItem}>
+          <div className={styles.fileInfo}>
+            <span className={styles.fileName}>{item.file.name}</span>
+            {item.requireEsign && (
+              <span className={styles.eSignBadge}>E-Sign Required</span>
+            )}
+          </div>
+
+          <div className={styles.fileActions}>
+            <label className={styles.switchContainer}>
+              <input
+                type="checkbox"
+                checked={item.requireEsign}
+                onChange={() => handleToggleEsign(index)}
+              />
+              <span className={styles.switchSlider}></span>
+              <span className={styles.switchLabel}>Require E-sign</span>
+            </label>
+
+            <button
+              type="button"
+              className={styles.removeBtn}
+              onClick={() => handleRemoveFile(index)}
+              aria-label="Remove file"
+            >
+              <X size={20} />
+            </button>
+
+            {item.requireEsign && (
+              <button
+                type="button"
+                className={styles.eSignBtn}
+                onClick={() => handleOpenESign(item.file, index)}
+                aria-label="Open e-sign interface"
+              >
+                Open E-Sign
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+
+  {/* Message if no files */}
+  {files.length === 0 && (
+    <div className={styles.noFilesMessage}>
+      <p>No files uploaded. This will be treated as a hardcopy document requiring wet signatures.</p>
+    </div>
+  )}
+</div>
+
+
+            
 
             <div className={styles.formGroup}>
               <button

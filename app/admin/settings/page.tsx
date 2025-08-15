@@ -8,8 +8,8 @@ import DocumentManagement from "./(management-entities)/DocumentManagement";
 import InformationForm from "./(profile-management)/InformationForm";
 import ChangePasswordForm from "./(profile-management)/ChangePasswordForm";
 import ProfileDisplay from "./(profile-management)/ProfileDisplay";
-import Loading from "@/app/loading";
 import Modal from "./(modal)/Modal";
+import Loading from "@/app/loading";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
@@ -29,11 +29,26 @@ interface UserInfo {
 
 export default function Settings() {
   const [showModal, setShowModal] = useState(false); // Modal visibility state
-  const [rowToDelete, setRowToDelete] = useState<string | null>(null); // Row to delete
+  const [modalData, setModalData] = useState({
+    description: "",
+    onConfirm: () => {},
+    onCancel: () => {},
+    isLoading: false
+  });
   const [isLoading, setIsLoading] = useState(false); // For loading effect
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Function to show modal from child components
+  const showModalFromChild = (data: {
+    description: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+    isLoading: boolean;
+  }) => {
+    setModalData(data);
+    setShowModal(true);
+  };
 
 
 useEffect(() => {
@@ -46,7 +61,7 @@ useEffect(() => {
   useEffect(() => {
   const fetchUserInfo = async () => {
     try {
-      setLoading(true); // ✅ start loader
+      setLoading(true);
       const response = await fetch("/api/admin/settings/user-info");
 
       if (response.ok) {
@@ -109,9 +124,9 @@ useEffect(() => {
     // Simulate async task (e.g., delete operation)
     setIsLoading(true); // Start loading
     setTimeout(() => {
-      console.log(`Row ${rowToDelete} deleted`);
+      console.log("Row deleted");
       setIsLoading(false); // End loading
-      setRowToDelete(null); // Clear row after deletion
+      setShowModal(false); // Close modal after deletion
     }, 2000); // Simulate 2-second delay
   };
 
@@ -146,24 +161,24 @@ useEffect(() => {
 
             {/* Document and Management Section */}
             <div className={styles.documentContainer}>
-              <DocumentManagement />
+              <DocumentManagement showModal={showModalFromChild} />
               <hr />
-              <DepartmentManagement />
+              <DepartmentManagement showModal={showModalFromChild} />
               <hr />
-              <PositionManagement />
+              <PositionManagement showModal={showModalFromChild} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modal for Confirmation */}
+      {/* Modal rendered at page level */}
       <Modal
-        showModal={showModal} // Pass the modal visibility
-        setShowModal={setShowModal} // Pass the setShowModal function
-        description={`Are you sure you want to delete this department?`} // Dynamic description
-        onConfirm={handleRemoveRow} // Pass the confirm action function
-        onCancel={() => setShowModal(false)} // Close modal on cancel
-        isLoading={isLoading} // Show loading spinner during action
+        showModal={showModal}
+        setShowModal={setShowModal}
+        description={modalData.description}
+        onConfirm={modalData.onConfirm}
+        onCancel={modalData.onCancel}
+        isLoading={modalData.isLoading}
       />
     </div>
   );

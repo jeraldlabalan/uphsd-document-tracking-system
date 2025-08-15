@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import styles from "./ManagementStyles.module.css";
-import Modal from "../(modal)/Modal";
 
 interface InputRow {
   id: string | number;
@@ -24,7 +23,6 @@ const DocumentTypeManagement: React.FC = () => {
   const [rows, setRows] = useState<InputRow[]>([{ id: Date.now(), value: "" }]);
   const [activeItems, setActiveItems] = useState<ActiveItem[]>([]);
 
-  const [showModal, setShowModal] = useState(false);
   const [rowToDelete, setRowToDelete] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -92,7 +90,12 @@ const DocumentTypeManagement: React.FC = () => {
     }
 
     setConfirmAdd(true);
-    setShowModal(true);
+    showModal({
+      description: "Are you sure you want to add these document types?",
+      onConfirm: handleConfirm,
+      onCancel: handleCancel,
+      isLoading: isLoading,
+    });
   };
 
   const handleConfirm = async () => {
@@ -106,7 +109,12 @@ const DocumentTypeManagement: React.FC = () => {
   const saveDocumentTypes = async () => {
     const validRows = rows.filter((r) => r.value.trim() !== "");
     if (validRows.length === 0) {
-      setShowModal(false);
+      showModal({
+        description: "Document type successfully deleted.",
+        onConfirm: handleCancel,
+        onCancel: handleCancel,
+        isLoading: false,
+      });
       setConfirmAdd(false);
       return;
     }
@@ -135,7 +143,12 @@ const DocumentTypeManagement: React.FC = () => {
       toast.error("Error saving document types.");
     } finally {
       setIsLoading(false);
-      setShowModal(false);
+      showModal({
+        description: "Document type successfully deleted.",
+        onConfirm: handleCancel,
+        onCancel: handleCancel,
+        isLoading: false,
+      });
       setConfirmAdd(false);
     }
   };
@@ -144,7 +157,12 @@ const DocumentTypeManagement: React.FC = () => {
     setSuccess(false);
     setRowToDelete(id);
     setConfirmAdd(false);
-    setShowModal(true);
+    showModal({
+      description: "Are you sure you want to delete this document type?",
+      onConfirm: handleConfirmDeletion,
+      onCancel: handleCancel,
+      isLoading: isLoading,
+    });
   };
 
   const handleConfirmDeletion = async () => {
@@ -170,14 +188,22 @@ const DocumentTypeManagement: React.FC = () => {
     } finally {
       setIsLoading(false);
       setRowToDelete(null);
-      setShowModal(false);
+      showModal({
+        description: "Document type successfully deleted.",
+        onConfirm: handleCancel,
+        onCancel: handleCancel,
+        isLoading: false,
+      });
     }
   };
 
   const handleCancel = () => {
-    setShowModal(false);
-    setRowToDelete(null);
-    setConfirmAdd(false);
+    showModal({
+      description: "Document type successfully deleted.",
+      onConfirm: handleCancel,
+      onCancel: handleCancel,
+      isLoading: false,
+    });
   };
 
   return (
@@ -284,20 +310,7 @@ const DocumentTypeManagement: React.FC = () => {
         </button>
       </div>
 
-      <Modal
-        showModal={showModal}
-        setShowModal={setShowModal}
-        description={
-          confirmAdd
-            ? "Are you sure you want to add these document types?"
-            : success
-              ? "Document type successfully deleted."
-              : "Are you sure you want to delete this document type?"
-        }
-        onConfirm={handleConfirm}
-        onCancel={handleCancel}
-        isLoading={isLoading}
-      />
+              {/* Modal is now handled by the parent page */}
     </div>
   );
 };

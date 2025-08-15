@@ -63,9 +63,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       summary: {
-        totalDocuments,
-        inProcessDocuments,
-        deletedDocuments,
+        totalDocuments: activeDocuments, // Active documents with workflow statuses (same as dashboard)
+        inProcessDocuments: allDocuments, // All non-deleted documents regardless of status
+        deletedDocuments, // Soft-deleted documents
       },
       documents: docs,
     });

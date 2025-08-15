@@ -250,6 +250,25 @@ function PDFViewer(
       top = window.innerHeight - modalHeight - 10;
     }
     
+    // Additional check: if click is too close to edges, adjust position
+    if (clickX < modalWidth + 20) {
+      left = 20; // Position from left edge
+    } else if (clickX > window.innerWidth - modalWidth - 20) {
+      left = window.innerWidth - modalWidth - 20; // Position from right edge
+    }
+    
+    // Debug logging
+    console.log('Modal positioning:', {
+      clickX,
+      clickY,
+      calculatedLeft: left,
+      calculatedTop: top,
+      windowWidth: window.innerWidth,
+      windowHeight: window.innerHeight,
+      modalWidth,
+      modalHeight
+    });
+    
     return { left, top };
   };
 
@@ -1009,6 +1028,24 @@ function PDFViewer(
         </Document>
       </div>
 
+      {/* Click Position Indicator */}
+      {assignModal?.visible && assignModal.clickX && assignModal.clickY && (
+        <div
+          style={{
+            position: 'fixed',
+            left: assignModal.clickX - 5,
+            top: assignModal.clickY - 5,
+            width: '10px',
+            height: '10px',
+            backgroundColor: '#007bff',
+            borderRadius: '50%',
+            zIndex: 999,
+            pointerEvents: 'none',
+            animation: 'pulse 1s infinite',
+          }}
+        />
+      )}
+
       {/* Assign Modal - moved outside the page loop */}
       {assignModal?.visible && (
         <div
@@ -1016,34 +1053,26 @@ function PDFViewer(
           className={styles.assignModalContainer}
           style={{
             position: 'fixed',
-            left: assignModal.clickX 
-              ? Math.min(
-                  Math.max(
-                    assignModal.clickX - 100, // Center modal on click position
-                    10
+            ...(assignModal.clickX && assignModal.clickY 
+              ? calculateModalPosition(assignModal.clickX, assignModal.clickY)
+              : {
+                  // Fallback to original positioning
+                  left: Math.min(
+                    Math.max(
+                      (assignModal.x * scale) + 12,
+                      10
+                    ),
+                    window.innerWidth - 220
                   ),
-                  window.innerWidth - 220
-                )
-              : Math.min(
-                  Math.max(
-                    (assignModal.x * scale) + 12, // Fallback to original positioning
-                    10
+                  top: Math.min(
+                    Math.max((assignModal.y * scale), 10),
+                    window.innerHeight - 300
                   ),
-                  window.innerWidth - 220
-                ),
-            top: assignModal.clickY
-              ? Math.min(
-                  Math.max(assignModal.clickY - 50, 10), // Position above click
-                  window.innerHeight - 300
-                )
-              : Math.min(
-                  Math.max((assignModal.y * scale), 10), // Fallback to original positioning
-                  window.innerHeight - 300
-                ),
+                }
+            ),
             zIndex: 1000,
             minWidth: '200px',
             maxWidth: '250px',
-            transform: assignModal.clickY ? 'translate(0, -100%)' : 'none', // Move modal above click point if available
           }}
           onClick={(e) => {
             e.stopPropagation();
