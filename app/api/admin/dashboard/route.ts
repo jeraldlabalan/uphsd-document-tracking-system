@@ -1,14 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
+
+export async function GET(request: Request) {
   try {
-    // Use the new auth utility function
-    const authResult = await verifyAdminAuth(request);
-    
-    if (!authResult) {
-      return NextResponse.json({ error: "Not authorized" }, { status: 401 });
+    const cookieStore = await cookies();
+    const token = cookieStore.get("session")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    const decoded = verify(token, process.env.JWT_SECRET!) as { role: string };
+
+    if (decoded.role !== "Admin") {
+      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
     }
 
     // Get current date and calculate date ranges
@@ -76,6 +84,7 @@ export async function GET(request: NextRequest) {
     const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
     const totalDays = lastDayOfMonth.getDate();
 
+
     // Each week is approximately 7-8 days
     const daysPerWeek = Math.ceil(totalDays / 4);
 
@@ -114,9 +123,12 @@ export async function GET(request: NextRequest) {
             ],
           },
           CreatedAt: { gte: weekStart, lte: weekEnd },
+
+
         },
         _count: { Status: true },
       });
+
 
       weeklyStats.forEach((stat: any) => {
         const status = stat.Status;
@@ -149,6 +161,7 @@ export async function GET(request: NextRequest) {
       const monthEnd = new Date(now.getFullYear(), i + 1, 0, 23, 59, 59);
 
       const monthlyStats = await db.document.groupBy({
+
         by: ["Status"],
         where: {
           IsDeleted: false,
@@ -161,7 +174,9 @@ export async function GET(request: NextRequest) {
               "Awaiting-Completion",
             ],
           },
+
           CreatedAt: { gte: monthStart, lte: monthEnd },
+
         },
         _count: { Status: true },
       });
@@ -215,6 +230,7 @@ export async function GET(request: NextRequest) {
         },
         _count: { Status: true },
       });
+
 
       // Initialize counts for this year
       let inProcess = 0,

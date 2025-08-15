@@ -24,6 +24,9 @@ export default function CreateNewDocument() {
     "Select Document Type"
   );
 
+  const [modalMessage, setModalMessage] = useState("");
+  const [showModal, setShowModal] = useState(false);
+
   const [selectedTypeID, setSelectedTypeID] = useState<number | null>(null);
 
   const [department, setDepartment] = useState<string>("Select Department");
@@ -275,116 +278,47 @@ export default function CreateNewDocument() {
     setApproverIDs(newApproverIDs); // Update the state with the new array
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError(null);
+  setSuccess(false);
 
-    try {
-      // Files are now optional - they can be hardcopy documents
-      // Only validate files if they are provided
-      if (files && files.length > 0) {
-        // Validate that uploaded files are valid
-        for (const fileItem of files) {
-          if (!fileItem.file || fileItem.file.size === 0) {
-            setError("Please ensure all uploaded files are valid");
-            setLoading(false);
-            return;
-          }
+  try {
+    if (files && files.length > 0) {
+      for (const fileItem of files) {
+        if (!fileItem.file || fileItem.file.size === 0) {
+          setModalMessage("Please ensure all uploaded files are valid");
+          setShowModal(true);
+          setLoading(false);
+          return;
         }
       }
+    }
 
-      // Check if we have a saved document with placeholders
-      const savedDocumentData = localStorage.getItem("documentWithPlaceholdersData");
-      const savedDocumentPlaceholders = localStorage.getItem("documentWithPlaceholdersPlaceholders");
-      const savedDocumentId = localStorage.getItem("documentWithPlaceholdersId");
+    const savedDocumentData = localStorage.getItem("documentWithPlaceholdersData");
+    const savedDocumentPlaceholders = localStorage.getItem("documentWithPlaceholdersPlaceholders");
+    const savedDocumentId = localStorage.getItem("documentWithPlaceholdersId");
 
-      if (savedDocumentData && savedDocumentPlaceholders) {
-        // If we have a document with placeholders, use that instead of creating a new one
-        try {
-          const placeholders = JSON.parse(savedDocumentPlaceholders);
-          
-          // Create FormData for the document with placeholders
-          const formData = new FormData();
-          formData.append("Title", title);
-          formData.append("TypeID", selectedTypeID?.toString() ?? "");
-          formData.append("Description", description);
-          formData.append("DepartmentID", departmentID?.toString() ?? "");
-          formData.append(
-            "ApproverIDs",
-            JSON.stringify(approverIDs.filter((id) => id !== 0))
-          );
+    if (savedDocumentData && savedDocumentPlaceholders) {
+      try {
+        const placeholders = JSON.parse(savedDocumentPlaceholders);
 
-          // Convert base64 data back to a File object
-          const base64Response = await fetch(savedDocumentData);
-          const blob = await base64Response.blob();
-          const file = new File([blob], `document-with-placeholders.pdf`, { type: 'application/pdf' });
-          formData.append("files", file);
-
-          // Add placeholders data
-          formData.append("Placeholders", JSON.stringify(placeholders));
-
-          const res = await fetch("/api/employee/create-document", {
-            method: "POST",
-            body: formData,
-          });
-
-          if (!res.ok) {
-            const data = await res.json();
-            throw new Error(data.error || "Failed to upload document");
-          }
-
-          // Clear localStorage
-          localStorage.removeItem("documentWithPlaceholdersData");
-          localStorage.removeItem("documentWithPlaceholdersTitle");
-          localStorage.removeItem("documentWithPlaceholdersId");
-          localStorage.removeItem("documentWithPlaceholdersType");
-          localStorage.removeItem("documentWithPlaceholdersDepartment");
-          localStorage.removeItem("documentWithPlaceholdersApprovers");
-          localStorage.removeItem("documentWithPlaceholdersDescription");
-          localStorage.removeItem("documentWithPlaceholdersPlaceholders");
-
-          setSuccess(true);
-          setTitle("");
-          setDescription("");
-          setSelectedTypeID(0);
-          setDepartmentID(0);
-          setFiles([]);
-          setApprovers([]);
-          setSavedDocument(null);
-          console.log("document with placeholders success");
-          alert("Document with placeholders successfully created!");
-          router.push("/employee2/dashboard");
-        } catch (error) {
-          console.error("Error creating document with placeholders:", error);
-          throw new Error("Failed to create document with placeholders");
-        }
-      } else {
-        // Regular document creation (files and approvers are optional)
         const formData = new FormData();
         formData.append("Title", title);
         formData.append("TypeID", selectedTypeID?.toString() ?? "");
         formData.append("Description", description);
         formData.append("DepartmentID", departmentID?.toString() ?? "");
-        
-        // Only append approvers if they are selected
-        if (approverIDs.filter((id) => id !== 0).length > 0) {
-          formData.append(
-            "ApproverIDs",
-            JSON.stringify(approverIDs.filter((id) => id !== 0))
-          );
-        } else {
-          // No approvers selected - send empty array to indicate department-wide notification
-          formData.append("ApproverIDs", JSON.stringify([]));
-        }
+        formData.append(
+          "ApproverIDs",
+          JSON.stringify(approverIDs.filter((id) => id !== 0))
+        );
 
-        // Only append files if they are provided
-        if (files && files.length > 0) {
-          files.forEach((item) => {
-            formData.append("files", item.file);
-          });
-        }
+        const base64Response = await fetch(savedDocumentData);
+        const blob = await base64Response.blob();
+        const file = new File([blob], `document-with-placeholders.pdf`, { type: 'application/pdf' });
+        formData.append("files", file);
+        formData.append("Placeholders", JSON.stringify(placeholders));
 
         const res = await fetch("/api/employee/create-document", {
           method: "POST",
@@ -396,6 +330,15 @@ export default function CreateNewDocument() {
           throw new Error(data.error || "Failed to upload document");
         }
 
+        localStorage.removeItem("documentWithPlaceholdersData");
+        localStorage.removeItem("documentWithPlaceholdersTitle");
+        localStorage.removeItem("documentWithPlaceholdersId");
+        localStorage.removeItem("documentWithPlaceholdersType");
+        localStorage.removeItem("documentWithPlaceholdersDepartment");
+        localStorage.removeItem("documentWithPlaceholdersApprovers");
+        localStorage.removeItem("documentWithPlaceholdersDescription");
+        localStorage.removeItem("documentWithPlaceholdersPlaceholders");
+
         setSuccess(true);
         setTitle("");
         setDescription("");
@@ -403,27 +346,74 @@ export default function CreateNewDocument() {
         setDepartmentID(0);
         setFiles([]);
         setApprovers([]);
-        console.log("document success");
-        
-        // Show appropriate success message based on whether files and approvers were provided
-        if (files && files.length > 0 && approverIDs.filter((id) => id !== 0).length > 0) {
-          alert("Document successfully created with files and specific approvers!");
-        } else if (files && files.length > 0) {
-          alert("Document successfully created with files! Document requests have been created for all department members so they can review and take action on the document.");
-        } else if (approverIDs.filter((id) => id !== 0).length > 0) {
-          alert("Document successfully created! This is a hardcopy document that requires wet signatures.");
-        } else {
-          alert("Document successfully created! Document requests have been created for all department members so they can track the hardcopy document status, put it on hold, or add remarks about any issues.");
-        }
-        
-        router.push("/employee2/dashboard");
+        setSavedDocument(null);
+
+        setModalMessage("Document with placeholders successfully created!");
+        setShowModal(true);
+      } catch (error) {
+        console.error("Error creating document with placeholders:", error);
+        throw new Error("Failed to create document with placeholders");
       }
-    } catch (err: any) {
-      setError(err.message || "Something went wrong");
-    } finally {
-      setLoading(false);
+    } else {
+      const formData = new FormData();
+      formData.append("Title", title);
+      formData.append("TypeID", selectedTypeID?.toString() ?? "");
+      formData.append("Description", description);
+      formData.append("DepartmentID", departmentID?.toString() ?? "");
+      
+      if (approverIDs.filter((id) => id !== 0).length > 0) {
+        formData.append(
+          "ApproverIDs",
+          JSON.stringify(approverIDs.filter((id) => id !== 0))
+        );
+      } else {
+        formData.append("ApproverIDs", JSON.stringify([]));
+      }
+
+      if (files && files.length > 0) {
+        files.forEach((item) => {
+          formData.append("files", item.file);
+        });
+      }
+
+      const res = await fetch("/api/employee/create-document", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to upload document");
+      }
+
+      setSuccess(true);
+      setTitle("");
+      setDescription("");
+      setSelectedTypeID(0);
+      setDepartmentID(0);
+      setFiles([]);
+      setApprovers([]);
+
+      if (files && files.length > 0 && approverIDs.filter((id) => id !== 0).length > 0) {
+        setModalMessage("Document successfully created with files and specific approvers!");
+      } else if (files && files.length > 0) {
+        setModalMessage("Document successfully created with files! Document requests have been created for all department members so they can review and take action on the document.");
+      } else if (approverIDs.filter((id) => id !== 0).length > 0) {
+        setModalMessage("Document successfully created! This is a hardcopy document that requires wet signatures.");
+      } else {
+        setModalMessage("Document successfully created! Document requests have been created for all department members so they can track the hardcopy document status, put it on hold, or add remarks about any issues.");
+      }
+
+      setShowModal(true);
     }
-  };
+  } catch (err: any) {
+    setModalMessage(err.message || "Something went wrong");
+    setShowModal(true);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newFile = e.target.files ? e.target.files[0] : null;
@@ -931,7 +921,28 @@ export default function CreateNewDocument() {
             </div>
           </div>
         )}
-      </div>
+  </div>
+
+ {showModal && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.deletemodalContent}>
+              
+              <p>{modalMessage}</p>
+              <div className={styles.modalActions}>
+                <button onClick={() => {
+        setShowModal(false);
+        if (modalMessage.includes("successfully")) {
+          router.push("/employee2/dashboard");
+        }
+      }} className={styles.OKButton}>OK</button>
+                
+              </div>
+            </div>
+          </div>
+        )}
+    
+
+    
     </div>
   );
 }
