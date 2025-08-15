@@ -94,13 +94,253 @@
 .selectField:focus,
 .textareaField:focus {
   outline: var(--color-maroon) solid 2px;
-  
 }
 
+.sectionDescription {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
 
+.fileUpload {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+}
 
+.fileUpload:hover {
+  border-color: var(--color-maroon);
+}
 
+.fileInput {
+  display: none;
+}
 
+.fileLabel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: #666;
+  cursor: pointer;
+}
+
+.fileLabel span {
+  font-size: 0.9rem;
+}
+
+.fileList {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.fileItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.fileInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fileName {
+  font-weight: 500;
+  color: #333;
+}
+
+.eSignBadge {
+  background-color: var(--color-yellow);
+  color: #333;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.fileActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.switchContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.switchContainer input[type="checkbox"] {
+  display: none;
+}
+
+.switchSlider {
+  position: relative;
+  width: 40px;
+  height: 20px;
+  background-color: #ccc;
+  border-radius: 20px;
+  transition: background-color 0.3s ease;
+}
+
+.switchSlider:before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+}
+
+.switchContainer input[type="checkbox"]:checked + .switchSlider {
+  background-color: var(--color-maroon);
+}
+
+.switchContainer input[type="checkbox"]:checked + .switchSlider:before {
+  transform: translateX(20px);
+}
+
+.switchLabel {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.removeBtn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.removeBtn:hover {
+  background-color: #c82333;
+}
+
+.eSignBtn {
+  background-color: var(--color-maroon);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.eSignBtn:hover {
+  background-color: #8b0000;
+}
+
+.noFilesMessage {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  text-align: center;
+  color: #6c757d;
+}
+
+.approvalContainer {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.approvalHeader {
+  margin-bottom: 1.5rem;
+}
+
+.approvalHeader p {
+  color: #666;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.approverRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.approverNumber {
+  background-color: var(--color-maroon);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.addBtn {
+  background-color: var(--color-yellow);
+  color: #333;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.addBtn:hover {
+  background-color: #e6c200;
+}
+
+.submitBtn {
+  background-color: var(--color-maroon);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+  width: 100%;
+  margin-top: 2rem;
+}
+
+.submitBtn:hover {
+  background-color: #8b0000;
+}
+
+.submitBtn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
 
 
 .textareaField {

@@ -23,6 +23,8 @@ export type PDFViewerProps = {
   signees: Signee[];
   documentId?: string;
   onSavePlaceholders?: (placeholders: Placeholder[]) => void;
+  setPdfUrl?: (url: string) => void; // New prop to update PDF URL
+  setHasSigned?: (signed: boolean) => void; // New prop to update hasSigned state
 };
 
 export type Placeholder = {
@@ -78,6 +80,7 @@ export type SidebarProps = {
   onBackToDashboard?: () => void;
   documentId?: string;
   isDocumentCreator?: boolean;
+  onUndoChanges?: () => void; // New prop for undo functionality
 }
 
 export interface PDFViewerRef {
@@ -90,4 +93,5 @@ export interface PDFViewerRef {
   getPlaceholders: () => Placeholder[];
   setPlaceholders: React.Dispatch<React.SetStateAction<Placeholder[]>>;
   resetSignaturePreview: () => void;
+  undoChanges: () => void; // New function to undo signature changes
 }

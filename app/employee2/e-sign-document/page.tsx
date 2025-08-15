@@ -575,6 +575,13 @@ export default function ESignDocument() {
     }
   };
 
+  // Handle undo changes
+  const handleUndoChanges = () => {
+    if (viewerRef.current) {
+      viewerRef.current.undoChanges();
+    }
+  };
+
   return (
     <div className={styles.container}>
       
@@ -603,6 +610,7 @@ export default function ESignDocument() {
           onBackToDashboard={handleBackToDashboard}
           documentId={documentId || undefined}
           isDocumentCreator={isDocumentCreator}
+          onUndoChanges={handleUndoChanges}
         />
       )}
 
@@ -661,24 +669,24 @@ export default function ESignDocument() {
               setModalOpen={setModalOpen}
               draggingEnabled={draggingEnabled}
               setDraggingEnabled={setDraggingEnabled}
-                             onApplyComplete={(signedUrl) => {
-                 console.log("onApplyComplete called with signedUrl:", signedUrl);
-                 setPdfUrl(signedUrl); // Update PDF URL with signed version
-                 setHasSigned(true);
-                 console.log("PDF URL updated and hasSigned set to true");
-                 
-                 // Remove all placeholders from UI state immediately
-                 console.log("Removing all placeholders from UI state");
-                 setPlaceholders([]);
-                 
-                 console.log("Placeholders removed from UI state");
-                 
-                 // Additional debugging
-                 console.log("State after signature application:");
-                 console.log("- hasSigned:", true);
-                 console.log("- placeholders count:", 0);
-                 console.log("- pdfUrl updated to:", signedUrl);
-               }}
+              onApplyComplete={(signedUrl) => {
+                console.log("onApplyComplete called with signedUrl:", signedUrl);
+                setPdfUrl(signedUrl); // Update PDF URL with signed version
+                setHasSigned(true);
+                console.log("PDF URL updated and hasSigned set to true");
+                
+                // Remove all placeholders from UI state immediately
+                console.log("Removing all placeholders from UI state");
+                setPlaceholders([]);
+                
+                console.log("Placeholders removed from UI state");
+                
+                // Additional debugging
+                console.log("State after signature application:");
+                console.log("- hasSigned:", true);
+                console.log("- placeholders count:", 0);
+                console.log("- pdfUrl updated to:", signedUrl);
+              }}
               viewMode={viewMode}
               setViewMode={setViewMode}
               originalPdfUrl={originalPdfUrl}
@@ -686,6 +694,8 @@ export default function ESignDocument() {
               signees={SIGNEES}
               documentId={documentId || undefined}
               onSavePlaceholders={handleSavePlaceholders}
+              setPdfUrl={setPdfUrl}
+              setHasSigned={setHasSigned}
             />
           )}
         </div>

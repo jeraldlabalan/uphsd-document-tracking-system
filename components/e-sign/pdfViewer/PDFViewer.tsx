@@ -26,6 +26,10 @@ function PDFViewer(
     originalPdfUrl,
     hasSigned,
     signees, // Add signees prop
+    documentId,
+    onSavePlaceholders,
+    setPdfUrl,
+    setHasSigned,
   }: PDFViewerProps,
   ref: React.Ref<PDFViewerRef>
 ) {
@@ -53,7 +57,57 @@ function PDFViewer(
     getPlaceholders: () => placeholders,
     setPlaceholders,
     resetSignaturePreview,
+    undoChanges: () => {
+      // Reset the PDF to the original version and restore placeholders
+      if (originalPdfUrl && setPdfUrl && setHasSigned) {
+        setPdfUrl(originalPdfUrl);
+        setHasSigned(false);
+        
+        // Restore placeholders from the database if available
+        if (documentId) {
+          fetchPlaceholdersFromDatabase();
+        }
+        
+        // Reset signature preview
+        setSignatureImage(null);
+        setUploadedSignature(null);
+        
+        console.log("Changes undone - document restored to original state");
+      }
+    },
   }));
+
+  // Function to fetch placeholders from database
+  const fetchPlaceholdersFromDatabase = async () => {
+    try {
+      const response = await fetch(`/api/employee/signature-placeholders?documentId=${documentId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.placeholders) {
+          // Convert database placeholders to UI format
+          const uiPlaceholders = data.placeholders.map((ph: any) => ({
+            id: ph.PlaceholderID,
+            placeholderId: ph.PlaceholderID,
+            page: ph.Page - 1, // Convert to 0-based indexing
+            x: ph.X,
+            y: ph.Y,
+            width: ph.Width,
+            height: ph.Height,
+            signee: ph.AssignedToID.toString(),
+            signeeName: ph.AssignedTo?.FirstName + ' ' + ph.AssignedTo?.LastName,
+            isSigned: ph.IsSigned,
+            signedAt: ph.SignedAt,
+            assignedToId: ph.AssignedToID,
+          }));
+          
+          setPlaceholders(uiPlaceholders);
+          console.log("Placeholders restored from database:", uiPlaceholders);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching placeholders from database:", error);
+    }
+  };
 
   const resetSignaturePreview = () => {
     setSignatureImage(null);

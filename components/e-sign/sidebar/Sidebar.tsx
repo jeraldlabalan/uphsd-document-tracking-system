@@ -19,6 +19,7 @@ export default function Sidebar({
   onBackToDashboard,
   documentId,
   isDocumentCreator = false,
+  onUndoChanges,
 }: SidebarProps) {
   console.log("All placeholders", placeholders);
   console.log("Current role:", role);
@@ -179,6 +180,16 @@ export default function Sidebar({
           >
             {hasSigned ? "Re-upload Signature" : "Sign Document"}
           </button>
+
+          {/* Undo Changes Button - only show if user has signed */}
+          {hasSigned && onUndoChanges && (
+            <button
+              onClick={onUndoChanges}
+              className={styles.undoChangesButton}
+            >
+              Undo Changes
+            </button>
+          )}
 
           <button 
             className={styles.saveFileButton}

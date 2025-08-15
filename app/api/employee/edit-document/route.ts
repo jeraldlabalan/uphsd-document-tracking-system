@@ -73,110 +73,174 @@ export async function POST(req: NextRequest) {
     // 1) Update document metadata
     await db.document.update({
       where: { DocumentID },
-      data: { Title, Description, TypeID, DepartmentID },
-    });
-
-    // 2) Create new version(s) if files are provided (persist files similar to create-document)
-    let createdVersionId: number | null = null;
-    if (files && files.length > 0) {
-      // Find latest version number
-      const latest = await db.documentVersion.findFirst({
-        where: { DocumentID },
-        orderBy: { VersionNumber: "desc" },
-      });
-      let versionNumber = (latest?.VersionNumber || 0) + 1;
-
-      const uploadDir = path.join(process.cwd(), "public", "uploads", "documents");
-      
-      // Create directory if it doesn't exist
-      try {
-        await mkdir(uploadDir, { recursive: true });
-      } catch (err) {
-        console.error("Error creating upload directory:", err);
-        return NextResponse.json({ error: "Failed to create upload directory" }, { status: 500 });
-      }
-
-      for (const file of files) {
-        try {
-          // Save file to disk
-          const buffer = Buffer.from(await file.arrayBuffer());
-          // Extract only the file extension from the original name
-          const fileExtension = file.name.split('.').pop() || 'pdf';
-          const filename = `${uuidv4()}.${fileExtension}`;
-          const filePath = path.join(uploadDir, filename);
-          
-          await writeFile(filePath, buffer);
-          const FilePath = `/uploads/documents/${filename}`;
-
-          const newVersion = await db.documentVersion.create({
-            data: {
-              DocumentID,
-              VersionNumber: versionNumber++,
-              FilePath: FilePath,
-              ChangedBy: editorID,
-              ChangeDescription: "Updated version",
-            },
-          });
-          createdVersionId = newVersion.VersionID;
-        } catch (fileError) {
-          console.error("Error processing file:", file.name, fileError);
-          return NextResponse.json({ 
-            error: `Failed to process file ${file.name}: ${fileError instanceof Error ? fileError.message : 'Unknown error'}` 
-          }, { status: 500 });
-        }
-      }
-    }
-
-    // 3) Reset requests/notifications to match new approvers
-    await db.documentRequest.deleteMany({ where: { DocumentID } });
-    await db.notification.deleteMany({
-      where: {
-        Title: {
-          in: ["New Document for Review", "Document Update"],
-        },
+      data: {
+        Title,
+        Description,
+        TypeID,
+        DepartmentID,
+        UpdatedAt: new Date(),
       },
     });
 
+    // 2) Handle file uploads (only if files are provided)
+    let createdVersionId: number | null = null;
+    if (files && files.length > 0) {
+      const uploadDir = path.join(process.cwd(), "public", "uploads", "documents");
+      
+      for (const file of files) {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const filename = `${uuidv4()}-${file.name}`;
+        await writeFile(path.join(uploadDir, filename), buffer);
+        const FilePath = `/uploads/documents/${filename}`;
+
+        const newVersion = await db.documentVersion.create({
+          data: {
+            DocumentID,
+            VersionNumber: (existing.Versions[0]?.VersionNumber || 0) + 1,
+            FilePath,
+            ChangedBy: editorID,
+            ChangeDescription: "Document updated with new file",
+          },
+        });
+
+        createdVersionId = newVersion.VersionID;
+
+        await db.activityLog.create({
+          data: {
+            PerformedBy: editorID,
+            Action: "Updated Document Version",
+            TargetType: "DocumentVersion",
+            Remarks: `New version uploaded for document ${DocumentID}`,
+            TargetID: newVersion.VersionID,
+          },
+        });
+      }
+    }
+
+    // 3) Handle approvers and notifications
+    let createReqs: Promise<any>[] = [];
+    let notifications: Promise<any>[] = [];
+
+    // Get In-Process status
     const inProcess = await db.status.findFirst({ where: { StatusName: "In-Process" } });
     if (!inProcess) {
       return NextResponse.json({ error: "Missing 'In-Process' status in DB" }, { status: 500 });
     }
 
-    const createReqs = ApproverIDs.map(async (approverID) => {
-      const reqRec = await db.documentRequest.create({
-        data: {
-          RequestedByID: editorID,
-          RecipientUserID: approverID,
-          DocumentID,
-          StatusID: inProcess.StatusID,
-          Priority: "Normal",
-          Remarks: "Awaiting review",
+    if (ApproverIDs && ApproverIDs.length > 0) {
+      // Specific approvers are specified
+      createReqs = ApproverIDs.map(async (approverID: number) => {
+        const reqRec = await db.documentRequest.create({
+          data: {
+            RequestedByID: editorID,
+            RecipientUserID: approverID,
+            DocumentID,
+            StatusID: inProcess.StatusID,
+            Priority: "Normal",
+            Remarks: "Awaiting review",
+          },
+        });
+
+        await db.notification.create({
+          data: {
+            SenderID: editorID,
+            ReceiverID: approverID,
+            Title: "Document Update",
+            Message: `A document "${Title}" has been updated and needs your review.`,
+          },
+        });
+
+        await db.activityLog.create({
+          data: {
+            PerformedBy: editorID,
+            Action: "Updated Document Request",
+            TargetType: "DocumentRequest",
+            Remarks: `Request created for user ${approverID} on document ${DocumentID}`,
+            TargetID: reqRec.RequestID,
+          },
+        });
+        
+        return reqRec;
+      });
+    } else if (DepartmentID) {
+      // No approvers required, but send notifications to all department members
+      const departmentMembers = await db.user.findMany({
+        where: {
+          DepartmentID: DepartmentID,
+          UserID: { not: editorID }, // Exclude the editor
+          IsActive: true,
+          IsDeleted: false,
+        },
+        select: {
+          UserID: true,
         },
       });
 
-      await db.notification.create({
-        data: {
-          SenderID: editorID,
-          ReceiverID: approverID,
-          Title: "Document Update",
-          Message: `A document "${Title}" has been updated and needs your review.`,
-        },
-      });
+      // If files are uploaded, create document requests for all department members
+      // If no files, just send notifications for hardcopy documents
+      if (files && files.length > 0) {
+        // Create document requests for all department members so they can see and act on the updated document
+        createReqs = departmentMembers.map(async (member) => {
+          const reqRec = await db.documentRequest.create({
+            data: {
+              RequestedByID: editorID,
+              RecipientUserID: member.UserID,
+              DocumentID,
+              StatusID: inProcess.StatusID,
+              Priority: "Normal",
+              Remarks: "Document updated and available for review - no approval required",
+            },
+          });
 
-      await db.activityLog.create({
-        data: {
-          PerformedBy: editorID,
-          Action: "Updated Document Request",
-          TargetType: "DocumentRequest",
-          Remarks: `Request created for user ${approverID} on document ${DocumentID}`,
-          TargetID: reqRec.RequestID,
-        },
-      });
-      
-      return reqRec;
-    });
+          await db.notification.create({
+            data: {
+              SenderID: editorID,
+              ReceiverID: member.UserID,
+              Title: "Document Updated",
+              Message: `A document "${Title}" has been updated in your department with uploaded files. This document is available for your review and does not require specific approval.`,
+            },
+          });
 
-    await Promise.all(createReqs);
+          await db.activityLog.create({
+            data: {
+              PerformedBy: editorID,
+              Action: "Created Department Update Request",
+              TargetType: "DocumentRequest",
+              Remarks: `Document update request created for department member ${member.UserID} for document ${DocumentID}`,
+              TargetID: reqRec.RequestID,
+            },
+          });
+
+          return reqRec;
+        });
+      } else {
+        // No files - hardcopy document requiring wet signatures, just send notifications
+        notifications = departmentMembers.map(async (member) => {
+          const notif = await db.notification.create({
+            data: {
+              SenderID: editorID,
+              ReceiverID: member.UserID,
+              Title: "Document Updated",
+              Message: `A document "${Title}" has been updated in your department. This document requires wet signatures and does not need digital approval.`,
+            },
+          });
+
+          await db.activityLog.create({
+            data: {
+              PerformedBy: editorID,
+              Action: "Sent Department Update Notification",
+              TargetType: "Notification",
+              Remarks: `Department update notification sent to user ${member.UserID} for document ${DocumentID}`,
+              TargetID: notif.NotificationID,
+            },
+          });
+          
+          return notif;
+        });
+      }
+    }
+
+    await Promise.all([...createReqs, ...notifications]);
 
     // 4) Handle signature placeholders if provided
     if (placeholders && placeholders.length > 0) {
@@ -436,28 +500,56 @@ export async function PUT(req: NextRequest) {
         },
       });
 
-      // Send notifications to all department members
-      notifications = departmentMembers.map(async (member) => {
-        const notif = await db.notification.create({
+      // Always create document requests for all department members so they can track and act on documents
+      // This applies to both files and hardcopy documents
+      createReqs = departmentMembers.map(async (member) => {
+        let remarks = "";
+        let notificationTitle = "";
+        let notificationMessage = "";
+        
+        if (files && files.length > 0) {
+          // Files uploaded - document available for review
+          remarks = "Document updated and available for review - no approval required";
+          notificationTitle = "Document Updated";
+          notificationMessage = `A document "${Title}" has been updated in your department with uploaded files. This document is available for your review and does not require specific approval.`;
+        } else {
+          // No files - hardcopy document requiring wet signatures
+          remarks = "Hardcopy document updated - track status and add remarks";
+          notificationTitle = "Hardcopy Document Updated";
+          notificationMessage = `A hardcopy document "${Title}" has been updated in your department. This document requires wet signatures. You can track its status, put it on hold, or add remarks about any issues.`;
+        }
+
+        const reqRec = await db.documentRequest.create({
+          data: {
+            RequestedByID: editorID,
+            RecipientUserID: member.UserID,
+            DocumentID,
+            StatusID: inProcess.StatusID,
+            Priority: "Normal",
+            Remarks: remarks,
+          },
+        });
+
+        await db.notification.create({
           data: {
             SenderID: editorID,
             ReceiverID: member.UserID,
-            Title: "Document Updated",
-            Message: `A document "${Title}" has been updated in your department.`,
+            Title: notificationTitle,
+            Message: notificationMessage,
           },
         });
 
         await db.activityLog.create({
           data: {
             PerformedBy: editorID,
-            Action: "Sent Department Update Notification",
-            TargetType: "Notification",
-            Remarks: `Department update notification sent to user ${member.UserID} for document ${DocumentID}`,
-            TargetID: notif.NotificationID,
+            Action: "Created Department Update Request",
+            TargetType: "DocumentRequest",
+            Remarks: `Document update request created for department member ${member.UserID} for document ${DocumentID}`,
+            TargetID: reqRec.RequestID,
           },
         });
-        
-        return notif;
+
+        return reqRec;
       });
     }
 

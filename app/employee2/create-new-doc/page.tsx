@@ -281,10 +281,17 @@ export default function CreateNewDocument() {
     setSuccess(false);
 
     try {
-      if (!files || files.length === 0) {
-        setError("File is required");
-        setLoading(false);
-        return;
+      // Files are now optional - they can be hardcopy documents
+      // Only validate files if they are provided
+      if (files && files.length > 0) {
+        // Validate that uploaded files are valid
+        for (const fileItem of files) {
+          if (!fileItem.file || fileItem.file.size === 0) {
+            setError("Please ensure all uploaded files are valid");
+            setLoading(false);
+            return;
+          }
+        }
       }
 
       // Check if we have a saved document with placeholders
@@ -353,26 +360,29 @@ export default function CreateNewDocument() {
           throw new Error("Failed to create document with placeholders");
         }
       } else {
-        // Regular document creation without placeholders
+        // Regular document creation (files and approvers are optional)
         const formData = new FormData();
         formData.append("Title", title);
         formData.append("TypeID", selectedTypeID?.toString() ?? "");
         formData.append("Description", description);
         formData.append("DepartmentID", departmentID?.toString() ?? "");
-        formData.append(
-          "ApproverIDs",
-          JSON.stringify(approverIDs.filter((id) => id !== 0))
-        );
-
-        files.forEach((item) => {
-          formData.append("files", item.file);
-        });
-
-        if (approvalRequired) {
+        
+        // Only append approvers if they are selected
+        if (approverIDs.filter((id) => id !== 0).length > 0) {
           formData.append(
             "ApproverIDs",
             JSON.stringify(approverIDs.filter((id) => id !== 0))
           );
+        } else {
+          // No approvers selected - send empty array to indicate department-wide notification
+          formData.append("ApproverIDs", JSON.stringify([]));
+        }
+
+        // Only append files if they are provided
+        if (files && files.length > 0) {
+          files.forEach((item) => {
+            formData.append("files", item.file);
+          });
         }
 
         const res = await fetch("/api/employee/create-document", {
@@ -393,7 +403,18 @@ export default function CreateNewDocument() {
         setFiles([]);
         setApprovers([]);
         console.log("document success");
-        alert("Document successfully created!");
+        
+        // Show appropriate success message based on whether files and approvers were provided
+        if (files && files.length > 0 && approverIDs.filter((id) => id !== 0).length > 0) {
+          alert("Document successfully created with files and specific approvers!");
+        } else if (files && files.length > 0) {
+          alert("Document successfully created with files! Document requests have been created for all department members so they can review and take action on the document.");
+        } else if (approverIDs.filter((id) => id !== 0).length > 0) {
+          alert("Document successfully created! This is a hardcopy document that requires wet signatures.");
+        } else {
+          alert("Document successfully created! Document requests have been created for all department members so they can track the hardcopy document status, put it on hold, or add remarks about any issues.");
+        }
+        
         router.push("/employee2/dashboard");
       }
     } catch (err: any) {
@@ -635,25 +656,33 @@ export default function CreateNewDocument() {
 
             <div className={styles.sectionHeader}>
               <div className={styles.sectionTitle}>Document Files</div>
-
-              <div className={styles.toggleContainer}>
-                <span>Document Required</span>
-                <label className={styles.switch}>
-                  <input
-                    type="checkbox"
-                    checked={showDocuments}
-                    onChange={() => setShowDocuments(!showDocuments)}
-                  />
-                  <span className={styles.slider}></span>
-                </label>
+              <div className={styles.sectionDescription}>
+                Upload PDF files for digital documents, or leave empty for hardcopy documents. Document requests will be created for all department members so they can track status, take actions, and add remarks about any issues.
               </div>
             </div>
 
-            {showDocuments && (
-              <>
-                {files.map((item, index) => (
-                  <div key={index} className={styles.inputGroup}>
-                    <div className={styles.fileItem}>
+            <div className={styles.inputGroup}>
+              <label htmlFor="file" className={styles.label}>
+                Document Files (Optional)
+              </label>
+              <div className={styles.fileUpload}>
+                <input
+                  type="file"
+                  id="file"
+                  accept=".pdf"
+                  onChange={handleFileChange}
+                  multiple
+                  className={styles.fileInput}
+                />
+                <label htmlFor="file" className={styles.fileLabel}>
+                  <FileUp size={20} />
+                  <span>Choose files or drag and drop</span>
+                </label>
+              </div>
+              {files.length > 0 && (
+                <div className={styles.fileList}>
+                  {files.map((item, index) => (
+                    <div key={index} className={styles.fileItem}>
                       <div className={styles.fileInfo}>
                         <span className={styles.fileName}>
                           {item.file.name}
@@ -699,154 +728,72 @@ export default function CreateNewDocument() {
                         )}
                       </div>
                     </div>
-                  </div>
-                ))}
-
-                <div className={styles.inputGroup}>
-                  <label>Upload Documents</label>
-
-                  <label className={styles.uploadBox}>
-                    <input
-                      type="file"
-                      onChange={handleFileChange}
-                      className={styles.hiddenInput}
-                    />
-                    <div className={styles.uploadContent}>
-                      <FileUp size={32} />
-                      <span>Click or drag to upload</span>
-                    </div>
-                  </label>
-
-                  {files.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const input = document.querySelector(
-                          `.${styles.hiddenInput}`
-                        ) as HTMLInputElement;
-                        if (input) {
-                          input.click();
-                        }
-                      }}
-                      className={styles.addFileBtn}
-                    >
-                      <Plus size={20} /> Add another file
-                    </button>
-                  )}
+                  ))}
                 </div>
-              </>
-            )}
+              )}
+              {files.length === 0 && (
+                <div className={styles.noFilesMessage}>
+                  <p>No files uploaded. This will be treated as a hardcopy document requiring wet signatures.</p>
+                </div>
+              )}
+            </div>
 
-            <div className={styles.sectionTitle}>Send Document</div>
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionTitle}>Approvers (Optional)</div>
+              <div className={styles.sectionDescription}>
+                Select specific approvers for digital review, or leave empty to create document requests for all department members. All department members will receive document requests and can take actions like approve, hold, reject, or add remarks about issues.
+              </div>
+            </div>
 
             <div className={styles.approvalContainer}>
               <div className={styles.approvalHeader}>
                 <p>
                   Select the people who need to review and approve this document
-                  in order.
+                  in order, or leave empty for department-wide notification.
                 </p>
-                <div className={styles.toggleContainer}>
-                  <span>Approval Required</span>
-                  <label className={styles.switch}>
-                    <input
-                      title="approval"
-                      type="checkbox"
-                      checked={approvalRequired}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setApprovalRequired(checked);
-                        if (checked && approverIDs.length === 0) {
-                          setApproverIDs([0]);
-                        }
-                      }}
-                    />
-
-                    <span className={styles.slider}></span>
-                  </label>
-                </div>
               </div>
 
-              {approvalRequired &&
-                approverIDs.map((id, index) => (
-                  <div className={styles.approverRow} key={index}>
-                    <span className={styles.approverNumber}>{index + 1}</span>
-
-                    <Select
-                      options={selectOptions}
-                      value={
-                        selectOptions.find((opt) => opt.value === id) || null
-                      }
-                      onChange={(selected) =>
-                        handleApproverChange(selected, index)
-                      }
-                      placeholder="Select approver..."
-                      isSearchable
-                      menuPortalTarget={
-                        typeof window !== "undefined" ? document.body : null
-                      }
-                      styles={{
-                        container: (base) => ({
-                          ...base,
-                          width: "auto",
-                          minWidth: "120px",
-                          maxWidth: "100%",
-                          flex: 1,
-                        }),
-                        menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                      }}
-                    />
-
-                    {/* ✅ Add Approver Button */}
+              {approverIDs.map((id, index) => (
+                <div className={styles.approverRow} key={index}>
+                  <span className={styles.approverNumber}>{index + 1}</span>
+                  <Select
+                    options={selectOptions}
+                    value={selectOptions.find((option) => option.value === id)}
+                    onChange={(selected) =>
+                      handleApproverChange(selected, index)
+                    }
+                    placeholder="Select approver"
+                    className={styles.selectField}
+                  />
+                  {approverIDs.length > 1 && (
                     <button
                       type="button"
-                      onClick={addApprover}
-                      className={styles.addBtn}
+                      className={styles.removeBtn}
+                      onClick={() => removeApprover(index)}
                     >
-                      + Add Approver
+                      Remove
                     </button>
+                  )}
+                </div>
+              ))}
 
-                    {/* ✅ Only show Remove if more than 1 approver */}
-                    {approverIDs.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeApprover(index)}
-                        className={styles.removeBtn}
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                ))}
-
-              <div className={styles.inputGroup}>
-                <label>
-                  Due Date <span className={styles.optional}>(optional)</span>
-                </label>
-                <input
-                  type="date"
-                  title="date"
-                  className={styles.inputField}
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  min={new Date().toISOString().split("T")[0]} // 👈 prevents past dates
-                />
-              </div>
+              <button
+                type="button"
+                className={styles.addBtn}
+                onClick={addApprover}
+              >
+                + Add New Approver
+              </button>
             </div>
 
-            <div className={styles.buttonGroup}>
-              <div className={styles.leftButtons}>
-                <Link href="./dashboard">
-                  <button className={styles.backBtn}>Back</button>{" "}
-                </Link>
-              </div>
-              <div className={styles.rightButtons}>
-                <button className={styles.clearBtn} onClick={handleClear}>
-                  Clear
-                </button>
-                <button className={styles.submitBtn} type="submit">
-                  Submit
-                </button>
-              </div>
+            <div className={styles.formGroup}>
+              <button
+                type="submit"
+                className={styles.submitBtn}
+                disabled={loading}
+              >
+                {loading ? "Creating..." : "Create Document"}
+              </button>
             </div>
           </form>
         </div>
