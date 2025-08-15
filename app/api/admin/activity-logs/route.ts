@@ -18,7 +18,10 @@ export async function GET(req: NextRequest) {
     console.log("Token Retrieved:" + token);
 
     if (!token) {
-      return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+      return NextResponse.json(
+        { message: "Not authenticated" },
+        { status: 401 }
+      );
     }
 
     let decoded: JwtPayload;
@@ -42,7 +45,7 @@ export async function GET(req: NextRequest) {
       tomorrow.setDate(tomorrow.getDate() + 1);
 
       // Build where clause for summary based on filters
-      const summaryWhere: any = {
+      const summaryWhere: Record<string, unknown> = {
         IsDeleted: false,
         Timestamp: {
           gte: today,
@@ -50,12 +53,13 @@ export async function GET(req: NextRequest) {
         },
       };
 
-      if (targetType && targetType !== "All Targets") summaryWhere.TargetType = targetType;
+      if (targetType && targetType !== "All Targets")
+        summaryWhere.TargetType = targetType;
       if (department && department !== "All Departments") {
         summaryWhere.User = {
           Department: {
-            Name: department
-          }
+            Name: department,
+          },
         };
       }
 
@@ -69,7 +73,12 @@ export async function GET(req: NextRequest) {
         where: {
           ...summaryWhere,
           TargetType: {
-            in: ["Document", "DocumentVersion", "DocumentRequest", "SignaturePlaceholder"],
+            in: [
+              "Document",
+              "DocumentVersion",
+              "DocumentRequest",
+              "SignaturePlaceholder",
+            ],
           },
         },
       });
@@ -91,16 +100,17 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const where: any = {
+    const where: Record<string, unknown> = {
       IsDeleted: false,
     };
 
-    if (targetType && targetType !== "All Targets") where.TargetType = targetType;
+    if (targetType && targetType !== "All Targets")
+      where.TargetType = targetType;
     if (department && department !== "All Departments") {
       where.User = {
         Department: {
-          Name: department
-        }
+          Name: department,
+        },
       };
     }
     if (date && date !== "All Dates") {
@@ -112,7 +122,7 @@ export async function GET(req: NextRequest) {
 
     const totallog = await db.activityLog.count({
       where,
-    })
+    });
     const logs = await db.activityLog.findMany({
       where,
       include: {
@@ -130,7 +140,6 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    
     console.log("Activity Logs: ", logs);
     return NextResponse.json(logs);
   } catch (error) {

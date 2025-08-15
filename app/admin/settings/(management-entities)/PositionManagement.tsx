@@ -14,16 +14,12 @@ interface ActiveItem {
   checked: boolean;
 }
 
-interface PositionManagementProps {
-  showModal: (data: {
-    description: string;
-    onConfirm: () => void;
-    onCancel: () => void;
-    isLoading: boolean;
-  }) => void;
+interface PositionDTO {
+  PositionID: number;
+  Name: string;
 }
 
-const PositionManagement: React.FC<PositionManagementProps> = ({ showModal }) => {
+const PositionManagement: React.FC = () => {
   const [rows, setRows] = useState<InputRow[]>([{ id: Date.now(), value: "" }]);
   const [activeItems, setActiveItems] = useState<ActiveItem[]>([]);
 
@@ -41,9 +37,9 @@ const PositionManagement: React.FC<PositionManagementProps> = ({ showModal }) =>
     try {
       const res = await fetch("/api/admin/settings/position-management");
       if (!res.ok) throw new Error("Failed to fetch positions");
-      const data = await res.json();
+      const data: PositionDTO[] = await res.json();
       setActiveItems(
-        data.map((pos: any) => ({
+        data.map((pos: PositionDTO) => ({
           id: pos.PositionID,
           name: pos.Name,
           checked: true,

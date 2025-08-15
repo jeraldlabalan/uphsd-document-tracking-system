@@ -30,22 +30,13 @@ export async function GET(req: NextRequest) {
     requireAdmin(token);
 
     // Summary and listing
-    const [activeDocuments, allDocuments, deletedDocuments, recentDocuments] = await Promise.all([
-      // Count documents with the same logic as dashboard - only specific workflow statuses
-      db.document.count({
-        where: {
-          IsDeleted: false,
-          Status: {
-            in: [
-              "In-Process",
-              "On Hold",
-              "Approved",
-              "Completed",
-              "Awaiting-Completion",
-            ],
-          },
-        },
-      }),
+    const [
+      totalDocuments,
+      inProcessDocuments,
+      deletedDocuments,
+      recentDocuments,
+    ] = await Promise.all([
+      db.document.count(),
       db.document.count({ where: { IsDeleted: false } }),
       db.document.count({ where: { IsDeleted: true } }),
       db.document.findMany({
@@ -64,7 +55,8 @@ export async function GET(req: NextRequest) {
       title: doc.Title,
       type: doc.DocumentType?.TypeName ?? "Unknown",
       department: doc.Department?.Name ?? "Unassigned",
-      creator: `${doc.Creator?.FirstName ?? ""} ${doc.Creator?.LastName ?? ""}`.trim(),
+      creator:
+        `${doc.Creator?.FirstName ?? ""} ${doc.Creator?.LastName ?? ""}`.trim(),
       status: doc.Status ?? "Unknown",
       dateCreated: doc.CreatedAt.toISOString().split("T")[0],
     }));
@@ -77,9 +69,13 @@ export async function GET(req: NextRequest) {
       },
       documents: docs,
     });
-  } catch (error: any) {
-    const message = error?.message || "Server error";
-    const status = message.includes("Not authenticated") ? 401 : message.includes("Not authorized") ? 403 : 500;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Server error";
+    const status = message.includes("Not authenticated")
+      ? 401
+      : message.includes("Not authorized")
+        ? 403
+        : 500;
     return NextResponse.json({ message }, { status });
   }
 }
@@ -93,7 +89,10 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json();
     const documentId = Number(body?.documentId);
     if (!documentId) {
-      return NextResponse.json({ message: "documentId is required" }, { status: 400 });
+      return NextResponse.json(
+        { message: "documentId is required" },
+        { status: 400 }
+      );
     }
 
     // Soft delete the document
@@ -114,9 +113,13 @@ export async function PATCH(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    const message = error?.message || "Server error";
-    const status = message.includes("Not authenticated") ? 401 : message.includes("Not authorized") ? 403 : 500;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Server error";
+    const status = message.includes("Not authenticated")
+      ? 401
+      : message.includes("Not authorized")
+        ? 403
+        : 500;
     return NextResponse.json({ message }, { status });
   }
 }

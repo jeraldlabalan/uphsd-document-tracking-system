@@ -14,16 +14,12 @@ interface ActiveItem {
   checked: boolean;
 }
 
-interface DepartmentManagementProps {
-  showModal: (data: {
-    description: string;
-    onConfirm: () => void;
-    onCancel: () => void;
-    isLoading: boolean;
-  }) => void;
+interface DepartmentDTO {
+  DepartmentID: number;
+  Name: string;
 }
 
-const DepartmentManagement: React.FC<DepartmentManagementProps> = ({ showModal }) => {
+const DepartmentManagement: React.FC = () => {
   const [rows, setRows] = useState<InputRow[]>([{ id: Date.now(), value: "" }]);
   const [activeItems, setActiveItems] = useState<ActiveItem[]>([]);
 
@@ -40,9 +36,9 @@ const DepartmentManagement: React.FC<DepartmentManagementProps> = ({ showModal }
     try {
       const res = await fetch("/api/admin/settings/department-management");
       if (!res.ok) throw new Error("Failed to fetch departments");
-      const data = await res.json();
+      const data: DepartmentDTO[] = await res.json();
       setActiveItems(
-        data.map((dept: any) => ({
+        data.map((dept: DepartmentDTO) => ({
           id: dept.DepartmentID,
           name: dept.Name,
           checked: true,

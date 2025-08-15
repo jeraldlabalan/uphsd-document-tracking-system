@@ -17,14 +17,29 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    let decoded: any;
+    interface JwtPayload {
+      UserID?: number;
+      userId?: number;
+      email?: string;
+      iat?: number;
+      exp?: number;
+    }
+    let decoded: JwtPayload;
     try {
-      decoded = verify(token, JWT_SECRET);
+      decoded = verify(token, JWT_SECRET) as JwtPayload;
     } catch (err) {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 });
     }
 
-    const body = await req.json();
+    const body: {
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+      employeeId?: string | null;
+      mobileNumber?: string | null;
+      sex?: string | null;
+      position?: string | null;
+    } = await req.json();
     const {
       firstName,
       lastName,
