@@ -41,8 +41,8 @@ export default function ActivityLogs() {
   const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
+  const [targetFilter, setTargetFilter] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("");
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -63,6 +63,47 @@ export default function ActivityLogs() {
   const [showSuccessPermanentDelete, setShowSuccessPermanentDelete] =
     useState(false);
 
+  // Add state for summary statistics
+  const [summaryStats, setSummaryStats] = useState({
+    totalActivityToday: 0,
+    documentActivityToday: 0,
+    userActivityToday: 0,
+  });
+
+  // Common target types for activity logs
+  const targetTypes = [
+    "Document",
+    "DocumentVersion", 
+    "DocumentRequest",
+    "SignaturePlaceholder",
+    "User",
+    "Department",
+    "Role",
+    "Notification"
+  ];
+
+  // Fetch summary statistics
+  const fetchSummaryStats = async () => {
+    try {
+      const summaryRes = await fetch('/api/admin/activity-logs?summary=true', {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (summaryRes.ok) {
+        const summaryData = await summaryRes.json();
+        setSummaryStats(summaryData);
+      }
+    } catch (error) {
+      console.error('Error fetching summary stats:', error);
+    }
+  };
+
+  // Fetch summary stats on mount and when filters change
+  useEffect(() => {
+    fetchSummaryStats();
+  }, [targetFilter, departmentFilter, dateFrom]);
+
      useEffect(() => {
   const fetchAllData = async () => {
     try {
@@ -70,8 +111,8 @@ export default function ActivityLogs() {
 
       // Fetch activity logs
       const params = new URLSearchParams();
-      if (statusFilter) params.append("action", statusFilter);
-      if (typeFilter) params.append("documentType", typeFilter);
+      if (targetFilter) params.append("targetType", targetFilter);
+      if (departmentFilter) params.append("department", departmentFilter);
       if (dateFrom) params.append("date", dateFrom);
 
       const resLogs = await fetch(`/api/admin/activity-logs?${params.toString()}`, {
@@ -95,15 +136,18 @@ export default function ActivityLogs() {
     } catch (err) {
       console.error("Error fetching data:", err);
       setLogs([]);
-      setFilterData([]);
+      setFilterData({
+        documentTypes: [],
+        departments: [],
+        statuses: []
+      });
     } finally {
       setLoading(false); // ✅ stop loader after both fetches
     }
   };
 
   fetchAllData();
-}, [statusFilter, typeFilter, dateFrom]);
- // Re-fetch on filter change
+}, [targetFilter, departmentFilter, dateFrom]); // Re-fetch on filter change
 
   // const activityLogs = [
   //   {
@@ -206,26 +250,20 @@ if (loading) {
           <div className={styles.summary}>
             <div className={`${styles.card} ${styles.orange}`}>
               <CheckCircle className={styles.icon} />
-              <span className={styles.count}>116</span>
+              <span className={styles.count}>{summaryStats.totalActivityToday}</span>
               <span>Total Activity Today</span>
             </div>
 
             <div className={`${styles.card} ${styles.cyan}`}>
               <Clock className={styles.icon} />
-              <span className={styles.count}>3</span>
-              <span>Document Action</span>
+              <span className={styles.count}>{summaryStats.documentActivityToday}</span>
+              <span>Document Activity Today</span>
             </div>
 
             <div className={`${styles.card} ${styles.green}`}>
               <Clock className={styles.icon} />
-              <span className={styles.count}>3</span>
-              <span>User Action</span>
-            </div>
-
-            <div className={`${styles.card} ${styles.yellow}`}>
-              <Clock className={styles.icon} />
-              <span className={styles.count}>3</span>
-              <span>Total Documents</span>
+              <span className={styles.count}>{summaryStats.userActivityToday}</span>
+              <span>User Activity Today</span>
             </div>
           </div>
 
@@ -234,7 +272,7 @@ if (loading) {
               <SearchIcon className={styles.searchIcon} size={18} />
               <input
                 type="text"
-                placeholder="Search users..."
+                placeholder="Search activities..."
                 className={styles.searchInput}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -243,26 +281,26 @@ if (loading) {
 
             <select
               className={styles.dropdown}
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              value={targetFilter}
+              onChange={(e) => setTargetFilter(e.target.value)}
             >
-              <option value="">All Status</option>
-              {filterData.statuses.map((status) => (
-                <option key={status.StatusID} value={status.StatusName}>
-                  {status.StatusName}
+              <option value="">All Targets</option>
+              {targetTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type}
                 </option>
               ))}
             </select>
 
             <select 
               className={styles.dropdown}
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
+              value={departmentFilter}
+              onChange={(e) => setDepartmentFilter(e.target.value)}
             >
-              <option value="">All Types</option>
-              {filterData.documentTypes.map((type) => (
-                <option key={type.TypeID} value={type.TypeName}>
-                  {type.TypeName}
+              <option value="">All Departments</option>
+              {filterData.departments.map((department) => (
+                <option key={department.DepartmentID} value={department.Name}>
+                  {department.Name}
                 </option>
               ))}
             </select>
