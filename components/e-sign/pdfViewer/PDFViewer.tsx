@@ -213,6 +213,8 @@ function PDFViewer(
     height: number;
     editingId?: number;
     existingId?: number;
+    clickX?: number;
+    clickY?: number;
   } | null>(null);
 
   const [search, setSearch] = useState("");
@@ -220,6 +222,55 @@ function PDFViewer(
   const filteredSignees = signees.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Function to calculate optimal modal position based on click coordinates
+  const calculateModalPosition = (clickX: number, clickY: number) => {
+    const modalWidth = 220;
+    const modalHeight = 300;
+    
+    // Calculate left position (center modal on click)
+    let left = clickX - (modalWidth / 2);
+    
+    // Ensure modal doesn't go off-screen
+    if (left < 10) left = 10;
+    if (left + modalWidth > window.innerWidth - 10) {
+      left = window.innerWidth - modalWidth - 10;
+    }
+    
+    // Calculate top position (above click point)
+    let top = clickY - modalHeight - 20;
+    
+    // If modal would go above screen, position below click point
+    if (top < 10) {
+      top = clickY + 20;
+    }
+    
+    // Ensure modal doesn't go below screen
+    if (top + modalHeight > window.innerHeight - 10) {
+      top = window.innerHeight - modalHeight - 10;
+    }
+    
+    // Additional check: if click is too close to edges, adjust position
+    if (clickX < modalWidth + 20) {
+      left = 20; // Position from left edge
+    } else if (clickX > window.innerWidth - modalWidth - 20) {
+      left = window.innerWidth - modalWidth - 20; // Position from right edge
+    }
+    
+    // Debug logging
+    console.log('Modal positioning:', {
+      clickX,
+      clickY,
+      calculatedLeft: left,
+      calculatedTop: top,
+      windowWidth: window.innerWidth,
+      windowHeight: window.innerHeight,
+      modalWidth,
+      modalHeight
+    });
+    
+    return { left, top };
+  };
 
 
 
@@ -276,6 +327,8 @@ function PDFViewer(
         y: dragRect.y,
         width: dragRect.width,
         height: dragRect.height,
+        clickX: e.clientX,
+        clickY: e.clientY,
       });
 
       setSelectedAssignee(null);
@@ -727,6 +780,8 @@ function PDFViewer(
                     y: centeredY,
                     width: MIN_WIDTH,
                     height: MIN_HEIGHT,
+                    clickX: e.clientX,
+                    clickY: e.clientY,
                   });
 
                   setSelectedAssignee(null);
@@ -852,6 +907,8 @@ function PDFViewer(
                                 width: ph.width,
                                 height: ph.height,
                                 visible: true,
+                                clickX: e.clientX,
+                                clickY: e.clientY,
                               });
                               setSelectedAssignee({
                                 signee: ph.signee ?? "",
@@ -934,7 +991,7 @@ function PDFViewer(
             <div className={styles.editAssignedSigneeContainer}>
               <h4>Edit Placeholder</h4>
               <button
-                onClick={() => {
+                onClick={(e) => {
                   setAssignModal({
                     visible: true,
                     page: selectedPlaceholder.page,
@@ -943,6 +1000,8 @@ function PDFViewer(
                     width: selectedPlaceholder.width,
                     height: selectedPlaceholder.height,
                     editingId: selectedPlaceholder.id,
+                    clickX: e.clientX,
+                    clickY: e.clientY,
                   });
                   setSelectedPlaceholder(null);
                 }}
@@ -969,6 +1028,24 @@ function PDFViewer(
         </Document>
       </div>
 
+      {/* Click Position Indicator */}
+      {assignModal?.visible && assignModal.clickX && assignModal.clickY && (
+        <div
+          style={{
+            position: 'fixed',
+            left: assignModal.clickX - 5,
+            top: assignModal.clickY - 5,
+            width: '10px',
+            height: '10px',
+            backgroundColor: '#007bff',
+            borderRadius: '50%',
+            zIndex: 999,
+            pointerEvents: 'none',
+            animation: 'pulse 1s infinite',
+          }}
+        />
+      )}
+
       {/* Assign Modal - moved outside the page loop */}
       {assignModal?.visible && (
         <div
@@ -976,16 +1053,22 @@ function PDFViewer(
           className={styles.assignModalContainer}
           style={{
             position: 'fixed',
-            left: Math.min(
-              Math.max(
-                (assignModal.x * scale) + 12,
-                10
-              ),
-              window.innerWidth - 220
-            ),
-            top: Math.min(
-              Math.max((assignModal.y * scale), 10),
-              window.innerHeight - 300
+            ...(assignModal.clickX && assignModal.clickY 
+              ? calculateModalPosition(assignModal.clickX, assignModal.clickY)
+              : {
+                  // Fallback to original positioning
+                  left: Math.min(
+                    Math.max(
+                      (assignModal.x * scale) + 12,
+                      10
+                    ),
+                    window.innerWidth - 220
+                  ),
+                  top: Math.min(
+                    Math.max((assignModal.y * scale), 10),
+                    window.innerHeight - 300
+                  ),
+                }
             ),
             zIndex: 1000,
             minWidth: '200px',

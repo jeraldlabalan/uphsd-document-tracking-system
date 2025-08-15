@@ -4,6 +4,7 @@ import Image from "next/image";
 import styles from "./adminHeaderStyles.module.css";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import ProfilePicture from "../ProfilePicture";
 
 import {
   LayoutDashboard,
@@ -21,7 +22,7 @@ export default function AdminHeader() {
   const [userInfo, setUserInfo] = useState<{
     FirstName: string | null;
     LastName: string | null;
-    ProfilePicture?: string;
+    ProfilePicture?: string | null;
   } | null>(null);
   const router = useRouter();
 
@@ -88,7 +89,7 @@ export default function AdminHeader() {
     }
   };
 
-  const firstInitial = userInfo?.FirstName?.charAt(0).toUpperCase() || "U";
+
 
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
@@ -205,7 +206,12 @@ export default function AdminHeader() {
               Welcome,{" "}
               {userInfo ? `${userInfo.FirstName} ${userInfo.LastName}!` : ""}
             </span>
-            <div className={styles.userIcon}>{firstInitial}</div>
+            <ProfilePicture
+              profilePicture={userInfo?.ProfilePicture}
+              firstName={userInfo?.FirstName || ""}
+              lastName={userInfo?.LastName || ""}
+              className={styles.userIcon}
+            />
           </div>
         </div>
       </header>
