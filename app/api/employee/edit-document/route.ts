@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
-    // 1) Update document metadata
+    // 1) Update document metadata and reset status to "In-Process"
     await db.document.update({
       where: { DocumentID },
       data: {
@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
         TypeID,
         DepartmentID,
         UpdatedAt: new Date(),
+        Status: "In-Process", // Reset status to In-Process when document is updated
       },
     });
 
@@ -281,11 +282,7 @@ export async function POST(req: NextRequest) {
 
       await Promise.all(placeholderPromises);
 
-      // Update document status to "In-Process" for documents with placeholders
-      await db.document.update({
-        where: { DocumentID },
-        data: { Status: "In-Process" },
-      });
+      // Document status is already set to "In-Process" above, no need to update again
     }
 
     // 5) Activity logs
@@ -430,7 +427,7 @@ export async function PUT(req: NextRequest) {
       }
     }
 
-    // 3) Reset requests/notifications to match new approvers
+    // 3) Reset requests/notifications to match new approvers and reset document status
     await db.documentRequest.deleteMany({ where: { DocumentID } });
     await db.notification.deleteMany({
       where: {
@@ -439,6 +436,12 @@ export async function PUT(req: NextRequest) {
         },
         ReceiverID: { in: ApproverIDs },
       },
+    });
+
+    // Reset document status to "In-Process" when updating
+    await db.document.update({
+      where: { DocumentID },
+      data: { Status: "In-Process" },
     });
 
     const inProcess = await db.status.findFirst({ where: { StatusName: "In-Process" } });
@@ -592,11 +595,7 @@ export async function PUT(req: NextRequest) {
 
       await Promise.all(placeholderPromises);
 
-      // Update document status to "Awaiting Signatures"
-      await db.document.update({
-        where: { DocumentID },
-        data: { Status: "Awaiting Signatures" },
-      });
+      // Document status is already set to "In-Process" above, no need to update again
     }
 
     // 5) Activity logs

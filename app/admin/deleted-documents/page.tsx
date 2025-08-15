@@ -4,33 +4,25 @@ import { useState, useEffect } from "react";
 import styles from "./deletedDocuments.module.css";
 import AdminHeader from "@/components/shared/adminHeader";
 import { Search as SearchIcon } from "lucide-react";
-import Image from "next/image";
-import { X } from "lucide-react";
-import Link from "next/link";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { CheckCircle, Clock, PauseCircle } from "lucide-react";
-import { fetchFilterData, FilterData } from "@/lib/filterData";
+import { CheckCircle, Clock } from "lucide-react";
+import Loading from "@/app/loading";
 
-
-// const cookieStore = await cookies();
-// const session = cookieStore.get("session");
-
-// console.log("SESSION:", session); // ✅ prints to server logs
-
-// if (!session) {
-//   redirect("/login"); // or wherever you want
-// }
-type Documents = {
-  id: string;
-  name: string;
-  file: string;
-  preview: string;
-  type: string;
-  creator: string;
-  department: string;
-  status: string;
-  dateCreated: string;
+type DeletedDocument = {
+  DocumentID: number;
+  Title: string;
+  Description: string;
+  UpdatedAt: string;
+  Status: string;
+  Creator: {
+    FirstName: string;
+    LastName: string;
+    Department: { Name: string };
+  };
+  DocumentType: {
+    TypeName: string;
+  };
 };
 
 export default function DeletedDocuments() {
@@ -39,23 +31,12 @@ export default function DeletedDocuments() {
       duration: 1000,
       once: true,
     });
-
-    // Load filter data
-    const loadFilterData = async () => {
-      const data = await fetchFilterData();
-      setFilterData(data);
-    };
-    loadFilterData();
   }, []);
 
+  const [documents, setDocuments] = useState<DeletedDocument[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
-  const [selectedDoc, setSelectedDoc] = useState<Documents | null>();
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [dateError, setDateError] = useState("");
-  const [selectedUser, setSelectedUser] = useState<Documents | null>(null);
+  const [selectedDoc, setSelectedDoc] = useState<DeletedDocument | null>(null);
   const [showConfirmRestore, setShowConfirmRestore] = useState(false);
   const [showRestoreLoading, setShowRestoreLoading] = useState(false);
   const [showConfirmSuccess, setShowConfirmSuccess] = useState(false);
@@ -65,66 +46,68 @@ export default function DeletedDocuments() {
     useState(false);
   const [showSuccessPermanentDelete, setShowSuccessPermanentDelete] =
     useState(false);
-  const [filterData, setFilterData] = useState<FilterData>({
-    documentTypes: [],
-    departments: [],
-    statuses: []
+
+  // Add state for summary statistics
+  const [summaryStats, setSummaryStats] = useState({
+    totalDeleted: 0,
+    totalRestored: 0,
   });
 
-  const documents: Documents[] = [
-    {
-      id: "DOC001",
-      name: "Naruto Uzumaki",
-      file: "hr-policy.pdf",
-      preview: "/files/hr-policy.pdf", // Example PDF path
-      type: "Report",
-      creator: "John Doe",
-      department: "HR",
-      status: "Pending",
-      dateCreated: "2025-07-30",
-    },
-    {
-      id: "DOC002",
-      name: "Sasuke Uchiha",
-      file: "finance-q3-request.pdf",
-      preview: "/files/finance-q3-request.pdf",
-      type: "Request",
-      creator: "Jane Smith",
-      department: "Finance",
-      status: "Completed",
-      dateCreated: "2025-07-29",
-    },
-    {
-      id: "DOC003",
-      name: "Kakashi Hatake",
-      file: "finance-q3-request.pdf",
-      preview: "/files/finance-q3-request.pdf",
-      type: "Request",
-      creator: "Jane Smith",
-      department: "Finance",
-      status: "On Hold",
-      dateCreated: "2025-07-29",
-    },
-  ];
+  // Fetch summary statistics
+  const fetchSummaryStats = async () => {
+    try {
+      const summaryRes = await fetch('/api/admin/deleted-documents?summary=true', {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (summaryRes.ok) {
+        const summaryData = await summaryRes.json();
+        setSummaryStats(summaryData);
+      }
+    } catch (error) {
+      console.error('Error fetching summary stats:', error);
+    }
+  };
+
+  // Fetch deleted documents
+  const fetchDeletedDocuments = async () => {
+    try {
+      setLoading(true);
+      
+      const res = await fetch('/api/admin/deleted-documents', {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setDocuments(data);
+      } else {
+        console.error("Failed to fetch deleted documents");
+        setDocuments([]);
+      }
+    } catch (error) {
+      console.error("Error fetching deleted documents:", error);
+      setDocuments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch data on mount
+  useEffect(() => {
+    fetchDeletedDocuments();
+    fetchSummaryStats();
+  }, []);
 
   const filteredDocs = documents.filter((doc) => {
-    const statusMatch =
-      !statusFilter || doc.status.toLowerCase() === statusFilter.toLowerCase();
-    const typeMatch =
-      !typeFilter || doc.type.toLowerCase() === typeFilter.toLowerCase();
     const searchMatch =
       !search ||
-      doc.name?.toLowerCase().includes(search.toLowerCase()) ||
-      doc.id?.toLowerCase().includes(search.toLowerCase());
+      doc.Title?.toLowerCase().includes(search.toLowerCase()) ||
+      doc.DocumentID?.toString().includes(search.toLowerCase());
 
-    const docDate = new Date(doc.dateCreated);
-    const fromDate = dateFrom ? new Date(dateFrom) : null;
-    const toDate = dateTo ? new Date(dateTo) : null;
-
-    const dateMatch =
-      (!fromDate || docDate >= fromDate) && (!toDate || docDate <= toDate);
-
-    return statusMatch && typeMatch && searchMatch && dateMatch;
+    return searchMatch;
   });
 
   const handleCancelButtonClick = (
@@ -142,30 +125,77 @@ export default function DeletedDocuments() {
     if (e.target === e.currentTarget && callback) callback();
   };
 
-  const handleRestoreSuccess = () => {
-    setShowConfirmRestore(false);
-    setShowRestoreLoading(true);
+  const handleRestoreDocument = async () => {
+    if (!selectedDoc) return;
 
-    setTimeout(() => {
+    try {
+      setShowRestoreLoading(true);
+      
+      const res = await fetch('/api/admin/deleted-documents', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          documentId: selectedDoc.DocumentID,
+          action: 'restore'
+        }),
+      });
+
+      if (res.ok) {
+        setShowRestoreLoading(false);
+        setShowConfirmSuccess(true);
+        // Refresh the documents list
+        fetchDeletedDocuments();
+        fetchSummaryStats();
+      } else {
+        console.error('Failed to restore document');
+        setShowRestoreLoading(false);
+      }
+    } catch (error) {
+      console.error('Error restoring document:', error);
       setShowRestoreLoading(false);
-      setShowConfirmSuccess(true);
-    }, 1000);
+    }
   };
 
-  const handleSuccessPermanentDelete = () => {
-    setShowConfirmPermanentDelete(false);
-    setShowPermanentDeleteLoading(true);
+  const handlePermanentDelete = async () => {
+    if (!selectedDoc) return;
 
-    setTimeout(() => {
+    try {
+      setShowPermanentDeleteLoading(true);
+      
+      const res = await fetch('/api/admin/deleted-documents', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          documentId: selectedDoc.DocumentID,
+          action: 'permanent-delete'
+        }),
+      });
+
+      if (res.ok) {
+        setShowPermanentDeleteLoading(false);
+        setShowSuccessPermanentDelete(true);
+        // Refresh the documents list
+        fetchDeletedDocuments();
+        fetchSummaryStats();
+      } else {
+        console.error('Failed to permanently delete document');
+        setShowPermanentDeleteLoading(false);
+      }
+    } catch (error) {
+      console.error('Error permanently deleting document:', error);
       setShowPermanentDeleteLoading(false);
-      setShowSuccessPermanentDelete(true);
-    }, 1000);
+    }
   };
 
   // for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const docsPerPage = 5; 
-
 
   const totalPages = Math.ceil(filteredDocs.length / docsPerPage);
 
@@ -177,6 +207,9 @@ export default function DeletedDocuments() {
   const handlePrev = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
   const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <div>
@@ -191,13 +224,13 @@ export default function DeletedDocuments() {
           <div className={styles.summary}>
             <div className={`${styles.card} ${styles.red}`}>
               <CheckCircle className={styles.icon} />
-              <span className={styles.count}>116</span>
+              <span className={styles.count}>{summaryStats.totalDeleted}</span>
               <span>Total Documents Deleted</span>
             </div>
 
             <div className={`${styles.card} ${styles.cyan}`}>
               <Clock className={styles.icon} />
-              <span className={styles.count}>3</span>
+              <span className={styles.count}>{summaryStats.totalRestored}</span>
               <span>Total Documents Restored</span>
             </div>
           </div>
@@ -213,79 +246,18 @@ export default function DeletedDocuments() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-
-            <select
-              className={styles.dropdown}
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="">All Status</option>
-              {filterData.statuses.map((status) => (
-                <option key={status.StatusID} value={status.StatusName}>
-                  {status.StatusName}
-                </option>
-              ))}
-            </select>
-
-            <select
-              className={styles.dropdown}
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="">All Types</option>
-              {filterData.documentTypes.map((type) => (
-                <option key={type.TypeID} value={type.TypeName}>
-                  {type.TypeName}
-                </option>
-              ))}
-            </select>
-            <div className={styles.dateFilterWrapper}>
-              <div className={styles.dateGroup}>
-                <span className={styles.dateLabel}>From:</span>
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => {
-                    const newFrom = e.target.value;
-                    setDateFrom(newFrom);
-
-                    if (dateTo && newFrom > dateTo) {
-                      setDateError('"From" date cannot be later than "To" date.');
-                    } else {
-                      setDateError("");
-                    }
-                  }}
-                  className={styles.dateInput}
-                />
-              <span className={styles.dateLabel}>To:</span>
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => {
-                    const newTo = e.target.value;
-                    setDateTo(newTo);
-
-                    if (dateFrom && newTo < dateFrom) {
-                      setDateError('"To" date cannot be earlier than "From" date.');
-                    } else {
-                      setDateError("");
-                    }
-                  }}
-                  className={styles.dateInput}
-                  min={dateFrom}
-                />
-              </div>
-            </div>
           </div>
           <div className={styles.tableWrapper}>
           <table className={styles.docTable}>
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Activity</th>
+                <th>Title</th>
                 <th>Creator</th>
                 <th>Department</th>
-                <th>Date of Activity</th>
+                <th>Target Type</th>
+                <th>Status</th>
+                <th>Date Updated</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -293,18 +265,15 @@ export default function DeletedDocuments() {
   {paginatedDocs.length > 0 ? (
     paginatedDocs.map((doc, i) => (
       <tr key={i}>
-        <td>{doc.id}</td>
+        <td>{doc.DocumentID}</td>
+        <td>{doc.Title}</td>
+        <td>{doc.Creator.FirstName + " " + doc.Creator.LastName}</td>
+        <td>{doc.Creator.Department.Name}</td>
+        <td>{doc.DocumentType.TypeName}</td>
+        <td>{doc.Status}</td>
+        <td>{new Date(doc.UpdatedAt).toLocaleDateString()}</td>
         <td>
-          {doc.status === "Completed"
-            ? "Document Restored"
-            : "Document Deleted"}
-        </td>
-        <td>{doc.creator}</td>
-        <td>{doc.department}</td>
-        <td>{doc.dateCreated}</td>
-        <td>
-          <a
-            href="#"
+          <button
             className={`${styles.actionBtn} ${styles.restoreBtn}`}
             onClick={() => {
               setSelectedDoc(doc);
@@ -312,23 +281,27 @@ export default function DeletedDocuments() {
             }}
           >
             Restore
-          </a>{" "}
-          <button
+          </button>{" "}
+          {/* <button
             className={`${styles.actionBtn} ${styles.deleteBtn}`}
             onClick={() => {
-              setSelectedUser(doc);
+              setSelectedDoc(doc);
               setShowConfirmPermanentDelete(true);
             }}
           >
             Permanently Delete
-          </button>
+          </button> */}
         </td>
       </tr>
     ))
   ) : (
     <tr className={styles.noDataRow}>
-      <td colSpan={6} style={{ textAlign: "center", padding: "1rem" }}>
-        No documents found.
+      <td colSpan={8} style={{ textAlign: "center", padding: "1rem" }}>
+        {search ? (
+          <>No deleted documents found for "<strong>{search}</strong>"</>
+        ) : (
+          <>No deleted documents available.</>
+        )}
       </td>
     </tr>
   )}
@@ -366,7 +339,7 @@ export default function DeletedDocuments() {
                         setShowConfirmRestore(false)
                       )
                     } className={styles.restorecancelButton}>Cancel</button>
-                <button onClick={handleRestoreSuccess} className={styles.restoreButton}>Continue</button>
+                <button onClick={handleRestoreDocument} className={styles.restoreButton}>Continue</button>
               </div>
             </div>
           </div>
@@ -423,7 +396,7 @@ export default function DeletedDocuments() {
                         setShowConfirmPermanentDelete(false)
                       )
                     } className={styles.deletecancelButton}>Cancel</button>
-                <button onClick={handleSuccessPermanentDelete} className={styles.deleteButton}>Continue</button>
+                <button onClick={handlePermanentDelete} className={styles.deleteButton}>Continue</button>
               </div>
             </div>
           </div>
@@ -443,7 +416,7 @@ export default function DeletedDocuments() {
         {/* success permanent delete modal */}
         {showSuccessPermanentDelete && (
           <div className={styles.successmodalOverlay} onClick={(e) =>
-              handleBackdropClick(e, () => setShowConfirmSuccess(false))
+              handleBackdropClick(e, () => setShowSuccessPermanentDelete(false))
             }>
             <div className={styles.successModal}>
               <h3 className={styles.successmodalTitle}>Success!</h3>
