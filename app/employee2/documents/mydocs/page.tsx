@@ -37,6 +37,8 @@ export default function MyDocuments() {
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [documents, setDocuments] = useState<document[]>([]);
   const [loading, setLoading] = useState(true);
+  const [departmentFilter, setDepartmentFilter] = useState("");
+
   
   const [filterData, setFilterData] = useState<FilterData>({
     documentTypes: [],
@@ -88,18 +90,29 @@ export default function MyDocuments() {
 
 
   const filteredDocs = documents.filter((doc) => {
-    const matchesSearch =
-      doc.name.toLowerCase().includes(search.toLowerCase()) ||
-      doc.id.toString().includes(search);
-    const matchesStatus = !statusFilter || doc.status === statusFilter;
-    const matchesType = !typeFilter || doc.type === typeFilter;
-    const docDate = new Date(doc.date);
-    const fromDate = dateFrom ? new Date(dateFrom) : null;
-    const toDate = dateTo ? new Date(dateTo) : null;
-    const matchesDate =
-      (!fromDate || docDate >= fromDate) && (!toDate || docDate <= toDate);
-    return matchesSearch && matchesStatus && matchesType && matchesDate;
-  });
+  const matchesSearch =
+    doc.name.toLowerCase().includes(search.toLowerCase()) ||
+    doc.id.toString().includes(search);
+
+  const matchesStatus = !statusFilter || doc.status === statusFilter;
+  const matchesType = !typeFilter || doc.type === typeFilter;
+  const matchesDepartment = !departmentFilter || doc.department === departmentFilter;
+
+  const docDate = new Date(doc.date);
+  const fromDate = dateFrom ? new Date(dateFrom) : null;
+  const toDate = dateTo ? new Date(dateTo) : null;
+  const matchesDate =
+    (!fromDate || docDate >= fromDate) && (!toDate || docDate <= toDate);
+
+  return (
+    matchesSearch &&
+    matchesStatus &&
+    matchesType &&
+    matchesDepartment &&
+    matchesDate
+  );
+});
+
 
   const handleDownload = () => {
     if (!selectedDoc?.latestVersion?.filePath) return;
@@ -244,17 +257,18 @@ if (loading) {
             </select>
 
             <select
-              className={styles.dropdown}
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="">All Types</option>
-              {filterData.documentTypes.map((type) => (
-                <option key={type.TypeID} value={type.TypeName}>
-                  {type.TypeName}
-                </option>
-              ))}
-            </select>
+                className={styles.dropdown}
+                value={departmentFilter}
+                onChange={(e) => setDepartmentFilter(e.target.value)}
+              >
+                <option value="">All Departments</option>
+                {filterData.departments.map((dept) => (
+                  <option key={dept.DepartmentID} value={dept.Name}>
+                    {dept.Name}
+                  </option>
+                ))}
+              </select>
+
 
             <div className={styles.dateFilterWrapper}>
               <div className={styles.dateGroup}>
@@ -329,24 +343,21 @@ if (loading) {
                       <td>{doc.name}</td>
                       <td>{doc.type}</td>
                       <td>
-                        <span
-                          className={`${styles.badge} 
-                  ${
-                    doc.status === "In-Process"
-                      ? styles.inProcess
-                      : doc.status === "Completed"
-                        ? styles.completed
-                        : doc.status === "On-Hold"
-                          ? styles.onHold
-                          : doc.status === "Approved"
-                            ? styles.approved
-                            : doc.status === "Awaiting-Completion"
-                              ? styles.awaiting
-                              : ""
-                  }`}
-                        >
-                          {doc.status}
-                        </span>
+                        <span className={`${styles.badge} ${
+                  doc.status === "Completed" ? styles.completed : 
+                  doc.status === "In-Process" ? styles.inProcess : 
+
+                  doc.status === "Approved" ? styles.approved : 
+                  doc.status === "Awaiting Signatures" ? styles.pending :
+                  doc.status === "Awaiting-Completion" ? styles.awaiting :
+                  doc.status === "On Hold" || doc.status === "On-Hold"
+
+                                                      ? styles.onHold :
+
+                  styles.pending
+                }`}>
+                  {doc.status}
+                </span>
                       </td>
                       <td>{doc.date}</td>
                       <td className={styles.actions}>
@@ -382,24 +393,21 @@ if (loading) {
                   <div key={doc.id} className={styles.cardItem}>
                     <div className={styles.cardTop}>
                       <h3 className={styles.highlighted}>{doc.name}</h3>
-                      <span
-                        className={`${styles.badge} 
-                ${
-                  doc.status === "In-Process"
-                    ? styles.inProcess
-                    : doc.status === "Completed"
-                      ? styles.completed
-                      : doc.status === "On-Hold"
-                        ? styles.onHold
-                        : doc.status === "Approved"
-                          ? styles.approved
-                          : doc.status === "Awaiting-Completion"
-                            ? styles.awaiting
-                            : ""
-                }`}
-                      >
-                        {doc.status}
-                      </span>
+                      <span className={`${styles.badge} ${
+                  doc.status === "Completed" ? styles.completed : 
+                  doc.status === "In-Process" ? styles.inProcess : 
+
+                  doc.status === "Approved" ? styles.approved : 
+                  doc.status === "Awaiting Signatures" ? styles.pending :
+                  doc.status === "Awaiting-Completion" ? styles.awaiting :
+                  doc.status === "On Hold" || doc.status === "On-Hold"
+
+                                                      ? styles.onHold :
+
+                  styles.pending
+                }`}>
+                  {doc.status}
+                </span>
                     </div>
                     <p>
                       <strong className={styles.highlighted}>File:</strong>{" "}
@@ -464,23 +472,19 @@ if (loading) {
 
               <div className={styles.modalTop}>
                 <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
-                <span
-                  className={`${styles.badge} 
-                                ${
-                                  selectedDoc.status === "In-Process"
-                                    ? styles.inProcess
-                                    : selectedDoc.status === "Completed"
-                                      ? styles.completed
-                                      : selectedDoc.status === "On-Hold"
-                                        ? styles.onHold
-                                        : selectedDoc.status === "Approved"
-                                          ? styles.approved
-                                          : selectedDoc.status ===
-                                              "Awaiting-Completion"
-                                            ? styles.awaiting
-                                            : ""
-                                }`}
-                >
+                <span className={`${styles.badge} ${
+                  selectedDoc.status === "Completed" ? styles.completed : 
+
+                  selectedDoc.status === "In-Process" ? styles.inProcess :
+                  selectedDoc.status === "Approved" ? styles.approved :
+
+                  selectedDoc.status === "Awaiting Signatures" ? styles.pending :
+                  selectedDoc.status === "Awaiting-Completion" ? styles.awaiting :
+                  selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold"
+                                                      ? styles.onHold :
+
+                  styles.pending
+                }`}>
                   {selectedDoc.status}
                 </span>
               </div>

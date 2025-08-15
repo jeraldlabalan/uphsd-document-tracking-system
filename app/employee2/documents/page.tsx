@@ -32,6 +32,7 @@ export default function Documents() {
   const [dateTo, setDateTo] = useState("");
   const [dateError, setDateError] = useState("");
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [departmentFilter, setDepartmentFilter] = useState("");
   const [filterData, setFilterData] = useState<FilterData>({
     documentTypes: [],
     departments: [],
@@ -150,22 +151,30 @@ useEffect(() => {
 
 
   const filteredDocs = documents.filter((doc) => {
-    const matchesSearch =
-      doc.name.toLowerCase().includes(search.toLowerCase()) ||
-      doc.id.toString().includes(search);
+  const matchesSearch =
+    doc.name.toLowerCase().includes(search.toLowerCase()) ||
+    doc.id.toString().includes(search);
 
-    const matchesStatus = !statusFilter || doc.status === statusFilter;
-    const matchesType = !typeFilter || doc.type === typeFilter;
+  const matchesStatus = !statusFilter || doc.status === statusFilter;
+  const matchesType = !typeFilter || doc.type === typeFilter;
+  const matchesDepartment = !departmentFilter || doc.department === departmentFilter;
 
-    const docDate = new Date(doc.date);
-    const fromDate = dateFrom ? new Date(dateFrom) : null;
-    const toDate = dateTo ? new Date(dateTo) : null;
+  const docDate = new Date(doc.date);
+  const fromDate = dateFrom ? new Date(dateFrom) : null;
+  const toDate = dateTo ? new Date(dateTo) : null;
 
-    const matchesDate =
-      (!fromDate || docDate >= fromDate) && (!toDate || docDate <= toDate);
+  const matchesDate =
+    (!fromDate || docDate >= fromDate) &&
+    (!toDate || docDate <= toDate);
 
-    return matchesSearch && matchesStatus && matchesType && matchesDate;
-  });
+  return (
+    matchesSearch &&
+    matchesStatus &&
+    matchesType &&
+    matchesDepartment &&
+    matchesDate
+  );
+});
 
   const handleDownload = () => {
     if (!selectedDoc?.preview) return;
@@ -262,17 +271,18 @@ useEffect(() => {
             </select>
 
             <select
-              className={styles.dropdown}
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="">All Types</option>
-              {filterData.documentTypes.map((type) => (
-                <option key={type.TypeID} value={type.TypeName}>
-                  {type.TypeName}
-                </option>
-              ))}
-            </select>
+                className={styles.dropdown}
+                value={departmentFilter}
+                onChange={(e) => setDepartmentFilter(e.target.value)}
+              >
+                <option value="">All Departments</option>
+                {filterData.departments.map((dept) => (
+                  <option key={dept.DepartmentID} value={dept.Name}>
+                    {dept.Name}
+                  </option>
+                ))}
+              </select>
+              
             <div className={styles.dateFilterWrapper}>
               <div className={styles.dateGroup}>
                 <span className={styles.dateLabel}>From:</span>

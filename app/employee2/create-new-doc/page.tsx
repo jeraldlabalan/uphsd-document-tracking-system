@@ -48,6 +48,7 @@ export default function CreateNewDocument() {
     console.log("Selected Department:", name, "ID:", id); // Log selected department
     setDepartment(name); // Update department value
     setDepartmentID(id); // Update department ID
+    setOpenSelect2(false);
   };
 
   useEffect(() => {

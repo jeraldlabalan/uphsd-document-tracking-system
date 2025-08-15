@@ -44,13 +44,16 @@
 }
 
 .menuButton {
-  display: block; /* ← make sure this is not hidden */
+  position: relative; 
+  font-size: 1.5rem;
+  padding: 0.5rem;
   background: none;
   border: none;
-  color: white;
   cursor: pointer;
-  font-size: 24px;
 }
+
+
+
 
 .userInfo {
   display: flex;
@@ -76,6 +79,40 @@
   font-size: 16px;
   font-weight: 500;
   color: white;
+}
+
+.iconWrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.badge {
+  position: absolute;
+  top: -5px;
+  right: -8px;
+  background-color: red;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 2px 5px;
+  border-radius: 9999px;
+  line-height: 1;
+  min-width: 16px;
+  text-align: center;
+}
+
+.badgeMenu {
+  position: absolute;
+  right: -5px;
+  background-color: red;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 2px 5px;
+  border-radius: 9999px;
+  line-height: 1;
+  min-width: 16px;
+  text-align: center;
 }
 
 
