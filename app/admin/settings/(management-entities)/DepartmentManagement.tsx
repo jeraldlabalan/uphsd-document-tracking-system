@@ -37,7 +37,6 @@ const DepartmentManagement: React.FC<DepartmentManagementProps> = ({
   const [rowToDelete, setRowToDelete] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [confirmAdd, setConfirmAdd] = useState(false);
 
   useEffect(() => {
     fetchDepartments();
@@ -99,28 +98,25 @@ const DepartmentManagement: React.FC<DepartmentManagementProps> = ({
       return;
     }
 
-    setConfirmAdd(true);
+    console.log("[DepartmentManagement Debug] handleSaveClick - calling showModal for add operation");
     showModal({
       description: "Are you sure you want to add these departments?",
-      onConfirm: handleConfirm,
+      onConfirm: () => handleConfirmAdd(),
       onCancel: handleCancel,
       isLoading: false,
     });
   };
 
-  const handleConfirm = async () => {
-    if (confirmAdd) {
-      await saveDepartments();
-    } else {
-      await handleConfirmDeletion();
-    }
+  const handleConfirmAdd = async () => {
+    console.log("[DepartmentManagement Debug] handleConfirmAdd called");
+    await saveDepartments();
   };
 
   const saveDepartments = async () => {
     const validRows = rows.filter((r) => r.value.trim() !== "");
     if (validRows.length === 0) {
       toast.success("No changes to save.");
-      setConfirmAdd(false);
+      console.log("Empty Row")
       return;
     }
     setIsLoading(true);
@@ -148,7 +144,6 @@ const DepartmentManagement: React.FC<DepartmentManagementProps> = ({
       toast.error("Error saving departments.");
     } finally {
       setIsLoading(false);
-      setConfirmAdd(false);
       // Close modal after action completes
       if (typeof window !== "undefined") {
         const event = new CustomEvent("closeModal");
@@ -158,34 +153,47 @@ const DepartmentManagement: React.FC<DepartmentManagementProps> = ({
   };
 
   const handleDeleteActiveItem = (id: number) => {
+    console.log("[DepartmentManagement Debug] handleDeleteActiveItem - calling showModal for delete operation", { id });
     setSuccess(false);
     setRowToDelete(id);
-    setConfirmAdd(false);
     showModal({
       description: "Are you sure you want to delete this department?",
-      onConfirm: handleConfirmDeletion,
+      onConfirm: () => handleConfirmDelete(id),
       onCancel: handleCancel,
       isLoading: false,
     });
   };
 
-  const handleConfirmDeletion = async () => {
-    if (rowToDelete === null) return;
+  const handleConfirmDelete = async (id: number) => {
+    console.log("[DepartmentManagement Debug] handleConfirmDelete called for ID:", id);
     setIsLoading(true);
     setSuccess(false);
+    
     try {
+      console.log("[DepartmentManagement Debug] Making DELETE request for ID:", id);
       const res = await fetch("/api/admin/settings/department-management", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: rowToDelete }),
+        body: JSON.stringify({ id: id }),
       });
+      
+      console.log("[DepartmentManagement Debug] DELETE response status:", res.status);
+      
       if (res.ok) {
+        console.log("[DepartmentManagement Debug] Delete successful, updating UI");
         setActiveItems((prev) =>
-          prev.filter((item) => item.id !== rowToDelete)
+          prev.filter((item) => item.id !== id)
         );
         setSuccess(true);
         toast.success("Department successfully deleted.");
+        
+        // Close modal after successful deletion
+        if (typeof window !== "undefined") {
+          const event = new CustomEvent("closeModal");
+          window.dispatchEvent(event);
+        }
       } else {
+        console.log("[DepartmentManagement Debug] Delete failed with status:", res.status);
         throw new Error("Delete failed");
       }
     } catch (error) {
@@ -194,11 +202,6 @@ const DepartmentManagement: React.FC<DepartmentManagementProps> = ({
     } finally {
       setIsLoading(false);
       setRowToDelete(null);
-      // Close modal after action completes
-      if (typeof window !== "undefined") {
-        const event = new CustomEvent("closeModal");
-        window.dispatchEvent(event);
-      }
     }
   };
 

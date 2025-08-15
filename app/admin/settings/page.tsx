@@ -31,8 +31,13 @@ export default function Settings() {
   const [showModal, setShowModal] = useState(false); // Modal visibility state
   const [modalData, setModalData] = useState({
     description: "",
-    onConfirm: () => {},
-    onCancel: () => {},
+    onConfirm: () => {
+      console.log("[Settings Debug] Default onConfirm called - this should not happen");
+    },
+    onCancel: () => {
+      console.log("[Settings Debug] Default onCancel called - this should not happen");
+      setShowModal(false);
+    },
     isLoading: false,
   });
   const [isLoading, setIsLoading] = useState(false); // For loading effect
@@ -46,9 +51,29 @@ export default function Settings() {
     onCancel: () => void;
     isLoading: boolean;
   }) => {
+    console.log("[Settings Debug] showModalFromChild called with:", {
+      description: data.description,
+      onConfirm: data.onConfirm.toString(),
+      onCancel: data.onCancel.toString(),
+      isLoading: data.isLoading
+    });
     setModalData(data);
     setShowModal(true);
+    console.log("[Settings Debug] Modal state set to true");
   };
+
+  // Debug logging for modal state changes
+  useEffect(() => {
+    console.log("[Settings Debug] Modal state changed:", { 
+      showModal, 
+      modalData: {
+        description: modalData.description,
+        onConfirm: modalData.onConfirm.toString(),
+        onCancel: modalData.onCancel.toString(),
+        isLoading: modalData.isLoading
+      }
+    });
+  }, [showModal, modalData]);
 
   useEffect(() => {
     AOS.init({
