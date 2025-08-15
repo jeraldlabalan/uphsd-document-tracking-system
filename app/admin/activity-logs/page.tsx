@@ -12,6 +12,7 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import { CheckCircle, Clock, PauseCircle } from "lucide-react";
 import { fetchFilterData, FilterData } from "@/lib/filterData";
+import Loading from "@/app/loading";
 
 // const cookieStore = await cookies();
 
@@ -40,8 +41,8 @@ export default function ActivityLogs() {
   const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
+  const [targetFilter, setTargetFilter] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("");
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -62,38 +63,91 @@ export default function ActivityLogs() {
   const [showSuccessPermanentDelete, setShowSuccessPermanentDelete] =
     useState(false);
 
-     useEffect(() => {
-    const fetchLogs = async () => {
-      try {
-        const params = new URLSearchParams();
-        if (statusFilter) params.append("action", statusFilter);
-        if (typeFilter) params.append("documentType", typeFilter);
-        if (dateFrom) params.append("date", dateFrom); // Your backend only supports single date
+  // Add state for summary statistics
+  const [summaryStats, setSummaryStats] = useState({
+    totalActivityToday: 0,
+    documentActivityToday: 0,
+    userActivityToday: 0,
+  });
 
-        const res = await fetch(`/api/admin/activity-logs?${params.toString()}`, {
-          method: "GET",
-          credentials: "include", // IMPORTANT: send cookies
-        });
+  // Common target types for activity logs
+  const targetTypes = [
+    "Document",
+    "DocumentVersion", 
+    "DocumentRequest",
+    "SignaturePlaceholder",
+    "User",
+    "Department",
+    "Role",
+    "Notification"
+  ];
 
-        if (!res.ok) throw new Error("Failed to fetch logs");
+  // Fetch summary statistics
+  const fetchSummaryStats = async () => {
+    try {
+      const summaryRes = await fetch('/api/admin/activity-logs?summary=true', {
+        method: 'GET',
+        credentials: 'include',
+      });
 
-        const data = await res.json();
-        setLogs(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+      if (summaryRes.ok) {
+        const summaryData = await summaryRes.json();
+        setSummaryStats(summaryData);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching summary stats:', error);
+    }
+  };
 
-    const loadFilterData = async () => {
-      const data = await fetchFilterData();
-      setFilterData(data);
-    };
+  // Fetch summary stats on mount and when filters change
+  useEffect(() => {
+    fetchSummaryStats();
+  }, [targetFilter, departmentFilter, dateFrom]);
 
-    fetchLogs();
-    loadFilterData();
-  }, [statusFilter, typeFilter, dateFrom]); // Re-fetch on filter change
+     useEffect(() => {
+  const fetchAllData = async () => {
+    try {
+      setLoading(true); // ✅ start loader
+
+      // Fetch activity logs
+      const params = new URLSearchParams();
+      if (targetFilter) params.append("targetType", targetFilter);
+      if (departmentFilter) params.append("department", departmentFilter);
+      if (dateFrom) params.append("date", dateFrom);
+
+      const resLogs = await fetch(`/api/admin/activity-logs?${params.toString()}`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      let logsData: any[] = [];
+      if (resLogs.ok) {
+        const dataLogs = await resLogs.json();
+        logsData = dataLogs || [];
+      } else {
+        console.error("Failed to fetch logs");
+      }
+      setLogs(logsData);
+
+      // Fetch filter data
+      const filterData = await fetchFilterData();
+      setFilterData(filterData);
+
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setLogs([]);
+      setFilterData({
+        documentTypes: [],
+        departments: [],
+        statuses: []
+      });
+    } finally {
+      setLoading(false); // ✅ stop loader after both fetches
+    }
+  };
+
+  fetchAllData();
+}, [targetFilter, departmentFilter, dateFrom]); // Re-fetch on filter change
 
   // const activityLogs = [
   //   {
@@ -180,7 +234,9 @@ export default function ActivityLogs() {
   const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
 
-
+if (loading) {
+    return <Loading />;
+  }
   return (
     <div>
       <AdminHeader />
@@ -194,26 +250,20 @@ export default function ActivityLogs() {
           <div className={styles.summary}>
             <div className={`${styles.card} ${styles.orange}`}>
               <CheckCircle className={styles.icon} />
-              <span className={styles.count}>116</span>
+              <span className={styles.count}>{summaryStats.totalActivityToday}</span>
               <span>Total Activity Today</span>
             </div>
 
             <div className={`${styles.card} ${styles.cyan}`}>
               <Clock className={styles.icon} />
-              <span className={styles.count}>3</span>
-              <span>Document Action</span>
+              <span className={styles.count}>{summaryStats.documentActivityToday}</span>
+              <span>Document Activity Today</span>
             </div>
 
             <div className={`${styles.card} ${styles.green}`}>
               <Clock className={styles.icon} />
-              <span className={styles.count}>3</span>
-              <span>User Action</span>
-            </div>
-
-            <div className={`${styles.card} ${styles.yellow}`}>
-              <Clock className={styles.icon} />
-              <span className={styles.count}>3</span>
-              <span>Total Documents</span>
+              <span className={styles.count}>{summaryStats.userActivityToday}</span>
+              <span>User Activity Today</span>
             </div>
           </div>
 
@@ -222,7 +272,7 @@ export default function ActivityLogs() {
               <SearchIcon className={styles.searchIcon} size={18} />
               <input
                 type="text"
-                placeholder="Search users..."
+                placeholder="Search activities..."
                 className={styles.searchInput}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -231,26 +281,26 @@ export default function ActivityLogs() {
 
             <select
               className={styles.dropdown}
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              value={targetFilter}
+              onChange={(e) => setTargetFilter(e.target.value)}
             >
-              <option value="">All Status</option>
-              {filterData.statuses.map((status) => (
-                <option key={status.StatusID} value={status.StatusName}>
-                  {status.StatusName}
+              <option value="">All Targets</option>
+              {targetTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type}
                 </option>
               ))}
             </select>
 
             <select 
               className={styles.dropdown}
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
+              value={departmentFilter}
+              onChange={(e) => setDepartmentFilter(e.target.value)}
             >
-              <option value="">All Types</option>
-              {filterData.documentTypes.map((type) => (
-                <option key={type.TypeID} value={type.TypeName}>
-                  {type.TypeName}
+              <option value="">All Departments</option>
+              {filterData.departments.map((department) => (
+                <option key={department.DepartmentID} value={department.Name}>
+                  {department.Name}
                 </option>
               ))}
             </select>

@@ -6,6 +6,9 @@ import { Search as SearchIcon, X, FileText, Inbox, FileX } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 import { fetchFilterData, FilterData } from "@/lib/filterData";
+import Loading from "@/app/loading";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 
 type ReceivedDocument = {
@@ -65,6 +68,7 @@ export default function ReceiveDocuments() {
   const [remarks, setRemarks] = useState("");
   const [docs, setDocs] = useState<ReceivedDocument[]>([]);
   const [loading, setLoading] = useState(true);
+  const [departmentFilter, setDepartmentFilter] = useState("");
   const [filterData, setFilterData] = useState<FilterData>({
     documentTypes: [],
     departments: [],
@@ -73,34 +77,45 @@ export default function ReceiveDocuments() {
   const [isApproving, setIsApproving] = useState(false);
   const [approvedDocs, setApprovedDocs] = useState<number[]>([]); // to track approved documents
 
-
+useEffect(() => {
+    AOS.init({
+      duration: 1000,
+      once: true,
+    });
+  }, []);
 
   useEffect(() => {
-    const fetchDocs = async () => {
-      try {
-        const res = await fetch("/api/employee/documents/received-docs");
-        const data = await res.json();
-        if (res.ok) {
-          console.log("Received documents data:", data);
-          setDocs(data.receivedDocuments);
-        } else {
-          console.error(data.error || "Failed to fetch documents");
-        }
-      } catch (err) {
-        console.error("Error fetching documents:", err);
-      } finally {
-        setLoading(false);
+  const fetchAllData = async () => {
+    try {
+      setLoading(true); // ✅ start loader
+
+      // Fetch received documents
+      const resDocs = await fetch("/api/employee/documents/received-docs");
+      let receivedDocs: any[] = [];
+      if (resDocs.ok) {
+        const dataDocs = await resDocs.json();
+        console.log("Received documents data:", dataDocs);
+        receivedDocs = dataDocs.receivedDocuments || [];
+      } else {
+        console.error("Failed to fetch received documents");
       }
-    };
+      setDocs(receivedDocs);
 
-    const loadFilterData = async () => {
-      const data = await fetchFilterData();
-      setFilterData(data);
-    };
+      // Fetch filter data
+      const filterData = await fetchFilterData();
+      setFilterData(filterData);
 
-    fetchDocs();
-    loadFilterData();
-  }, []);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setDocs([]);
+      setFilterData([]);
+    } finally {
+      setLoading(false); // ✅ stop loader after both fetches
+    }
+  };
+
+  fetchAllData();
+}, []);
 
 
   // const documents = [
@@ -127,19 +142,31 @@ export default function ReceiveDocuments() {
   // ];
 
   const filteredDocs = docs.filter((doc) => {
-    const matchesSearch =
-      doc.title.toLowerCase().includes(search.toLowerCase()) ||
-      doc.documentID.toString().includes(search);
-    const matchesStatus = !statusFilter || doc.status === statusFilter;
-    const matchesType = !typeFilter || doc.type === typeFilter;
-    const docDate = new Date(doc.requestedAt);
-    const fromDate = dateFrom ? new Date(dateFrom) : null;
-    const toDate = dateTo ? new Date(dateTo) : null;
-    const matchesDate =
-      (!fromDate || docDate >= fromDate) &&
-      (!toDate || docDate <= toDate);
-    return matchesSearch && matchesStatus && matchesType && matchesDate;
-  });
+  const matchesSearch =
+    doc.title.toLowerCase().includes(search.toLowerCase()) ||
+    doc.documentID.toString().includes(search);
+
+  const matchesStatus = !statusFilter || doc.status === statusFilter;
+  const matchesType = !typeFilter || doc.type === typeFilter;
+  const matchesDepartment =
+    !departmentFilter || doc.department === departmentFilter;
+
+  const docDate = new Date(doc.requestedAt);
+  const fromDate = dateFrom ? new Date(dateFrom) : null;
+  const toDate = dateTo ? new Date(dateTo) : null;
+  const matchesDate =
+    (!fromDate || docDate >= fromDate) &&
+    (!toDate || docDate <= toDate);
+
+  return (
+    matchesSearch &&
+    matchesStatus &&
+    matchesType &&
+    matchesDepartment &&
+    matchesDate
+  );
+});
+
 
   const handleApprove = async (requestId: number) => {
   try {
@@ -262,12 +289,36 @@ const handleConfirmClick = async () => {
   }
 };
 
+  // Pagination state
+const [currentPage, setCurrentPage] = useState(1);
+const docsPerPage = 6;
+
+const totalPages = Math.ceil(filteredDocs.length / docsPerPage);
+
+const startIndex = (currentPage - 1) * docsPerPage;
+const endIndex = startIndex + docsPerPage;
+const paginatedDocs = filteredDocs.slice(startIndex, endIndex);
+
+const handlePrev = () => {
+  setCurrentPage((prev) => Math.max(prev - 1, 1));
+};
+
+const handleNext = () => {
+  setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+};
+
+
+
+if (loading) {
+    return <Loading />;
+  }
+
   return (
     <div>
       <EmpHeader />
       <div className={styles.container}>
         {/* Sidebar */}
-        <div className={styles.sidebarContainer}>
+        <div className={styles.sidebarContainer} data-aos="fade-up">
           <div className={styles.sidebar}>
             <h2 className={styles.sidebarHeader}>Documents</h2>
             <ul className={styles.sidebarMenu}>
@@ -343,17 +394,17 @@ const handleConfirmClick = async () => {
             </select>
 
             <select
-              className={styles.dropdown}
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="">All Types</option>
-              {filterData.documentTypes.map((type) => (
-                <option key={type.TypeID} value={type.TypeName}>
-                  {type.TypeName}
-                </option>
-              ))}
-            </select>
+                className={styles.dropdown}
+                value={departmentFilter}
+                onChange={(e) => setDepartmentFilter(e.target.value)}
+              >
+                <option value="">All Departments</option>
+                {filterData.departments.map((dept) => (
+                  <option key={dept.DepartmentID} value={dept.Name}>
+                    {dept.Name}
+                  </option>
+                ))}
+              </select>
 
             <div className={styles.dateFilterWrapper}>
               <div className={styles.dateGroup}>
@@ -396,7 +447,7 @@ const handleConfirmClick = async () => {
 
          {/* Table or Card View */}
 {viewMode === "table" ? (
-  <table className={styles.docTable}>
+  <table data-aos="fade-up" className={styles.docTable}>
     <thead>
       <tr>
         <th>ID</th>
@@ -418,29 +469,27 @@ const handleConfirmClick = async () => {
           </td>
         </tr>
       ) : filteredDocs.length > 0 ? (
-        filteredDocs.map((doc, i) => (
-          <tr key={i}>
+  paginatedDocs.map((doc, i) => (
+    <tr key={i}>
             <td>{doc.documentID}</td>
             <td>{doc.title}</td>
             <td>{doc.type}</td>
             <td>
-              <span
-                className={`${styles.badge} 
-                  ${doc.status === "In-Process" 
-                    ? styles.inProcess 
-                    : doc.status === "Completed" 
-                      ? styles.completed 
-                      : doc.status === "On-Hold" 
-                        ? styles.onHold 
-                        : doc.status === "Approved" 
-                          ? styles.approved 
-                          : doc.status === "Awaiting-Completion" 
-                            ? styles.awaiting 
-                            : ""
-                  }`}
-              >
-                {doc.status}
-              </span>
+              <span className={`${styles.badge} ${
+                  doc.status === "Completed" ? styles.completed : 
+                  doc.status === "In-Process" ? styles.inProcess : 
+
+                  doc.status === "Approved" ? styles.approved : 
+                  doc.status === "Awaiting Signatures" ? styles.pending :
+                  doc.status === "Awaiting-Completion" ? styles.awaiting :
+                  doc.status === "On Hold" || doc.status === "On-Hold"
+
+                                                      ? styles.onHold :
+
+                  styles.pending
+                }`}>
+                  {doc.status}
+                </span>
             </td>
             <td>{new Date(doc.requestedAt).toLocaleDateString()}</td>
             <td className={styles.actions}>
@@ -464,34 +513,32 @@ const handleConfirmClick = async () => {
     </tbody>
   </table>
 ) : (
-  <div className={styles.cardGrid}>
+  <div data-aos="fade-up" className={styles.cardGrid}>
     {loading ? ( // 👈 Loading state for card view
       <div className={styles.loadingContainer}>
         <div className={styles.spinner}></div>
         <p>Loading documents...</p>
       </div>
     ) : filteredDocs.length > 0 ? (
-      filteredDocs.map((doc) => (
+              paginatedDocs.map((doc) => (
         <div key={doc.documentID} className={styles.cardItem}>
           <div className={styles.cardTop}>
             <h3 className={styles.highlighted}>{doc.title}</h3>
-            <span
-              className={`${styles.badge} 
-                ${doc.status === "In-Process" 
-                  ? styles.inProcess 
-                  : doc.status === "Completed" 
-                    ? styles.completed 
-                    : doc.status === "On-Hold" 
-                      ? styles.onHold 
-                      : doc.status === "Approved" 
-                        ? styles.approved 
-                        : doc.status === "Awaiting-Completion" 
-                          ? styles.awaiting 
-                          : ""
-                }`}
-            >
-              {doc.status}
-            </span>
+            <span className={`${styles.badge} ${
+                  doc.status === "Completed" ? styles.completed : 
+                  doc.status === "In-Process" ? styles.inProcess : 
+
+                  doc.status === "Approved" ? styles.approved : 
+                  doc.status === "Awaiting Signatures" ? styles.pending :
+                  doc.status === "Awaiting-Completion" ? styles.awaiting :
+                  doc.status === "On Hold" || doc.status === "On-Hold"
+
+                                                      ? styles.onHold :
+
+                  styles.pending
+                }`}>
+                  {doc.status}
+                </span>
           </div>
           <p><strong className={styles.highlighted}>Type:</strong> {doc.type}</p>
           <p><strong className={styles.highlighted}>Department:</strong> {doc.department}</p>
@@ -513,35 +560,52 @@ const handleConfirmClick = async () => {
     )}
   </div>
 )}
+{/* Pagination controls */}
+<div className={styles.pagination}>
+  <button onClick={handlePrev} disabled={currentPage === 1}>
+    Previous
+  </button>
+  
+  <span>
+    Page {currentPage} of {totalPages}
+  </span>
+  
+  <button onClick={handleNext} disabled={currentPage === totalPages}>
+    Next
+  </button>
 </div>
+
+
+
+
+        </div>
+
 
         {/* Modal */}
         {selectedDoc && (
           <div className={styles.modalOverlay}>
-            <div className={styles.modalCard}>
+            <div className={styles.modalCard} data-aos="zoom-in">
               <button className={styles.closeButton} onClick={() => setSelectedDoc(null)} aria-label="Close">
                 <X size={20} />
               </button>
 
               <div className={styles.modalTop}>
                 <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
-                <span
-                              className={`${styles.badge} 
-                                ${selectedDoc.status === "In-Process" 
-                                  ? styles.inProcess 
-                                  : selectedDoc.status === "Completed" 
-                                    ? styles.completed 
-                                    : selectedDoc.status === "On-Hold" 
-                                      ? styles.onHold 
-                                      : selectedDoc.status === "Approved" 
-                                        ? styles.approved 
-                                        : selectedDoc.status === "Awaiting-Completion" 
-                                          ? styles.awaiting 
-                                          : ""
-                                }`}
-                            >
-                                {selectedDoc.status}
-                            </span>
+                <span className={`${styles.badge} ${
+                  selectedDoc.status === "Completed" ? styles.completed : 
+
+                  selectedDoc.status === "In-Process" ? styles.inProcess :
+                  selectedDoc.status === "Approved" ? styles.approved :
+
+                  selectedDoc.status === "Awaiting Signatures" ? styles.pending :
+                  selectedDoc.status === "Awaiting-Completion" ? styles.awaiting :
+                  selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold"
+                                                      ? styles.onHold :
+
+                  styles.pending
+                }`}>
+                  {selectedDoc.status}
+                </span>
               </div>
 
               <div className={styles.metaGrid}>
@@ -620,29 +684,48 @@ const handleConfirmClick = async () => {
 </div>
 
               <div className={styles.modalFooter}>
-                <button className={styles.download} onClick={handleDownload}>Download</button>
-                <button
-                  className={styles.Approve}
-                  onClick={() => handleApprove(selectedDoc.requestID)}
-                  disabled={isApproving}
-                >
-                  {isApproving ? "Approving..." : "Approve"}
-                </button>
-                <button className={styles.OnHold} onClick={() => setShowOnHoldModal(true)}>On Hold</button>
-                <button
-                className={styles.print}
-                onClick={() => {
-                  if (selectedDoc.latestVersion?.filePath) {
-                    window.open(selectedDoc.latestVersion.filePath, "_blank", "noopener,noreferrer");
-                  } else {
-                    alert("No file available to print.");
-                  }
-                }}
-              >
-                Print
-              </button>
+  {/* Left side buttons */}
+  <div className={styles.footerLeft}>
+    <button className={styles.download} onClick={handleDownload}>
+      Download
+    </button>
+    <button
+      className={styles.print}
+      onClick={() => {
+        if (selectedDoc.latestVersion?.filePath) {
+          window.open(selectedDoc.latestVersion.filePath, "_blank", "noopener,noreferrer");
+        } else {
+          alert("No file available to print.");
+        }
+      }}
+    >
+      Print
+    </button>
+  </div>
 
-              </div>
+  {/* Right side buttons */}
+  <div className={styles.footerRight}>
+    {!["Approved", "Awaiting-Completion", "Completed", "On-Hold"].includes(selectedDoc.status) && (
+      <>
+        <button
+          className={styles.Approve}
+          onClick={() => handleApprove(selectedDoc.requestID)}
+          disabled={isApproving}
+        >
+          {isApproving ? "Approving..." : "Approve"}
+        </button>
+        <button
+          className={styles.OnHold}
+          onClick={() => setShowOnHoldModal(true)}
+        >
+          On Hold
+        </button>
+      </>
+    )}
+  </div>
+</div>
+
+
             </div>
           </div>
         )}
@@ -651,7 +734,7 @@ const handleConfirmClick = async () => {
         {showOnHoldModal && (
 
           <div className={styles.modal}>
-            <div className={styles.modalContent}>
+            <div className={styles.modalContent} data-aos="zoom-in">
               <div className={styles.confirmRestoreContainer}>
                 <h2>ON HOLD</h2>
 

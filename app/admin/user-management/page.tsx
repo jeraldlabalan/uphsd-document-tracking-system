@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import Loading from "@/app/loading";
 
 interface User {
   id: number;
@@ -52,33 +53,35 @@ export default function UserManagement() {
   const [showDeactivateSuccess, setShowDeactivateSuccess] = useState(false);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await fetch("/api/admin/user-management/users");
-        const data = await res.json();
+  const fetchUsers = async () => {
+    try {
+      setLoading(true); // ✅ start loader
+      const res = await fetch("/api/admin/user-management/users");
+      const data = await res.json();
 
-        if (Array.isArray(data)) {
-          setUsers(data);
-          setError(null);
-        } else if (data && typeof data === "object" && "error" in data) {
-          setError(data.error || "Unknown API error");
-          setUsers([]);
-        } else {
-          setError("Unexpected API response");
-          setUsers([]);
-          console.error("API did not return an array:", data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch users", err);
-        setError("Failed to fetch users");
+      if (Array.isArray(data)) {
+        setUsers(data);
+        setError(null);
+      } else if (data && typeof data === "object" && "error" in data) {
+        setError(data.error || "Unknown API error");
         setUsers([]);
-      } finally {
-        setLoading(false);
+      } else {
+        setError("Unexpected API response");
+        setUsers([]);
+        console.error("API did not return an array:", data);
       }
-    };
+    } catch (err) {
+      console.error("Failed to fetch users", err);
+      setError("Failed to fetch users");
+      setUsers([]);
+    } finally {
+      setLoading(false); // ✅ stop loader
+    }
+  };
 
-    fetchUsers();
-  }, []);
+  fetchUsers();
+}, []);
+
 
   const filteredUsers = users.filter((user) => {
     const statusMatch = !statusFilter || user.status === statusFilter;
@@ -234,6 +237,9 @@ export default function UserManagement() {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   };
 
+  if (loading) {
+      return <Loading />;
+    }
   return (
     <div>
       <AdminHeader />

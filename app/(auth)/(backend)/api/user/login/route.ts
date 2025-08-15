@@ -12,6 +12,8 @@ interface UserWithRole {
   role: "Admin" | "Employee";
   FirstName: string;
   LastName: string;
+  isActive: boolean; // Add isActive field
+  isDeleted: boolean; // Add isDeleted field
 }
 
 async function findUserByEmail(email: string): Promise<UserWithRole | null> {
@@ -30,8 +32,10 @@ async function findUserByEmail(email: string): Promise<UserWithRole | null> {
     email: user.Email,
     password: user.Password,
     role: roleName,
-    FirstName: user.FirstName,
-    LastName: user.LastName,
+    FirstName: user.FirstName || "", // Handle null values
+    LastName: user.LastName || "", // Handle null values
+    isActive: user.IsActive, // ✅ Save isActive
+    isDeleted: user.IsDeleted, // ✅ Save isDeleted
   };
 }
 
@@ -82,9 +86,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if user account is terminated (deleted)
+    if (user.isDeleted) {
+      return NextResponse.json(
+        { message: "Account has been terminated. Please contact an administrator." },
+        { status: 403 }
+      );
+    }
+
+    // Check if user account is deactivated (suspended)
+    if (!user.isActive) {
+      return NextResponse.json(
+        { message: "Account has been deactivated. Please contact an administrator." },
+        { status: 403 }
+      );
+    }
+
     // ✅ Create secure JWT with UserID
     const token = sign(
-      { UserID: user.id, email: user.email, role: user.role },
+      { UserID: user.id, email: user.email, role: user.role, isActive: user.isActive, isDeleted: user.isDeleted },
       JWT_SECRET,
       { expiresIn: "24h" }
     );

@@ -29,16 +29,80 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const action = searchParams.get("action");
-    const documentType = searchParams.get("documentType");
+    const targetType = searchParams.get("targetType");
+    const department = searchParams.get("department");
     const date = searchParams.get("date");
+    const summary = searchParams.get("summary");
+
+    // If summary is requested, return summary statistics
+    if (summary === "true") {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      // Build where clause for summary based on filters
+      const summaryWhere: any = {
+        IsDeleted: false,
+        Timestamp: {
+          gte: today,
+          lt: tomorrow,
+        },
+      };
+
+      if (targetType && targetType !== "All Targets") summaryWhere.TargetType = targetType;
+      if (department && department !== "All Departments") {
+        summaryWhere.User = {
+          Department: {
+            Name: department
+          }
+        };
+      }
+
+      // Total activity today
+      const totalActivityToday = await db.activityLog.count({
+        where: summaryWhere,
+      });
+
+      // Document-related activity today
+      const documentActivityToday = await db.activityLog.count({
+        where: {
+          ...summaryWhere,
+          TargetType: {
+            in: ["Document", "DocumentVersion", "DocumentRequest", "SignaturePlaceholder"],
+          },
+        },
+      });
+
+      // User-related activity today
+      const userActivityToday = await db.activityLog.count({
+        where: {
+          ...summaryWhere,
+          TargetType: {
+            in: ["User", "Department", "Role"],
+          },
+        },
+      });
+
+      return NextResponse.json({
+        totalActivityToday,
+        documentActivityToday,
+        userActivityToday,
+      });
+    }
 
     const where: any = {
       IsDeleted: false,
     };
 
-    if (action && action !== "All Actions") where.Action = action;
-    if (documentType && documentType !== "All Types") where.DocumentType = documentType;
+    if (targetType && targetType !== "All Targets") where.TargetType = targetType;
+    if (department && department !== "All Departments") {
+      where.User = {
+        Department: {
+          Name: department
+        }
+      };
+    }
     if (date && date !== "All Dates") {
       const startDate = new Date(date);
       const endDate = new Date(date);

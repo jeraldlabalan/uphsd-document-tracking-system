@@ -7,6 +7,10 @@ import Link from "next/link";
 import Select, { SingleValue } from "react-select";
 import { useRouter } from "next/navigation"; // ✅ Correct import for App Router
 import { useParams } from "next/navigation";
+import Loading from "@/app/loading";
+import AOS from "aos";
+import "aos/dist/aos.css";
+
 
 
 
@@ -54,6 +58,13 @@ export default function EditDocument() {
   };
 
   useEffect(() => {
+              AOS.init({
+                duration: 1000,
+                once: true,
+              });
+            }, []);
+
+  useEffect(() => {
     const fetchDoc = async () => {
       try {
         if (!idStr) throw new Error("Missing document id");
@@ -92,7 +103,6 @@ export default function EditDocument() {
         // Handle document file from latest version
         if (data.latestVersion) {
           setFilePath(data.latestVersion.FilePath);
-          setShowDocuments(true);
         }
         
         // Handle signature placeholders if they exist
@@ -169,7 +179,6 @@ export default function EditDocument() {
     []
   );
   const [approvalRequired, setApprovalRequired] = useState(false);
-  const [showDocuments, setShowDocuments] = useState(false);
 
   // Add loading, error, and success states for form submission
   const [loading, setLoading] = useState(false);
@@ -407,7 +416,14 @@ export default function EditDocument() {
           formData.append("Description", description);
           formData.append("TypeID", selectedTypeID?.toString() ?? "");
           formData.append("DepartmentID", departmentID?.toString() ?? "");
-          formData.append("ApproverIDs", JSON.stringify(approverIDs.filter((id) => id !== 0)));
+          
+          // Only append approvers if they are selected
+          if (approverIDs.filter((id) => id !== 0).length > 0) {
+            formData.append("ApproverIDs", JSON.stringify(approverIDs.filter((id) => id !== 0)));
+          } else {
+            // No approvers selected - send empty array to indicate department-wide notification
+            formData.append("ApproverIDs", JSON.stringify([]));
+          }
 
           // Convert base64 data back to a File object
           // savedDocumentData is a base64 data URL, so we need to convert it directly
@@ -483,15 +499,22 @@ export default function EditDocument() {
       } else {
         console.log("No saved document with placeholders, processing regular update...");
         // Regular document update without placeholders
-      const formData = new FormData();
-      formData.append("DocumentID", String(idStr ?? ""));
-      formData.append("Title", title);
-      formData.append("Description", description);
-      formData.append("TypeID", selectedTypeID?.toString() ?? "");
-      formData.append("DepartmentID", departmentID?.toString() ?? "");
-      formData.append("ApproverIDs", JSON.stringify(approverIDs.filter((id) => id !== 0)));
+        const formData = new FormData();
+        formData.append("DocumentID", String(idStr ?? ""));
+        formData.append("Title", title);
+        formData.append("Description", description);
+        formData.append("TypeID", selectedTypeID?.toString() ?? "");
+        formData.append("DepartmentID", departmentID?.toString() ?? "");
+        
+        // Only append approvers if they are selected
+        if (approverIDs.filter((id) => id !== 0).length > 0) {
+          formData.append("ApproverIDs", JSON.stringify(approverIDs.filter((id) => id !== 0)));
+        } else {
+          // No approvers selected - send empty array to indicate department-wide notification
+          formData.append("ApproverIDs", JSON.stringify([]));
+        }
 
-              // Only append files if they exist and have content
+        // Only append files if they exist and have content
         console.log("Files array before submission:", files);
         let validFilesCount = 0;
         
@@ -523,21 +546,32 @@ export default function EditDocument() {
         
         console.log("Proceeding with document update...");
 
-              console.log("Making API call to edit-document...");
+        console.log("Making API call to edit-document...");
         const res = await fetch("/api/employee/edit-document", {
           method: "POST",
           body: formData,
         });
         console.log("API response received:", res.status, res.statusText);
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to upload document");
-      }
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || "Failed to upload document");
+        }
 
-      setSuccess(true);
-      alert("Document successfully updated!");
-      router.push("/employee2/documents");
+        setSuccess(true);
+        
+        // Show appropriate success message based on whether files and approvers were provided
+        if (validFilesCount > 0 && approverIDs.filter((id) => id !== 0).length > 0) {
+          alert("Document successfully updated with files and specific approvers!");
+        } else if (validFilesCount > 0) {
+          alert("Document successfully updated with files! Document requests have been created for all department members so they can review and take action on the updated document.");
+        } else if (approverIDs.filter((id) => id !== 0).length > 0) {
+          alert("Document successfully updated! This is a hardcopy document that requires wet signatures.");
+        } else {
+          alert("Document successfully updated! Document requests have been created for all department members so they can track the updated hardcopy document status, put it on hold, or add remarks about any issues.");
+        }
+        
+        router.push(`/employee2/documents`);
       }
     } catch (err: any) {
       setError(err.message || "Something went wrong");
@@ -680,13 +714,13 @@ export default function EditDocument() {
   console.log("Render check - doc state:", doc);
   if (!doc) {
     console.log("Document not loaded yet, showing loading...");
-    return <p>Loading...</p>;
+    return <Loading/>;
   }
 
   return (
     <div className={styles.container}>
       <EmpHeader />
-      <div className={styles.contentContainer}>
+      <div className={styles.contentContainer} data-aos="fade-up">
         <div className={styles.formWrapper}>
           <h2 className={styles.title}>Edit Document</h2>
           <hr className={styles.separator}></hr>
@@ -805,56 +839,141 @@ export default function EditDocument() {
 
             <div className={styles.sectionHeader}>
               <div className={styles.sectionTitle}>Document Files</div>
-
-              <div className={styles.toggleContainer}>
-                <span>Document Required</span>
-                <label className={styles.switch}>
-                  <input
-                    type="checkbox"
-                    checked={showDocuments}
-                    onChange={() => setShowDocuments(!showDocuments)}
-                  />
-                  <span className={styles.slider}></span>
-                </label>
+              <div className={styles.sectionDescription}>
+                Upload PDF files for digital documents, or leave empty for hardcopy documents. Document requests will be created for all department members so they can track status, take actions, and add remarks about any issues.
               </div>
             </div>
 
-            {showDocuments && (
-              <>
-                {/* Display current document if it exists */}
-                {filePath && (
-                  <div className={styles.inputGroup}>
-                    <div className={styles.fileItem}>
-                      <div className={styles.fileInfo}>
-                        <span className={styles.fileName}>
-                          {filePath.split('/').pop() || 'Current Document'}
-                        </span>
-                        <span className={styles.currentDocumentBadge}>
-                          Current Document
-                        </span>
-                      </div>
+            {/* Display current document if it exists */}
+            {filePath && (
+              <div className={styles.inputGroup}>
+                <div className={styles.fileItem}>
+                  <div className={styles.fileInfo}>
+                    <span className={styles.fileName}>
+                      {filePath.split('/').pop() || 'Current Document'}
+                    </span>
+                    <span className={styles.currentDocumentBadge}>
+                      Current Document
+                    </span>
+                  </div>
 
-                      <div className={styles.fileActions}>
-                        <button
-                          type="button"
-                          className={styles.viewDocumentBtn}
-                          onClick={() => {
-                            // Open the current document in a new tab
-                            window.open(`/uploads/documents/${filePath.split('/').pop()}`, '_blank');
-                          }}
-                        >
-                          View Document
-                        </button>
+                  <div className={styles.fileActions}>
+                    <button
+                      type="button"
+                      className={styles.viewDocumentBtn}
+                      onClick={() => {
+                        // Open the current document in a new tab
+                        window.open(`/uploads/documents/${filePath.split('/').pop()}`, '_blank');
+                      }}
+                    >
+                      View Document
+                    </button>
 
-                        {/* Show Edit Placeholders button if document has placeholders */}
-                        {savedDocument?.placeholders && savedDocument.placeholders.length > 0 && (
-                          <button
-                            type="button"
-                            className={styles.editPlaceholdersBtn}
-                            onClick={() => {
-                              // Open e-sign interface again for editing placeholders
-                              const placeholders = savedDocument?.placeholders;
-                              if (placeholders && placeholders.length > 0) {
+                    {/* Show Edit Placeholders button if document has placeholders */}
+                    {savedDocument?.placeholders && savedDocument.placeholders.length > 0 && (
+                      <button
+                        type="button"
+                        className={styles.editPlaceholdersBtn}
+                        onClick={() => {
+                          // Open e-sign interface again for editing placeholders
+                          const placeholders = savedDocument?.placeholders;
+                          if (placeholders && placeholders.length > 0) {
+                            // Prepare approvers data
+                            const approversData = approverIDs.filter(id => id !== 0).map(id => {
+                              const approver = approvers.find(a => a.UserID === id);
+                              return {
+                                id: id.toString(),
+                                userId: id,
+                                name: approver ? `${approver.FirstName} ${approver.LastName}` : `Approver ${id}`,
+                              };
+                            });
+
+                            // Create URL parameters
+                            const params = new URLSearchParams({
+                              docId: idStr || 'unknown',
+                              title: title,
+                              type: selectedType,
+                              department: department,
+                              approvers: JSON.stringify(approversData),
+                              userRole: "sender",
+                            });
+
+                            // Open e-sign interface in new tab
+                            window.open(`/employee2/e-sign-document?${params.toString()}`, "_blank");
+                          }
+                        }}
+                      >
+                        Edit Placeholders
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Display uploaded files */}
+            {files.map((item, index) => (
+              <div key={index} className={styles.inputGroup}>
+                <div className={styles.fileItem}>
+                  <div className={styles.fileInfo}>
+                    <span className={styles.fileName}>
+                      {item.file.name}
+                    </span>
+                    {item.requireEsign && (
+                      <span className={styles.eSignBadge}>
+                        E-Sign Required
+                      </span>
+                    )}
+                  </div>
+
+                  <div className={styles.fileActions}>
+                    <label className={styles.switchContainer}>
+                      <input
+                        type="checkbox"
+                        checked={item.requireEsign}
+                        onChange={() => handleToggleEsign(index)}
+                      />
+                      <span className={styles.switchSlider}></span>
+                      <span className={styles.switchLabel}>
+                        Require E-sign
+                      </span>
+                    </label>
+
+                    <button
+                      type="button"
+                      className={styles.removeBtn}
+                      onClick={() => handleRemoveFile(index)}
+                      aria-label="Remove file"
+                    >
+                      <X size={20} />
+                    </button>
+
+                    {item.requireEsign && (
+                      <button
+                        type="button"
+                        className={styles.eSignBtn}
+                        onClick={() => handleOpenESign(item.file, index)}
+                        aria-label="Open e-sign interface"
+                      >
+                        Open E-Sign
+                      </button>
+                    )}
+
+                    {/* Add Edit Placeholders button beside Open E-Sign */}
+                    {item.requireEsign && (
+                      <button
+                        type="button"
+                        className={styles.editPlaceholdersBtn}
+                        onClick={() => {
+                          // Open e-sign interface again for editing placeholders
+                          const placeholders = savedDocument?.placeholders;
+                          if (placeholders && placeholders.length > 0) {
+                            // Create a new file object from the saved document URL
+                            fetch(savedDocument.url)
+                              .then(response => response.blob())
+                              .then(blob => {
+                                const file = new File([blob], `document-with-placeholders.pdf`, { type: 'application/pdf' });
+                                
                                 // Prepare approvers data
                                 const approversData = approverIDs.filter(id => id !== 0).map(id => {
                                   const approver = approvers.find(a => a.UserID === id);
@@ -871,254 +990,122 @@ export default function EditDocument() {
                                   title: title,
                                   type: selectedType,
                                   department: department,
-                                  approvers: JSON.stringify(approversData),
+                                  approvers: encodeURIComponent(JSON.stringify(approversData)),
+                                  file: URL.createObjectURL(file),
                                   userRole: "sender",
                                 });
 
                                 // Open e-sign interface in new tab
                                 window.open(`/employee2/e-sign-document?${params.toString()}`, "_blank");
-                              }
-                            }}
-                          >
-                            Edit Placeholders
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                              })
+                              .catch(error => {
+                                console.error("Error opening document for editing:", error);
+                                alert("Failed to open document for editing. Please try again.");
+                              });
+                          }
+                        }}
+                      >
+                        Edit Placeholders
+                      </button>
+                    )}
                   </div>
-                )}
-
-                {/* Display uploaded files */}
-                {files.map((item, index) => (
-                  <div key={index} className={styles.inputGroup}>
-                    <div className={styles.fileItem}>
-                      <div className={styles.fileInfo}>
-                        <span className={styles.fileName}>
-                          {item.file.name}
-                        </span>
-                        {item.requireEsign && (
-                          <span className={styles.eSignBadge}>
-                            E-Sign Required
-                          </span>
-                        )}
-                      </div>
-
-                      <div className={styles.fileActions}>
-                        <label className={styles.switchContainer}>
-                          <input
-                            type="checkbox"
-                            checked={item.requireEsign}
-                            onChange={() => handleToggleEsign(index)}
-                          />
-                          <span className={styles.switchSlider}></span>
-                          <span className={styles.switchLabel}>
-                            Require E-sign
-                          </span>
-                        </label>
-
-                        <button
-                          type="button"
-                          className={styles.removeBtn}
-                          onClick={() => handleRemoveFile(index)}
-                          aria-label="Remove file"
-                        >
-                          <X size={20} />
-                        </button>
-
-                        {item.requireEsign && (
-                          <button
-                            type="button"
-                            className={styles.eSignBtn}
-                            onClick={() => handleOpenESign(item.file, index)}
-                            aria-label="Open e-sign interface"
-                          >
-                            Open E-Sign
-                          </button>
-                        )}
-
-                        {/* Add Edit Placeholders button beside Open E-Sign */}
-                        {item.requireEsign && (
-                          <button
-                            type="button"
-                            className={styles.editPlaceholdersBtn}
-                            onClick={() => {
-                              // Open e-sign interface again for editing placeholders
-                              const placeholders = savedDocument?.placeholders;
-                              if (placeholders && placeholders.length > 0) {
-                                // Create a new file object from the saved document URL
-                                fetch(savedDocument.url)
-                                  .then(response => response.blob())
-                                  .then(blob => {
-                                    const file = new File([blob], `document-with-placeholders.pdf`, { type: 'application/pdf' });
-                                    
-                                    // Prepare approvers data
-                                    const approversData = approverIDs.filter(id => id !== 0).map(id => {
-                                      const approver = approvers.find(a => a.UserID === id);
-                                      return {
-                                        id: id.toString(),
-                                        userId: id,
-                                        name: approver ? `${approver.FirstName} ${approver.LastName}` : `Approver ${id}`,
-                                      };
-                                    });
-
-                                    // Create URL parameters
-                                    const params = new URLSearchParams({
-                                      docId: idStr || 'unknown',
-                                      title: title,
-                                      type: selectedType,
-                                      department: department,
-                                      approvers: encodeURIComponent(JSON.stringify(approversData)),
-                                      file: URL.createObjectURL(file),
-                                      userRole: "sender",
-                                    });
-
-                                    // Open e-sign interface in new tab
-                                    window.open(`/employee2/e-sign-document?${params.toString()}`, "_blank");
-                                  })
-                                  .catch(error => {
-                                    console.error("Error opening document for editing:", error);
-                                    alert("Failed to open document for editing. Please try again.");
-                                  });
-                              }
-                            }}
-                          >
-                            Edit Placeholders
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                <div className={styles.inputGroup}>
-                  <label>Upload New Version</label>
-
-                  <label className={styles.uploadBox}>
-                    <input
-                      type="file"
-                      onChange={handleFileChange}
-                      className={styles.hiddenInput}
-                    />
-                    <div className={styles.uploadContent}>
-                      <FileUp size={32} />
-                      <span>Click or drag to upload new version</span>
-                    </div>
-                  </label>
-
-                  {files.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const input = document.querySelector(
-                          `.${styles.hiddenInput}`
-                        ) as HTMLInputElement;
-                        if (input) {
-                          input.click();
-                        }
-                      }}
-                      className={styles.addFileBtn}
-                    >
-                      <Plus size={20} /> Add another file
-                    </button>
-                  )}
                 </div>
-              </>
-            )}
+              </div>
+            ))}
 
-            <div className={styles.sectionTitle}>Send Document</div>
+            <div className={styles.inputGroup}>
+              <label>Upload New Version</label>
+
+              <label className={styles.uploadBox}>
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  className={styles.hiddenInput}
+                />
+                <div className={styles.uploadContent}>
+                  <FileUp size={32} />
+                  <span>Click or drag to upload new version</span>
+                </div>
+              </label>
+
+              {files.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const input = document.querySelector(
+                      `.${styles.hiddenInput}`
+                    ) as HTMLInputElement;
+                    if (input) {
+                      input.click();
+                    }
+                  }}
+                  className={styles.addFileBtn}
+                >
+                  <Plus size={20} /> Add another file
+                </button>
+              )}
+            </div>
+
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionTitle}>Approvers (Optional)</div>
+              <div className={styles.sectionDescription}>
+                Select specific approvers for digital review, or leave empty to create document requests for all department members. All department members will receive document requests and can take actions like approve, hold, reject, or add remarks about issues.
+              </div>
+            </div>
 
             <div className={styles.approvalContainer}>
               <div className={styles.approvalHeader}>
                 <p>
                   Select the people who need to review and approve this document
-                  in order.
+                  in order, or leave empty for department-wide notification.
                 </p>
-                <div className={styles.toggleContainer}>
-                  <span>Approval Required</span>
-                  <label className={styles.switch}>
-                    <input
-                      title="approval"
-                      type="checkbox"
-                      checked={approvalRequired}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setApprovalRequired(checked);
-                        if (checked && approverIDs.length === 0) {
-                          setApproverIDs([0]);
-                        }
-                      }}
-                    />
-
-                    <span className={styles.slider}></span>
-                  </label>
-                </div>
               </div>
 
-              {approvalRequired &&
-                approverIDs.map((id, index) => (
-                  <div className={styles.approverRow} key={index}>
-                    <span className={styles.approverNumber}>{index + 1}</span>
-
-                    <Select
-                      options={selectOptions}
-                      value={
-                        selectOptions.find((opt) => opt.value === id) || null
-                      }
-                      onChange={(selected) =>
-                        handleApproverChange(selected, index)
-                      }
-                      placeholder="Select approver..."
-                      isSearchable
-                      menuPortalTarget={
-                        typeof window !== "undefined" ? document.body : null
-                      }
-                      styles={{
-                        container: (base) => ({
-                          ...base,
-                          width: "auto",
-                          minWidth: "120px",
-                          maxWidth: "100%",
-                          flex: 1,
-                        }),
-                        menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                      }}
-                    />
-
-                    {/* ✅ Add Approver Button */}
+              {approverIDs.map((id, index) => (
+                <div className={styles.approverRow} key={index}>
+                  <span className={styles.approverNumber}>{index + 1}</span>
+                  <Select
+                    options={selectOptions}
+                    value={selectOptions.find((option) => option.value === id)}
+                    onChange={(selected) =>
+                      handleApproverChange(selected, index)
+                    }
+                    placeholder="Select approver"
+                    className={styles.selectField}
+                  />
+                  {approverIDs.length > 1 && (
                     <button
                       type="button"
-                      onClick={addApprover}
-                      className={styles.addBtn}
+                      className={styles.removeBtn}
+                      onClick={() => removeApprover(index)}
                     >
-                      + Add Approver
+                      Remove
                     </button>
+                  )}
+                </div>
+              ))}
 
-                    {/* ✅ Only show Remove if more than 1 approver */}
-                    {approverIDs.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeApprover(index)}
-                        className={styles.removeBtn}
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                ))}
+              <button
+                type="button"
+                className={styles.addBtn}
+                onClick={addApprover}
+              >
+                + Add New Approver
+              </button>
+            </div>
 
-              <div className={styles.inputGroup}>
-                <label>
-                  Due Date <span className={styles.optional}>(optional)</span>
-                </label>
-                <input
-                  type="date"
-                  title="date"
-                  className={styles.inputField}
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  min={new Date().toISOString().split("T")[0]} // 👈 prevents past dates
-                />
-              </div>
+            <div className={styles.inputGroup}>
+              <label>
+                Due Date <span className={styles.optional}>(optional)</span>
+              </label>
+              <input
+                type="date"
+                title="date"
+                className={styles.inputField}
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                min={new Date().toISOString().split("T")[0]} // 👈 prevents past dates
+              />
             </div>
 
             <div className={styles.buttonGroup}>

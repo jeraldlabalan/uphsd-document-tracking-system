@@ -5,6 +5,9 @@ import EmpHeader from "@/components/shared/empHeader";
 import { useSearchParams } from "next/navigation";
 import { Search as SearchIcon, User } from "lucide-react";
 import { fetchFilterData, FilterData } from "@/lib/filterData";
+import Loading from "@/app/loading";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 import Link from "next/link";
 import { X } from "lucide-react";
@@ -29,6 +32,7 @@ export default function Documents() {
   const [dateTo, setDateTo] = useState("");
   const [dateError, setDateError] = useState("");
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [departmentFilter, setDepartmentFilter] = useState("");
   const [filterData, setFilterData] = useState<FilterData>({
     documentTypes: [],
     departments: [],
@@ -36,6 +40,9 @@ export default function Documents() {
   });
   const searchParams = useSearchParams();
   const docId = searchParams.get("docId");
+  const [loading, setLoading] = useState(true);
+
+  
 
   // const documents = [
   //   {
@@ -62,38 +69,49 @@ export default function Documents() {
   //   },
   // ];
 
+  useEffect(() => {
+      AOS.init({
+        duration: 1000,
+        once: true,
+      });
+    }, []);
 
 useEffect(() => {
-  const fetchDocuments = async () => {
+  const fetchAllData = async () => {
     try {
-      const res = await fetch("/api/employee/documents");
-      const data = await res.json();
+      setLoading(true); // ✅ start loading
 
-      // Log to verify shape
-      console.log("API response:", data);
+      // Fetch documents
+      const resDocs = await fetch("/api/employee/documents");
+      const dataDocs = await resDocs.json();
 
-      // Make sure to access the array correctly
-      if (Array.isArray(data)) {
-        setDocuments(data);
-      } else if (Array.isArray(data.docs)) {
-        setDocuments(data.docs); // ✅ most likely this
+      console.log("API response:", dataDocs);
+
+      if (Array.isArray(dataDocs)) {
+        setDocuments(dataDocs);
+      } else if (Array.isArray(dataDocs.docs)) {
+        setDocuments(dataDocs.docs);
       } else {
-        console.error("❌ Invalid documents data:", data);
-        setDocuments([]); // fallback to prevent crashes
+        console.error("❌ Invalid documents data:", dataDocs);
+        setDocuments([]);
       }
+
+      // Fetch filter data
+      const filterData = await fetchFilterData();
+      setFilterData(filterData);
+
     } catch (err) {
-      console.error("Failed to fetch documents", err);
+      console.error("Failed to fetch data", err);
+      setDocuments([]);
+      setFilterData([]);
+    } finally {
+      setLoading(false); // ✅ stop loading after both fetches
     }
   };
 
-  const loadFilterData = async () => {
-    const data = await fetchFilterData();
-    setFilterData(data);
-  };
-
-  fetchDocuments();
-  loadFilterData();
+  fetchAllData();
 }, []);
+
   // const documents = [
   //   {
   //     id: 1,
@@ -133,22 +151,30 @@ useEffect(() => {
 
 
   const filteredDocs = documents.filter((doc) => {
-    const matchesSearch =
-      doc.name.toLowerCase().includes(search.toLowerCase()) ||
-      doc.id.toString().includes(search);
+  const matchesSearch =
+    doc.name.toLowerCase().includes(search.toLowerCase()) ||
+    doc.id.toString().includes(search);
 
-    const matchesStatus = !statusFilter || doc.status === statusFilter;
-    const matchesType = !typeFilter || doc.type === typeFilter;
+  const matchesStatus = !statusFilter || doc.status === statusFilter;
+  const matchesType = !typeFilter || doc.type === typeFilter;
+  const matchesDepartment = !departmentFilter || doc.department === departmentFilter;
 
-    const docDate = new Date(doc.date);
-    const fromDate = dateFrom ? new Date(dateFrom) : null;
-    const toDate = dateTo ? new Date(dateTo) : null;
+  const docDate = new Date(doc.date);
+  const fromDate = dateFrom ? new Date(dateFrom) : null;
+  const toDate = dateTo ? new Date(dateTo) : null;
 
-    const matchesDate =
-      (!fromDate || docDate >= fromDate) && (!toDate || docDate <= toDate);
+  const matchesDate =
+    (!fromDate || docDate >= fromDate) &&
+    (!toDate || docDate <= toDate);
 
-    return matchesSearch && matchesStatus && matchesType && matchesDate;
-  });
+  return (
+    matchesSearch &&
+    matchesStatus &&
+    matchesType &&
+    matchesDepartment &&
+    matchesDate
+  );
+});
 
   const handleDownload = () => {
     if (!selectedDoc?.preview) return;
@@ -168,6 +194,30 @@ useEffect(() => {
       alert("No file available to print.");
     }
   };
+
+    // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const docsPerPage = 6;
+  
+  const totalPages = Math.ceil(filteredDocs.length / docsPerPage);
+  
+  const startIndex = (currentPage - 1) * docsPerPage;
+  const endIndex = startIndex + docsPerPage;
+  const paginatedDocs = filteredDocs.slice(startIndex, endIndex);
+  
+  const handlePrev = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
+  
+  const handleNext = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  };
+
+
+
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <div>
@@ -221,17 +271,18 @@ useEffect(() => {
             </select>
 
             <select
-              className={styles.dropdown}
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="">All Types</option>
-              {filterData.documentTypes.map((type) => (
-                <option key={type.TypeID} value={type.TypeName}>
-                  {type.TypeName}
-                </option>
-              ))}
-            </select>
+                className={styles.dropdown}
+                value={departmentFilter}
+                onChange={(e) => setDepartmentFilter(e.target.value)}
+              >
+                <option value="">All Departments</option>
+                {filterData.departments.map((dept) => (
+                  <option key={dept.DepartmentID} value={dept.Name}>
+                    {dept.Name}
+                  </option>
+                ))}
+              </select>
+              
             <div className={styles.dateFilterWrapper}>
               <div className={styles.dateGroup}>
                 <span className={styles.dateLabel}>From:</span>
@@ -285,25 +336,27 @@ useEffect(() => {
             </thead>
             <tbody>
   {filteredDocs.length > 0 ? (
-    filteredDocs.map((doc, i) => (
-      <tr key={i}>
+  paginatedDocs.map((doc, i) => (
+    <tr key={i}>
         <td>{doc.id}</td>
         <td>{doc.name}</td>
         <td>{doc.preview ? doc.preview.split('.').pop()?.toUpperCase() || 'File' : 'No file'}</td>
         <td>
-          <span
-            className={`${styles.badge} ${
-              doc.status === "Completed"
-                ? styles.completed
-                : doc.status === "In Process"
-                ? styles.inProcess
-                : doc.status === "Pending"
-                ? styles.pending
-                : ""
-            }`}
-          >
-            {doc.status}
-          </span>
+          <span className={`${styles.badge} ${
+                  doc.status === "Completed" ? styles.completed : 
+                  doc.status === "In-Process" ? styles.inProcess : 
+
+                  doc.status === "Approved" ? styles.approved : 
+                  doc.status === "Awaiting Signatures" ? styles.pending :
+                  doc.status === "Awaiting-Completion" ? styles.awaiting :
+                  doc.status === "On Hold" || doc.status === "On-Hold"
+
+                                                      ? styles.onHold :
+
+                  styles.pending
+                }`}>
+                  {doc.status}
+                </span>
         </td>
         <td>{doc.date}</td>
         <td className={styles.actions}>
@@ -328,10 +381,24 @@ useEffect(() => {
 </tbody>
 
           </table>
+                    {/* Pagination controls */}
+<div className={styles.pagination}>
+  <button onClick={handlePrev} disabled={currentPage === 1}>
+    Previous
+  </button>
+  
+  <span>
+    Page {currentPage} of {totalPages}
+  </span>
+  
+  <button onClick={handleNext} disabled={currentPage === totalPages}>
+    Next
+  </button>
+</div>
         </div>
         {selectedDoc && (
           <div className={styles.modalOverlay}>
-            <div className={styles.modalCard}>
+            <div data-aos="zoom-in" className={styles.modalCard} >
               <button
                 className={styles.closeButton}
                 onClick={() => setSelectedDoc(null)}
@@ -342,13 +409,19 @@ useEffect(() => {
 
               <div className={styles.modalTop}>
                 <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
-                <span
-                  className={`${styles.badge} ${
-                    selectedDoc.status === "Completed"
-                      ? styles.completed
-                      : styles.pending
-                  }`}
-                >
+                <span className={`${styles.badge} ${
+                  selectedDoc.status === "Completed" ? styles.completed : 
+
+                  selectedDoc.status === "In-Process" ? styles.inProcess :
+                  selectedDoc.status === "Approved" ? styles.approved :
+
+                  selectedDoc.status === "Awaiting Signatures" ? styles.pending :
+                  selectedDoc.status === "Awaiting-Completion" ? styles.awaiting :
+                  selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold"
+                                                      ? styles.onHold :
+
+                  styles.pending
+                }`}>
                   {selectedDoc.status}
                 </span>
               </div>

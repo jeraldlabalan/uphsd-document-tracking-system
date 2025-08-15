@@ -8,8 +8,10 @@ import DocumentManagement from "./(management-entities)/DocumentManagement";
 import InformationForm from "./(profile-management)/InformationForm";
 import ChangePasswordForm from "./(profile-management)/ChangePasswordForm";
 import ProfileDisplay from "./(profile-management)/ProfileDisplay";
-
+import Loading from "@/app/loading";
 import Modal from "./(modal)/Modal";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 interface UserInfo {
   FirstName: string | null;
@@ -30,35 +32,52 @@ export default function Settings() {
   const [rowToDelete, setRowToDelete] = useState<string | null>(null); // Row to delete
   const [isLoading, setIsLoading] = useState(false); // For loading effect
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+
+
+
+useEffect(() => {
+            AOS.init({
+              duration: 1000,
+              once: true,
+            });
+          }, []);
 
   useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const response = await fetch("/api/admin/settings/user-info");
-        if (response.ok) {
-          const data = await response.json();
-          setUserInfo(data);
-        } else {
-          console.error("Failed to fetch user info");
-        }
-      } catch (error) {
-        console.error("Error fetching user info:", error);
+  const fetchUserInfo = async () => {
+    try {
+      setLoading(true); // ✅ start loader
+      const response = await fetch("/api/admin/settings/user-info");
+
+      if (response.ok) {
+        const data = await response.json();
+        setUserInfo(data);
+      } else {
+        console.error("Failed to fetch user info");
+        setUserInfo(null);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+      setUserInfo(null);
+    } finally {
+      setLoading(false); // ✅ stop loader
+    }
+  };
 
+  fetchUserInfo();
+
+  // Listen for custom events to automatically refresh user info
+  const handleUserInfoUpdate = () => {
     fetchUserInfo();
+  };
 
-    // Listen for custom events to automatically refresh user info
-    const handleUserInfoUpdate = () => {
-      fetchUserInfo();
-    };
+  window.addEventListener("userInfoUpdated", handleUserInfoUpdate);
 
-    window.addEventListener("userInfoUpdated", handleUserInfoUpdate);
+  return () => {
+    window.removeEventListener("userInfoUpdated", handleUserInfoUpdate);
+  };
+}, []);
 
-    return () => {
-      window.removeEventListener("userInfoUpdated", handleUserInfoUpdate);
-    };
-  }, []);
 
   const handleUserInfoUpdate = (updatedInfo: Partial<UserInfo>) => {
     if (userInfo) {
@@ -96,11 +115,15 @@ export default function Settings() {
     }, 2000); // Simulate 2-second delay
   };
 
+
+  if (loading) {
+      return <Loading />;
+    }
   return (
     <div>
       <AdminHeader />
 
-      <div className={styles.container}>
+      <div className={styles.container} data-aos="fade-up">
         <div className={styles.rightContent}>
           <h1>Settings</h1>
 

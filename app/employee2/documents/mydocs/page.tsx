@@ -5,6 +5,9 @@ import EmpHeader from "@/components/shared/empHeader";
 import { Search as SearchIcon, X, FileText, Inbox, FileX } from "lucide-react";
 import Link from "next/link";
 import { fetchFilterData, FilterData } from "@/lib/filterData";
+import Loading from "@/app/loading";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 type document = {
   id: number;
@@ -34,6 +37,9 @@ export default function MyDocuments() {
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [documents, setDocuments] = useState<document[]>([]);
   const [loading, setLoading] = useState(true);
+  const [departmentFilter, setDepartmentFilter] = useState("");
+
+  
   const [filterData, setFilterData] = useState<FilterData>({
     documentTypes: [],
     departments: [],
@@ -43,46 +49,70 @@ export default function MyDocuments() {
   const [showMarkCompletedSuccess, setShowMarkCompletedSuccess] =
     useState(false);
 
+    useEffect(() => {
+          AOS.init({
+            duration: 1000,
+            once: true,
+          });
+        }, []);
+
   useEffect(() => {
-    const fetchDocuments = async () => {
-      try {
-        const res = await fetch("/api/employee/documents/mydocs");
-        if (res.ok) {
-          const data = await res.json();
-          setDocuments(data.docs || []);
-        } else {
-          console.error("Failed to load documents");
-          setDocuments([]); // fallback to avoid undefined
-        }
-      } catch (error) {
-        console.error("Error fetching documents:", error);
-      } finally {
-        setLoading(false);
+  const fetchAllData = async () => {
+    try {
+      setLoading(true); // ✅ start loader
+
+      // Fetch documents
+      const resDocs = await fetch("/api/employee/documents/mydocs");
+      let docs: any[] = [];
+      if (resDocs.ok) {
+        const dataDocs = await resDocs.json();
+        docs = dataDocs.docs || [];
+      } else {
+        console.error("Failed to load documents");
       }
-    };
+      setDocuments(docs);
 
-    const loadFilterData = async () => {
-      const data = await fetchFilterData();
-      setFilterData(data);
-    };
+      // Fetch filter data
+      const filterData = await fetchFilterData();
+      setFilterData(filterData);
 
-    fetchDocuments();
-    loadFilterData();
-  }, []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setDocuments([]);
+      setFilterData([]);
+    } finally {
+      setLoading(false); // ✅ stop loader after both fetches
+    }
+  };
+
+  fetchAllData();
+}, []);
+
 
   const filteredDocs = documents.filter((doc) => {
-    const matchesSearch =
-      doc.name.toLowerCase().includes(search.toLowerCase()) ||
-      doc.id.toString().includes(search);
-    const matchesStatus = !statusFilter || doc.status === statusFilter;
-    const matchesType = !typeFilter || doc.type === typeFilter;
-    const docDate = new Date(doc.date);
-    const fromDate = dateFrom ? new Date(dateFrom) : null;
-    const toDate = dateTo ? new Date(dateTo) : null;
-    const matchesDate =
-      (!fromDate || docDate >= fromDate) && (!toDate || docDate <= toDate);
-    return matchesSearch && matchesStatus && matchesType && matchesDate;
-  });
+  const matchesSearch =
+    doc.name.toLowerCase().includes(search.toLowerCase()) ||
+    doc.id.toString().includes(search);
+
+  const matchesStatus = !statusFilter || doc.status === statusFilter;
+  const matchesType = !typeFilter || doc.type === typeFilter;
+  const matchesDepartment = !departmentFilter || doc.department === departmentFilter;
+
+  const docDate = new Date(doc.date);
+  const fromDate = dateFrom ? new Date(dateFrom) : null;
+  const toDate = dateTo ? new Date(dateTo) : null;
+  const matchesDate =
+    (!fromDate || docDate >= fromDate) && (!toDate || docDate <= toDate);
+
+  return (
+    matchesSearch &&
+    matchesStatus &&
+    matchesType &&
+    matchesDepartment &&
+    matchesDate
+  );
+});
+
 
   const handleDownload = () => {
     if (!selectedDoc?.latestVersion?.filePath) return;
@@ -119,12 +149,37 @@ export default function MyDocuments() {
     }
   };
 
+  
+  // Pagination state
+const [currentPage, setCurrentPage] = useState(1);
+const docsPerPage = 6;
+
+const totalPages = Math.ceil(filteredDocs.length / docsPerPage);
+
+const startIndex = (currentPage - 1) * docsPerPage;
+const endIndex = startIndex + docsPerPage;
+const paginatedDocs = filteredDocs.slice(startIndex, endIndex);
+
+const handlePrev = () => {
+  setCurrentPage((prev) => Math.max(prev - 1, 1));
+};
+
+const handleNext = () => {
+  setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+};
+
+
+
+if (loading) {
+  return <Loading />;
+}
+
   return (
     <div>
       <EmpHeader />
       <div className={styles.container}>
         {/* Sidebar */}
-        <div className={styles.sidebarContainer}>
+        <div className={styles.sidebarContainer} data-aos="fade-up">
           <div className={styles.sidebar}>
             <h2 className={styles.sidebarHeader}>Documents</h2>
             <ul className={styles.sidebarMenu}>
@@ -202,17 +257,18 @@ export default function MyDocuments() {
             </select>
 
             <select
-              className={styles.dropdown}
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="">All Types</option>
-              {filterData.documentTypes.map((type) => (
-                <option key={type.TypeID} value={type.TypeName}>
-                  {type.TypeName}
-                </option>
-              ))}
-            </select>
+                className={styles.dropdown}
+                value={departmentFilter}
+                onChange={(e) => setDepartmentFilter(e.target.value)}
+              >
+                <option value="">All Departments</option>
+                {filterData.departments.map((dept) => (
+                  <option key={dept.DepartmentID} value={dept.Name}>
+                    {dept.Name}
+                  </option>
+                ))}
+              </select>
+
 
             <div className={styles.dateFilterWrapper}>
               <div className={styles.dateGroup}>
@@ -259,7 +315,7 @@ export default function MyDocuments() {
 
           {/* Table or Card View */}
           {viewMode === "table" ? (
-            <table className={styles.docTable}>
+            <table data-aos="fade-up" className={styles.docTable}>
               <thead>
                 <tr>
                   <th>ID</th>
@@ -281,30 +337,27 @@ export default function MyDocuments() {
                     </td>
                   </tr>
                 ) : filteredDocs.length > 0 ? (
-                  filteredDocs.map((doc, i) => (
-                    <tr key={i}>
+  paginatedDocs.map((doc, i) => (
+    <tr key={i}>
                       <td>{doc.id}</td>
                       <td>{doc.name}</td>
                       <td>{doc.type}</td>
                       <td>
-                        <span
-                          className={`${styles.badge} 
-                  ${
-                    doc.status === "In-Process"
-                      ? styles.inProcess
-                      : doc.status === "Completed"
-                        ? styles.completed
-                        : doc.status === "On-Hold"
-                          ? styles.onHold
-                          : doc.status === "Approved"
-                            ? styles.approved
-                            : doc.status === "Awaiting-Completion"
-                              ? styles.awaiting
-                              : ""
-                  }`}
-                        >
-                          {doc.status}
-                        </span>
+                        <span className={`${styles.badge} ${
+                  doc.status === "Completed" ? styles.completed : 
+                  doc.status === "In-Process" ? styles.inProcess : 
+
+                  doc.status === "Approved" ? styles.approved : 
+                  doc.status === "Awaiting Signatures" ? styles.pending :
+                  doc.status === "Awaiting-Completion" ? styles.awaiting :
+                  doc.status === "On Hold" || doc.status === "On-Hold"
+
+                                                      ? styles.onHold :
+
+                  styles.pending
+                }`}>
+                  {doc.status}
+                </span>
                       </td>
                       <td>{doc.date}</td>
                       <td className={styles.actions}>
@@ -329,35 +382,32 @@ export default function MyDocuments() {
               </tbody>
             </table>
           ) : (
-            <div className={styles.cardGrid}>
+            <div data-aos="fade-up" className={styles.cardGrid}>
               {loading ? (
                 <div className={styles.loadingContainer}>
                   <div className={styles.spinner}></div>
                   <p>Loading documents...</p>
                 </div>
               ) : filteredDocs.length > 0 ? (
-                filteredDocs.map((doc) => (
+              paginatedDocs.map((doc) => (
                   <div key={doc.id} className={styles.cardItem}>
                     <div className={styles.cardTop}>
                       <h3 className={styles.highlighted}>{doc.name}</h3>
-                      <span
-                        className={`${styles.badge} 
-                ${
-                  doc.status === "In-Process"
-                    ? styles.inProcess
-                    : doc.status === "Completed"
-                      ? styles.completed
-                      : doc.status === "On-Hold"
-                        ? styles.onHold
-                        : doc.status === "Approved"
-                          ? styles.approved
-                          : doc.status === "Awaiting-Completion"
-                            ? styles.awaiting
-                            : ""
-                }`}
-                      >
-                        {doc.status}
-                      </span>
+                      <span className={`${styles.badge} ${
+                  doc.status === "Completed" ? styles.completed : 
+                  doc.status === "In-Process" ? styles.inProcess : 
+
+                  doc.status === "Approved" ? styles.approved : 
+                  doc.status === "Awaiting Signatures" ? styles.pending :
+                  doc.status === "Awaiting-Completion" ? styles.awaiting :
+                  doc.status === "On Hold" || doc.status === "On-Hold"
+
+                                                      ? styles.onHold :
+
+                  styles.pending
+                }`}>
+                  {doc.status}
+                </span>
                     </div>
                     <p>
                       <strong className={styles.highlighted}>File:</strong>{" "}
@@ -388,12 +438,30 @@ export default function MyDocuments() {
               )}
             </div>
           )}
+          {/* Pagination controls */}
+<div className={styles.pagination}>
+  <button onClick={handlePrev} disabled={currentPage === 1}>
+    Previous
+  </button>
+  
+  <span>
+    Page {currentPage} of {totalPages}
+  </span>
+  
+  <button onClick={handleNext} disabled={currentPage === totalPages}>
+    Next
+  </button>
+</div>
+
+
+
+
         </div>
 
         {/* Modal */}
         {selectedDoc && (
           <div className={styles.modalOverlay}>
-            <div className={styles.modalCard}>
+            <div className={styles.modalCard} data-aos="zoom-in">
               <button
                 className={styles.closeButton}
                 onClick={() => setSelectedDoc(null)}
@@ -404,23 +472,19 @@ export default function MyDocuments() {
 
               <div className={styles.modalTop}>
                 <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
-                <span
-                  className={`${styles.badge} 
-                                ${
-                                  selectedDoc.status === "In-Process"
-                                    ? styles.inProcess
-                                    : selectedDoc.status === "Completed"
-                                      ? styles.completed
-                                      : selectedDoc.status === "On-Hold"
-                                        ? styles.onHold
-                                        : selectedDoc.status === "Approved"
-                                          ? styles.approved
-                                          : selectedDoc.status ===
-                                              "Awaiting-Completion"
-                                            ? styles.awaiting
-                                            : ""
-                                }`}
-                >
+                <span className={`${styles.badge} ${
+                  selectedDoc.status === "Completed" ? styles.completed : 
+
+                  selectedDoc.status === "In-Process" ? styles.inProcess :
+                  selectedDoc.status === "Approved" ? styles.approved :
+
+                  selectedDoc.status === "Awaiting Signatures" ? styles.pending :
+                  selectedDoc.status === "Awaiting-Completion" ? styles.awaiting :
+                  selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold"
+                                                      ? styles.onHold :
+
+                  styles.pending
+                }`}>
                   {selectedDoc.status}
                 </span>
               </div>
@@ -466,46 +530,50 @@ export default function MyDocuments() {
 
 
               <div className={styles.modalFooter}>
-                <div className={styles.leftButtons}>
-                  <button className={styles.download} onClick={handleDownload}>
-                    Download
-                  </button>
-                  <button className={styles.print} onClick={handlePrint}>
-                    Print
-                  </button>
-                </div>
-                <div className={styles.rightButton}>
-                  <Link
-                    href={`/employee2/edit-doc/${selectedDoc.id}`}
-                  >
-                    <button className={styles.edit}>Edit</button>
-                  </Link>
-                  {selectedDoc.status === "Awaiting-Completion" && (
-                    <button
-                      className={styles.markCompleteBtn}
-                      onClick={handleMarkAsComplete}
-                    >
-                      Mark as Completed
-                    </button>
-                  )}
+  <div className={styles.leftButtons}>
+    <button className={styles.download} onClick={handleDownload}>
+      Download
+    </button>
+    <button className={styles.print} onClick={handlePrint}>
+      Print
+    </button>
+  </div>
 
-                  {selectedDoc.status === "On-Hold" && (
-                    <button
-                      className={styles.RemarksBtn}
-                      onClick={() => setIsRemarksModalOpen(true)}
-                    >
-                      Remarks
-                    </button>
-                  )}
-                </div>
-              </div>
+  <div className={styles.rightButton}>
+    {!["Completed", "Awaiting-Completion", "On-Hold"].includes(selectedDoc.status) && (
+  <Link href={`/employee2/edit-doc/${selectedDoc.id}`}>
+    <button className={styles.edit}>Edit</button>
+  </Link>
+)}
+
+
+    {selectedDoc.status === "Awaiting-Completion" && (
+      <button
+        className={styles.markCompleteBtn}
+        onClick={handleMarkAsComplete}
+      >
+        Mark as Completed
+      </button>
+    )}
+
+    {selectedDoc.status === "On-Hold" && (
+      <button
+        className={styles.RemarksBtn}
+        onClick={() => setIsRemarksModalOpen(true)}
+      >
+        Remarks
+      </button>
+    )}
+  </div>
+</div>
+
             </div>
           </div>
         )}
 
         {isRemarksModalOpen && (
           <div className={styles.modalOverlay}>
-            <div className={styles.modalCardRemarks}>
+            <div className={styles.modalCardRemarks} data-aos="zoom-in">
               <button
                 className={styles.closeButton}
                 onClick={() => setIsRemarksModalOpen(false)}
@@ -558,7 +626,7 @@ export default function MyDocuments() {
             className={styles.modal}
             onClick={() => setShowMarkCompletedSuccess(false)}
           >
-            <div className={styles.modalContent}>
+            <div className={styles.modalContent} data-aos="zoom-in">
               <div className={styles.confirmSuccessContainer}>
                 <h1>success!</h1>
                 <p>Document successfully completed.</p>

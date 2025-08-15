@@ -28,6 +28,10 @@ export default function EmpDashboard() {
     LastName: string;
     ProfilePicture?: string;
   } | null>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -57,6 +61,60 @@ export default function EmpDashboard() {
     };
   }, []);
 
+    useEffect(() => {
+  const fetchNotifications = async () => {
+    try {
+      setLoadingNotifications(true);
+      const response = await fetch("/api/employee/notification");
+      const data = await response.json();
+
+      console.log("Raw notifications:", data);
+
+      const mapped = (data || [])
+        .map((notif: any) => {
+          const id = Number(notif.NotificationID ?? notif.id);
+
+          if (isNaN(id)) {
+            console.error("❌ Invalid ID detected:", notif);
+            return null;
+          }
+
+          return {
+            ...notif,
+            id,
+            status: notif.status,
+          };
+        })
+        .filter((notif: any) => notif !== null);
+
+      console.log("Mapped notifications:", mapped);
+
+      setNotifications(mapped);
+
+      // Count unread notifications
+      const unread = mapped.filter(
+        (notif: any) => notif.status !== "Read"
+      ).length;
+      setUnreadCount(unread);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      setNotifications([]);
+      setUnreadCount(0);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
+  // Run immediately
+  fetchNotifications();
+
+  // ✅ Poll every 5 seconds for updates
+  const interval = setInterval(fetchNotifications, 5000);
+
+  return () => clearInterval(interval);
+}, []);
+
+
 const handleLogout = async () => {
   try {
     const res = await fetch("/api/user/logout", {
@@ -72,6 +130,7 @@ const handleLogout = async () => {
     console.error("Logout error:", err);
   }
 };
+
 
 
   const firstInitial = user?.FirstName?.charAt(0).toUpperCase() || "U";
@@ -127,9 +186,15 @@ const handleLogout = async () => {
                 : ""
             }`}
           >
-            <Bell size={18} className={styles.icon} />
+            <div className={styles.iconWrapper}>
+              <Bell size={18} className={styles.icon} />
+              {unreadCount > 0 && (
+                <span className={styles.badge}>{unreadCount}</span>
+              )}
+            </div>
             Notification
           </a>
+
 
           <a
             href="/employee2/history"
@@ -162,12 +227,19 @@ const handleLogout = async () => {
       <header className={styles.header}>
         <div className={styles.logoWrapper}>
           <button
-            className={styles.menuButton}
-            onClick={toggleSidebar}
-            aria-label="Toggle Menu"
-          >
-            &#9776;
-          </button>
+  className={styles.menuButton}
+  onClick={toggleSidebar}
+  aria-label="Toggle Menu"
+>
+  &#9776;
+
+  {unreadCount > 0 && (
+    <span className={styles.badgeMenu}>
+      {unreadCount}
+    </span>
+  )}
+</button>
+
           <Image src="/dms-logo.png" alt="Logo" width={180} height={50} />
         </div>
 

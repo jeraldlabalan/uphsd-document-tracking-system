@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verify } from "jsonwebtoken";
+import { verifyAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   try {
-    const token = req.cookies.get("session")?.value; // 🔧 match this with your other routes
-    console.log("Token from cookies:", token);
-    if (!token)
+    // Use the new auth utility function
+    const authResult = await verifyAuth(req);
+    
+    if (!authResult) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    const decoded = verify(token, process.env.JWT_SECRET!) as { email: string };
+    const { user } = authResult;
 
-    const user = await db.user.findUnique({
-      where: { Email: decoded.email },
+    // Get user details from database
+    const userDetails = await db.user.findUnique({
+      where: { UserID: user.UserID },
       select: {
         UserID: true,
         FirstName: true,
@@ -21,17 +24,13 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    if (!user)
+    if (!userDetails) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
-    return NextResponse.json(user);
+    return NextResponse.json(userDetails);
   } catch (err: any) {
-    if (err.name === "TokenExpiredError") {
-      return NextResponse.json({ error: "Token expired" }, { status: 401 });
-    }
-    if (err.name === "JsonWebTokenError") {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    console.error("Error in /me route:", err);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

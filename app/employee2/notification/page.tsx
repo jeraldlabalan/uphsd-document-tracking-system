@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import styles from "./notificationStyles.module.css";
 import EmpHeader from "@/components/shared/empHeader";
 import { Bell } from "lucide-react";
+import Loading from "@/app/loading";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 type Notification = {
   id: number;
@@ -65,43 +68,57 @@ export default function NotificationPage() {
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
+  const [loadingNotifications, setLoadingNotifications] = useState(true);
 
+
+  useEffect(() => {
+    AOS.init({
+      duration: 1000,
+      once: true,
+    });
+  }, []);
   
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const response = await fetch("/api/employee/notification");
-        const data = await response.json();
+  const fetchNotifications = async () => {
+    try {
+      setLoadingNotifications(true); // ✅ start loader
+      const response = await fetch("/api/employee/notification");
+      const data = await response.json();
 
-        console.log("Raw notifications:", data); // 👀 Check the exact structure
+      console.log("Raw notifications:", data);
 
-        const mapped = data
-          .map((notif: any) => {
-            const id = Number(notif.NotificationID ?? notif.id);
+      const mapped = (data || [])
+        .map((notif: any) => {
+          const id = Number(notif.NotificationID ?? notif.id);
 
-            if (isNaN(id)) {
-              console.error("❌ Invalid ID detected:", notif);
-              return null; // skip this entry
-            }
+          if (isNaN(id)) {
+            console.error("❌ Invalid ID detected:", notif);
+            return null; // skip invalid entry
+          }
 
-            return {
-              ...notif,
-              id,
-              status: notif.status,
-            };
-          })
-          .filter((notif: any) => notif !== null); // filter out any null entries
-        console.log("Mapped notifications:", mapped); // ✅ Check the final structure
+          return {
+            ...notif,
+            id,
+            status: notif.status,
+          };
+        })
+        .filter((notif: any) => notif !== null);
 
-        setNotifications(mapped);
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
-      }
-    };
+      console.log("Mapped notifications:", mapped);
 
-    fetchNotifications();
-  }, []);
+      setNotifications(mapped);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      setNotifications([]);
+    } finally {
+      setLoadingNotifications(false); // ✅ stop loader
+    }
+  };
+
+  fetchNotifications();
+}, []);
+
 
   const toggleAll = () => {
     setSelected(
@@ -196,6 +213,30 @@ const handleBackdropClick = (
   const markRead = (id: number) => updateNotificationStatus(id, "Read");
   const markUnread = (id: number) => updateNotificationStatus(id, "Unread");
 
+  // Pagination state
+const [currentPage, setCurrentPage] = useState(1);
+const itemsPerPage = 5; // number of notifications per page
+
+// Calculate indexes
+const totalPages = Math.ceil(notifications.length / itemsPerPage);
+const startIndex = (currentPage - 1) * itemsPerPage;
+const endIndex = startIndex + itemsPerPage;
+const paginatedNotifications = notifications.slice(startIndex, endIndex);
+
+// Pagination handlers
+const handlePrev = () => {
+  setCurrentPage((prev) => Math.max(prev - 1, 1));
+};
+
+const handleNext = () => {
+  setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+};
+
+
+if (loadingNotifications) {
+    return <Loading />;
+  }
+
   return (
     <div>
       <EmpHeader />
@@ -210,7 +251,7 @@ const handleBackdropClick = (
           <div className={styles.main}>
            
 
-            {notifications.map((notification, index) => (
+            {paginatedNotifications.map((notification, index) => (
               <div
                 key={index}
                 className={styles.notification}
@@ -255,7 +296,7 @@ const handleBackdropClick = (
                     </button>
                     {notification.status === "Unread" && (
                       <button
-                        className={styles.markAsRead}
+                        className={styles.markRead}
                         onClick={() =>
                           updateNotificationStatus(notification.id, "Read")
                         }
@@ -278,12 +319,25 @@ const handleBackdropClick = (
               </div>
             ))}
           </div>
+
+          <div className={styles.pagination}>
+  <button onClick={handlePrev} disabled={currentPage === 1}>
+    Previous
+  </button>
+  <span>
+    Page {currentPage} of {totalPages}
+  </span>
+  <button onClick={handleNext} disabled={currentPage === totalPages}>
+    Next
+  </button>
+</div>
+
         </div>
 
         {/* View Modal Styles */}
 {selectedNotification && (
   <div className={styles.modalOverlay}>
-    <div className={styles.modalContent}>
+    <div className={styles.modalContent} data-aos="zoom-in">
       <button
         className={styles.closeButton}
         onClick={() => setSelectedNotification(null)}
@@ -339,48 +393,29 @@ const handleBackdropClick = (
 
        {/* Delete Modal - using same style as permanent delete modal */}
 {showDeleteModal && notificationToDelete && (
-  <div
-    className={styles.modalDelete}
-    onClick={(e) =>
+          <div className={styles.deletemodalOverlay} onClick={(e) =>
       handleBackdropClick(e, () => {
         setShowDeleteModal(false);
         setNotificationToDelete(null);
       })
-    }
-  >
-    <div className={styles.modalContentDelete}>
-      <div className={styles.confirmPermanentDeleteContainer}>
-        <h1>Confirm Deletion</h1>
-
-        <p>
-          Are you sure you want to delete{" "}
-          <strong>{notificationToDelete.title}</strong>?
-        </p>
-
-        <div className={styles.confirmPermanentDeleteActionButton}>
-          <button
-            onClick=
-              {handleCancelButtonClick}
-              
-            
-          >
-            Cancel
-          </button>
-          <button
-            onClick={async () => {
+    }>
+            <div className={styles.deletemodalContent} >
+              <h3 className={styles.deletemodalTitle}>Confirm Deletion</h3>
+              <p>Are you sure you want to delete{" "}
+          <strong>{notificationToDelete.title}</strong>?</p>
+              <div className={styles.modalActions}>
+                <button onClick=
+              {handleCancelButtonClick} className={styles.deletecancelButton}>Cancel</button>
+                <button onClick={async () => {
               if (!notificationToDelete) return;
               await handleDeleteNotification(notificationToDelete.id);
               setShowDeleteModal(false);
               setNotificationToDelete(null);
-            }}
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+            }} className={styles.deleteButton}>Continue</button>
+              </div>
+            </div>
+          </div>
+        )}
 
 
       </div>

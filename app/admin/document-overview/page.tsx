@@ -6,6 +6,7 @@ import AdminHeader from "@/components/shared/adminHeader";
 import { Search as SearchIcon } from "lucide-react";
 import { X, FileCheck, FileText, Trash2, CheckCircle } from "lucide-react";
 import { fetchFilterData, FilterData } from "@/lib/filterData";
+import Loading from "@/app/loading";
 
 export default function DocumentOverview() {
   const [search, setSearch] = useState("");
@@ -30,21 +31,26 @@ export default function DocumentOverview() {
   });
 
   async function loadData() {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/admin/document-overview", { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to load");
-      const data = await res.json();
-      setDocuments(Array.isArray(data.documents) ? data.documents : []);
-      setSummary(data.summary || null);
-    } catch (e) {
-      console.error(e);
-      setDocuments([]);
-      setSummary(null);
-    } finally {
-      setLoading(false);
-    }
+  setLoading(true); // ✅ start loader
+  try {
+    const res = await fetch("/api/admin/document-overview", { credentials: "include" });
+    if (!res.ok) throw new Error("Failed to load");
+
+    const data = await res.json();
+
+    // Ensure documents is always an array
+    setDocuments(Array.isArray(data.documents) ? data.documents : []);
+    setSummary(data.summary || null);
+
+  } catch (e) {
+    console.error("Error loading data:", e);
+    setDocuments([]);
+    setSummary(null);
+  } finally {
+    setLoading(false); // ✅ stop loader
   }
+}
+
 
   useEffect(() => {
     loadData();
@@ -72,35 +78,11 @@ export default function DocumentOverview() {
 
   
 
-  const handleCloseModal = () => setIsModalOpen(false);
+  const handleCloseModal = () => setIsModalOpen(false); 
   const handleCloseSuccess = () => setShowSuccessModal(false);
-  const handleCloseStatusUpdate = () => setShowStatusUpdateModal(false);
+  
 
-  async function handleUpdateDocumentStatuses() {
-    try {
-      const res = await fetch("/api/admin/update-document-statuses", {
-        method: "POST",
-        credentials: "include",
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to update document statuses");
-      }
-      
-      const data = await res.json();
-      setStatusUpdateMessage(data.message);
-      setShowStatusUpdateModal(true);
-      
-      // Reload data to reflect changes
-      await loadData();
-    } catch (error: any) {
-      console.error("Error updating document statuses:", error);
-      setStatusUpdateMessage(`Error: ${error.message}`);
-      setShowStatusUpdateModal(true);
-    }
-  }
-
+  
   async function handleConfirmDelete() {
     try {
       if (!selectedDoc?.id) return;
@@ -112,11 +94,13 @@ export default function DocumentOverview() {
       });
       if (!res.ok) throw new Error("Delete failed");
       setIsModalOpen(false);
+      setSelectedDoc(false);
       setShowSuccessModal(true);
       await loadData();
     } catch (e) {
       console.error(e);
       setIsModalOpen(false);
+
     }
   }
 
@@ -146,7 +130,9 @@ const handleNext = () => {
 
 
 
-
+if (loading) {
+    return <Loading />;
+  }
   return (
     <div>
       <AdminHeader />
@@ -154,13 +140,7 @@ const handleNext = () => {
         <div className={styles.contentSection}>
           <div className={styles.headerRow}>
             <h2 className={styles.pageTitle}>Document Overview</h2>
-            <button 
-              onClick={handleUpdateDocumentStatuses}
-              className={styles.statusUpdateBtn}
-              title="Update any existing documents with 'Active' status to 'In-Process'"
-            >
-              Update Document Statuses
-            </button>
+            
             
           </div>
           <hr className={styles.separator} />
@@ -168,7 +148,6 @@ const handleNext = () => {
           <div className={styles.summary}>
             <div className={`${styles.card} ${styles.green}`}>
 
-              <CheckCircle className={styles.icon} />
               <FileCheck className={styles.icon} />
               <span className={styles.count}>{summary?.inProcessDocuments ?? 0}</span>
               <span>In-Process</span>
@@ -248,76 +227,77 @@ const handleNext = () => {
               </div>
             </div>
           </div>
-<div className={styles.tableWrapper}>
-  <table className={styles.docTable}>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Title</th>
-        <th>Department</th>
-        <th>Status</th>
-        <th>Date Created</th>
-        <th>Action</th>
+
+          <table className={styles.docTable}>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Department</th>
+                <th>Status</th>
+                <th>Date Created</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+  {paginatedDocs.length > 0 ? (
+    paginatedDocs.map((doc, i) => (
+      <tr key={i}>
+        <td>{doc.id}</td>
+        <td>{doc.title}</td>
+        <td>{doc.department}</td>
+        <td>
+          <span
+            className={`${styles.badge} ${
+              doc.status === "Completed"
+                ? styles.completed
+                : doc.status === "In-Process"
+                ? styles.inProcess
+                : doc.status === "Awaiting Signatures"
+                ? styles.pending
+                : doc.status === "Awaiting-Completion"
+                ? styles.awaiting
+                : doc.status === "On Hold"
+                ? styles.onHold
+                : styles.pending
+            }`}
+          >
+            {doc.status}
+          </span>
+        </td>
+        <td>{doc.dateCreated}</td>
+        <td>
+          <a
+            href="#"
+            onClick={() => setSelectedDoc(doc)}
+            className={`${styles.actionBtn} ${styles.viewBtn}`}
+          >
+            View
+          </a>{" "}
+          <button
+            className={`${styles.actionBtn} ${styles.deleteBtn}`}
+            onClick={() => {
+              setSelectedDoc(doc);
+              setIsModalOpen(true);
+
+            }}
+          >
+            Delete
+          </button>
+        </td>
       </tr>
-    </thead>
-    <tbody>
-      {paginatedDocs.length > 0 ? (
-        paginatedDocs.map((doc, i) => (
-          <tr key={i}>
-            <td>{doc.id}</td>
-            <td>{doc.title}</td>
-            <td>{doc.department}</td>
-            <td>
-              <span
-                className={`${styles.badge} ${
-                  doc.status === "Completed"
-                    ? styles.completed
-                    : doc.status === "In-Process"
-                    ? styles.inProcess
-                    : doc.status === "Awaiting Signatures"
-                    ? styles.pending
-                    : doc.status === "Awaiting-Completion"
-                    ? styles.awaiting
-                    : doc.status === "On Hold"
-                    ? styles.onHold
-                    : styles.pending
-                }`}
-              >
-                {doc.status}
-              </span>
-            </td>
-            <td>{doc.dateCreated}</td>
-            <td>
-              <a
-                href="#"
-                onClick={() => setSelectedDoc(doc)}
-                className={`${styles.actionBtn} ${styles.viewBtn}`}
-              >
-                View
-              </a>{" "}
-              <button
-                className={`${styles.actionBtn} ${styles.deleteBtn}`}
-                onClick={() => {
-                  setSelectedDoc(doc);
-                  setIsModalOpen(true);
-                }}
-              >
-                Delete
-              </button>
-            </td>
-          </tr>
-        ))
-      ) : (
-        <tr className={styles.noDataRow}>
-          <td colSpan={6} style={{ textAlign: "center", padding: "1rem" }}>
-            No documents found.
-          </td>
-        </tr>
-      )}
-    </tbody>
-  </table>
-</div>
-        {/* Pagination controls */}
+    ))
+  ) : (
+    <tr className={styles.noDataRow}>
+      <td colSpan={6} style={{ textAlign: "center", padding: "1rem" }}>
+        No documents found.
+      </td>
+    </tr>
+  )}
+</tbody>
+</table>
+
+          {/* Pagination controls */}
       <div className={styles.pagination}>
         <button onClick={handlePrev} disabled={currentPage === 1}>
           Previous
@@ -331,6 +311,8 @@ const handleNext = () => {
       </div>
 </div>
 
+    
+
         {selectedDoc && (
   <div className={styles.modalOverlay}>
     <div className={styles.modalCard}>
@@ -342,20 +324,7 @@ const handleNext = () => {
         <X size={20} />
       </button>
 
-              <div className={styles.modalTop}>
-                <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
-                <span className={`${styles.badge} ${
-                  selectedDoc.status === "Completed" ? styles.completed : 
-                  selectedDoc.status === "In-Process" ? styles.inProcess : 
-                  selectedDoc.status === "Awaiting Signatures" ? styles.pending :
-                  selectedDoc.status === "Awaiting-Completion" ? styles.pending :
-                  selectedDoc.status === "On Hold" ? styles.onHold : 
-                  styles.pending
-                }`}>
-                  {selectedDoc.status}
-                </span>
-
-              </div>
+              
       {/* Top Section */}
       <div className={styles.modalTop}>
         <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
@@ -422,17 +391,8 @@ const handleNext = () => {
 
         {/* Success Modal */}
         {showSuccessModal && (
-          <div className={styles.modalOverlay}>
+          <div className={styles.successmodalOverlay}>
             <div className={styles.modal}>
-              <div className={styles.modalHeader}>
-                <h3>Success!</h3>
-                <button onClick={handleCloseSuccess} className={styles.closeBtn}>
-                  <X size={20} />
-                </button>
-              </div>
-              <div className={styles.modalContent}>
-                <p>Document deleted successfully!</p>
-              </div>
               <h3 className={styles.successmodalTitle}>Success!</h3>
               <p>Document deleted successfully!</p>
               <div className={styles.modalActions}>
@@ -444,26 +404,12 @@ const handleNext = () => {
                   Close
                 </button>
               </div>
+              
             </div>
           </div>
         )}
 
-        {/* Status Update Modal */}
-        {showStatusUpdateModal && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modal}>
-              <div className={styles.modalHeader}>
-                <h3>Status Update Result</h3>
-                <button onClick={handleCloseStatusUpdate} className={styles.closeBtn}>
-                  <X size={20} />
-                </button>
-              </div>
-              <div className={styles.modalContent}>
-                <p>{statusUpdateMessage}</p>
-              </div>
-            </div>
-          </div>
-        )}
+       
       </div>
     </div>
   );

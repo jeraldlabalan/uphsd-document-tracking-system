@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import styles from "./Modal.module.css"; // Adjust path if necessary
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 // Modal props interface should match the props passed from Settings.tsx
 interface ModalProps {
@@ -35,6 +37,13 @@ const Modal: React.FC<ModalProps> = ({
     }
   }, [isLoading]);
 
+  useEffect(() => {
+              AOS.init({
+                duration: 1000,
+                once: true,
+              });
+            }, []);
+
   // Reset success state when modal opens
   useEffect(() => {
     if (showModal) {
@@ -65,7 +74,7 @@ const Modal: React.FC<ModalProps> = ({
   return (
     showModal && (
       <div className={styles.modalOverlay}>
-        <div className={styles.modalContent} ref={modalRef}>
+        <div data-aos="zoom-in" className={styles.modalContent} ref={modalRef}>
           <h3 className={styles.deletemodalTitle}>
             {success ? "Success" : "Confirm"}
           </h3>

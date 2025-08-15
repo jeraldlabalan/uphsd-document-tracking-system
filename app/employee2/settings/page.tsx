@@ -5,7 +5,7 @@ import EmpHeader from "@/components/shared/empHeader";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import Image from "next/image";
-import Email from "next-auth/providers/email";
+import Loading from "@/app/loading";
 import UploadPhotoModal from "@/components/shared/modalSettings/modal";
 
 export default function ProfileSettings() {
@@ -28,6 +28,38 @@ export default function ProfileSettings() {
   const [mobileNumber, setMobileNumber] = useState("");
   const [position, setPosition] = useState("");
   const [department, setDepartment] = useState("");
+
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  const [loading, setLoading] = useState(true);
+
+  const handleUpload = async (file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/employee/settings/photo", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      console.log("Upload response:", data);
+
+      if (res.ok && data.url) {
+        setTempPreview(data.url);
+        setIsSuccessModalOpen(true);
+      } else {
+        alert(data.error || "Failed to upload profile picture.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong while uploading.");
+    }
+  };
+
   interface ProfilePayload {
     firstName: string;
     lastName: string;
@@ -44,21 +76,24 @@ export default function ProfileSettings() {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const res = await fetch("/api/employee/settings");
-      const data = await res.json();
+      try {
+        const res = await fetch("/api/employee/settings");
+        const data = await res.json();
 
-       console.log("Profile data:", data); // <--- Add this
-
-      setEmail(data.Email || "");
-      setEmployeeID(data.EmployeeID || "");
-      setMobileNumber(data.MobileNumber || "");
-      setPosition(data.Position || "");
-      setDepartment(data.Department || "");
-      setFirstName(data.FirstName || "");
-      setLastName(data.LastName || "");
-
-      if (data.ProfilePhoto) {
-        setTempPreview(`/uploads/${data.ProfilePhoto}`);
+        setEmail(data.Email || "");
+        setEmployeeID(data.EmployeeID || "");
+        setMobileNumber(data.MobileNumber || "");
+        setPosition(data.Position || "");
+        setDepartment(data.Department || "");
+        setFirstName(data.FirstName || "");
+        setLastName(data.LastName || "");
+        if (data.ProfilePicture) {
+          setTempPreview(data.ProfilePicture || "/uploads/default.jpg");
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -66,45 +101,42 @@ export default function ProfileSettings() {
   }, []);
 
   useEffect(() => {
-    // Fetch user data here (e.g. from /api/user/me)
     const fetchUser = async () => {
       const res = await fetch("/api/user/me");
       if (res.ok) {
         const data = await res.json();
-        setProfilePicture(`/uploads/${data.ProfilePicture || "default.jpg"}`);
+        setProfilePicture(data.ProfilePicture || "/uploads/default.jpg");
       }
     };
     fetchUser();
   }, []);
 
   const handleSave = async (
-  e: React.FormEvent<HTMLFormElement>
-): Promise<void> => {
-  e.preventDefault();
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
+    e.preventDefault();
 
-  const payload: ProfilePayload = {
-    firstName,
-    lastName,
-    mobileNumber,
-    position,
-    department, // optional
+    const payload: ProfilePayload = {
+      firstName,
+      lastName,
+      mobileNumber,
+      position,
+      department,
+    };
+
+    const res: Response = await fetch("/api/employee/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data: ApiResponse = await res.json();
+    console.log(data);
+
+    if (res.ok) {
+      window.location.reload();
+    }
   };
-
-  const res: Response = await fetch("/api/employee/settings", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  const data: ApiResponse = await res.json();
-  console.log(data);
-
-  if (res.ok) {
-    // optional: show a success toast/modal before reload
-    window.location.reload();
-  }
-};
-
 
   const handlePasswordSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -161,6 +193,10 @@ export default function ProfileSettings() {
     }
   };
 
+  if (loading) {
+    return <Loading />;
+  }
+
   return (
     <div>
       <EmpHeader />
@@ -176,14 +212,14 @@ export default function ProfileSettings() {
               {/* Profile Photo + Name */}
               <div className={styles.profileInfo}>
                 <Image
-                    src={tempPreview || "/placeholder.png"}
-                    alt="Profile"
-                    className={styles.avatar}
-                    width={150}
-                    height={150}
-                    onClick={() => setIsModalOpen(true)}
-                    style={{ cursor: "pointer" }}
-                  />
+                  src={tempPreview || "/placeholder.png"}
+                  alt="Profile"
+                  className={styles.avatar}
+                  width={150}
+                  height={150}
+                  onClick={() => setIsModalOpen(true)}
+                  style={{ cursor: "pointer" }}
+                />
                 <div className={styles.profileDetails}>
                   <h3 className={styles.name}>
                     {firstName} {lastName}
@@ -242,10 +278,13 @@ export default function ProfileSettings() {
                   <button
                     className={styles.clearBtn}
                     onClick={clearPasswordFields}
+                    type="button"
                   >
                     Clear
                   </button>
-                  <button className={styles.uploadBtn}>Change Password</button>
+                  <button className={styles.uploadBtn} type="submit">
+                    Change Password
+                  </button>
                 </div>
               </form>
             </div>
@@ -345,16 +384,87 @@ export default function ProfileSettings() {
           </div>
         </div>
 
-        {/* ✅ Modal */}
+        {/* Profile Upload Modal */}
         {isModalOpen && (
-          <UploadPhotoModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            onUploadSuccess={(filename: string) => {
-              setTempPreview(`/uploads/${filename}`);
-              setIsModalOpen(false);
-            }}
-          />
+          <div className={styles.modalOverlay}>
+            <div className={styles.modalContainer}>
+              <h2 className={styles.modalTitle}>Upload Profile Picture</h2>
+
+              {/* Image Preview */}
+              <div className={styles.previewContainer}>
+                {previewImage ? (
+                  <img src={previewImage} alt="Preview" className={styles.previewImage} />
+                ) : (
+                  <div className={styles.placeholder}>
+                    <p>No image selected</p>
+                  </div>
+                )}
+              </div>
+
+              {/* File Input */}
+              <label htmlFor="fileUpload" className={styles.uploadArea}>
+                <input
+                  id="fileUpload"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setSelectedFile(file);
+                      setPreviewImage(URL.createObjectURL(file));
+                    }
+                  }}
+                />
+                <p>Click or drag image here</p>
+              </label>
+
+              {/* Actions */}
+              <div className={styles.modalActions}>
+                <button
+                  onClick={async () => {
+                    if (selectedFile) {
+                      await handleUpload(selectedFile);
+                      setIsModalOpen(false);
+                    }
+                  }}
+                  className={styles.uploadBtn}
+                >
+                  Upload
+                </button>
+                <button
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setPreviewImage(null);
+                    setSelectedFile(null);
+                  }}
+                  className={styles.cancelBtn}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Success Modal */}
+        {isSuccessModalOpen && (
+          <div className={styles.successmodalOverlay}>
+            <div className={styles.modal}>
+              <h3 className={styles.successmodalTitle}>Upload Successful!</h3>
+              <p>Your profile picture has been updated.</p>
+              <div className={styles.successModalActions}>
+                <button
+                  onClick={() => {
+                    setIsSuccessModalOpen(false);
+                    window.location.reload();
+                  }}
+                  className={styles.closeButtonx}
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

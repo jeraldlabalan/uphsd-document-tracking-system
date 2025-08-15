@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     console.log("fetched files: ", files)
     console.log("placeholders: ", placeholders)
 
-    if (!files.length || !Title || !Description || !TypeID || !approverIDs.length) {
+    if ( !Title || !Description || !TypeID ) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -67,23 +67,47 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Step 2: Save files and create DocumentVersion entries
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "documents");
+    // Step 2: Save files and create DocumentVersion entries (only if files are provided)
     let versionNumber = 1;
+    if (files && files.length > 0) {
+      const uploadDir = path.join(process.cwd(), "public", "uploads", "documents");
+      
+      for (const file of files) {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const filename = `${uuidv4()}-${file.name}`;
+        await writeFile(path.join(uploadDir, filename), buffer);
+        const FilePath = `/uploads/documents/${filename}`;
 
-    for (const file of files) {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const filename = `${uuidv4()}-${file.name}`;
-      await writeFile(path.join(uploadDir, filename), buffer);
-      const FilePath = `/uploads/documents/${filename}`;
+        const newVersion = await db.documentVersion.create({
+          data: {
+            DocumentID: newDocument.DocumentID,
+            VersionNumber: versionNumber++,
+            FilePath,
+            ChangedBy: creatorID,
+            ChangeDescription: "Initial version",
+          },
+        });
 
+        await db.activityLog.create({
+          data: {
+            PerformedBy: creatorID,
+            Action: "Created Document Version",
+            TargetType: "DocumentVersion",
+            Remarks: `Version ${newVersion.VersionNumber} uploaded for document ID ${newDocument.DocumentID}`,
+            TargetID: newVersion.VersionID,
+          },
+        });
+      }
+    } else {
+      // No files provided - this is a hardcopy document that needs wet signatures
+      // Create a placeholder version entry
       const newVersion = await db.documentVersion.create({
         data: {
           DocumentID: newDocument.DocumentID,
           VersionNumber: versionNumber++,
-          FilePath,
+          FilePath: null, // No file path for hardcopy documents
           ChangedBy: creatorID,
-          ChangeDescription: "Initial version",
+          ChangeDescription: "Hardcopy document - no digital file",
         },
       });
 
@@ -92,7 +116,7 @@ export async function POST(req: NextRequest) {
           PerformedBy: creatorID,
           Action: "Created Document Version",
           TargetType: "DocumentVersion",
-          Remarks: `Version ${newVersion.VersionNumber} uploaded for document ID ${newDocument.DocumentID}`,
+          Remarks: `Hardcopy document version created for document ID ${newDocument.DocumentID}`,
           TargetID: newVersion.VersionID,
         },
       });
@@ -114,10 +138,10 @@ export async function POST(req: NextRequest) {
     let requests: Promise<any>[] = [];
     let notifs: Promise<any>[] = [];
 
-    if (approverIDs.length > 0) {
-      // Create requests for specific approvers
+    if (approverIDs && approverIDs.length > 0) {
+      // Specific approvers are specified
       requests = approverIDs.map(async (approverID: number) => {
-        const request = await db.documentRequest.create({
+        const reqRec = await db.documentRequest.create({
           data: {
             RequestedByID: creatorID,
             RecipientUserID: approverID,
@@ -128,37 +152,26 @@ export async function POST(req: NextRequest) {
           },
         });
 
+        await db.notification.create({
+          data: {
+            SenderID: creatorID,
+            ReceiverID: approverID,
+            Title: "Document Review Required",
+            Message: `A new document "${Title}" requires your review and approval.`,
+          },
+        });
+
         await db.activityLog.create({
           data: {
             PerformedBy: creatorID,
             Action: "Created Document Request",
             TargetType: "DocumentRequest",
             Remarks: `Request created for user ${approverID} on document ${newDocument.DocumentID}`,
-            TargetID: request.RequestID,
-          },
-        });
-      });
-
-      // Send notifications to specific approvers
-      notifs = approverIDs.map(async (approverID: number) => {
-        const notif = await db.notification.create({
-          data: {
-            SenderID: creatorID,
-            ReceiverID: approverID,
-            Title: "New Document for Review",
-            Message: `A new document "${Title}" requires your review.`,
+            TargetID: reqRec.RequestID,
           },
         });
 
-        await db.activityLog.create({
-          data: {
-            PerformedBy: creatorID,
-            Action: "Sent Notification",
-            TargetType: "Notification",
-            Remarks: `Notification sent to user ${approverID} for document ${newDocument.DocumentID}`,
-            TargetID: notif.NotificationID,
-          },
-        });
+        return reqRec;
       });
     } else if (DepartmentID) {
       // No approvers required, but send notifications to all department members
@@ -174,26 +187,56 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Send notifications to all department members
-      notifs = departmentMembers.map(async (member) => {
-        const notif = await db.notification.create({
+      // Always create document requests for all department members so they can track and act on documents
+      // This applies to both files and hardcopy documents
+      requests = departmentMembers.map(async (member) => {
+        let remarks = "";
+        let notificationTitle = "";
+        let notificationMessage = "";
+        
+        if (files && files.length > 0) {
+          // Files uploaded - document available for review
+          remarks = "Document available for review - no approval required";
+          notificationTitle = "New Document Available";
+          notificationMessage = `A new document "${Title}" has been created in your department with uploaded files. This document is available for your review and does not require specific approval.`;
+        } else {
+          // No files - hardcopy document requiring wet signatures
+          remarks = "Hardcopy document requiring wet signatures - track status and add remarks";
+          notificationTitle = "New Hardcopy Document";
+          notificationMessage = `A new hardcopy document "${Title}" has been created in your department. This document requires wet signatures. You can track its status, put it on hold, or add remarks about any issues.`;
+        }
+
+        const reqRec = await db.documentRequest.create({
+          data: {
+            RequestedByID: creatorID,
+            RecipientUserID: member.UserID,
+            DocumentID: newDocument.DocumentID,
+            StatusID: pendingStatus.StatusID,
+            Priority: "Normal",
+            Remarks: remarks,
+          },
+        });
+
+        await db.notification.create({
           data: {
             SenderID: creatorID,
             ReceiverID: member.UserID,
-            Title: "New Document Created",
-            Message: `A new document "${Title}" has been created in your department.`,
+            Title: notificationTitle,
+            Message: notificationMessage,
           },
         });
 
         await db.activityLog.create({
           data: {
             PerformedBy: creatorID,
-            Action: "Sent Department Notification",
-            TargetType: "Notification",
-            Remarks: `Department notification sent to user ${member.UserID} for document ${newDocument.DocumentID}`,
-            TargetID: notif.NotificationID,
+            Action: "Created Department Document Request",
+            TargetType: "DocumentRequest",
+            Remarks: `Document request created for department member ${member.UserID} for document ${newDocument.DocumentID}`,
+            TargetID: reqRec.RequestID,
           },
         });
+
+        return reqRec;
       });
     }
 

@@ -23,6 +23,8 @@ export type PDFViewerProps = {
   signees: Signee[];
   documentId?: string;
   onSavePlaceholders?: (placeholders: Placeholder[]) => void;
+  setPdfUrl?: (url: string) => void; // New prop to update PDF URL
+  setHasSigned?: (signed: boolean) => void; // New prop to update hasSigned state
 };
 
 export type Placeholder = {
@@ -78,10 +80,18 @@ export type SidebarProps = {
   onBackToDashboard?: () => void;
   documentId?: string;
   isDocumentCreator?: boolean;
+  onUndoChanges?: () => void; // New prop for undo functionality
 }
 
-export type PDFViewerRef = {
-  applySignature: () => void;
+export interface PDFViewerRef {
+  applySignature: (signatureImage: string) => Promise<string | undefined>;
+  generatePdfWithoutPlaceholders: () => Promise<string | null>; // Generates PDF WITHOUT embedding placeholders
+  generateCleanPdf: () => Promise<string | null>; // Generates clean PDF without placeholders
+  addPlaceholder: (placeholder: Placeholder) => void;
+  removePlaceholder: (id: number) => void;
+  updatePlaceholder: (id: number, updates: Partial<Placeholder>) => void;
+  getPlaceholders: () => Placeholder[];
+  setPlaceholders: React.Dispatch<React.SetStateAction<Placeholder[]>>;
   resetSignaturePreview: () => void;
-  generatePdfWithPlaceholders: () => Promise<string | null>;
-};
+  undoChanges: () => void; // New function to undo signature changes
+}

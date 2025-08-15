@@ -19,6 +19,7 @@ export default function Sidebar({
   onBackToDashboard,
   documentId,
   isDocumentCreator = false,
+  onUndoChanges,
 }: SidebarProps) {
   console.log("All placeholders", placeholders);
   console.log("Current role:", role);
@@ -64,7 +65,7 @@ export default function Sidebar({
 
   const remainingPlaceholders = userPlaceholders;
   const signedPlaceholders = userSignedPlaceholders;
-  const hasAnySignatures = signedPlaceholders.length > 0;
+  const hasAnySignatures = hasSigned; // Use hasSigned prop directly since placeholders are cleared after signing
 
   console.log("Remaining placeholders", remainingPlaceholders);
   console.log("Signed placeholders", signedPlaceholders);
@@ -179,6 +180,16 @@ export default function Sidebar({
           >
             {hasSigned ? "Re-upload Signature" : "Sign Document"}
           </button>
+
+          {/* Undo Changes Button - only show if user has signed */}
+          {hasSigned && onUndoChanges && (
+            <button
+              onClick={onUndoChanges}
+              className={styles.undoChangesButton}
+            >
+              Undo Changes
+            </button>
+          )}
 
           <button 
             className={styles.saveFileButton}
