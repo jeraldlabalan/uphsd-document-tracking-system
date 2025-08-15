@@ -77,6 +77,9 @@ export default function Sidebar({
   console.log("Signed placeholders", signedPlaceholders);
   console.log("Has any signatures", hasAnySignatures);
 
+  const [modalMessage, setModalMessage] = useState("");
+  const [showModal, setShowModal] = useState(false);
+
   const handleSavePlaceholders = async () => {
     if (!onSavePlaceholders) {
       alert("Cannot save placeholders. Save function is not available.");
@@ -84,7 +87,7 @@ export default function Sidebar({
     }
 
     if (placeholders.length === 0) {
-      alert(
+      setModalMessage(
         "No signature placeholders to save. Please add at least one placeholder."
       );
       return;
@@ -95,7 +98,7 @@ export default function Sidebar({
       (p) => !p.assignedToId && !p.signee
     );
     if (unassignedPlaceholders.length > 0) {
-      alert(
+      setModalMessage(
         "All signature placeholders must have assigned signees before saving."
       );
       return;
@@ -103,7 +106,7 @@ export default function Sidebar({
 
     try {
       await onSavePlaceholders(placeholders);
-      alert(
+      setModalMessage(
         "Signature placeholders saved successfully! Signees will be notified."
       );
     } catch (error) {
@@ -114,6 +117,23 @@ export default function Sidebar({
 
   return (
     <div className={styles.sidebar}>
+      {showModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.deletemodalContent}>
+            <p>{modalMessage}</p>
+            <div className={styles.modalActions}>
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                }}
+                className={styles.OKButton}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className={styles.sidebarHeader}>
         <label htmlFor="">Document</label>
       </div>
