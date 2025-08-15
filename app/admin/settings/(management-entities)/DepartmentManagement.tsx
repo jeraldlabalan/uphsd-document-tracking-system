@@ -14,12 +14,23 @@ interface ActiveItem {
   checked: boolean;
 }
 
+interface DepartmentManagementProps {
+  showModal: (data: {
+    description: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+    isLoading: boolean;
+  }) => void;
+}
+
 interface DepartmentDTO {
   DepartmentID: number;
   Name: string;
 }
 
-const DepartmentManagement: React.FC = () => {
+const DepartmentManagement: React.FC<DepartmentManagementProps> = ({
+  showModal,
+}) => {
   const [rows, setRows] = useState<InputRow[]>([{ id: Date.now(), value: "" }]);
   const [activeItems, setActiveItems] = useState<ActiveItem[]>([]);
 
@@ -74,11 +85,14 @@ const DepartmentManagement: React.FC = () => {
     const validRows = rows.filter((r) => r.value.trim() !== "");
 
     if (rows.some((r) => r.value.trim() === "")) {
-      toast.error("Please fill out all department fields before saving.");
+      toast.error("Please complete all Department fields before saving.");
       return;
     }
 
-    if (validRows.length === 0) return;
+    if (validRows.length === 0) {
+      toast.error("Please complete all Department fields before saving.");
+      return;
+    }
 
     if (hasDuplicates()) {
       toast.error("One or more departments already exist and cannot be added.");
@@ -90,7 +104,7 @@ const DepartmentManagement: React.FC = () => {
       description: "Are you sure you want to add these departments?",
       onConfirm: handleConfirm,
       onCancel: handleCancel,
-      isLoading: isLoading,
+      isLoading: false,
     });
   };
 
@@ -105,12 +119,7 @@ const DepartmentManagement: React.FC = () => {
   const saveDepartments = async () => {
     const validRows = rows.filter((r) => r.value.trim() !== "");
     if (validRows.length === 0) {
-      showModal({
-        description: "Department successfully deleted.",
-        onConfirm: handleCancel,
-        onCancel: handleCancel,
-        isLoading: false,
-      });
+      toast.success("No changes to save.");
       setConfirmAdd(false);
       return;
     }
@@ -139,13 +148,12 @@ const DepartmentManagement: React.FC = () => {
       toast.error("Error saving departments.");
     } finally {
       setIsLoading(false);
-      showModal({
-        description: "Department successfully deleted.",
-        onConfirm: handleCancel,
-        onCancel: handleCancel,
-        isLoading: false,
-      });
       setConfirmAdd(false);
+      // Close modal after action completes
+      if (typeof window !== "undefined") {
+        const event = new CustomEvent("closeModal");
+        window.dispatchEvent(event);
+      }
     }
   };
 
@@ -157,7 +165,7 @@ const DepartmentManagement: React.FC = () => {
       description: "Are you sure you want to delete this department?",
       onConfirm: handleConfirmDeletion,
       onCancel: handleCancel,
-      isLoading: isLoading,
+      isLoading: false,
     });
   };
 
@@ -186,23 +194,15 @@ const DepartmentManagement: React.FC = () => {
     } finally {
       setIsLoading(false);
       setRowToDelete(null);
-      showModal({
-        description: "Department successfully deleted.",
-        onConfirm: handleCancel,
-        onCancel: handleCancel,
-        isLoading: false,
-      });
+      // Close modal after action completes
+      if (typeof window !== "undefined") {
+        const event = new CustomEvent("closeModal");
+        window.dispatchEvent(event);
+      }
     }
   };
 
-  const handleCancel = () => {
-    showModal({
-      description: "Department successfully deleted.",
-      onConfirm: handleCancel,
-      onCancel: handleCancel,
-      isLoading: false,
-    });
-  };
+  const handleCancel = () => {};
 
   return (
     <div className={styles.managementContainer}>
