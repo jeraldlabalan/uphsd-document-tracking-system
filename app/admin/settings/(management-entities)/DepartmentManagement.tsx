@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import styles from "./ManagementStyles.module.css";
-import Modal from "../(modal)/Modal";
 
 interface InputRow {
   id: number;
@@ -15,11 +14,19 @@ interface ActiveItem {
   checked: boolean;
 }
 
-const DepartmentManagement: React.FC = () => {
+interface DepartmentManagementProps {
+  showModal: (data: {
+    description: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+    isLoading: boolean;
+  }) => void;
+}
+
+const DepartmentManagement: React.FC<DepartmentManagementProps> = ({ showModal }) => {
   const [rows, setRows] = useState<InputRow[]>([{ id: Date.now(), value: "" }]);
   const [activeItems, setActiveItems] = useState<ActiveItem[]>([]);
 
-  const [showModal, setShowModal] = useState(false);
   const [rowToDelete, setRowToDelete] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -83,7 +90,12 @@ const DepartmentManagement: React.FC = () => {
     }
 
     setConfirmAdd(true);
-    setShowModal(true);
+    showModal({
+      description: "Are you sure you want to add these departments?",
+      onConfirm: handleConfirm,
+      onCancel: handleCancel,
+      isLoading: isLoading,
+    });
   };
 
   const handleConfirm = async () => {
@@ -97,7 +109,12 @@ const DepartmentManagement: React.FC = () => {
   const saveDepartments = async () => {
     const validRows = rows.filter((r) => r.value.trim() !== "");
     if (validRows.length === 0) {
-      setShowModal(false);
+      showModal({
+        description: "Department successfully deleted.",
+        onConfirm: handleCancel,
+        onCancel: handleCancel,
+        isLoading: false,
+      });
       setConfirmAdd(false);
       return;
     }
@@ -126,7 +143,12 @@ const DepartmentManagement: React.FC = () => {
       toast.error("Error saving departments.");
     } finally {
       setIsLoading(false);
-      setShowModal(false);
+      showModal({
+        description: "Department successfully deleted.",
+        onConfirm: handleCancel,
+        onCancel: handleCancel,
+        isLoading: false,
+      });
       setConfirmAdd(false);
     }
   };
@@ -135,7 +157,12 @@ const DepartmentManagement: React.FC = () => {
     setSuccess(false);
     setRowToDelete(id);
     setConfirmAdd(false);
-    setShowModal(true);
+    showModal({
+      description: "Are you sure you want to delete this department?",
+      onConfirm: handleConfirmDeletion,
+      onCancel: handleCancel,
+      isLoading: isLoading,
+    });
   };
 
   const handleConfirmDeletion = async () => {
@@ -163,14 +190,22 @@ const DepartmentManagement: React.FC = () => {
     } finally {
       setIsLoading(false);
       setRowToDelete(null);
-      setShowModal(false);
+      showModal({
+        description: "Department successfully deleted.",
+        onConfirm: handleCancel,
+        onCancel: handleCancel,
+        isLoading: false,
+      });
     }
   };
 
   const handleCancel = () => {
-    setShowModal(false);
-    setRowToDelete(null);
-    setConfirmAdd(false);
+    showModal({
+      description: "Department successfully deleted.",
+      onConfirm: handleCancel,
+      onCancel: handleCancel,
+      isLoading: false,
+    });
   };
 
   return (
@@ -277,20 +312,7 @@ const DepartmentManagement: React.FC = () => {
         </button>
       </div>
 
-      <Modal
-        showModal={showModal}
-        setShowModal={setShowModal}
-        description={
-          confirmAdd
-            ? "Are you sure you want to add these departments?"
-            : success
-              ? "Department successfully deleted."
-              : "Are you sure you want to delete this department?"
-        }
-        onConfirm={handleConfirm}
-        onCancel={handleCancel}
-        isLoading={isLoading}
-      />
+      {/* Modal is now handled by the parent page */}
     </div>
   );
 };

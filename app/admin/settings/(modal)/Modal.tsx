@@ -48,8 +48,20 @@ const Modal: React.FC<ModalProps> = ({
   useEffect(() => {
     if (showModal) {
       setSuccess(false); // Reset success state when modal opens
+      // Hide body scroll when modal opens
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Restore body scroll when modal closes
+      document.body.style.overflow = 'unset';
     }
   }, [showModal]);
+
+  // Cleanup body scroll when component unmounts
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   // Close modal if clicked outside of modal content, but not during loading
   useEffect(() => {
