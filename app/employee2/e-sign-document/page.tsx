@@ -279,29 +279,60 @@ export default function ESignDocument() {
     const loadFile = async () => {
       if (uploadedFile) {
         console.log("Uploaded file param:", uploadedFile);
+        
+        // Handle different file URL formats
+        let finalUrl = uploadedFile;
+        
         if (uploadedFile.startsWith('blob:')) {
-          // Local blob URL
-          console.log("Setting blob URL:", uploadedFile);
-          setPdfUrl(uploadedFile);
-          setOriginalPdfUrl(uploadedFile);
+          // Local blob URL - use as is
+          console.log("Using blob URL:", uploadedFile);
         } else if (uploadedFile.startsWith('/uploads/')) {
           // Server file path - convert to full URL
-          const fullUrl = `${window.location.origin}${uploadedFile}`;
-          console.log("Setting server file URL:", fullUrl);
-          setPdfUrl(fullUrl);
-          setOriginalPdfUrl(fullUrl);
+          finalUrl = `${window.location.origin}${uploadedFile}`;
+          console.log("Converted server file path to URL:", finalUrl);
         } else if (uploadedFile.includes('uploads/documents/')) {
           // File path without leading slash - add it
-          const fullUrl = `${window.location.origin}/${uploadedFile}`;
-          console.log("Setting documents file URL:", fullUrl);
-          setPdfUrl(fullUrl);
-          setOriginalPdfUrl(fullUrl);
+          finalUrl = `${window.location.origin}/${uploadedFile}`;
+          console.log("Converted documents file path to URL:", finalUrl);
+        } else if (uploadedFile.includes('uploads/')) {
+          // File path without leading slash - add it
+          finalUrl = `${window.location.origin}/${uploadedFile}`;
+          console.log("Converted uploads file path to URL:", finalUrl);
         } else {
           // Try to construct the full URL
-          const fullUrl = `${window.location.origin}/uploads/documents/${uploadedFile}`;
-          console.log("Setting constructed file URL:", fullUrl);
-          setPdfUrl(fullUrl);
-          setOriginalPdfUrl(fullUrl);
+          finalUrl = `${window.location.origin}/uploads/documents/${uploadedFile}`;
+          console.log("Constructed file URL:", finalUrl);
+        }
+        
+        // Test if the file is accessible
+        try {
+          console.log("Testing file accessibility for:", finalUrl);
+          const testResponse = await fetch(finalUrl, { method: 'HEAD' });
+          if (testResponse.ok) {
+            console.log("✅ File is accessible:", finalUrl);
+            setPdfUrl(finalUrl);
+            setOriginalPdfUrl(finalUrl);
+          } else {
+            console.error("❌ File not accessible:", finalUrl, "Status:", testResponse.status);
+            // Try alternative path
+            const altUrl = `${window.location.origin}/uploads/documents/${uploadedFile.split('/').pop()}`;
+            console.log("Trying alternative URL:", altUrl);
+            const altResponse = await fetch(altUrl, { method: 'HEAD' });
+            if (altResponse.ok) {
+              console.log("✅ Alternative URL works:", altUrl);
+              setPdfUrl(altUrl);
+              setOriginalPdfUrl(altUrl);
+            } else {
+              console.error("❌ Alternative URL also failed:", altUrl, "Status:", altResponse.status);
+              // Set error state for missing file
+              setPdfUrl(null);
+              setOriginalPdfUrl(null);
+            }
+          }
+        } catch (error) {
+          console.error("❌ Error testing file accessibility:", error);
+          setPdfUrl(null);
+          setOriginalPdfUrl(null);
         }
       } else if (documentId && documentId !== "unknown") {
         // If no uploadedFile but we have a documentId, try to fetch the file path from the API
@@ -310,24 +341,71 @@ export default function ESignDocument() {
           const response = await fetch(`/api/employee/documents/${documentId}`);
           if (response.ok) {
             const data = await response.json();
+            console.log("Document data from API:", data);
+            
             if (data.latestVersion?.FilePath) {
               const filePath = data.latestVersion.FilePath;
               console.log("Found file path from API:", filePath);
+              
+              // Test the file path
               const fullUrl = `${window.location.origin}${filePath}`;
-              console.log("Setting file URL from API:", fullUrl);
-              setPdfUrl(fullUrl);
-              setOriginalPdfUrl(fullUrl);
+              console.log("Testing file URL from API:", fullUrl);
+              
+              try {
+                const testResponse = await fetch(fullUrl, { method: 'HEAD' });
+                if (testResponse.ok) {
+                  console.log("✅ API file path is accessible:", fullUrl);
+                  setPdfUrl(fullUrl);
+                  setOriginalPdfUrl(fullUrl);
+                } else {
+                  console.error("❌ API file path not accessible:", fullUrl, "Status:", testResponse.status);
+                  
+                  // Try alternative path
+                  const fileName = filePath.split('/').pop();
+                  const altUrl = `${window.location.origin}/uploads/documents/${fileName}`;
+                  console.log("Trying alternative API file URL:", altUrl);
+                  
+                  const altResponse = await fetch(altUrl, { method: 'HEAD' });
+                  if (altResponse.ok) {
+                    console.log("✅ Alternative API URL works:", altUrl);
+                    setPdfUrl(altUrl);
+                    setOriginalPdfUrl(altUrl);
+                  } else {
+                    console.error("❌ Alternative API URL also failed:", altUrl, "Status:", altResponse.status);
+                    
+                    // File doesn't exist - show helpful error message
+                    console.error("🚨 CRITICAL: File not found on filesystem:", fileName);
+                    console.error("This suggests a database-file mismatch. The file path in the database doesn't match what's on the filesystem.");
+                    
+                    // Set error state
+                    setPdfUrl(null);
+                    setOriginalPdfUrl(null);
+                  }
+                }
+              } catch (error) {
+                console.error("❌ Error testing API file path:", error);
+                setPdfUrl(null);
+                setOriginalPdfUrl(null);
+              }
             } else {
               console.log("No file path found in API response for document:", documentId);
+              setPdfUrl(null);
+              setOriginalPdfUrl(null);
             }
           } else {
             console.log("Failed to fetch document details from API");
+            setPdfUrl(null);
+            setOriginalPdfUrl(null);
           }
         } catch (error) {
           console.error("Error fetching file path from API:", error);
+          setPdfUrl(null);
+          setOriginalPdfUrl(null);
         }
       } else {
         console.log("No uploadedFile parameter provided and no documentId to fetch from");
+        setPdfUrl(null);
+        setOriginalPdfUrl(null);
       }
     };
 
@@ -582,82 +660,125 @@ export default function ESignDocument() {
     }
   };
 
+  const handleApplyComplete = (signedUrl: string) => {
+    console.log("onApplyComplete called with signedUrl:", signedUrl);
+    setPdfUrl(signedUrl); // Update PDF URL with signed version
+    setHasSigned(true);
+    console.log("PDF URL updated and hasSigned set to true");
+    
+    // Remove all placeholders from UI state immediately
+    console.log("Removing all placeholders from UI state");
+    setPlaceholders([]);
+    
+    console.log("Placeholders removed from UI state");
+    
+    // Additional debugging
+    console.log("State after signature application:");
+    console.log("- hasSigned:", true);
+    console.log("- placeholders count:", 0);
+    console.log("- pdfUrl updated to:", signedUrl);
+  };
+
   return (
     <div className={styles.container}>
-      
-      {isSidebarOpen && (
-        <Sidebar
-          hasSigned={hasSigned}
-          role={role}
-          signees={SIGNEES}
-          onRoleChange={setRole}
-          resetSignaturePreview={() =>
-            viewerRef.current?.resetSignaturePreview()
-          }
-          onFileChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) {
-              handleFileUpload(file);
-            }
-          }}
-          placeholders={placeholders}
-          jumpToNextSignature={jumpToNextSignature}
-          setModalOpen={setModalOpen}
-          setDraggingEnabled={setDraggingEnabled}
-          setViewMode={setViewMode}
-          onSaveFile={handleSaveFile}
-          onSavePlaceholders={handleSavePlaceholders}
-          onBackToDashboard={handleBackToDashboard}
-          documentId={documentId || undefined}
-          isDocumentCreator={isDocumentCreator}
-          onUndoChanges={handleUndoChanges}
-        />
+      <div className={styles.header}>
+        <div className={styles.logoContainer}>
+          <Image src={logo} alt="Logo" width={40} height={40} />
+          <h1>E-Sign Document</h1>
+        </div>
+        <div className={styles.documentInfo}>
+          <h2>{documentTitle || "Untitled Document"}</h2>
+          <p>Type: {documentType || "Unknown"}</p>
+          <p>Department: {department || "Unknown"}</p>
+        </div>
+      </div>
+
+      {/* Show error message if no PDF URL is available */}
+      {!pdfUrl && (
+        <div className={styles.errorContainer}>
+          <h3>⚠️ PDF File Not Found</h3>
+          <p><strong>Issue:</strong> The PDF file for this document could not be loaded.</p>
+          
+          {documentId && documentId !== "unknown" ? (
+            <div>
+              <p><strong>Document ID:</strong> {documentId}</p>
+              <p><strong>Possible Causes:</strong></p>
+              <ul>
+                <li>The file was never properly uploaded to the system</li>
+                <li>The file was deleted from the filesystem but the database wasn't updated</li>
+                <li>There's a mismatch between the file path in the database and the actual file location</li>
+                <li>The file upload process failed during document creation</li>
+              </ul>
+              
+              <div className={styles.troubleshootingActions}>
+                <h4>Troubleshooting Steps:</h4>
+                <ol>
+                  <li>Check if the document was properly created with a file upload</li>
+                  <li>Verify the file exists in the system's document storage</li>
+                  <li>Contact the system administrator to investigate the database-file mismatch</li>
+                  <li>Try recreating the document with a new file upload</li>
+                </ol>
+                
+                <button 
+                  onClick={() => window.location.reload()}
+                  className={styles.retryButton}
+                >
+                  🔄 Retry Loading
+                </button>
+                
+                <button 
+                  onClick={() => router.back()}
+                  className={styles.backButton}
+                >
+                  ← Go Back
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <p><strong>Issue:</strong> No document ID or file URL provided.</p>
+              <p>This usually happens when trying to access the e-sign page without proper parameters.</p>
+              
+              <button 
+                onClick={() => router.back()}
+                className={styles.backButton}
+              >
+                ← Go Back
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
-      <div
-        className={`${styles.mainContent} ${
-          isSidebarOpen ? styles.withSidebar : styles.fullWidth
-        }`}
-      >
-        <header className={styles.header}>
-          <button onClick={() => setSidebarOpen(!isSidebarOpen)}>
-            {isSidebarOpen ? (
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 30 31"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12.7017 15.3622L0.034668 2.69521L2.33339 0.396484L15.0004 13.0633L27.6673 0.396484L29.966 2.69521L17.2991 15.3622L29.966 28.029L27.6673 30.3279L15.0004 17.6609L2.33339 30.3279L0.034668 28.029L12.7017 15.3622Z"
-                  fill="white"
-                />
-              </svg>
-            ) : (
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 39 35"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M0.375 0.5H38.625V4.75H0.375V0.5ZM0.375 15.375H38.625V19.625H0.375V15.375ZM0.375 30.25H38.625V34.5H0.375V30.25Z"
-                  fill="#F6ECEC"
-                />
-              </svg>
-            )}
-          </button>
-          <Image src={logo} className={styles.headerLogo} alt="upshd logo" />
-          <div className={styles.documentInfo}>
-            <h3>{documentTitle || "Document"}</h3>
-            <p>Type: {documentType || "N/A"} | Department: {department || "N/A"}</p>
-          </div>
-        </header>
-        
-        <div className={styles.pdfViewer}>
-          {pdfUrl && (
+      {/* Show PDF viewer only if we have a valid PDF URL */}
+      {pdfUrl && (
+        <div className={styles.content}>
+          <Sidebar
+            role={role}
+            signees={SIGNEES}
+            onRoleChange={setRole}
+            onFileChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                handleFileUpload(file);
+              }
+            }}
+            placeholders={placeholders}
+            jumpToNextSignature={jumpToNextSignature}
+            setModalOpen={setModalOpen}
+            setDraggingEnabled={setDraggingEnabled}
+            hasSigned={hasSigned}
+            resetSignaturePreview={() => viewerRef.current?.resetSignaturePreview()}
+            setViewMode={setViewMode}
+            onSaveFile={handleSaveFile}
+            onSavePlaceholders={handleSavePlaceholders}
+            onBackToDashboard={handleBackToDashboard}
+            documentId={documentId || undefined}
+            isDocumentCreator={isDocumentCreator}
+            onUndoChanges={handleUndoChanges}
+          />
+
+          <div className={styles.mainContent}>
             <PDFViewer
               ref={viewerRef}
               role={role}
@@ -669,24 +790,7 @@ export default function ESignDocument() {
               setModalOpen={setModalOpen}
               draggingEnabled={draggingEnabled}
               setDraggingEnabled={setDraggingEnabled}
-              onApplyComplete={(signedUrl) => {
-                console.log("onApplyComplete called with signedUrl:", signedUrl);
-                setPdfUrl(signedUrl); // Update PDF URL with signed version
-                setHasSigned(true);
-                console.log("PDF URL updated and hasSigned set to true");
-                
-                // Remove all placeholders from UI state immediately
-                console.log("Removing all placeholders from UI state");
-                setPlaceholders([]);
-                
-                console.log("Placeholders removed from UI state");
-                
-                // Additional debugging
-                console.log("State after signature application:");
-                console.log("- hasSigned:", true);
-                console.log("- placeholders count:", 0);
-                console.log("- pdfUrl updated to:", signedUrl);
-              }}
+              onApplyComplete={handleApplyComplete}
               viewMode={viewMode}
               setViewMode={setViewMode}
               originalPdfUrl={originalPdfUrl}
@@ -697,9 +801,9 @@ export default function ESignDocument() {
               setPdfUrl={setPdfUrl}
               setHasSigned={setHasSigned}
             />
-          )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
