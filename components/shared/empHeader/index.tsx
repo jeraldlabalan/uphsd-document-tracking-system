@@ -4,6 +4,7 @@ import Image from "next/image";
 import styles from "./empHeaderStyles.module.css";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import ProfilePicture from "../ProfilePicture";
 
 import {
   LayoutDashboard,
@@ -26,7 +27,7 @@ export default function EmpDashboard() {
   const [user, setUser] = useState<{
     FirstName: string;
     LastName: string;
-    ProfilePicture?: string;
+    ProfilePicture?: string | null;
   } | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -133,7 +134,7 @@ const handleLogout = async () => {
 
 
 
-  const firstInitial = user?.FirstName?.charAt(0).toUpperCase() || "U";
+
 
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
@@ -249,7 +250,12 @@ const handleLogout = async () => {
               Welcome, {user ? `${user.FirstName} ${user.LastName}!` : ""}
             </span>
 
-            <div className={styles.userIcon}>{firstInitial}</div>
+            <ProfilePicture
+              profilePicture={user?.ProfilePicture}
+              firstName={user?.FirstName || ""}
+              lastName={user?.LastName || ""}
+              className={styles.userIcon}
+            />
           </div>
         </div>
       </header>
