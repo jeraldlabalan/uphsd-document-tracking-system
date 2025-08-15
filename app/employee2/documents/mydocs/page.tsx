@@ -540,7 +540,7 @@ if (loading) {
   </div>
 
   <div className={styles.rightButton}>
-    {!["Completed", "Awaiting-Completion", "On-Hold"].includes(selectedDoc.status) && (
+    {!["Completed", "Awaiting-Completion"].includes(selectedDoc.status) && (
   <Link href={`/employee2/edit-doc/${selectedDoc.id}`}>
     <button className={styles.edit}>Edit</button>
   </Link>

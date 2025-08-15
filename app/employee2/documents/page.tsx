@@ -262,7 +262,7 @@ useEffect(() => {
             </Link>
           </div>
 
-          <div className={styles.filters}>
+          {/* <div className={styles.filters}>
             <div className={styles.searchWrapper}>
               <SearchIcon className={styles.searchIcon} size={18} />
               <input
@@ -430,7 +430,7 @@ useEffect(() => {
 
           </table>
                     {/* Pagination controls */}
-<div className={styles.pagination}>
+{/* <div className={styles.pagination}>
   <button onClick={handlePrev} disabled={currentPage === 1}>
     Previous
   </button>
@@ -544,10 +544,10 @@ useEffect(() => {
                     </p>
                   </div>
                 )}
-              </div>
+              </div> */}
 
               {/* Footer Buttons */}
-              <div className={styles.modalFooter}>
+              {/* <div className={styles.modalFooter}>
                 <button className={styles.download} onClick={handleDownload}>
                   Download
                 </button>
@@ -563,7 +563,8 @@ useEffect(() => {
   <div className={styles.errorBox}>
     <p className={styles.errorText}>{dateError}</p>
   </div>
-)}
+)}  */}
+</div>
 
       </div>
     </div>
