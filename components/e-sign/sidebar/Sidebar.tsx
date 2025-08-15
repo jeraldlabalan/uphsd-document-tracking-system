@@ -25,26 +25,30 @@ export default function Sidebar({
   console.log("Current role:", role);
 
   // For receivers, count only unsigned placeholders assigned to them
-  const [userPlaceholders, setUserPlaceholders] = useState<typeof placeholders>([]);
-  const [userSignedPlaceholders, setUserSignedPlaceholders] = useState<typeof placeholders>([]);
+  const [userPlaceholders, setUserPlaceholders] = useState<typeof placeholders>(
+    []
+  );
+  const [userSignedPlaceholders, setUserSignedPlaceholders] = useState<
+    typeof placeholders
+  >([]);
 
   // Get current user's placeholders
   useEffect(() => {
     const fetchUserPlaceholders = async () => {
       if (role === "receiver") {
         try {
-          const userResponse = await fetch('/api/user/me');
+          const userResponse = await fetch("/api/user/me");
           if (userResponse.ok) {
             const userData = await userResponse.json();
             const currentUserId = userData.UserID;
-            
-            const userUnsigned = placeholders.filter((ph) => 
-              !ph.isSigned && ph.assignedToId === currentUserId
+
+            const userUnsigned = placeholders.filter(
+              (ph) => !ph.isSigned && ph.assignedToId === currentUserId
             );
-            const userSigned = placeholders.filter((ph) => 
-              ph.isSigned && ph.assignedToId === currentUserId
+            const userSigned = placeholders.filter(
+              (ph) => ph.isSigned && ph.assignedToId === currentUserId
             );
-            
+
             setUserPlaceholders(userUnsigned);
             setUserSignedPlaceholders(userSigned);
           }
@@ -54,7 +58,9 @@ export default function Sidebar({
       } else {
         // For senders, show all placeholders they created
         const senderPlaceholders = placeholders.filter((ph) => !ph.isSigned);
-        const senderSignedPlaceholders = placeholders.filter((ph) => ph.isSigned);
+        const senderSignedPlaceholders = placeholders.filter(
+          (ph) => ph.isSigned
+        );
         setUserPlaceholders(senderPlaceholders);
         setUserSignedPlaceholders(senderSignedPlaceholders);
       }
@@ -78,20 +84,28 @@ export default function Sidebar({
     }
 
     if (placeholders.length === 0) {
-      alert("No signature placeholders to save. Please add at least one placeholder.");
+      alert(
+        "No signature placeholders to save. Please add at least one placeholder."
+      );
       return;
     }
 
     // Validate that all placeholders have assigned signees
-    const unassignedPlaceholders = placeholders.filter(p => !p.assignedToId && !p.signee);
+    const unassignedPlaceholders = placeholders.filter(
+      (p) => !p.assignedToId && !p.signee
+    );
     if (unassignedPlaceholders.length > 0) {
-      alert("All signature placeholders must have assigned signees before saving.");
+      alert(
+        "All signature placeholders must have assigned signees before saving."
+      );
       return;
     }
 
     try {
       await onSavePlaceholders(placeholders);
-      alert("Signature placeholders saved successfully! Signees will be notified.");
+      alert(
+        "Signature placeholders saved successfully! Signees will be notified."
+      );
     } catch (error) {
       console.error("Error saving placeholders:", error);
       alert("Failed to save placeholders. Please try again.");
@@ -111,27 +125,9 @@ export default function Sidebar({
         </span>
       </div>
 
-      {/* File upload - only for sender when creating new document */}
-      {role === "sender" && isDocumentCreator && (
-        <label>
-          Upload PDF:
-          <input type="file" accept="application/pdf" onChange={onFileChange} />
-        </label>
-      )}
-
       {/* Sender Role: Can only add signature placeholders and assign signees */}
       {role === "sender" && (
         <div className={styles.senderButtons}>
-          <p className={styles.senderInstructions}>
-            As the document sender, you can:
-          </p>
-          <ul className={styles.senderInstructionsList}>
-            <li>• Add signature placeholders for others to sign</li>
-            <li>• Assign specific signees to each placeholder</li>
-            <li>• Position and resize placeholders as needed</li>
-            <li>• Save the document with placeholders</li>
-          </ul>
-          
           <button
             draggable
             onDragStart={(e) => {
@@ -143,7 +139,7 @@ export default function Sidebar({
             Add Signature Placeholder
           </button>
 
-          <button 
+          <button
             className={styles.saveFileButton}
             onClick={handleSavePlaceholders}
             disabled={placeholders.length === 0}
@@ -191,7 +187,7 @@ export default function Sidebar({
             </button>
           )}
 
-          <button 
+          <button
             className={styles.saveFileButton}
             onClick={onSaveFile}
             disabled={!hasAnySignatures}
@@ -201,12 +197,9 @@ export default function Sidebar({
         </div>
       )}
 
-      <button 
-        onClick={onBackToDashboard}
-        className={styles.backToDashboard}
-      >
+      <button onClick={onBackToDashboard} className={styles.backToDashboard}>
         Back to Dashboard
-      </button>        
+      </button>
     </div>
   );
 }
