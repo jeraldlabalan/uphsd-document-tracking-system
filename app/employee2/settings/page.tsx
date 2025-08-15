@@ -34,6 +34,19 @@ export default function ProfileSettings() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
+  const [modalMessage, setModalMessage] = useState("");
+const [isModalReq, setIsModalReq] = useState(false);
+
+const openModalReq  = (message: string) => {
+  setModalMessage(message);
+  setIsModalReq(true);
+};
+
+const closeModal = () => {
+  setIsModalReq(false);
+  setModalMessage("");
+};
+
 
   const handleUpload = async (file: File) => {
     try {
@@ -139,39 +152,40 @@ export default function ProfileSettings() {
   };
 
   const handlePasswordSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (newPassword !== confirmPassword) {
-      alert("New passwords do not match.");
-      return;
+  if (newPassword !== confirmPassword) {
+    openModalReq("New passwords do not match.");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/employee/settings/password", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        currentPassword,
+        newPassword,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      openModalReq("Password changed successfully!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setProfilePhoto(data.ProfilePhoto || "default.jpg");
+    } else {
+      openModalReq(data.message || "Failed to update password");
     }
+  } catch (err) {
+    console.error(err);
+    openModalReq("Something went wrong.");
+  }
+};
 
-    try {
-      const res = await fetch("/api/employee/settings/password", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        alert("Password changed successfully!");
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        setProfilePhoto(data.ProfilePhoto || "default.jpg");
-      } else {
-        alert(data.message || "Failed to update password");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Something went wrong.");
-    }
-  };
 
   const clearPasswordFields = () => {
     setCurrentPassword("");
@@ -467,6 +481,22 @@ export default function ProfileSettings() {
           </div>
         )}
       </div>
+
+       {isModalReq && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.deletemodalContent}>
+      <p>{modalMessage}</p>
+      <div className={styles.modalActions}>
+        <button onClick={closeModal} className={styles.OKButtonModal}>
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+    
+
     </div>
   );
 }
