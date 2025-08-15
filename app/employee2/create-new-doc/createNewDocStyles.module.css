@@ -446,11 +446,12 @@
 .approverNumber {
   font-weight: bold;
   color: var(--color-maroon);
+  background-color: var(--color-yellow);
 }
 
 .approverRow {
   display: flex;
-  justify-content: space-between; 
+  flex-wrap: wrap; /* ✅ allows wrapping to new line */
   align-items: center;
   gap: 1rem;
   margin-bottom: 1rem;
@@ -458,13 +459,17 @@
   padding: 0.75rem 1rem;
   border-radius: 6px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-  overflow-x: auto; 
 }
 
 .selectField {
-  flex: 1 1 200px;
-  min-width: 150px;
+  flex: 1;          /* fill remaining space */
+  min-width: 200px; /* keep usable on smaller screens */
 }
+
+.selectField > div {
+  width: 100%; /* force react-select control to fill the flex item */
+}
+
 
 .addBtn,
 .removeBtn {
@@ -1215,3 +1220,55 @@
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
 }
+
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.deletemodalContent {
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+}
+
+.deletemodalTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #AD191B;
+  margin-bottom: 1rem;
+}
+
+
+.modalActions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+
+.OKButton {
+  background-color: #0F72B8;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 50%;
+}
+
+
+
