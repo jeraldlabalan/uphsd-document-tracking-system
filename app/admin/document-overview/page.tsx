@@ -4,21 +4,21 @@ import { useState, useEffect } from "react";
 import styles from "./documentOverview.module.css";
 import AdminHeader from "@/components/shared/adminHeader";
 import { Search as SearchIcon } from "lucide-react";
-import { X, Clock, FileText, Trash2, CheckCircle } from "lucide-react";
+import { X, FileCheck, FileText, Trash2, CheckCircle } from "lucide-react";
 import { fetchFilterData, FilterData } from "@/lib/filterData";
 import Loading from "@/app/loading";
 
-type OverviewDocument = {
-  id: number;
+interface OverviewDocument {
+  id: string;
   title: string;
   department: string;
   status: string;
   dateCreated: string;
+  creator: string;
   type: string;
-  creator?: string;
-  preview?: string;
   previewUrl?: string;
-};
+  preview?: string;
+}
 
 export default function DocumentOverview() {
   const [search, setSearch] = useState("");
@@ -159,11 +159,11 @@ export default function DocumentOverview() {
 
           <div className={styles.summary}>
             <div className={`${styles.card} ${styles.green}`}>
-              <Clock className={styles.icon} />
+              <FileText className={styles.icon} />
               <span className={styles.count}>
                 {summary?.inProcessDocuments ?? 0}
               </span>
-              <span>In-Process</span>
+              <span>All Documents</span>
             </div>
 
             <div className={`${styles.card} ${styles.red}`}>
@@ -171,15 +171,15 @@ export default function DocumentOverview() {
               <span className={styles.count}>
                 {summary?.deletedDocuments ?? 0}
               </span>
-              <span>Deleted</span>
+              <span>Deleted Documents</span>
             </div>
 
             <div className={`${styles.card} ${styles.cyan}`}>
-              <FileText className={styles.icon} />
+              <FileCheck className={styles.icon} />
               <span className={styles.count}>
                 {summary?.totalDocuments ?? 0}
               </span>
-              <span>Total</span>
+              <span>Active Documents</span>
             </div>
           </div>
 

@@ -30,25 +30,35 @@ export async function GET(req: NextRequest) {
     requireAdmin(token);
 
     // Summary and listing
-    const [
-      totalDocuments,
-      inProcessDocuments,
-      deletedDocuments,
-      recentDocuments,
-    ] = await Promise.all([
-      db.document.count(),
-      db.document.count({ where: { IsDeleted: false } }),
-      db.document.count({ where: { IsDeleted: true } }),
-      db.document.findMany({
-        where: { IsDeleted: false },
-        orderBy: { CreatedAt: "desc" },
-        include: {
-          Creator: { select: { FirstName: true, LastName: true } },
-          Department: { select: { Name: true } },
-          DocumentType: { select: { TypeName: true } },
-        },
-      }),
-    ]);
+    const [activeDocuments, allDocuments, deletedDocuments, recentDocuments] =
+      await Promise.all([
+        // Count documents with the same logic as dashboard - only specific workflow statuses
+        db.document.count({
+          where: {
+            IsDeleted: false,
+            Status: {
+              in: [
+                "In-Process",
+                "On Hold",
+                "Approved",
+                "Completed",
+                "Awaiting-Completion",
+              ],
+            },
+          },
+        }),
+        db.document.count({ where: { IsDeleted: false } }),
+        db.document.count({ where: { IsDeleted: true } }),
+        db.document.findMany({
+          where: { IsDeleted: false },
+          orderBy: { CreatedAt: "desc" },
+          include: {
+            Creator: { select: { FirstName: true, LastName: true } },
+            Department: { select: { Name: true } },
+            DocumentType: { select: { TypeName: true } },
+          },
+        }),
+      ]);
 
     const docs = recentDocuments.map((doc) => ({
       id: doc.DocumentID,
