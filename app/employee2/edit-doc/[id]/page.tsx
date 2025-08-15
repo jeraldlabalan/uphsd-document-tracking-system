@@ -418,7 +418,14 @@ export default function EditDocument() {
           formData.append("Description", description);
           formData.append("TypeID", selectedTypeID?.toString() ?? "");
           formData.append("DepartmentID", departmentID?.toString() ?? "");
-          formData.append("ApproverIDs", JSON.stringify(approverIDs.filter((id) => id !== 0)));
+          
+          // Only append approvers if they are selected
+          if (approverIDs.filter((id) => id !== 0).length > 0) {
+            formData.append("ApproverIDs", JSON.stringify(approverIDs.filter((id) => id !== 0)));
+          } else {
+            // No approvers selected - send empty array to indicate department-wide notification
+            formData.append("ApproverIDs", JSON.stringify([]));
+          }
 
           // Convert base64 data back to a File object
           // savedDocumentData is a base64 data URL, so we need to convert it directly
@@ -494,15 +501,22 @@ export default function EditDocument() {
       } else {
         console.log("No saved document with placeholders, processing regular update...");
         // Regular document update without placeholders
-      const formData = new FormData();
-      formData.append("DocumentID", String(idStr ?? ""));
-      formData.append("Title", title);
-      formData.append("Description", description);
-      formData.append("TypeID", selectedTypeID?.toString() ?? "");
-      formData.append("DepartmentID", departmentID?.toString() ?? "");
-      formData.append("ApproverIDs", JSON.stringify(approverIDs.filter((id) => id !== 0)));
+        const formData = new FormData();
+        formData.append("DocumentID", String(idStr ?? ""));
+        formData.append("Title", title);
+        formData.append("Description", description);
+        formData.append("TypeID", selectedTypeID?.toString() ?? "");
+        formData.append("DepartmentID", departmentID?.toString() ?? "");
+        
+        // Only append approvers if they are selected
+        if (approverIDs.filter((id) => id !== 0).length > 0) {
+          formData.append("ApproverIDs", JSON.stringify(approverIDs.filter((id) => id !== 0)));
+        } else {
+          // No approvers selected - send empty array to indicate department-wide notification
+          formData.append("ApproverIDs", JSON.stringify([]));
+        }
 
-              // Only append files if they exist and have content
+        // Only append files if they exist and have content
         console.log("Files array before submission:", files);
         let validFilesCount = 0;
         
@@ -534,21 +548,32 @@ export default function EditDocument() {
         
         console.log("Proceeding with document update...");
 
-              console.log("Making API call to edit-document...");
+        console.log("Making API call to edit-document...");
         const res = await fetch("/api/employee/edit-document", {
           method: "POST",
           body: formData,
         });
         console.log("API response received:", res.status, res.statusText);
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to upload document");
-      }
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || "Failed to upload document");
+        }
 
-      setSuccess(true);
-      alert("Document successfully updated!");
-      router.push("/employee2/documents");
+        setSuccess(true);
+        
+        // Show appropriate success message based on whether files and approvers were provided
+        if (validFilesCount > 0 && approverIDs.filter((id) => id !== 0).length > 0) {
+          alert("Document successfully updated with files and specific approvers!");
+        } else if (validFilesCount > 0) {
+          alert("Document successfully updated with files! Document requests have been created for all department members so they can review and take action on the updated document.");
+        } else if (approverIDs.filter((id) => id !== 0).length > 0) {
+          alert("Document successfully updated! This is a hardcopy document that requires wet signatures.");
+        } else {
+          alert("Document successfully updated! Document requests have been created for all department members so they can track the updated hardcopy document status, put it on hold, or add remarks about any issues.");
+        }
+        
+        router.push(`/employee2/documents`);
       }
     } catch (err: any) {
       setError(err.message || "Something went wrong");
@@ -816,6 +841,9 @@ export default function EditDocument() {
 
             <div className={styles.sectionHeader}>
               <div className={styles.sectionTitle}>Document Files</div>
+              <div className={styles.sectionDescription}>
+                Upload PDF files for digital documents, or leave empty for hardcopy documents. Document requests will be created for all department members so they can track status, take actions, and add remarks about any issues.
+              </div>
 
               <div className={styles.toggleContainer}>
                 <span>Document Required</span>
@@ -1036,100 +1064,66 @@ export default function EditDocument() {
               </>
             )}
 
-            <div className={styles.sectionTitle}>Send Document</div>
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionTitle}>Approvers (Optional)</div>
+              <div className={styles.sectionDescription}>
+                Select specific approvers for digital review, or leave empty to create document requests for all department members. All department members will receive document requests and can take actions like approve, hold, reject, or add remarks about issues.
+              </div>
+            </div>
 
             <div className={styles.approvalContainer}>
               <div className={styles.approvalHeader}>
                 <p>
                   Select the people who need to review and approve this document
-                  in order.
+                  in order, or leave empty for department-wide notification.
                 </p>
-                <div className={styles.toggleContainer}>
-                  <span>Approval Required</span>
-                  <label className={styles.switch}>
-                    <input
-                      title="approval"
-                      type="checkbox"
-                      checked={approvalRequired}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setApprovalRequired(checked);
-                        if (checked && approverIDs.length === 0) {
-                          setApproverIDs([0]);
-                        }
-                      }}
-                    />
-
-                    <span className={styles.slider}></span>
-                  </label>
-                </div>
               </div>
 
-              {approvalRequired &&
-                approverIDs.map((id, index) => (
-                  <div className={styles.approverRow} key={index}>
-                    <span className={styles.approverNumber}>{index + 1}</span>
-
-                    <Select
-                      options={selectOptions}
-                      value={
-                        selectOptions.find((opt) => opt.value === id) || null
-                      }
-                      onChange={(selected) =>
-                        handleApproverChange(selected, index)
-                      }
-                      placeholder="Select approver..."
-                      isSearchable
-                      menuPortalTarget={
-                        typeof window !== "undefined" ? document.body : null
-                      }
-                      styles={{
-                        container: (base) => ({
-                          ...base,
-                          width: "auto",
-                          minWidth: "120px",
-                          maxWidth: "100%",
-                          flex: 1,
-                        }),
-                        menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                      }}
-                    />
-
-                    {/* ✅ Add Approver Button */}
+              {approverIDs.map((id, index) => (
+                <div className={styles.approverRow} key={index}>
+                  <span className={styles.approverNumber}>{index + 1}</span>
+                  <Select
+                    options={selectOptions}
+                    value={selectOptions.find((option) => option.value === id)}
+                    onChange={(selected) =>
+                      handleApproverChange(selected, index)
+                    }
+                    placeholder="Select approver"
+                    className={styles.selectField}
+                  />
+                  {approverIDs.length > 1 && (
                     <button
                       type="button"
-                      onClick={addApprover}
-                      className={styles.addBtn}
+                      className={styles.removeBtn}
+                      onClick={() => removeApprover(index)}
                     >
-                      + Add Approver
+                      Remove
                     </button>
+                  )}
+                </div>
+              ))}
 
-                    {/* ✅ Only show Remove if more than 1 approver */}
-                    {approverIDs.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeApprover(index)}
-                        className={styles.removeBtn}
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                ))}
+              <button
+                type="button"
+                className={styles.addBtn}
+                onClick={addApprover}
+              >
+                + Add New Approver
+              </button>
+            </div>
 
-              <div className={styles.inputGroup}>
-                <label>
-                  Due Date <span className={styles.optional}>(optional)</span>
-                </label>
-                <input
-                  type="date"
-                  title="date"
-                  className={styles.inputField}
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  min={new Date().toISOString().split("T")[0]} // 👈 prevents past dates
-                />
-              </div>
+            <div className={styles.inputGroup}>
+              <label>
+                Due Date <span className={styles.optional}>(optional)</span>
+              </label>
+              <input
+                type="date"
+                title="date"
+                className={styles.inputField}
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                min={new Date().toISOString().split("T")[0]} // 👈 prevents past dates
+              />
             </div>
 
             <div className={styles.buttonGroup}>

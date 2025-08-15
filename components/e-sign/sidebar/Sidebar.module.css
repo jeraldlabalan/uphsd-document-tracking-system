@@ -100,10 +100,23 @@
   opacity: 0.6;
 }
 
-.jumpToSignature:disabled:hover,
-.signDocument:disabled:hover,
-.saveFileButton:disabled:hover {
-  background-color: #6c757d;
+.undoChangesButton {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 0;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.undoChangesButton:hover {
+  background-color: #c82333;
+}
+
+.undoChangesButton:active {
+  background-color: #bd2130;
 }
 
 .sidebarHeader {
