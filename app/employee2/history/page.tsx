@@ -3,11 +3,14 @@
 import { useState, useEffect } from "react";
 import styles from "./historyStyles.module.css"; // Reuse same styles
 import EmpHeader from "@/components/shared/empHeader";
-import { Search as SearchIcon, X } from "lucide-react";
+import { Search as SearchIcon, X, FileText, Download } from "lucide-react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { fetchFilterData, FilterData } from "@/lib/filterData";
 import Loading from "@/app/loading";
+
+// Set up PDF.js worker
+// pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 type DocumentVersionHistory = {
   VersionID: number;
@@ -26,6 +29,7 @@ type DocumentVersionHistory = {
     }
   };
   ChangedByName: string;
+  FilePath: string;
 };
 
 export default function History() {
@@ -49,6 +53,8 @@ export default function History() {
 
   const [selectedDoc, setSelectedDoc] = useState<DocumentVersionHistory | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [currentVersion, setCurrentVersion] = useState<DocumentVersionHistory | null>(null);
+
 
   // const historyData = [
   //   {
@@ -104,7 +110,11 @@ export default function History() {
     } catch (err) {
       console.error("Error fetching data:", err);
       setHistory([]);
-      setFilterData([]);
+      setFilterData({
+        documentTypes: [],
+        departments: [],
+        statuses: []
+      });
     } finally {
       setLoading(false); // ✅ stop loader after both fetches
     }
@@ -112,6 +122,8 @@ export default function History() {
 
   fetchAllData();
 }, []);
+
+
 
 
 const filtered = history.filter((item) => {
@@ -128,13 +140,83 @@ const filtered = history.filter((item) => {
 
 
   const handleView = (entry: DocumentVersionHistory) => {
+    console.log('Opening document:', entry.Document.Title, 'File path:', entry.FilePath);
+    console.log('Full file URL:', getFileUrl(entry.FilePath));
+    
     setSelectedDoc(entry);
+    setCurrentVersion(entry);
     setShowModal(true);
+
   };
 
   const closeModal = () => {
     setShowModal(false);
     setSelectedDoc(null);
+    setCurrentVersion(null);
+
+  };
+
+  const handleVersionChange = (versionNumber: number) => {
+    console.log('Changing to version:', versionNumber);
+    // Find the document version with the selected version number
+    const versionData = history.find(
+      (doc) =>
+        doc.Document.Title === selectedDoc?.Document.Title &&
+        doc.VersionNumber === versionNumber
+    );
+    
+    if (versionData) {
+      console.log('New version data:', versionData);
+      setCurrentVersion(versionData);
+    }
+  };
+
+  // Get available versions for the selected document
+  const getAvailableVersions = () => {
+    if (!selectedDoc) return [];
+    
+    return history
+      .filter((doc) => doc.Document.Title === selectedDoc.Document.Title)
+      .sort((a, b) => b.VersionNumber - a.VersionNumber); // Newest first
+  };
+
+  // Get file extension from file path
+  const getFileExtension = (filePath: string) => {
+    if (!filePath) return '';
+    const parts = filePath.split('.');
+    return parts[parts.length - 1]?.toLowerCase() || '';
+  };
+
+  // Check if file is viewable in browser
+  const isViewableFile = (filePath: string) => {
+    const extension = getFileExtension(filePath);
+    return ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'txt'].includes(extension);
+  };
+
+  // Construct full file URL from database file path
+  const getFileUrl = (filePath: string) => {
+    if (!filePath) return '';
+    
+    let baseUrl = '';
+    
+    // If it's already a full URL, use as is
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+      baseUrl = filePath;
+    } else if (filePath.startsWith('/')) {
+      // If it's a relative path starting with /, construct full URL
+      baseUrl = `${window.location.origin}${filePath}`;
+    } else {
+      // If it's a relative path without leading slash, add it
+      baseUrl = `${window.location.origin}/${filePath}`;
+    }
+    
+    // Add PDF parameters to hide thumbnail sidebar and other controls
+    const extension = getFileExtension(filePath);
+    if (extension === 'pdf') {
+      return `${baseUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`;
+    }
+    
+    return baseUrl;
   };
 
   // Pagination state
@@ -240,65 +322,107 @@ if (loading) {
 )}
  </div>
       </div>
-     {showModal && selectedDoc && (
+     {showModal && selectedDoc && currentVersion && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalCard} data-aos="zoom-in">
             <button className={styles.closeButton} onClick={closeModal}>
               <X size={20} />
             </button>
-            <h3 className={styles.modalTitle}>File Versions</h3>
+            
+            <div className={styles.modalContent}>
+              <h3 className={styles.modalTitle}>File Versions</h3>
 
-            <div className={styles.modalMeta}>
-              <p>
-                <strong>File Name:</strong>{" "}
-                <span className={styles.highlight}>
-                  {selectedDoc.Document.Title}
-                </span>
-              </p>
-              <p>
-                <strong>Type:</strong>{" "}
-                <span className={styles.highlight}>
-                  {selectedDoc.Document.DocumentType.TypeName || "Unknown"}
-                </span>
-              </p>
-              <p>
-  <strong>Version:</strong>{" "}
-  <select
-    className={styles.versionDropdown}
-    value={selectedDoc.VersionNumber}
-    onChange={(e) => {
-      const selectedVersionNumber = Number(e.target.value);
-      const versionData = history.find(
-        (doc) =>
-          doc.Document.Title === selectedDoc.Document.Title &&
-          doc.VersionNumber === selectedVersionNumber
-      );
-      if (versionData) {
-        setSelectedDoc(versionData);
-      }
-    }}
-  >
-    {history
-      .filter((doc) => doc.Document.Title === selectedDoc.Document.Title)
-      .sort((a, b) => b.VersionNumber - a.VersionNumber) // optional: newest first
-      .map((doc) => (
-        <option key={doc.VersionID} value={doc.VersionNumber}>
-          {doc.VersionNumber}
-        </option>
-      ))}
-  </select>
-</p>
+              <div className={styles.modalMeta}>
+                <p>
+                  <strong>File Name:</strong>{" "}
+                  <span className={styles.highlight}>
+                    {selectedDoc.Document.Title}
+                  </span>
+                </p>
+                <p>
+                  <strong>Type:</strong>{" "}
+                  <span className={styles.highlight}>
+                    {selectedDoc.Document.DocumentType.TypeName || "Unknown"}
+                  </span>
+                </p>
+                <p>
+                  <strong>Version:</strong>{" "}
+                  <select
+                    className={styles.versionDropdown}
+                    value={currentVersion.VersionNumber}
+                    onChange={(e) => handleVersionChange(Number(e.target.value))}
+                  >
+                    {getAvailableVersions().map((doc) => (
+                      <option key={doc.VersionID} value={doc.VersionNumber}>
+                        Version {doc.VersionNumber} - {new Date(doc.CreatedAt).toLocaleDateString()}
+                      </option>
+                    ))}
+                  </select>
+                </p>
+                <p>
+                  <strong>Changed By:</strong>{" "}
+                  <span className={styles.highlight}>
+                    {currentVersion.ChangedByName}
+                  </span>
+                </p>
+                <p>
+                  <strong>Description:</strong>{" "}
+                  <span className={styles.highlight}>
+                    {currentVersion.ChangeDescription}
+                  </span>
+                </p>
+                <p>
+                  <strong>Created:</strong>{" "}
+                  <span className={styles.highlight}>
+                    {new Date(currentVersion.CreatedAt).toLocaleDateString()}
+                  </span>
+                </p>
+              </div>
 
-            </div>
-
-            <div className={styles.previewArea}>
-              {/* Replace src with your API/preview link */}
-              <iframe
-                src={`/api/documents/preview/${selectedDoc.VersionID}`}
-                width="100%"
-                height="500px"
-                title="Document Preview"
-              ></iframe>
+              <div className={styles.previewArea}>
+                {currentVersion.FilePath ? (
+                  isViewableFile(currentVersion.FilePath) ? (
+                    <div className={styles.pdfViewerContainer}>
+                      <iframe
+                        src={getFileUrl(currentVersion.FilePath)}
+                        width="100%"
+                        height="600px"
+                        title={`Document Preview - Version ${currentVersion.VersionNumber}`}
+                        style={{ 
+                          border: '2px solid #ccc',
+                          borderRadius: '4px',
+                          backgroundColor: '#f9f9f9'
+                        }}
+                        onLoad={() => console.log('Iframe loaded successfully')}
+                        onError={(e) => console.error('Iframe error:', e)}
+                      />
+                    </div>
+                  ) : (
+                    <div className={styles.fileInfo}>
+                      <FileText size={48} color="#666" />
+                      <h4>File Preview Not Available</h4>
+                      <p>This file type ({getFileExtension(currentVersion.FilePath)}) cannot be previewed in the browser.</p>
+                      <a 
+                        href={getFileUrl(currentVersion.FilePath)} 
+                        download 
+                        className={styles.downloadBtn}
+                      >
+                        <Download size={16} />
+                        Download File
+                      </a>
+                    </div>
+                  )
+                ) : (
+                  <div className={styles.fileInfo}>
+                    <FileText size={64} color="#ccc" />
+                    <h4>No File Path Available</h4>
+                    <p>This document version doesn't have an associated file.</p>
+                    <p style={{ fontSize: '0.9rem', color: '#888', marginTop: '0.5rem' }}>
+                      The file may have been moved or deleted from the system.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
