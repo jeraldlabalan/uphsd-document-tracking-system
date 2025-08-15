@@ -30,8 +30,22 @@ export async function GET(req: NextRequest) {
     requireAdmin(token);
 
     // Summary and listing
-    const [totalDocuments, inProcessDocuments, deletedDocuments, recentDocuments] = await Promise.all([
-      db.document.count(),
+    const [activeDocuments, allDocuments, deletedDocuments, recentDocuments] = await Promise.all([
+      // Count documents with the same logic as dashboard - only specific workflow statuses
+      db.document.count({
+        where: {
+          IsDeleted: false,
+          Status: {
+            in: [
+              "In-Process",
+              "On Hold",
+              "Approved",
+              "Completed",
+              "Awaiting-Completion",
+            ],
+          },
+        },
+      }),
       db.document.count({ where: { IsDeleted: false } }),
       db.document.count({ where: { IsDeleted: true } }),
       db.document.findMany({
@@ -57,9 +71,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       summary: {
-        totalDocuments,
-        inProcessDocuments,
-        deletedDocuments,
+        totalDocuments: activeDocuments, // Active documents with workflow statuses (same as dashboard)
+        inProcessDocuments: allDocuments, // All non-deleted documents regardless of status
+        deletedDocuments, // Soft-deleted documents
       },
       documents: docs,
     });
