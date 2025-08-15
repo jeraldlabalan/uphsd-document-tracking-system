@@ -8,7 +8,19 @@ import styles from "./PDFViewer.module.css";
 import type { PDFViewerProps, PDFViewerRef, Placeholder } from "../types";
 import SignatureModal from "../signatureModal/SignatureModal";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// Fix PDF.js worker loading - try multiple sources
+try {
+  // Try CDN first
+  pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+} catch (error) {
+  console.warn("Failed to set CDN worker, trying unpkg:", error);
+  try {
+    pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+  } catch (error2) {
+    console.warn("Failed to set unpkg worker, trying jsdelivr:", error2);
+    pdfjs.GlobalWorkerOptions.workerSrc = `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+  }
+}
 
 function PDFViewer(
   {
@@ -34,6 +46,8 @@ function PDFViewer(
   ref: React.Ref<PDFViewerRef>
 ) {
   const [numPages, setNumPages] = useState<number>(0);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState<boolean>(false);
 
   const [uploadedSignature, setUploadedSignature] = useState<string | null>(
     null
@@ -732,6 +746,59 @@ function PDFViewer(
 
   if (!pdfUrl) return <p>Please upload a PDF document.</p>;
 
+  // Check if we should use fallback iframe viewer
+  if (pdfUrl.includes('?fallback=true')) {
+    return (
+      <div className={styles.fallbackContainer}>
+        <h3>PDF Viewer (Browser Fallback)</h3>
+        <p>Using browser's built-in PDF viewer as React-PDF encountered issues.</p>
+        <button 
+          onClick={() => setPdfUrl(pdfUrl.replace('?fallback=true', ''))}
+          className={styles.retryButton}
+        >
+          Try React-PDF Again
+        </button>
+        <iframe 
+          src={pdfUrl.replace('?fallback=true', '')} 
+          width="100%" 
+          height="800px"
+          style={{ border: '1px solid #ccc', marginTop: '1rem' }}
+          title="PDF Fallback Viewer"
+        />
+      </div>
+    );
+  }
+
+  if (pdfError) {
+    return (
+      <div className={styles.errorContainer}>
+        <h3>PDF Loading Error</h3>
+        <p><strong>Error:</strong> {pdfError}</p>
+        <p><strong>URL:</strong> {pdfUrl}</p>
+        <div className={styles.errorActions}>
+          <button onClick={() => setPdfError(null)}>Retry with React-PDF</button>
+          <button onClick={() => {
+            // Fallback to iframe viewer
+            setPdfError(null);
+            setPdfUrl(pdfUrl + "?fallback=true");
+          }}>Use Browser PDF Viewer</button>
+        </div>
+        
+        {/* Fallback iframe viewer */}
+        <div className={styles.fallbackViewer}>
+          <h4>Fallback PDF Viewer</h4>
+          <iframe 
+            src={pdfUrl} 
+            width="100%" 
+            height="600px"
+            style={{ border: '1px solid #ccc' }}
+            title="PDF Fallback Viewer"
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       {/* Document Container */}
@@ -742,9 +809,27 @@ function PDFViewer(
       >
         <Document
           file={pdfUrl}
-          onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-          onLoadError={console.error}
+          onLoadSuccess={({ numPages }) => {
+            console.log("PDF loaded successfully with", numPages, "pages");
+            setNumPages(numPages);
+            setPdfError(null);
+            setPdfLoading(false);
+          }}
+          onLoadError={(error) => {
+            console.error("PDF loading error:", error);
+            setPdfError(`Failed to load PDF: ${error.message || 'Unknown error'}`);
+            setPdfLoading(false);
+          }}
+          onLoadProgress={({ loaded, total }) => {
+            console.log("PDF loading progress:", loaded, "/", total);
+            setPdfLoading(true);
+          }}
         >
+          {pdfLoading && (
+            <div className={styles.loadingContainer}>
+              <p>Loading PDF...</p>
+            </div>
+          )}
           {Array.from(new Array(numPages), (_, i) => (
             <div
               key={`page_${i + 1}`}

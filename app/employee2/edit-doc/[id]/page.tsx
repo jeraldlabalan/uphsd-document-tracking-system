@@ -33,6 +33,10 @@ export default function EditDocument() {
   );
   const [selectedTypeID, setSelectedTypeID] = useState<number | null>(null);
 
+  const [isModalReq, setIsModalReq] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+
+
   const [department, setDepartment] = useState<string>("Select Department");
 
   const [documentTypes, setDocumentTypes] = useState<
@@ -272,7 +276,7 @@ export default function EditDocument() {
 
     if (eSignedUrl && eSignedTitle) {
       // Show success message
-      alert(`E-signed document "${eSignedTitle}" has been saved successfully!`);
+      setModalMessage(`E-signed document "${eSignedTitle}" has been saved successfully!`);
 
       // Clear localStorage
       localStorage.removeItem("eSignedDocumentUrl");
@@ -371,224 +375,135 @@ export default function EditDocument() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    console.log("handleSubmit called!");
-    e.preventDefault();
-    console.log("Form submission prevented, setting loading state...");
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
+  e.preventDefault();
+  setLoading(true);
+  setError(null);
+  setSuccess(false);
 
-    try {
-      console.log("Starting file validation...");
-      console.log("Files array:", files);
-      console.log("Files length:", files?.length);
-      console.log("Document ID:", idStr);
-      console.log("Is editing existing document:", !!idStr);
-      
-      // For editing existing documents, files are optional
-      // For new documents, files are required
-      if (!idStr) {
-        // This is a new document creation
-        if (!files || files.length === 0) {
-          console.log("New document requires files, setting error...");
-          setError("File is required for new documents");
-          setLoading(false);
-          return;
-        }
-        console.log("New document file validation passed");
-      } else {
-        // This is editing an existing document
-        console.log("Editing existing document - files are optional");
-      }
+  try {
+    // Validation
+    if (!idStr && (!files || files.length === 0)) {
+      setError("File is required for new documents");
+      setLoading(false);
+      return;
+    }
 
-      console.log("Checking localStorage for saved document...");
-      // Check if we have a saved document with placeholders
-      const savedDocumentData = localStorage.getItem("documentWithPlaceholdersData");
-      const savedDocumentPlaceholders = localStorage.getItem("documentWithPlaceholdersPlaceholders");
-      const savedDocumentId = localStorage.getItem("documentWithPlaceholdersId");
+    const savedDocumentData = localStorage.getItem("documentWithPlaceholdersData");
+    const savedDocumentPlaceholders = localStorage.getItem("documentWithPlaceholdersPlaceholders");
 
-      console.log("Retrieved from localStorage:", {
-        savedDocumentData: savedDocumentData ? savedDocumentData.substring(0, 100) + "..." : null,
-        savedDocumentPlaceholders,
-        savedDocumentId
-      });
+    // CASE 1 — Saved document with placeholders
+    if (savedDocumentData && savedDocumentPlaceholders) {
+      try {
+        const placeholders = JSON.parse(savedDocumentPlaceholders);
 
-      if (savedDocumentData && savedDocumentPlaceholders) {
-        console.log("Found saved document with placeholders, processing...");
-        // If we have a document with placeholders, use that instead of creating a new one
-        try {
-          const placeholders = JSON.parse(savedDocumentPlaceholders);
-          
-          // Create FormData for the document with placeholders
-          const formData = new FormData();
-          formData.append("DocumentID", String(idStr ?? ""));
-          formData.append("Title", title);
-          formData.append("Description", description);
-          formData.append("TypeID", selectedTypeID?.toString() ?? "");
-          formData.append("DepartmentID", departmentID?.toString() ?? "");
-          
-          // Only append approvers if they are selected
-          if (approverIDs.filter((id) => id !== 0).length > 0) {
-            formData.append("ApproverIDs", JSON.stringify(approverIDs.filter((id) => id !== 0)));
-          } else {
-            // No approvers selected - send empty array to indicate department-wide notification
-            formData.append("ApproverIDs", JSON.stringify([]));
-          }
-
-          // Convert base64 data back to a File object
-          // savedDocumentData is a base64 data URL, so we need to convert it directly
-          const base64Data = savedDocumentData;
-          console.log("Base64 data length:", base64Data.length);
-          
-          // Remove the data URL prefix (e.g., "data:application/pdf;base64,")
-          const base64String = base64Data.split(',')[1];
-          console.log("Base64 string length:", base64String.length);
-          
-          // Convert base64 to binary
-          const binaryString = atob(base64String);
-          console.log("Binary string length:", binaryString.length);
-          
-          // Convert binary string to Uint8Array
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-          }
-          console.log("Bytes array length:", bytes.length);
-          
-          // Create blob and file
-          const blob = new Blob([bytes], { type: 'application/pdf' });
-          console.log("Blob size:", blob.size);
-          
-          const file = new File([blob], `document-with-placeholders.pdf`, { type: 'application/pdf' });
-          console.log("File size:", file.size);
-          formData.append("files", file);
-
-          // Add placeholders data
-          formData.append("Placeholders", JSON.stringify(placeholders));
-
-          const res = await fetch("/api/employee/edit-document", {
-            method: "PUT",
-            body: formData,
-          });
-
-          if (!res.ok) {
-            const data = await res.json();
-            throw new Error(data.error || "Failed to update document");
-          }
-
-          // Clear localStorage
-          localStorage.removeItem("documentWithPlaceholdersData");
-          localStorage.removeItem("documentWithPlaceholdersTitle");
-          localStorage.removeItem("documentWithPlaceholdersId");
-          localStorage.removeItem("documentWithPlaceholdersType");
-          localStorage.removeItem("documentWithPlaceholdersDepartment");
-          localStorage.removeItem("documentWithPlaceholdersApprovers");
-          localStorage.removeItem("documentWithPlaceholdersDescription");
-          localStorage.removeItem("documentWithPlaceholdersPlaceholders");
-
-          setSuccess(true);
-          console.log("document with placeholders success");
-          alert("Document with placeholders successfully updated! Redirecting back to edit page...");
-          
-          // Clear localStorage
-          localStorage.removeItem("documentWithPlaceholdersData");
-          localStorage.removeItem("documentWithPlaceholdersTitle");
-          localStorage.removeItem("documentWithPlaceholdersId");
-          localStorage.removeItem("documentWithPlaceholdersType");
-          localStorage.removeItem("documentWithPlaceholdersDepartment");
-          localStorage.removeItem("documentWithPlaceholdersApprovers");
-          localStorage.removeItem("documentWithPlaceholdersDescription");
-          localStorage.removeItem("documentWithPlaceholdersPlaceholders");
-          
-          // Redirect back to the documents page
-          router.push(`/employee2/documents`);
-        } catch (error) {
-          console.error("Error updating document with placeholders:", error);
-          throw new Error("Failed to update document with placeholders");
-        }
-      } else {
-        console.log("No saved document with placeholders, processing regular update...");
-        // Regular document update without placeholders
         const formData = new FormData();
         formData.append("DocumentID", String(idStr ?? ""));
         formData.append("Title", title);
         formData.append("Description", description);
         formData.append("TypeID", selectedTypeID?.toString() ?? "");
         formData.append("DepartmentID", departmentID?.toString() ?? "");
-        
-        // Only append approvers if they are selected
-        if (approverIDs.filter((id) => id !== 0).length > 0) {
-          formData.append("ApproverIDs", JSON.stringify(approverIDs.filter((id) => id !== 0)));
-        } else {
-          // No approvers selected - send empty array to indicate department-wide notification
-          formData.append("ApproverIDs", JSON.stringify([]));
-        }
+        formData.append("ApproverIDs", JSON.stringify(approverIDs.filter((id) => id !== 0)));
 
-        // Only append files if they exist and have content
-        console.log("Files array before submission:", files);
-        let validFilesCount = 0;
-        
-        if (files && files.length > 0) {
-          files.forEach((item, index) => {
-            console.log(`File ${index}:`, item.file.name, "Size:", item.file.size, "Type:", item.file.type);
-            // Check if the file has actual content (not a placeholder)
-            if (item.file && item.file.size > 0 && item.file.type === 'application/pdf') {
-              formData.append("files", item.file);
-              validFilesCount++;
-              console.log(`Added file ${item.file.name} to form data`);
-            } else {
-              console.log(`Skipped file ${item.file.name} - size is ${item.file.size}, type is ${item.file.type}`);
-            }
-          });
-        } else {
-          console.log("No new files to process");
-        }
-        
-        console.log(`Total valid files added: ${validFilesCount}`);
-        
-        // For editing existing documents, files are optional
-        // Only require files if this is a new document or if user wants to upload a new version
-        if (validFilesCount === 0 && !idStr) {
-          setError("Please upload a valid PDF file before submitting");
-          setLoading(false);
-          return;
-        }
-        
-        console.log("Proceeding with document update...");
+        // Convert base64 to File
+        const base64String = savedDocumentData.split(",")[1];
+        const binaryString = atob(base64String);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+        const blob = new Blob([bytes], { type: "application/pdf" });
+        const file = new File([blob], `document-with-placeholders.pdf`, { type: "application/pdf" });
+        formData.append("files", file);
 
-        console.log("Making API call to edit-document...");
+        formData.append("Placeholders", JSON.stringify(placeholders));
+
         const res = await fetch("/api/employee/edit-document", {
-          method: "POST",
+          method: "PUT",
           body: formData,
         });
-        console.log("API response received:", res.status, res.statusText);
 
         if (!res.ok) {
           const data = await res.json();
-          throw new Error(data.error || "Failed to upload document");
+          throw new Error(data.error || "Failed to update document");
         }
 
+        // Clear placeholders data
+        [
+          "documentWithPlaceholdersData",
+          "documentWithPlaceholdersTitle",
+          "documentWithPlaceholdersId",
+          "documentWithPlaceholdersType",
+          "documentWithPlaceholdersDepartment",
+          "documentWithPlaceholdersApprovers",
+          "documentWithPlaceholdersDescription",
+          "documentWithPlaceholdersPlaceholders",
+        ].forEach(localStorage.removeItem);
+
         setSuccess(true);
-        
-        // Show appropriate success message based on whether files and approvers were provided
-        if (validFilesCount > 0 && approverIDs.filter((id) => id !== 0).length > 0) {
-          alert("Document successfully updated with files and specific approvers!");
-        } else if (validFilesCount > 0) {
-          alert("Document successfully updated with files! Document requests have been created for all department members so they can review and take action on the updated document.");
-        } else if (approverIDs.filter((id) => id !== 0).length > 0) {
-          alert("Document successfully updated! This is a hardcopy document that requires wet signatures.");
-        } else {
-          alert("Document successfully updated! Document requests have been created for all department members so they can track the updated hardcopy document status, put it on hold, or add remarks about any issues.");
-        }
-        
-        router.push(`/employee2/documents`);
+        setModalMessage("Document with placeholders successfully updated! Redirecting back to edit page...");
+        setIsModalReq(true);
+
+      } catch (error) {
+        console.error("Error updating document with placeholders:", error);
+        throw new Error("Failed to update document with placeholders");
       }
-    } catch (err: any) {
-      setError(err.message || "Something went wrong");
-    } finally {
-      setLoading(false);
     }
-  };
+
+    // CASE 2 — Regular update
+    else {
+      const formData = new FormData();
+      formData.append("DocumentID", String(idStr ?? ""));
+      formData.append("Title", title);
+      formData.append("Description", description);
+      formData.append("TypeID", selectedTypeID?.toString() ?? "");
+      formData.append("DepartmentID", departmentID?.toString() ?? "");
+      formData.append("ApproverIDs", JSON.stringify(approverIDs.filter((id) => id !== 0)));
+
+      let validFilesCount = 0;
+      if (files && files.length > 0) {
+        files.forEach((item) => {
+          if (item.file && item.file.size > 0 && item.file.type === "application/pdf") {
+            formData.append("files", item.file);
+            validFilesCount++;
+          }
+        });
+      }
+
+      if (validFilesCount === 0 && !idStr) {
+        setError("Please upload a valid PDF file before submitting");
+        setLoading(false);
+        return;
+      }
+
+      const res = await fetch("/api/employee/edit-document", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to upload document");
+      }
+
+      setSuccess(true);
+
+      if (validFilesCount > 0 && approverIDs.filter((id) => id !== 0).length > 0) {
+        setModalMessage("Document successfully updated with files and specific approvers!");
+      } else if (validFilesCount > 0) {
+        setModalMessage("Document successfully updated with files! Document requests have been created for all department members.");
+      } else if (approverIDs.filter((id) => id !== 0).length > 0) {
+        setModalMessage("Document successfully updated! This is a hardcopy document that requires wet signatures.");
+      } else {
+        setModalMessage("Document successfully updated! Document requests have been created for all department members to track status.");
+      }
+
+      setIsModalReq(true);
+    }
+  } catch (err: any) {
+    setError(err.message || "Something went wrong");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
 
 
@@ -596,22 +511,22 @@ export default function EditDocument() {
   const handleOpenESign = async (file: File, index: number) => {
     // Validate required fields before opening e-sign interface
     if (!title.trim()) {
-      alert("Please enter a document title before proceeding with e-signing.");
+      setModalMessage("Please enter a document title before proceeding with e-signing.");
       return;
     }
 
     if (!selectedTypeID) {
-      alert("Please select a document type before proceeding with e-signing.");
+      setModalMessage("Please select a document type before proceeding with e-signing.");
       return;
     }
 
     if (!departmentID) {
-      alert("Please select a department before proceeding with e-signing.");
+      setModalMessage("Please select a department before proceeding with e-signing.");
       return;
     }
 
     if (approverIDs.filter((id) => id !== 0).length === 0) {
-      alert(
+      setModalMessage(
         "Please select at least one approver before proceeding with e-signing."
       );
       return;
@@ -632,18 +547,18 @@ export default function EditDocument() {
           fileUrl = URL.createObjectURL(blob);
         } catch (error) {
           console.error("Error loading file from server:", error);
-          alert("Failed to load document file. Please try again.");
+          setModalMessage("Failed to load document file. Please try again.");
           return;
         }
       } else if (file && file.size > 0) {
         // If we have a regular file object (from upload), use it
         if (file.type !== "application/pdf") {
-          alert("Only PDF files are supported for e-signing");
+          setModalMessage("Only PDF files are supported for e-signing");
           return;
         }
         fileUrl = URL.createObjectURL(file);
       } else {
-        alert("No document file available for e-signing.");
+        setModalMessage("No document file available for e-signing.");
         return;
       }
 
@@ -675,7 +590,7 @@ export default function EditDocument() {
       window.open(`/employee2/e-sign-document?${params.toString()}`, "_blank");
     } catch (error) {
       console.error("Error opening e-sign interface:", error);
-      alert(
+      setModalMessage(
         `Failed to open e-sign interface: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     }
@@ -1242,6 +1157,26 @@ export default function EditDocument() {
           </div>
         )}
       </div>
+
+       {isModalReq && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.deletemodalContent}>
+      <p>{modalMessage}</p>
+      <div className={styles.modalActions}>
+        <button 
+          onClick={() => {
+            setIsModalReq(false);
+            router.push(`/employee2/documents`);
+          }} 
+          className={styles.OKButton}
+        >
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }
