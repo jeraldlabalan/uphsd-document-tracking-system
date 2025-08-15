@@ -22,84 +22,82 @@ const Modal: React.FC<ModalProps> = ({
   isLoading,
 }) => {
   const [isProcessing, setIsProcessing] = useState(false); // Loading state
-  const [success, setSuccess] = useState(false); // Track success state
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Effect to simulate processing during loading
+  // Sync processing state with external loading flag if provided
   useEffect(() => {
-    if (isLoading) {
-      setIsProcessing(true);
-      // Simulate loading time of 2 seconds
-      setTimeout(() => {
-        setIsProcessing(false);
-        setSuccess(true); // After loading, show success message
-      }, 2000); // 2 seconds loading time
-    }
+    setIsProcessing(isLoading);
   }, [isLoading]);
 
   useEffect(() => {
-              AOS.init({
-                duration: 1000,
-                once: true,
-              });
-            }, []);
+    AOS.init({
+      duration: 1000,
+      once: true,
+    });
+  }, []);
 
-  // Reset success state when modal opens
+  // Reset processing state when modal opens
   useEffect(() => {
     if (showModal) {
-      setSuccess(false); // Reset success state when modal opens
+      setIsProcessing(false); // Reset processing state when modal opens
       // Hide body scroll when modal opens
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
       // Restore body scroll when modal closes
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
   }, [showModal]);
 
   // Cleanup body scroll when component unmounts
   useEffect(() => {
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, []);
 
-  // Close modal if clicked outside of modal content, but not during loading
+  // Prevent escape key from closing modal
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!isProcessing && modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        setShowModal(false); // Close modal if clicked outside and not processing
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && showModal) {
+        e.preventDefault();
+        e.stopPropagation();
       }
     };
 
-    // Add event listener when modal is open and processing is false
-    if (showModal && !isProcessing) {
-      document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
+    if (showModal) {
+      document.addEventListener("keydown", handleEscape);
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside); // Cleanup listener on unmount
+      document.removeEventListener("keydown", handleEscape);
     };
-  }, [showModal, isProcessing]); // Make sure dependencies stay constant
+  }, [showModal]);
+
+  // Prevent outside click from closing modal
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
 
   return (
     showModal && (
-      <div className={styles.modalOverlay}>
+      <div className={styles.modalOverlay} onClick={handleOverlayClick}>
         <div data-aos="zoom-in" className={styles.modalContent} ref={modalRef}>
           <h3 className={styles.deletemodalTitle}>
-            {success ? "Success" : "Confirm"}
+            {isProcessing ? "Processing..." : "Confirm"}
           </h3>
 
           {/* Show loading spinner only when processing */}
           {isProcessing && <div className={styles.spinner}></div>}
 
           {/* Description is hidden during loading */}
-          {!isProcessing && <p>{!success ? description : ""}</p>}
+          {!isProcessing && <p>{description}</p>}
 
           <div className={styles.modalActions}>
-            {/* Only show buttons when not processing */}
-            {!isProcessing && !success && (
+            {/* Only show action buttons for confirmation flows (not during loading) */}
+            {!isProcessing && (
               <>
                 <button
                   className={styles.cancelButton}
@@ -107,30 +105,28 @@ const Modal: React.FC<ModalProps> = ({
                     onCancel(); // Trigger the cancel function
                     setShowModal(false); // Close the modal
                   }}
+                  disabled={isProcessing}
                 >
                   Cancel
                 </button>
 
                 <button
                   className={styles.confirmButton}
-                  onClick={() => {
-                    onConfirm(); // Trigger the confirm function
+                  onClick={async () => {
+                    try {
+                      setIsProcessing(true);
+                      await onConfirm(); // Await completion of the action
+                      // Modal will close automatically after action completes
+                      // The parent component will handle the toast and modal closing
+                    } finally {
+                      setIsProcessing(false);
+                    }
                   }}
-                  disabled={isProcessing} // Disable the button during loading
+                  disabled={isProcessing}
                 >
-                  {isProcessing ? "" : "Continue"}
+                  {isProcessing ? "Processing..." : "Continue"}
                 </button>
               </>
-            )}
-
-            {/* Show success message and OK button after completion */}
-            {success && (
-              <button
-                className={styles.okButton}
-                onClick={() => setShowModal(false)} // Close modal after success
-              >
-                OK
-              </button>
             )}
           </div>
         </div>

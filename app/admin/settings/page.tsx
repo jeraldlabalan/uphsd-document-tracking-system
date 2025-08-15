@@ -33,7 +33,7 @@ export default function Settings() {
     description: "",
     onConfirm: () => {},
     onCancel: () => {},
-    isLoading: false
+    isLoading: false,
   });
   const [isLoading, setIsLoading] = useState(false); // For loading effect
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
@@ -50,49 +50,54 @@ export default function Settings() {
     setShowModal(true);
   };
 
-
-useEffect(() => {
-            AOS.init({
-              duration: 1000,
-              once: true,
-            });
-          }, []);
+  useEffect(() => {
+    AOS.init({
+      duration: 1000,
+      once: true,
+    });
+  }, []);
 
   useEffect(() => {
-  const fetchUserInfo = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch("/api/admin/settings/user-info");
+    const fetchUserInfo = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("/api/admin/settings/user-info");
 
-      if (response.ok) {
-        const data = await response.json();
-        setUserInfo(data);
-      } else {
-        console.error("Failed to fetch user info");
+        if (response.ok) {
+          const data = await response.json();
+          setUserInfo(data);
+        } else {
+          console.error("Failed to fetch user info");
+          setUserInfo(null);
+        }
+      } catch (error) {
+        console.error("Error fetching user info:", error);
         setUserInfo(null);
+      } finally {
+        setLoading(false); // ✅ stop loader
       }
-    } catch (error) {
-      console.error("Error fetching user info:", error);
-      setUserInfo(null);
-    } finally {
-      setLoading(false); // ✅ stop loader
-    }
-  };
+    };
 
-  fetchUserInfo();
-
-  // Listen for custom events to automatically refresh user info
-  const handleUserInfoUpdate = () => {
     fetchUserInfo();
-  };
 
-  window.addEventListener("userInfoUpdated", handleUserInfoUpdate);
+    // Listen for custom events to automatically refresh user info
+    const handleUserInfoUpdate = () => {
+      fetchUserInfo();
+    };
 
-  return () => {
-    window.removeEventListener("userInfoUpdated", handleUserInfoUpdate);
-  };
-}, []);
+    // Listen for custom event to close modal
+    const handleCloseModal = () => {
+      setShowModal(false);
+    };
 
+    window.addEventListener("userInfoUpdated", handleUserInfoUpdate);
+    window.addEventListener("closeModal", handleCloseModal);
+
+    return () => {
+      window.removeEventListener("userInfoUpdated", handleUserInfoUpdate);
+      window.removeEventListener("closeModal", handleCloseModal);
+    };
+  }, []);
 
   const handleUserInfoUpdate = (updatedInfo: Partial<UserInfo>) => {
     if (userInfo) {
@@ -130,10 +135,9 @@ useEffect(() => {
     }, 2000); // Simulate 2-second delay
   };
 
-
   if (loading) {
-      return <Loading />;
-    }
+    return <Loading />;
+  }
   return (
     <div>
       <AdminHeader />
