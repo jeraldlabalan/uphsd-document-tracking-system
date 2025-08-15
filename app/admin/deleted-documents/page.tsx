@@ -6,7 +6,7 @@ import AdminHeader from "@/components/shared/adminHeader";
 import { Search as SearchIcon } from "lucide-react";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { CheckCircle, Clock } from "lucide-react";
+import { Trash2, FileText } from "lucide-react";
 import Loading from "@/app/loading";
 
 type DeletedDocument = {
@@ -56,17 +56,20 @@ export default function DeletedDocuments() {
   // Fetch summary statistics
   const fetchSummaryStats = async () => {
     try {
-      const summaryRes = await fetch('/api/admin/deleted-documents?summary=true', {
-        method: 'GET',
-        credentials: 'include',
-      });
+      const summaryRes = await fetch(
+        "/api/admin/deleted-documents?summary=true",
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
 
       if (summaryRes.ok) {
         const summaryData = await summaryRes.json();
         setSummaryStats(summaryData);
       }
     } catch (error) {
-      console.error('Error fetching summary stats:', error);
+      console.error("Error fetching summary stats:", error);
     }
   };
 
@@ -74,8 +77,8 @@ export default function DeletedDocuments() {
   const fetchDeletedDocuments = async () => {
     try {
       setLoading(true);
-      
-      const res = await fetch('/api/admin/deleted-documents', {
+
+      const res = await fetch("/api/admin/deleted-documents", {
         method: "GET",
         credentials: "include",
       });
@@ -130,16 +133,16 @@ export default function DeletedDocuments() {
 
     try {
       setShowRestoreLoading(true);
-      
-      const res = await fetch('/api/admin/deleted-documents', {
-        method: 'PATCH',
+
+      const res = await fetch("/api/admin/deleted-documents", {
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify({
           documentId: selectedDoc.DocumentID,
-          action: 'restore'
+          action: "restore",
         }),
       });
 
@@ -150,11 +153,11 @@ export default function DeletedDocuments() {
         fetchDeletedDocuments();
         fetchSummaryStats();
       } else {
-        console.error('Failed to restore document');
+        console.error("Failed to restore document");
         setShowRestoreLoading(false);
       }
     } catch (error) {
-      console.error('Error restoring document:', error);
+      console.error("Error restoring document:", error);
       setShowRestoreLoading(false);
     }
   };
@@ -164,16 +167,16 @@ export default function DeletedDocuments() {
 
     try {
       setShowPermanentDeleteLoading(true);
-      
-      const res = await fetch('/api/admin/deleted-documents', {
-        method: 'PATCH',
+
+      const res = await fetch("/api/admin/deleted-documents", {
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify({
           documentId: selectedDoc.DocumentID,
-          action: 'permanent-delete'
+          action: "permanent-delete",
         }),
       });
 
@@ -184,18 +187,18 @@ export default function DeletedDocuments() {
         fetchDeletedDocuments();
         fetchSummaryStats();
       } else {
-        console.error('Failed to permanently delete document');
+        console.error("Failed to permanently delete document");
         setShowPermanentDeleteLoading(false);
       }
     } catch (error) {
-      console.error('Error permanently deleting document:', error);
+      console.error("Error permanently deleting document:", error);
       setShowPermanentDeleteLoading(false);
     }
   };
 
   // for pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const docsPerPage = 5; 
+  const docsPerPage = 5;
 
   const totalPages = Math.ceil(filteredDocs.length / docsPerPage);
 
@@ -205,7 +208,8 @@ export default function DeletedDocuments() {
   const paginatedDocs = filteredDocs.slice(startIndex, endIndex);
 
   const handlePrev = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
-  const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  const handleNext = () =>
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
   if (loading) {
     return <Loading />;
@@ -223,15 +227,15 @@ export default function DeletedDocuments() {
 
           <div className={styles.summary}>
             <div className={`${styles.card} ${styles.red}`}>
-              <CheckCircle className={styles.icon} />
+              <Trash2 className={styles.icon} />
               <span className={styles.count}>{summaryStats.totalDeleted}</span>
-              <span>Total Documents Deleted</span>
+              <span>Total Deleted Documents</span>
             </div>
 
             <div className={`${styles.card} ${styles.cyan}`}>
-              <Clock className={styles.icon} />
+              <FileText className={styles.icon} />
               <span className={styles.count}>{summaryStats.totalRestored}</span>
-              <span>Total Documents Restored</span>
+              <span>Total Restored Documents</span>
             </div>
           </div>
 
@@ -248,41 +252,43 @@ export default function DeletedDocuments() {
             </div>
           </div>
           <div className={styles.tableWrapper}>
-          <table className={styles.docTable}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Title</th>
-                <th>Creator</th>
-                <th>Department</th>
-                <th>Target Type</th>
-                <th>Status</th>
-                <th>Date Updated</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-          <tbody>
-  {paginatedDocs.length > 0 ? (
-    paginatedDocs.map((doc, i) => (
-      <tr key={i}>
-        <td>{doc.DocumentID}</td>
-        <td>{doc.Title}</td>
-        <td>{doc.Creator.FirstName + " " + doc.Creator.LastName}</td>
-        <td>{doc.Creator.Department.Name}</td>
-        <td>{doc.DocumentType.TypeName}</td>
-        <td>{doc.Status}</td>
-        <td>{new Date(doc.UpdatedAt).toLocaleDateString()}</td>
-        <td>
-          <button
-            className={`${styles.actionBtn} ${styles.restoreBtn}`}
-            onClick={() => {
-              setSelectedDoc(doc);
-              setShowConfirmRestore(true);
-            }}
-          >
-            Restore
-          </button>{" "}
-          {/* <button
+            <table className={styles.docTable}>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Title</th>
+                  <th>Creator</th>
+                  <th>Department</th>
+                  <th>Document Type</th>
+                  <th>Status</th>
+                  <th>Date Updated</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedDocs.length > 0 ? (
+                  paginatedDocs.map((doc, i) => (
+                    <tr key={i}>
+                      <td>{doc.DocumentID}</td>
+                      <td>{doc.Title}</td>
+                      <td>
+                        {doc.Creator.FirstName + " " + doc.Creator.LastName}
+                      </td>
+                      <td>{doc.Creator.Department.Name}</td>
+                      <td>{doc.DocumentType.TypeName}</td>
+                      <td>{doc.Status}</td>
+                      <td>{new Date(doc.UpdatedAt).toLocaleDateString()}</td>
+                      <td>
+                        <button
+                          className={`${styles.actionBtn} ${styles.restoreBtn}`}
+                          onClick={() => {
+                            setSelectedDoc(doc);
+                            setShowConfirmRestore(true);
+                          }}
+                        >
+                          Restore
+                        </button>{" "}
+                        {/* <button
             className={`${styles.actionBtn} ${styles.deleteBtn}`}
             onClick={() => {
               setSelectedDoc(doc);
@@ -291,60 +297,75 @@ export default function DeletedDocuments() {
           >
             Permanently Delete
           </button> */}
-        </td>
-      </tr>
-    ))
-  ) : (
-    <tr className={styles.noDataRow}>
-      <td colSpan={8} style={{ textAlign: "center", padding: "1rem" }}>
-        {search ? (
-          <>No deleted documents found for "<strong>{search}</strong>"</>
-        ) : (
-          <>No deleted documents available.</>
-        )}
-      </td>
-    </tr>
-  )}
-</tbody>
-
-
-          </table>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr className={styles.noDataRow}>
+                    <td
+                      colSpan={8}
+                      style={{ textAlign: "center", padding: "1rem" }}
+                    >
+                      {search ? (
+                        <>
+                          No deleted documents found for &quot;
+                          <strong>{search}</strong>&quot;
+                        </>
+                      ) : (
+                        <>No deleted documents available.</>
+                      )}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
           {/* Pagination controls */}
-      <div className={styles.pagination}>
-        <button onClick={handlePrev} disabled={currentPage === 1}>
-          Previous
-        </button>
-        <span>
-          Page {currentPage} of {totalPages}
-        </span>
-        <button onClick={handleNext} disabled={currentPage === totalPages}>
-          Next
-        </button>
-      </div>
-</div>
-       
+          <div className={styles.pagination}>
+            <button onClick={handlePrev} disabled={currentPage === 1}>
+              Previous
+            </button>
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
+            <button onClick={handleNext} disabled={currentPage === totalPages}>
+              Next
+            </button>
+          </div>
+        </div>
 
         {/* confirm restore modal */}
-         {showConfirmRestore && (
-          <div className={styles.modalOverlay} onClick={(e) =>
+        {showConfirmRestore && (
+          <div
+            className={styles.modalOverlay}
+            onClick={(e) =>
               handleBackdropClick(e, () => setShowConfirmRestore(false))
-            }>
+            }
+          >
             <div className={styles.restoremodalContent}>
               <h3 className={styles.restoremodalTitle}>Document Restore</h3>
               <p>Are you sure to restore this document?</p>
               <div className={styles.modalActions}>
-                <button onClick={(e) =>
-                      handleCancelButtonClick(e, () =>
-                        setShowConfirmRestore(false)
-                      )
-                    } className={styles.restorecancelButton}>Cancel</button>
-                <button onClick={handleRestoreDocument} className={styles.restoreButton}>Continue</button>
+                <button
+                  onClick={(e) =>
+                    handleCancelButtonClick(e, () =>
+                      setShowConfirmRestore(false)
+                    )
+                  }
+                  className={styles.restorecancelButton}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRestoreDocument}
+                  className={styles.restoreButton}
+                >
+                  Continue
+                </button>
               </div>
             </div>
           </div>
         )}
-
 
         {/* restore loading modal */}
         {showRestoreLoading && (
@@ -359,9 +380,12 @@ export default function DeletedDocuments() {
 
         {/* success restore modal */}
         {showConfirmSuccess && (
-          <div className={styles.successmodalOverlay} onClick={(e) =>
+          <div
+            className={styles.successmodalOverlay}
+            onClick={(e) =>
               handleBackdropClick(e, () => setShowConfirmSuccess(false))
-            }>
+            }
+          >
             <div className={styles.successModal}>
               <h3 className={styles.successmodalTitle}>Success!</h3>
               <p>The document has been successfully restored!</p>
@@ -382,21 +406,31 @@ export default function DeletedDocuments() {
         )}
 
         {/* confirm permanent delete modal */}
-         {showConfirmPermanentDelete && (
+        {showConfirmPermanentDelete && (
           <div className={styles.modalOverlay}>
             <div className={styles.deletemodalContent}>
               <h3 className={styles.deletemodalTitle}>Permanent Deletion</h3>
               <p>
-                  Are you sure to delete this document? This action cannot be
-                  undone.
-                </p>
+                Are you sure to delete this document? This action cannot be
+                undone.
+              </p>
               <div className={styles.modalActions}>
-                <button onClick={(e) =>
-                      handleCancelButtonClick(e, () =>
-                        setShowConfirmPermanentDelete(false)
-                      )
-                    } className={styles.deletecancelButton}>Cancel</button>
-                <button onClick={handlePermanentDelete} className={styles.deleteButton}>Continue</button>
+                <button
+                  onClick={(e) =>
+                    handleCancelButtonClick(e, () =>
+                      setShowConfirmPermanentDelete(false)
+                    )
+                  }
+                  className={styles.deletecancelButton}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePermanentDelete}
+                  className={styles.deleteButton}
+                >
+                  Continue
+                </button>
               </div>
             </div>
           </div>
@@ -415,9 +449,12 @@ export default function DeletedDocuments() {
 
         {/* success permanent delete modal */}
         {showSuccessPermanentDelete && (
-          <div className={styles.successmodalOverlay} onClick={(e) =>
+          <div
+            className={styles.successmodalOverlay}
+            onClick={(e) =>
               handleBackdropClick(e, () => setShowSuccessPermanentDelete(false))
-            }>
+            }
+          >
             <div className={styles.successModal}>
               <h3 className={styles.successmodalTitle}>Success!</h3>
               <p>The document has been permanently deleted!</p>

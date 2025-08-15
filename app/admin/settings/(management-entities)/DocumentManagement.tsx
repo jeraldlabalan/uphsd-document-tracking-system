@@ -15,6 +15,11 @@ interface ActiveItem {
   checked: boolean;
 }
 
+interface DocumentTypeDTO {
+  TypeID: number;
+  TypeName: string;
+}
+
 const DocumentTypeManagement: React.FC = () => {
   const [rows, setRows] = useState<InputRow[]>([{ id: Date.now(), value: "" }]);
   const [activeItems, setActiveItems] = useState<ActiveItem[]>([]);
@@ -34,9 +39,9 @@ const DocumentTypeManagement: React.FC = () => {
     try {
       const res = await fetch("/api/admin/settings/document-management");
       if (!res.ok) throw new Error("Failed to fetch document types");
-      const data = await res.json();
+      const data: DocumentTypeDTO[] = await res.json();
       setActiveItems(
-        data.map((dt: any) => ({
+        data.map((dt: DocumentTypeDTO) => ({
           id: dt.TypeID,
           name: dt.TypeName,
           checked: true,

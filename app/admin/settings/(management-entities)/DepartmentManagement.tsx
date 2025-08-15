@@ -15,6 +15,11 @@ interface ActiveItem {
   checked: boolean;
 }
 
+interface DepartmentDTO {
+  DepartmentID: number;
+  Name: string;
+}
+
 const DepartmentManagement: React.FC = () => {
   const [rows, setRows] = useState<InputRow[]>([{ id: Date.now(), value: "" }]);
   const [activeItems, setActiveItems] = useState<ActiveItem[]>([]);
@@ -33,9 +38,9 @@ const DepartmentManagement: React.FC = () => {
     try {
       const res = await fetch("/api/admin/settings/department-management");
       if (!res.ok) throw new Error("Failed to fetch departments");
-      const data = await res.json();
+      const data: DepartmentDTO[] = await res.json();
       setActiveItems(
-        data.map((dept: any) => ({
+        data.map((dept: DepartmentDTO) => ({
           id: dept.DepartmentID,
           name: dept.Name,
           checked: true,

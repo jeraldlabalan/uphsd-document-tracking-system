@@ -7,6 +7,7 @@ import { X, Users, FileText, School } from "lucide-react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import Link from "next/link";
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -160,9 +161,10 @@ export default function AdminDashboard() {
       setDashboardData(data);
       setLastUpdated(new Date());
       setError(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to fetch dashboard data:", err);
-      setError(err.message || "Failed to fetch dashboard data");
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message || "Failed to fetch dashboard data");
     } finally {
       if (isAutoUpdate) {
         setIsAutoUpdating(false);
@@ -177,10 +179,10 @@ export default function AdminDashboard() {
     setIsClient(true);
     setSelectedYear(new Date().getFullYear());
 
-    // Set up automatic refresh every 10 seconds for real-time updates
+    // Set up automatic refresh every 3 seconds for real-time updates
     const intervalId = setInterval(() => {
       fetchDashboardData(true); // Pass true for auto-update
-    }, 10000); // 10 seconds
+    }, 3000); // 3 seconds
 
     // Cleanup interval on component unmount
     return () => clearInterval(intervalId);
@@ -564,7 +566,7 @@ export default function AdminDashboard() {
                       backgroundColor: "#50C878",
                     },
                     {
-                      label: "On Hold",
+                      label: "On-Hold",
                       data: charts.weekly.onHold,
                       backgroundColor: "#F08080",
                     },
@@ -641,7 +643,7 @@ export default function AdminDashboard() {
                       backgroundColor: "#50C878",
                     },
                     {
-                      label: "On Hold",
+                      label: "On-Hold",
                       data: charts.monthly.onHold,
                       backgroundColor: "#F08080",
                     },
@@ -714,7 +716,7 @@ export default function AdminDashboard() {
                       backgroundColor: "#50C878",
                     },
                     {
-                      label: "On Hold",
+                      label: "On-Hold",
                       data: charts.yearly.onHold,
                       backgroundColor: "#F08080",
                     },
@@ -823,41 +825,47 @@ export default function AdminDashboard() {
 
           {/* Summary Cards */}
           <div className={styles.summary}>
-            <div className={`${styles.card} ${styles.cyan}`}>
-              <Users className={styles.icon} />
-              <span className={styles.count}>
-                {isRefreshing ? (
-                  <span>...</span>
-                ) : (
-                  dashboardData?.summary.totalUsers || 0
-                )}
-              </span>
-              <span>Total Active Users</span>
-            </div>
+            <Link href="/admin/user-management" className={styles.cardLink}>
+              <div className={`${styles.card} ${styles.cyan}`}>
+                <Users className={styles.icon} />
+                <span className={styles.count}>
+                  {isRefreshing ? (
+                    <span>...</span>
+                  ) : (
+                    dashboardData?.summary.totalUsers || 0
+                  )}
+                </span>
+                <span>Total Active Users</span>
+              </div>
+            </Link>
 
-            <div className={`${styles.card} ${styles.green}`}>
-              <FileText className={styles.icon} />
-              <span className={styles.count}>
-                {isRefreshing ? (
-                  <span>...</span>
-                ) : (
-                  dashboardData?.summary.totalDocs || 0
-                )}
-              </span>
-              <span>Total Documents</span>
-            </div>
+            <Link href="/admin/document-overview" className={styles.cardLink}>
+              <div className={`${styles.card} ${styles.green}`}>
+                <FileText className={styles.icon} />
+                <span className={styles.count}>
+                  {isRefreshing ? (
+                    <span>...</span>
+                  ) : (
+                    dashboardData?.summary.totalDocs || 0
+                  )}
+                </span>
+                <span>Total Documents</span>
+              </div>
+            </Link>
 
-            <div className={`${styles.card} ${styles.orange}`}>
-              <School className={styles.icon} />
-              <span className={styles.count}>
-                {isRefreshing ? (
-                  <span>...</span>
-                ) : (
-                  dashboardData?.summary.totalDepartments || 0
-                )}
-              </span>
-              <span>Total Active Departments</span>
-            </div>
+            <Link href="/admin/settings" className={styles.cardLink}>
+              <div className={`${styles.card} ${styles.orange}`}>
+                <School className={styles.icon} />
+                <span className={styles.count}>
+                  {isRefreshing ? (
+                    <span>...</span>
+                  ) : (
+                    dashboardData?.summary.totalDepartments || 0
+                  )}
+                </span>
+                <span>Total Active Departments</span>
+              </div>
+            </Link>
           </div>
 
           {/* Charts */}
@@ -912,7 +920,7 @@ export default function AdminDashboard() {
                   backgroundColor: "#50C878", // Green
                 },
                 {
-                  label: "On Hold",
+                  label: "On-Hold",
                   data: dataSet.onHold,
                   backgroundColor: "#F08080", // Light red
                 },
@@ -1025,21 +1033,19 @@ export default function AdminDashboard() {
                             "Dec",
                           ]
                         : (() => {
-                            // For yearly modal, show only current year's monthly data
-                            return [
-                              "Jan",
-                              "Feb",
-                              "Mar",
-                              "Apr",
-                              "May",
-                              "Jun",
-                              "Jul",
-                              "Aug",
-                              "Sep",
-                              "Oct",
-                              "Nov",
-                              "Dec",
-                            ];
+                            // For yearly modal, match the main yearly chart (multi-year labels)
+                            if (!isClient) return [];
+                            const baseYear = 2025;
+                            const currentYear = new Date().getFullYear();
+                            const yearLabels: string[] = [];
+                            for (
+                              let year = baseYear;
+                              year <= currentYear;
+                              year++
+                            ) {
+                              yearLabels.push(year.toString());
+                            }
+                            return yearLabels;
                           })(),
                   datasets: [
                     {
@@ -1053,7 +1059,7 @@ export default function AdminDashboard() {
                       backgroundColor: "#50C878",
                     },
                     {
-                      label: "On Hold",
+                      label: "On-Hold",
                       data: charts[activeChart].onHold,
                       backgroundColor: "#F08080",
                     },

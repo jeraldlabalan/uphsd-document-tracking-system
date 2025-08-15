@@ -24,6 +24,10 @@ interface UserInfo {
   Position: string | null;
 }
 
+interface PositionDTO {
+  Name: string;
+}
+
 interface InformationFormProps {
   userInfo: UserInfo | null;
   onUserInfoUpdate: (updatedInfo: Partial<UserInfo>) => void;
@@ -87,8 +91,8 @@ const InformationForm: React.FC<InformationFormProps> = ({
         const posRes = await fetch("/api/user/position");
 
         if (posRes.ok) {
-          const posData = await posRes.json();
-          setPositionOptions(posData.map((pos: any) => pos.Name));
+          const posData: PositionDTO[] = await posRes.json();
+          setPositionOptions(posData.map((pos) => pos.Name));
         }
       } catch (error) {
         console.error("Error fetching options:", error);
