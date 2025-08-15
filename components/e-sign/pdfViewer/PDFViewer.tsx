@@ -213,6 +213,8 @@ function PDFViewer(
     height: number;
     editingId?: number;
     existingId?: number;
+    clickX?: number;
+    clickY?: number;
   } | null>(null);
 
   const [search, setSearch] = useState("");
@@ -220,6 +222,36 @@ function PDFViewer(
   const filteredSignees = signees.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Function to calculate optimal modal position based on click coordinates
+  const calculateModalPosition = (clickX: number, clickY: number) => {
+    const modalWidth = 220;
+    const modalHeight = 300;
+    
+    // Calculate left position (center modal on click)
+    let left = clickX - (modalWidth / 2);
+    
+    // Ensure modal doesn't go off-screen
+    if (left < 10) left = 10;
+    if (left + modalWidth > window.innerWidth - 10) {
+      left = window.innerWidth - modalWidth - 10;
+    }
+    
+    // Calculate top position (above click point)
+    let top = clickY - modalHeight - 20;
+    
+    // If modal would go above screen, position below click point
+    if (top < 10) {
+      top = clickY + 20;
+    }
+    
+    // Ensure modal doesn't go below screen
+    if (top + modalHeight > window.innerHeight - 10) {
+      top = window.innerHeight - modalHeight - 10;
+    }
+    
+    return { left, top };
+  };
 
 
 
@@ -276,6 +308,8 @@ function PDFViewer(
         y: dragRect.y,
         width: dragRect.width,
         height: dragRect.height,
+        clickX: e.clientX,
+        clickY: e.clientY,
       });
 
       setSelectedAssignee(null);
@@ -727,6 +761,8 @@ function PDFViewer(
                     y: centeredY,
                     width: MIN_WIDTH,
                     height: MIN_HEIGHT,
+                    clickX: e.clientX,
+                    clickY: e.clientY,
                   });
 
                   setSelectedAssignee(null);
@@ -852,6 +888,8 @@ function PDFViewer(
                                 width: ph.width,
                                 height: ph.height,
                                 visible: true,
+                                clickX: e.clientX,
+                                clickY: e.clientY,
                               });
                               setSelectedAssignee({
                                 signee: ph.signee ?? "",
@@ -934,7 +972,7 @@ function PDFViewer(
             <div className={styles.editAssignedSigneeContainer}>
               <h4>Edit Placeholder</h4>
               <button
-                onClick={() => {
+                onClick={(e) => {
                   setAssignModal({
                     visible: true,
                     page: selectedPlaceholder.page,
@@ -943,6 +981,8 @@ function PDFViewer(
                     width: selectedPlaceholder.width,
                     height: selectedPlaceholder.height,
                     editingId: selectedPlaceholder.id,
+                    clickX: e.clientX,
+                    clickY: e.clientY,
                   });
                   setSelectedPlaceholder(null);
                 }}
@@ -976,20 +1016,34 @@ function PDFViewer(
           className={styles.assignModalContainer}
           style={{
             position: 'fixed',
-            left: Math.min(
-              Math.max(
-                (assignModal.x * scale) + 12,
-                10
-              ),
-              window.innerWidth - 220
-            ),
-            top: Math.min(
-              Math.max((assignModal.y * scale), 10),
-              window.innerHeight - 300
-            ),
+            left: assignModal.clickX 
+              ? Math.min(
+                  Math.max(
+                    assignModal.clickX - 100, // Center modal on click position
+                    10
+                  ),
+                  window.innerWidth - 220
+                )
+              : Math.min(
+                  Math.max(
+                    (assignModal.x * scale) + 12, // Fallback to original positioning
+                    10
+                  ),
+                  window.innerWidth - 220
+                ),
+            top: assignModal.clickY
+              ? Math.min(
+                  Math.max(assignModal.clickY - 50, 10), // Position above click
+                  window.innerHeight - 300
+                )
+              : Math.min(
+                  Math.max((assignModal.y * scale), 10), // Fallback to original positioning
+                  window.innerHeight - 300
+                ),
             zIndex: 1000,
             minWidth: '200px',
             maxWidth: '250px',
+            transform: assignModal.clickY ? 'translate(0, -100%)' : 'none', // Move modal above click point if available
           }}
           onClick={(e) => {
             e.stopPropagation();
