@@ -165,8 +165,7 @@
 
 .view {
   background-color: var(--color-yellow);
-  border: 2px solid var(--color-maroon);
-  color: var(--color-maroon);
+  color: black;
 }
 
 .markRead {

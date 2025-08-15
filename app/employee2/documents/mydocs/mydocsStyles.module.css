@@ -252,6 +252,12 @@
   font-size: 1rem;
 }
 
+
+.dropdown option:checked {
+  background-color: var(--color-maroon);
+  color: #fff;
+}
+
 .dateFilterWrapper {
   display: flex;
   gap: 1rem;
