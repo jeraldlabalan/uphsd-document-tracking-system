@@ -348,7 +348,7 @@ export default function EditDocument() {
       });
 
       // Show success message with more details
-      alert(
+      setModalMessage(
         `Document "${savedDocumentTitle}" has been updated with signature placeholders!\n\nWhat happens next:\n1. The document is now ready for signees to review\n2. Signees will be notified automatically\n3. They can access the document through their dashboard\n4. Once all signatures are complete, the document will be fully processed`
       );
     }
@@ -991,7 +991,7 @@ export default function EditDocument() {
                               })
                               .catch(error => {
                                 console.error("Error opening document for editing:", error);
-                                alert("Failed to open document for editing. Please try again.");
+                                setModalMessage("Failed to open document for editing. Please try again.");
                               });
                           }
                         }}

@@ -334,78 +334,70 @@ export default function DeletedDocuments() {
           </div>
         </div>
 
-        {/* confirm restore modal */}
-        {showConfirmRestore && (
-          <div
-            className={styles.modalOverlay}
-            onClick={(e) =>
-              handleBackdropClick(e, () => setShowConfirmRestore(false))
-            }
-          >
-            <div className={styles.restoremodalContent}>
-              <h3 className={styles.restoremodalTitle}>Document Restore</h3>
-              <p>Are you sure to restore this document?</p>
-              <div className={styles.modalActions}>
-                <button
-                  onClick={(e) =>
-                    handleCancelButtonClick(e, () =>
-                      setShowConfirmRestore(false)
-                    )
-                  }
-                  className={styles.restorecancelButton}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleRestoreDocument}
-                  className={styles.restoreButton}
-                >
-                  Continue
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Confirm Restore Modal */}
+{showConfirmRestore && !showRestoreLoading && (
+  <div
+    className={styles.modalOverlay}
+    onClick={(e) => handleBackdropClick(e, () => setShowConfirmRestore(false))}
+  >
+    <div className={styles.restoremodalContent}>
+      <h3 className={styles.restoremodalTitle}>Document Restore</h3>
+      <p>Are you sure you want to restore this document?</p>
+      <div className={styles.modalActions}>
+        <button
+          className={styles.restorecancelButton}
+          onClick={(e) => handleCancelButtonClick(e, () => setShowConfirmRestore(false))}
+        >
+          Cancel
+        </button>
+        <button
+          className={styles.restoreButton}
+          onClick={async () => {
+            setShowConfirmRestore(false);
+            await handleRestoreDocument();
+          }}
+        >
+          Continue
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
-        {/* restore loading modal */}
-        {showRestoreLoading && (
-          <div className={styles.modal}>
-            <div className={styles.modalContent}>
-              <div className={styles.loadingContainer}>
-                <div className={styles.spinnerGreen}></div>
-              </div>
-            </div>
-          </div>
-        )}
+{/* Restore Loading Modal */}
+{showRestoreLoading && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalContent}>
+      <div className={styles.loadingContainer}>
+        <div className={styles.spinnerGreen}></div>
+      </div>
+    </div>
+  </div>
+)}
 
-        {/* success restore modal */}
-        {showConfirmSuccess && (
-          <div
-            className={styles.successmodalOverlay}
-            onClick={(e) =>
-              handleBackdropClick(e, () => setShowConfirmSuccess(false))
-            }
-          >
-            <div className={styles.successModal}>
-              <h3 className={styles.successmodalTitle}>Success!</h3>
-              <p>The document has been successfully restored!</p>
-              <div className={styles.modalActions}>
-                <button
-                  onClick={(e) =>
-                    handleCancelButtonClick(e, () =>
-                      setShowConfirmSuccess(false)
-                    )
-                  }
-                  className={styles.closeButtonx}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+{/* Restore Success Modal */}
+{showConfirmSuccess && (
+  <div
+    className={styles.successmodalOverlay}
+    onClick={(e) => handleBackdropClick(e, () => setShowConfirmSuccess(false))}
+  >
+    <div className={styles.successModal}>
+      <h3 className={styles.successmodalTitle}>Success!</h3>
+      <p>The document has been successfully restored!</p>
+      <div className={styles.modalActions}>
+        <button
+          className={styles.closeButtonx}
+          onClick={(e) => handleCancelButtonClick(e, () => setShowConfirmSuccess(false))}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
-        {/* confirm permanent delete modal */}
+
+        {/* confirm permanent delete mod8al */}
         {showConfirmPermanentDelete && (
           <div className={styles.modalOverlay}>
             <div className={styles.deletemodalContent}>

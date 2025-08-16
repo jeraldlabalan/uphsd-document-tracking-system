@@ -258,47 +258,40 @@ const DepartmentManagement: React.FC<DepartmentManagementProps> = ({
         </div>
 
         <div className={styles.activeContainer}>
-          <p>Active Departments</p>
-          <div className={styles.activeList}>
-            <div className={styles.scrollable}>
-              <ul>
-                {activeItems.length > 0 ? (
-                  activeItems.map((item) => (
-                    <li className={styles.entryItem} key={item.id}>
-                      <div className={styles.entryCheckbox}>
-                        <input
-                          title="department"
-                          type="checkbox"
-                          checked={item.checked}
-                          readOnly
-                        />
-                        <label>{item.name}</label>
-                      </div>
-                      <button
-                        title="delete"
-                        className={styles.deleteButton}
-                        onClick={() => handleDeleteActiveItem(item.id)}
-                        disabled={isLoading}
-                      >
-                        <svg width="10" height="10" viewBox="0 0 10 10">
-                          <path
-                            d="M1 1L9 9M1 9L9 1"
-                            stroke="black"
-                            strokeWidth="2"
-                          />
-                        </svg>
-                      </button>
-                    </li>
-                  ))
-                ) : (
-                  <li key="no-active">No active departments found.</li>
-                )}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
+  <p>Active Departments</p>
+  <div className={styles.activeList}>
+    <div className={styles.scrollable}>
+      <ul>
+        {activeItems.length > 0 ? (
+          activeItems.map((item) => (
+            <li className={styles.entryItem} key={item.id}>
+              <div className={styles.entryLabel}>
+                <span>{item.name}</span>
+              </div>
+              <button
+                title="delete"
+                className={styles.deleteButton}
+                onClick={() => handleDeleteActiveItem(item.id)}
+                disabled={isLoading}
+              >
+                <svg width="10" height="10" viewBox="0 0 10 10">
+                  <path
+                    d="M1 1L9 9M1 9L9 1"
+                    stroke="black"
+                    strokeWidth="2"
+                  />
+                </svg>
+              </button>
+            </li>
+          ))
+        ) : (
+          <li key="no-active">No active departments found.</li>
+        )}
+      </ul>
+    </div>
+  </div>
+</div>
+</div>
       <div className={styles.managementActionButtons}>
         <button
           title="save"
