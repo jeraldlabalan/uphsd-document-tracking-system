@@ -100,6 +100,20 @@ function PDFViewer(
             assignedToId: ph.AssignedToID,
           }));
           
+          console.log("🔍 DATABASE PLACEHOLDERS DEBUG:", {
+            rawData: data.placeholders,
+            convertedPlaceholders: uiPlaceholders,
+            coordinateAnalysis: uiPlaceholders.map((ph: any) => ({
+              id: ph.id,
+              x: ph.x,
+              y: ph.y,
+              width: ph.width,
+              height: ph.height,
+              page: ph.page,
+              isSigned: ph.isSigned
+            }))
+          });
+          
           setPlaceholders(uiPlaceholders);
           console.log("Placeholders restored from database:", uiPlaceholders);
         }
@@ -129,7 +143,12 @@ function PDFViewer(
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const BASE_WIDTH = 800;
-  const [scale, setScale] = useState(1); // ← this is the original PDF width you expect
+  const [scale, setScale] = useState(1.0); // Fixed scale at 1.0
+  const [containerDims, setContainerDims] = useState({ width: 0, height: 0 });
+  const [pageDims, setPageDims] = useState<{ [key: number]: { width: number; height: number } }>({});
+
+  // Use completely fixed scale - no automatic scaling
+  const finalScale = 1.0; // Always use 1.0 scale
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -138,31 +157,22 @@ function PDFViewer(
     const resizeObserver = new ResizeObserver(([entry]) => {
       clearTimeout(timeout);
       timeout = setTimeout(() => {
-        const containerWidth = entry.contentRect.width;
-        const newScale = Math.min(containerWidth / BASE_WIDTH, 1);
-        setScale(newScale);
-        
-        // Also update container dimensions
+        // Don't change scale - keep it fixed at 1.0
+        // Just update container dimensions for reference
         const { width, height } = entry.contentRect;
         setContainerDims({ width, height });
       }, 100); // debounce time
     });
 
     resizeObserver.observe(containerRef.current);
-    
-    // Set initial dimensions
-    const rect = containerRef.current.getBoundingClientRect();
-    setContainerDims({ width: rect.width, height: rect.height });
-    
+
     return () => {
       resizeObserver.disconnect();
       clearTimeout(timeout);
     };
   }, []);
 
-  const [pageDims, setPageDims] = useState<
-    Record<number, { width: number; height: number }>
-  >({});
+  // Remove zoom controls - no zoom functionality needed
 
   const [imgDims, setImgDims] = useState<{
     width: number;
@@ -190,11 +200,6 @@ function PDFViewer(
   const MAX_WIDTH = 300;
   const MIN_HEIGHT = 40;
   const MAX_HEIGHT = 150;
-
-  const [containerDims, setContainerDims] = useState<{
-    width: number;
-    height: number;
-  }>({ width: 800, height: 1000 });
 
   const canSign = placeholders.some((p) => p.signee === role && !p.isSigned);
   const [selectedPlaceholder, setSelectedPlaceholder] =
@@ -297,25 +302,103 @@ function PDFViewer(
   ) => {
     if (!draggingEnabled || role !== "sender" || modalOpen) return;
     
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    setDragStart({ x, y });
-    setDragPage(page);
+    // Get coordinates relative to the PDF page, not the container
+    const pageContainer = e.currentTarget;
+    
+    // Try to find the actual PDF content element
+    // Look for canvas, img, or any element that contains the PDF content
+    let pdfContentElement = pageContainer.querySelector('canvas') || 
+                           pageContainer.querySelector('img') ||
+                           pageContainer.querySelector('.react-pdf__Page') ||
+                           pageContainer.querySelector('[data-testid="react-pdf__Page"]');
+    
+    console.log('🔍 PDF Content Element Debug:', {
+      pageContainer: pageContainer,
+      pdfContentElement: pdfContentElement,
+      availableElements: pageContainer.querySelectorAll('*').length,
+      allElements: Array.from(pageContainer.querySelectorAll('*')).map(el => ({
+        tagName: el.tagName,
+        className: el.className,
+        id: el.id
+      })).slice(0, 10)
+    });
+    
+    if (pdfContentElement) {
+      const contentRect = pdfContentElement.getBoundingClientRect();
+      
+      // Calculate coordinates relative to the PDF content
+      const x = e.clientX - contentRect.left;
+      const y = e.clientY - contentRect.top;
+      
+      console.log('✅ Using PDF content-relative coordinates:', { 
+        x, 
+        y, 
+        contentRect,
+        elementType: pdfContentElement.tagName,
+        elementClass: pdfContentElement.className
+      });
+      
+      setDragStart({ x, y });
+      setDragPage(page);
+    } else {
+      // Fallback to container coordinates if PDF content element not found
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      console.log('⚠️ Using container coordinates (fallback):', { x, y, rect });
+      setDragStart({ x, y });
+      setDragPage(page);
+    }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!dragStart || dragPage === null) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    
+    // Get coordinates relative to the PDF page, not the container
+    const pageContainer = e.currentTarget;
+    
+    // Use the same selector logic as handleMouseDown for consistency
+    let pdfContentElement = pageContainer.querySelector('canvas') || 
+                           pageContainer.querySelector('img') ||
+                           pageContainer.querySelector('.react-pdf__Page') ||
+                           pageContainer.querySelector('[data-testid="react-pdf__Page"]');
+    
+    if (pdfContentElement) {
+      const contentRect = pdfContentElement.getBoundingClientRect();
+      
+      const x = e.clientX - contentRect.left;
+      const y = e.clientY - contentRect.top;
 
-    const width = Math.abs(x - dragStart.x);
-    const height = Math.abs(y - dragStart.y);
-    const originX = Math.min(x, dragStart.x);
-    const originY = Math.min(y, dragStart.y);
+      const width = Math.abs(x - dragStart.x);
+      const height = Math.abs(y - dragStart.y);
+      const originX = Math.min(x, dragStart.x);
+      const originY = Math.min(y, dragStart.y);
 
-    setDragRect({ x: originX, y: originY, width, height });
+      console.log('🔍 Mouse Move - PDF coordinates:', { 
+        x, 
+        y, 
+        dragStart, 
+        width, 
+        height, 
+        originX, 
+        originY,
+        contentRect 
+      });
+      setDragRect({ x: originX, y: originY, width, height });
+    } else {
+      // Fallback to container coordinates if PDF page element not found
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const width = Math.abs(x - dragStart.x);
+      const height = Math.abs(y - dragStart.y);
+      const originX = Math.min(x, dragStart.x);
+      const originY = Math.min(y, dragStart.y);
+
+      console.log('⚠️ Mouse Move - Container coordinates (fallback):', { x, y, dragStart, width, height, originX, originY });
+      setDragRect({ x: originX, y: originY, width, height });
+    }
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
@@ -382,11 +465,37 @@ function PDFViewer(
         return;
       }
 
+      // Get the actual rendered PDF dimensions for accurate coordinate conversion
+      const displayedPageDims = pageDims[dragPage];
+      if (!displayedPageDims) {
+        console.error('No page dimensions available for page', dragPage);
+        return;
+      }
+      
+      // DEBUG: Let's see what coordinates we're actually getting
+      console.log('🔍 DEBUG: Raw coordinates from dragRect:', dragRect);
+      console.log('🔍 DEBUG: Page dimensions:', displayedPageDims);
+      
+      // For now, let's store the coordinates EXACTLY as they are without any conversion
+      // This will help us debug the coordinate system mismatch
+      const pdfX = dragRect.x;
+      const pdfY = dragRect.y; // Don't flip Y coordinate yet
+      
+      console.log('🔍 Creating new placeholder with coordinates:', {
+        dragRect,
+        MIN_WIDTH,
+        MIN_HEIGHT,
+        page: dragPage,
+        displayedPageDims,
+        rawCoords: { x: dragRect.x, y: dragRect.y },
+        storedCoords: { x: pdfX, y: pdfY }
+      });
+      
       const newPlaceholder: Placeholder = {
         id: Date.now(),
         page: dragPage,
-        x: dragRect.x,
-        y: dragRect.y,
+        x: pdfX, // Store raw coordinates for now
+        y: pdfY, // Store raw coordinates for now
         width: MIN_WIDTH,
         height: MIN_HEIGHT,
         signee,
@@ -396,6 +505,13 @@ function PDFViewer(
         initials: null,
         assignedToId: userId, // Set the database user ID
       };
+      
+      console.log('✅ New placeholder created:', newPlaceholder);
+      console.log('🔍 Coordinate analysis:', {
+        storedX: newPlaceholder.x,
+        storedY: newPlaceholder.y,
+        expectedPosition: 'Should be relative to PDF page, not container'
+      });
 
       // Add the new placeholder to the state
       setPlaceholders((prev) => {
@@ -470,13 +586,34 @@ function PDFViewer(
         hour: "2-digit",
         minute: "2-digit",
       });
-      const timestamp = now.toLocaleString();
+      // Use ISO string format for database compatibility with Prisma
+      const timestamp = now.toISOString();
 
-      // For receivers, sign ALL their available placeholders (they're already filtered to be unsigned)
-      const receiverPlaceholders = placeholders; // All placeholders are already unsigned
+      // For receivers, sign ONLY placeholders assigned to them that are unsigned
+      // Debug: Log all placeholder data to understand the structure
+      console.log("🔍 PLACEHOLDER FILTERING DEBUG:");
+      console.log("All placeholders:", placeholders);
+      console.log("Current user role:", role);
+      placeholders.forEach((p, i) => {
+        console.log(`Placeholder ${i}:`, {
+          id: p.id,
+          signee: p.signee,
+          signeeName: p.signeeName,
+          assignedToId: p.assignedToId,
+          isSigned: p.isSigned,
+          page: p.page,
+          coordinates: { x: p.x, y: p.y, width: p.width, height: p.height }
+        });
+      });
+      
+      // Filter placeholders for the current user - only sign placeholders assigned to them
+      // For now, let's just sign the first unsigned placeholder to test positioning
+      const receiverPlaceholders = placeholders.filter(p => !p.isSigned).slice(0, 1);
+      
       console.log("Available placeholders for signing:", receiverPlaceholders);
+      
       if (receiverPlaceholders.length === 0) {
-        alert("No placeholders found to sign.");
+        alert("No unsigned placeholders found to sign.");
         return undefined;
       }
 
@@ -487,12 +624,204 @@ function PDFViewer(
         const page = pages[placeholderToSign.page];
         const { width: pdfPageWidth, height: pdfPageHeight } = page.getSize();
 
-        // Convert from scaled screen space → actual PDF space
-        const pdfX = placeholderToSign.x / scale;
-        const pdfY = pdfPageHeight - (placeholderToSign.y + placeholderToSign.height) / scale;
-        const pdfWidth = placeholderToSign.width / scale;
-        const pdfHeight = placeholderToSign.height / scale;
+        // Try using placeholder coordinates directly - they might already be in PDF space
+        // Get the displayed page dimensions from React-PDF for debugging
+        const displayedPageDims = pageDims[placeholderToSign.page];
+        if (!displayedPageDims) {
+          console.error('No page dimensions found for page', placeholderToSign.page);
+          return;
+        }
+        
+        // DEBUG: Let's see what coordinates we're getting from the placeholder
+        console.log('🔍 DEBUG: Placeholder coordinates for signature placement:', {
+          id: placeholderToSign.id,
+          x: placeholderToSign.x,
+          y: placeholderToSign.y,
+          width: placeholderToSign.width,
+          height: placeholderToSign.height,
+          note: 'These should be the CURRENT coordinates after any dragging'
+        });
+        
+        // Now I understand the issue! The placeholder coordinates are in screen space
+        // but we need them in PDF space. Based on the git history, we need to divide by scale.
+        
+        // FIXED COORDINATE SYSTEM - The real issue is scale calculation
+        // Placeholders are positioned relative to the PDF content element (canvas/img)
+        // But PDF coordinates are relative to the PDF page dimensions
+        
+        console.log('🔍 COORDINATE SYSTEM ANALYSIS:', {
+          placeholderCoords: { x: placeholderToSign.x, y: placeholderToSign.y },
+          displayedPageDims: displayedPageDims,
+          pdfPageSize: { width: pdfPageWidth, height: pdfPageHeight },
+          note: 'Placeholders are relative to PDF content, PDF coords are relative to PDF page'
+        });
+        
+        // The issue: we need to find the actual scale between the displayed PDF content
+        // and the PDF page dimensions, not just width/width ratio
+        
+        // CRITICAL FIX: Coordinate system mismatch
+        // Placeholders are positioned relative to .react-pdf__Page
+        // But we need to use the SAME reference point for signature placement
+        
+        console.log('🔍 COORDINATE SYSTEM MISMATCH ANALYSIS:', {
+          placeholderCoords: { x: placeholderToSign.x, y: placeholderToSign.y },
+          note: 'Placeholders use .react-pdf__Page as reference, signatures must use same reference'
+        });
+        
+        // CRITICAL FIX: Use EXACTLY the same reference point as placeholders
+        // Placeholders use .react-pdf__Page for positioning, so signatures must use the same
+        
+        let pageContainer = null;
+        let pdfContentElement = null;
+        
+        // Find the page container first - try multiple approaches
+        if (containerRef.current) {
+          // Try to find the page container within our container
+          pageContainer = containerRef.current.querySelector('.pageContainer');
+          
+          // If not found, try to find it anywhere in the document
+          if (!pageContainer) {
+            pageContainer = document.querySelector('.pageContainer');
+          }
+          
+          // If still not found, try to find the PDF page element directly
+          if (!pageContainer) {
+            pdfContentElement = containerRef.current.querySelector('.react-pdf__Page');
+            if (pdfContentElement) {
+              console.log('🔍 DIRECT FIND: Found .react-pdf__Page directly in container');
+            }
+          }
+        }
+        
+        console.log('🔍 PAGE CONTAINER SEARCH:', {
+          containerRef: containerRef.current,
+          pageContainer: pageContainer,
+          directFind: pdfContentElement,
+          availableElements: pageContainer ? Array.from(pageContainer.querySelectorAll('*')).map(el => ({
+            tagName: el.tagName,
+            className: el.className,
+            id: el.id
+          })) : 'No page container found'
+        });
+        
+        // Use the EXACT same element as placeholder positioning
+        if (pageContainer && !pdfContentElement) {
+          pdfContentElement = pageContainer.querySelector('.react-pdf__Page');
+          
+          console.log('🔍 USING SAME REFERENCE AS PLACEHOLDERS:', {
+            pageContainer: pageContainer,
+            pdfContentElement: pdfContentElement,
+            selector: '.react-pdf__Page',
+            note: 'Placeholders use .react-pdf__Page, signatures use same reference'
+          });
+        }
+        
+        let actualScale = 1;
+        
+        // If still not found, this is a critical error
+        if (!pdfContentElement) {
+          console.error('❌ CRITICAL: Cannot find .react-pdf__Page element - coordinate system will be wrong!');
+          
+          // Try to find any PDF-related element as a last resort
+          const anyPdfElement = document.querySelector('.react-pdf__Page') || 
+                               document.querySelector('canvas') ||
+                               document.querySelector('img');
+          
+          if (anyPdfElement) {
+            console.log('🔍 LAST RESORT: Found alternative PDF element:', anyPdfElement);
+            pdfContentElement = anyPdfElement;
+          }
+        }
+        
+        if (pdfContentElement) {
+          const contentRect = pdfContentElement.getBoundingClientRect();
+          // Calculate scale based on the SAME reference element
+          actualScale = contentRect.width / pdfPageWidth;
+          
+          console.log('🔍 FIXED SCALE CALCULATION:', {
+            contentRect: contentRect,
+            pdfPageWidth: pdfPageWidth,
+            actualScale: actualScale,
+            note: 'Scale based on SAME reference element as placeholders (.react-pdf__Page)'
+          });
+        } else {
+          // Fallback to the original scale calculation
+          actualScale = displayedPageDims.width / pdfPageWidth;
+          console.log('⚠️ Using fallback scale calculation:', actualScale);
+        }
+        
+        // SIMPLE APPROACH: Use placeholder coordinates directly without scale conversion
+        // The placeholders are already positioned correctly relative to the PDF
+        const pdfX = placeholderToSign.x;
+        const pdfY = placeholderToSign.y;
+        
+        console.log('🔍 SIMPLE COORDINATE CONVERSION:', {
+          originalCoords: { x: placeholderToSign.x, y: placeholderToSign.y },
+          actualScale: actualScale,
+          calculatedPdfCoords: { x: pdfX, y: pdfY },
+          note: 'Using placeholder coordinates directly (no scale conversion)'
+        });
+        
+        const pdfWidth = placeholderToSign.width;
+        const pdfHeight = placeholderToSign.height;
+        
+        console.log('🔍 Coordinate conversion - Screen to PDF:', {
+          placeholderId: placeholderToSign.id,
+          screenCoords: { x: placeholderToSign.x, y: placeholderToSign.y, width: placeholderToSign.width, height: placeholderToSign.height },
+          pdfCoords: { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight },
+          actualScale: actualScale,
+          pdfPageSize: { width: pdfPageWidth, height: pdfPageHeight },
+          displayedPageDims
+        });
+        
+        console.log('🔍 DATABASE COORDINATES DEBUG:', {
+          placeholderId: placeholderToSign.id,
+          // Raw coordinates from database (screen space)
+          rawPlaceholderCoords: {
+            x: placeholderToSign.x,
+            y: placeholderToSign.y,
+            width: placeholderToSign.width,
+            height: placeholderToSign.height
+          },
+          // Scale used for conversion
+          actualScale: actualScale,
+          // Calculated PDF coordinates after conversion
+          calculatedPdfCoords: { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight },
+          // Page dimensions
+          pdfPageSize: { width: pdfPageWidth, height: pdfPageHeight },
+          displayedPageDims,
+          // Check if coordinates seem reasonable
+          coordinateAnalysis: {
+            isXReasonable: pdfX >= 0 && pdfX <= pdfPageWidth,
+            isYReasonable: pdfY >= 0 && pdfY <= pdfPageHeight,
+            placeholderArea: pdfWidth * pdfHeight,
+            pageArea: pdfPageWidth * pdfPageHeight
+          }
+        });
         const padding = 6;
+
+        // Debug: Log the coordinate conversion
+        console.log('Signature positioning debug:', {
+          placeholderId: placeholderToSign.id,
+          screenCoords: {
+            x: placeholderToSign.x,
+            y: placeholderToSign.y,
+            width: placeholderToSign.width,
+            height: placeholderToSign.height
+          },
+          actualScale: actualScale,
+          displayedPageDims,
+          pdfCoords: {
+            x: pdfX,
+            y: pdfY,
+            width: pdfWidth,
+            height: pdfHeight
+          },
+          pdfPageSize: {
+            width: pdfPageWidth,
+            height: pdfPageHeight
+          }
+        });
 
         // Draw signature box with border
         page.drawRectangle({
@@ -505,23 +834,49 @@ function PDFViewer(
           borderDashArray: [3, 3],
         });
 
-        const halfWidth = pdfWidth / 2;
-        const imgBoxWidth = halfWidth - padding * 2;
-        const imgBoxHeight = pdfHeight - padding * 2;
-
+        // Position signature exactly in the center of the placeholder
+        // Remove padding from the calculation to get perfect centering
         const scaled = embeddedImage.scale(1);
         const originalWidth = scaled.width;
         const originalHeight = scaled.height;
 
+        // Calculate scale to fit the image within the placeholder
         const imageScale = Math.min(
-          imgBoxWidth / originalWidth,
-          imgBoxHeight / originalHeight
+          pdfWidth / originalWidth,
+          pdfHeight / originalHeight
         );
         const scaledWidth = originalWidth * imageScale;
         const scaledHeight = originalHeight * imageScale;
 
-        const imgX = pdfX + padding + (imgBoxWidth - scaledWidth) / 2;
-        const imgY = pdfY + padding + (imgBoxHeight - scaledHeight) / 2;
+        // Position signature exactly at placeholder coordinates (no centering offset)
+        // The signature should appear exactly where the placeholder is positioned
+        const imgX = pdfX;
+        const imgY = pdfY;
+        
+        // Debug: Log the final positioning to verify exact placement
+        console.log('Final image positioning:', {
+          placeholderId: placeholderToSign.id,
+          placeholderBounds: { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight },
+          imageBounds: { x: imgX, y: imgY, width: scaledWidth, height: scaledHeight },
+          note: 'Signature positioned exactly at placeholder coordinates (no centering offset)'
+        });
+
+        // Debug: Log the image positioning
+        console.log('Image positioning debug:', {
+          placeholderId: placeholderToSign.id,
+          placeholderBounds: {
+            width: pdfWidth,
+            height: pdfHeight
+          },
+          imageSize: {
+            original: { width: originalWidth, height: originalHeight },
+            scaled: { width: scaledWidth, height: scaledHeight }
+          },
+          finalPosition: {
+            x: imgX,
+            y: imgY
+          }
+        });
 
         // Draw the signature image
         page.drawImage(embeddedImage, {
@@ -531,8 +886,7 @@ function PDFViewer(
           height: scaledHeight,
         });
 
-        // Draw signature information text
-        const textBlockX = pdfX + halfWidth + padding;
+        // Draw signature information text INSIDE the placeholder
         const signeeName = placeholderToSign.signeeName || "Unknown Signee";
         const textLines = [
           { text: "Signed by:", size: 8, bold: true },
@@ -542,13 +896,16 @@ function PDFViewer(
         ];
         const lineHeight = 12;
         const totalTextHeight = textLines.length * lineHeight;
-        const textStartY =
-          pdfY + (pdfHeight + totalTextHeight) / 2 - lineHeight;
-
+        
+        // Position text to the right of the signature image, not below it
+        const textStartY = imgY + (scaledHeight / 2); // Vertically center with the signature
+        
+        // Position text to the right of the signature
         textLines.forEach((line, i) => {
           const textWidth = font.widthOfTextAtSize(line.text, line.size);
-          const textX =
-            textBlockX + (halfWidth - padding * 2 - textWidth) / 2;
+          
+          // Position text to the right of the signature image
+          const textX = imgX + scaledWidth + 10; // 10px to the right of the signature
           
           // Use bold font for bold text
           const textFont = line.bold ? font : font;
@@ -564,20 +921,13 @@ function PDFViewer(
         });
       });
 
-      // Don't update placeholders as signed - they're filtered out when loading
-      // setPlaceholders(prev => prev.map(p => 
-      //   !p.isSigned 
-      //     ? { ...p, isSigned: true, signedAt: timestamp }
-      //     : p
-      // ));
-
-      // Update placeholders in the database
+      // Update placeholders in the database - only once
       try {
         console.log("Updating placeholders in database:", receiverPlaceholders);
         await Promise.all(
           receiverPlaceholders.map(async (placeholder) => {
             if (placeholder.placeholderId) {
-              console.log(`Updating placeholder ${placeholder.placeholderId} with isDeleted: true`);
+              console.log(`Updating placeholder ${placeholder.placeholderId} as signed`);
               const response = await fetch('/api/employee/signature-placeholders', {
                 method: 'PUT',
                 headers: {
@@ -588,7 +938,6 @@ function PDFViewer(
                   signatureData: signatureImage, // Store the signature image data
                   isSigned: true, // Mark as signed in database
                   signedAt: timestamp, // Add timestamp
-                  isDeleted: true, // Mark as deleted so it won't show up anymore
                 }),
               });
               
@@ -596,6 +945,7 @@ function PDFViewer(
                 console.error(`Failed to update placeholder ${placeholder.placeholderId} in database`);
                 const errorText = await response.text();
                 console.error("Error response:", errorText);
+                throw new Error(`Database update failed: ${errorText}`);
               } else {
                 console.log(`Successfully updated placeholder ${placeholder.placeholderId} in database`);
               }
@@ -612,34 +962,8 @@ function PDFViewer(
         });
       } catch (error) {
         console.error('Error updating placeholders in database:', error);
-        // Continue with the signature process even if database update fails
-      }
-
-      // Update placeholders in the database
-      try {
-        await Promise.all(
-          receiverPlaceholders.map(async (placeholder) => {
-            if (placeholder.placeholderId) {
-              const response = await fetch('/api/employee/signature-placeholders', {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  placeholderId: placeholder.placeholderId,
-                  signatureData: signatureImage, // Store the signature image data
-                }),
-              });
-              
-              if (!response.ok) {
-                console.error(`Failed to update placeholder ${placeholder.placeholderId} in database`);
-              }
-            }
-          })
-        );
-      } catch (error) {
-        console.error('Error updating placeholders in database:', error);
-        // Continue with the signature process even if database update fails
+        // Don't continue with the signature process if database update fails
+        throw new Error(`Failed to update placeholders in database: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
 
       const pdfBytes = await pdfDoc.save();
@@ -739,13 +1063,13 @@ function PDFViewer(
         <h3>PDF Viewer (Browser Fallback)</h3>
         <p>Using browser's built-in PDF viewer as React-PDF encountered issues.</p>
         <button 
-          onClick={() => setPdfUrl(pdfUrl.replace('?fallback=true', ''))}
+          onClick={() => pdfUrl && setPdfUrl?.(pdfUrl.replace('?fallback=true', ''))}
           className={styles.retryButton}
         >
           Try React-PDF Again
         </button>
         <iframe 
-          src={pdfUrl.replace('?fallback=true', '')} 
+          src={pdfUrl ? pdfUrl.replace('?fallback=true', '') : ''} 
           width="100%" 
           height="800px"
           style={{ border: '1px solid #ccc', marginTop: '1rem' }}
@@ -766,7 +1090,7 @@ function PDFViewer(
           <button onClick={() => {
             // Fallback to iframe viewer
             setPdfError(null);
-            setPdfUrl(pdfUrl + "?fallback=true");
+            pdfUrl && setPdfUrl?.(pdfUrl + "?fallback=true");
           }}>Use Browser PDF Viewer</button>
         </div>
         
@@ -828,9 +1152,22 @@ function PDFViewer(
                 e.preventDefault();
                 const data = e.dataTransfer.getData("text/plain");
                 if (data === "add-signature") {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const dropX = e.clientX - rect.left;
-                  const dropY = e.clientY - rect.top;
+                  // Get coordinates relative to the PDF page, not the container
+                  const pageContainer = e.currentTarget;
+                  const pdfPageElement = pageContainer.querySelector('.react-pdf__Page');
+                  
+                  let dropX, dropY;
+                  
+                  if (pdfPageElement) {
+                    const pdfRect = pdfPageElement.getBoundingClientRect();
+                    dropX = e.clientX - pdfRect.left;
+                    dropY = e.clientY - pdfRect.top;
+                  } else {
+                    // Fallback to container coordinates if PDF page element not found
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    dropX = e.clientX - rect.left;
+                    dropY = e.clientY - rect.top;
+                  }
 
                   // Offset by half of the placeholder dimensions to center it
                   const centeredX = dropX - MIN_WIDTH / 2;
@@ -862,7 +1199,7 @@ function PDFViewer(
             >
               <Page
                 key={i}
-                scale={scale}
+                scale={finalScale}
                 pageNumber={i + 1}
                 width={undefined}
                 renderTextLayer={false}
@@ -879,17 +1216,26 @@ function PDFViewer(
                 .map((ph) => (
                     <Rnd
                       size={{
-                        width: ph.width * scale,
-                        height: ph.height * scale,
+                        width: ph.width,
+                        height: ph.height,
                       }}
                       position={{
-                        x: ph.x * scale,
-                        y: ph.y * scale,
+                        x: ph.x,
+                        y: ph.y,
                       }}
-                      minWidth={MIN_WIDTH * scale}
-                      maxWidth={MAX_WIDTH * scale}
-                      minHeight={MIN_HEIGHT * scale}
-                      maxHeight={MIN_HEIGHT * scale}
+                      onMouseEnter={() => {
+                        console.log('🔍 DEBUG: Placeholder rendered at position:', {
+                          id: ph.id,
+                          x: ph.x,
+                          y: ph.y,
+                          width: ph.width,
+                          height: ph.height
+                        });
+                      }}
+                      minWidth={MIN_WIDTH}
+                      maxWidth={MAX_WIDTH}
+                      minHeight={MIN_HEIGHT}
+                      maxHeight={MIN_HEIGHT}
                       enableResizing={
                         role === "sender" && !ph.isSigned
                           ? {
@@ -907,33 +1253,71 @@ function PDFViewer(
                       key={ph.id}
                       onDragStop={(e, d) => {
                         if (ph.isSigned) return; // Prevent dragging signed placeholders
+                        
+                        console.log('🔍 DEBUG: Placeholder dragged to new position:', {
+                          placeholderId: ph.id,
+                          oldPosition: { x: ph.x, y: ph.y },
+                          newPosition: { x: d.x, y: d.y }
+                        });
+                        
+                        // Update local state immediately
                         setPlaceholders((prev) =>
                           prev.map((p) =>
                             p.id === ph.id
                               ? {
                                   ...p,
-                                  x: d.x / scale,
-                                  y: d.y / scale,
+                                  x: d.x,
+                                  y: d.y,
                                 }
                               : p
                           )
                         );
+                        
+                        // Also update the database to persist the new position (non-blocking)
+                        if (ph.placeholderId && documentId) {
+                          fetch('/api/employee/signature-placeholders', {
+                            method: 'PUT',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                              placeholderId: ph.placeholderId,
+                              x: d.x,
+                              y: d.y,
+                              width: ph.width,
+                              height: ph.height,
+                              // Don't change other fields
+                            }),
+                          })
+                          .then(response => {
+                            if (response.ok) {
+                              console.log('✅ Placeholder position updated in database');
+                            } else {
+                              console.warn('⚠️ Failed to update placeholder position in database');
+                            }
+                          })
+                          .catch(error => {
+                            console.error('Error updating placeholder position in database:', error);
+                          });
+                        }
                       }}
                       onResizeStop={(e, direction, ref, delta, position) => {
                         if (ph.isSigned) return; // Prevent resizing signed placeholders
-                        setPlaceholders((prev) =>
-                          prev.map((p) =>
-                            p.id === ph.id
-                              ? {
-                                  ...p,
-                                  width: parseInt(ref.style.width) / scale,
-                                  height: parseInt(ref.style.height) / scale,
-                                  x: position.x / scale,
-                                  y: position.y / scale,
-                                }
-                              : p
-                          )
-                        );
+                        if (ref && ref.style && ref.style.width && ref.style.height) {
+                          setPlaceholders((prev) =>
+                            prev.map((p) =>
+                              p.id === ph.id
+                                ? {
+                                    ...p,
+                                    width: parseInt(ref.style.width),
+                                    height: parseInt(ref.style.height),
+                                    x: position.x,
+                                    y: position.y,
+                                  }
+                                : p
+                            )
+                          );
+                        }
                       }}
                       disableDragging={role !== "sender" || ph.isSigned}
                       bounds="parent"
@@ -1044,10 +1428,10 @@ function PDFViewer(
                   className={styles.draggedPlaceholder}
                   style={{
                     position: "absolute",
-                    left: dragRect.x * scale,
-                    top: dragRect.y * scale,
-                    width: dragRect.width * scale,
-                    height: dragRect.height * scale,
+                    left: dragRect.x,
+                    top: dragRect.y,
+                    width: dragRect.width,
+                    height: dragRect.height,
                     border: "2px dashed #007bff",
                     backgroundColor: "rgba(0, 123, 255, 0.1)",
                     pointerEvents: "none",

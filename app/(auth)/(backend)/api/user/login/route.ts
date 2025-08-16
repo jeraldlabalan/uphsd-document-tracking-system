@@ -102,9 +102,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ Create secure JWT with UserID
+    // ✅ Create secure JWT with UserID and profile completion status
+    const hasCompleteProfile = !!(user.FirstName && user.LastName);
+    
     const token = sign(
-      { UserID: user.id, email: user.email, role: user.role, isActive: user.isActive, isDeleted: user.isDeleted },
+      { 
+        UserID: user.id, 
+        email: user.email, 
+        role: user.role, 
+        isActive: user.isActive, 
+        isDeleted: user.isDeleted,
+        hasCompleteProfile: hasCompleteProfile
+      },
       JWT_SECRET,
       { expiresIn: "24h" }
     );
@@ -112,6 +121,9 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({
       success: true,
       role: user.role,
+      hasCompleteProfile: hasCompleteProfile,
+      firstName: user.FirstName,
+      lastName: user.LastName
     });
 
     response.cookies.set({

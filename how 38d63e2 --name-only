@@ -1,0 +1,19 @@
+[33me89b39e[m Merge branch 'main' into dev/bayds
+[33m13820e7[m fix: employee functionality
+[33md1d4234[m Revert "Fix PDF loading issues and improve error handling in e-sign document system"
+[33m17927b3[m Dev/bayds (#165)
+[33me686ee9[m Fix PDF loading issues and improve error handling in e-sign document system
+[33m5bae188[m Dev/bayds (#152)
+[33m3b5471f[m re fix????
+[33mf7a1203[m Dev/bayds (#151)
+[33m06aaea4[m fix: e-sign-docs modal
+[33m7dc978f[m fix: create-docs functionality and conditions (#144)
+[33m8849721[m fix: create-docs functionality and conditions
+[33m944c6b7[m E sign lala (#141)
+[33m38e63e2[m fix: s-sign-docs signed by name and date (#139)
+[33m4083e1e[m style: styles e-sign page (#132)
+[33mafd2f57[m Dev/matthew (#128)
+[33m46886f5[m Chore/createdoc esign connection (#123)
+[33me8f3eec[m chore: set more style and functionalities on e-sign page (#91)
+[33m5de1009[m chore: applied styling on e-sign web page (#88)
+[33m5f2051f[m feat: added e-sign feature (#84)

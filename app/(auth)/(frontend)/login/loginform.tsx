@@ -84,17 +84,29 @@ export default function Login() {
         return;
       }
 
-      toast.success("Login successful!");
       setIsLoading(false); // ✅ Reset before navigation
 
-      if (data.role === "Admin") {
-        await new Promise((r) => setTimeout(r, 100)); // slight delay
-        router.push("/admin/dashboard");
-      } else if (data.role === "Employee") {
-        await new Promise((r) => setTimeout(r, 100)); // slight delay
-        router.push("/employee2/dashboard");
+      // Check if user has complete profile
+      if (!data.hasCompleteProfile) {
+        toast.error("Please complete your profile first");
+        if (data.role === "Admin") {
+          await new Promise((r) => setTimeout(r, 100)); // slight delay
+          router.push("/admin/settings");
+        } else if (data.role === "Employee") {
+          await new Promise((r) => setTimeout(r, 100)); // slight delay
+          router.push("/employee2/settings");
+        }
       } else {
-        router.push("/");
+        toast.success("Login successful!");
+        if (data.role === "Admin") {
+          await new Promise((r) => setTimeout(r, 100)); // slight delay
+          router.push("/admin/dashboard");
+        } else if (data.role === "Employee") {
+          await new Promise((r) => setTimeout(r, 100)); // slight delay
+          router.push("/employee2/dashboard");
+        } else {
+          router.push("/");
+        }
       }
     } catch (error) {
       toast.error("Something went wrong." + error);

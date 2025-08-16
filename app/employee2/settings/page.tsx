@@ -1,26 +1,14 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import Head from "next/head";
 import styles from "./settingStyles.module.css";
-import EmpHeader from "@/components/shared/empHeader";
-import AOS from "aos";
-import "aos/dist/aos.css";
-import Image from "next/image";
-import Loading from "@/app/loading";
+import { useState, useEffect } from "react";
+// import EmployeeSidebar from "@/components/shared/employeeSidebar/employeeSidebar";
+// import EmployeeHeader from "@/components/shared/employeeHeader/employeeHeader";
 import UploadPhotoModal from "@/components/shared/modalSettings/modal";
 
-export default function ProfileSettings() {
-  useEffect(() => {
-    AOS.init({ duration: 1000, once: true });
-  }, []);
-
-  const [profilePicture, setProfilePicture] = useState("");
-  const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [tempPreview, setTempPreview] = useState<string | null>(null);
+export default function Setting() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -28,50 +16,10 @@ export default function ProfileSettings() {
   const [mobileNumber, setMobileNumber] = useState("");
   const [position, setPosition] = useState("");
   const [department, setDepartment] = useState("");
-
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
-
-  const [loading, setLoading] = useState(true);
-  const [modalMessage, setModalMessage] = useState("");
-const [isModalReq, setIsModalReq] = useState(false);
-
-const openModalReq  = (message: string) => {
-  setModalMessage(message);
-  setIsModalReq(true);
-};
-
-const closeModal = () => {
-  setIsModalReq(false);
-  setModalMessage("");
-};
-
-
-  const handleUpload = async (file: File) => {
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch("/api/employee/settings/photo", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-      console.log("Upload response:", data);
-
-      if (res.ok && data.url) {
-        setTempPreview(data.url);
-        setIsSuccessModalOpen(true);
-      } else {
-        alert(data.error || "Failed to upload profile picture.");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Something went wrong while uploading.");
-    }
-  };
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [profilePhoto, setProfilePhoto] = useState("");
 
   interface ProfilePayload {
     firstName: string;
@@ -85,418 +33,285 @@ const closeModal = () => {
     [key: string]: any;
   }
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await fetch("/api/employee/settings");
-        const data = await res.json();
-
-        setEmail(data.Email || "");
-        setEmployeeID(data.EmployeeID || "");
-        setMobileNumber(data.MobileNumber || "");
-        setPosition(data.Position || "");
-        setDepartment(data.Department || "");
-        setFirstName(data.FirstName || "");
-        setLastName(data.LastName || "");
-        if (data.ProfilePicture) {
-          setTempPreview(data.ProfilePicture || "/uploads/default.jpg");
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, []);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const res = await fetch("/api/user/me");
-      if (res.ok) {
-        const data = await res.json();
-        setProfilePicture(data.ProfilePicture || "/uploads/default.jpg");
-      }
-    };
-    fetchUser();
-  }, []);
-
   const handleSave = async (
     e: React.FormEvent<HTMLFormElement>
   ): Promise<void> => {
     e.preventDefault();
-
     const payload: ProfilePayload = {
       firstName,
       lastName,
       mobileNumber,
       position,
-      department,
+      department, // optional
     };
-
     const res: Response = await fetch("/api/employee/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-
     const data: ApiResponse = await res.json();
     console.log(data);
-
-    if (res.ok) {
-      window.location.reload();
-    }
   };
 
   const handlePasswordSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (newPassword !== confirmPassword) {
-    openModalReq("New passwords do not match.");
-    return;
-  }
-
-  try {
-    const res = await fetch("/api/employee/settings/password", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        currentPassword,
-        newPassword,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      openModalReq("Password changed successfully!");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setProfilePhoto(data.ProfilePhoto || "default.jpg");
-    } else {
-      openModalReq(data.message || "Failed to update password");
+    if (newPassword !== confirmPassword) {
+      alert("New passwords do not match.");
+      return;
     }
-  } catch (err) {
-    console.error(err);
-    openModalReq("Something went wrong.");
-  }
-};
 
+    try {
+      const res = await fetch("/api/employee/settings/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
+      });
 
-  const clearPasswordFields = () => {
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-  };
+      const data = await res.json();
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setTempPreview(URL.createObjectURL(file));
-      setProfilePhoto(file);
+      if (res.ok) {
+        alert("Password changed successfully!");
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setProfilePhoto(data.ProfilePhoto || "default.jpg");
+      } else {
+        alert(data.message || "Failed to update password");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong.");
     }
   };
 
-  const applyPhoto = () => {
-    if (tempPreview) {
-      setIsModalOpen(false);
-    }
-  };
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const res = await fetch("/api/employee/settings");
+      const data = await res.json();
 
-  if (loading) {
-    return <Loading />;
-  }
+      // ✅ Fill your form fields here:
+      setEmail(data.Email || "");
+      setEmployeeID(data.EmployeeID || "");
+      setMobileNumber(data.MobileNumber || "");
+      setPosition(data.Position || "");
+      setDepartment(data.Department || "");
+      setFirstName(data.FirstName || "");
+      setLastName(data.LastName || "");
+    };
+
+    fetchProfile();
+  }, []);
 
   return (
-    <div>
-      <EmpHeader />
-      <div className={styles.container}>
-        <div data-aos="fade-up" className={styles.contentSection}>
-          <div className={styles.headerRow}>
-            <h2 className={styles.pageTitle}>Profile Settings</h2>
-          </div>
+    <>
+      <div className={styles.Maincontainer}>
+        <Head>
+          <title>Setting</title>
+        </Head>
 
-          <hr className={styles.separator} />
-          <div className={styles.profileContainer}>
-            <div className={styles.leftColumn}>
-              {/* Profile Photo + Name */}
-              <div className={styles.profileInfo}>
-                <Image
-                  src={tempPreview || "/placeholder.png"}
-                  alt="Profile"
-                  className={styles.avatar}
-                  width={150}
-                  height={150}
-                  onClick={() => setIsModalOpen(true)}
-                  style={{ cursor: "pointer" }}
-                />
-                <div className={styles.profileDetails}>
-                  <h3 className={styles.name}>
-                    {firstName} {lastName}
-                  </h3>
-                  <p className={styles.role}>{position}</p>
-                </div>
-              </div>
+        {/* <EmployeeHeader onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} /> */}
 
-              {/* Upload Photo Section */}
-              <div className={styles.uploadSection}>
-                <button
-                  className={styles.uploadBtn}
-                  onClick={() => setIsModalOpen(true)}
-                >
-                  Upload Photo
-                </button>
-                <p className={styles.photoNote}>
-                  Upload a professional photo to personalize your account.
-                </p>
-              </div>
+        <div className={styles.container}>
+          {/* <EmployeeSidebar sidebarOpen={sidebarOpen} /> */}
 
-              {/* Change Password Form */}
-              <form
-                className={styles.passwordSection}
-                onSubmit={handlePasswordSubmit}
-              >
-                <h3>Change Password</h3>
-                <div className={styles.inputGroup}>
-                  <label>Current password</label>
-                  <input
-                    type="password"
-                    className={styles.inputField}
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                  />
-                </div>
-                <div className={styles.inputGroup}>
-                  <label>New Password</label>
-                  <input
-                    type="password"
-                    className={styles.inputField}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                  />
-                </div>
-                <div className={styles.inputGroup}>
-                  <label>Confirm New Password</label>
-                  <input
-                    type="password"
-                    className={styles.inputField}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
-                </div>
-                <div className={styles.buttonGroup}>
-                  <button
-                    className={styles.clearBtn}
-                    onClick={clearPasswordFields}
-                    type="button"
-                  >
-                    Clear
-                  </button>
-                  <button className={styles.uploadBtn} type="submit">
-                    Change Password
-                  </button>
-                </div>
-              </form>
+          <main className={styles.main}>
+            <div className={styles.headerRow}>
+              <h1 className={styles.heading}>Profile Settings</h1>
             </div>
 
-            {/* Right Column: Information Section */}
-            <form className={styles.rightColumn} onSubmit={handleSave}>
-              <div className={styles.infoSection}>
-                <h3>Information</h3>
-                <div className={styles.formGroup}>
-                  <div className={styles.inputGroup}>
-                    <label>First Name</label>
-                    <input
-                      className={styles.inputField}
-                      name="firstName"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                    />
-                  </div>
-                  <div className={styles.inputGroup}>
-                    <label>Last Name</label>
-                    <input
-                      className={styles.inputField}
-                      name="lastName"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                    />
-                  </div>
-                </div>
+            {/* ➤ Wrapper with Two Independent Columns */}
+            <div className={styles.gridWrapper}>
+              {/* Left: Change Password Form */}
 
-                <div className={styles.formGroup}>
-                  <div className={styles.inputGroup}>
-                    <label>Email Address</label>
-                    <input
-                      className={styles.inputField}
-                      name="email"
-                      value={email}
-                      readOnly
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-                  <div className={styles.inputGroup}>
-                    <label>Employee ID</label>
-                    <input
-                      className={styles.inputField}
-                      name="employeeId"
-                      value={employeeID}
-                      onChange={(e) => setEmployeeID(e.target.value)}
-                      readOnly
-                    />
-                  </div>
-                </div>
+              <div className={styles.leftColumn}>
+                <div className={styles.ChangeContainer}>
+                  <div className={styles.profileContainer}>
+                    <div className={styles.profileLeft}>
+                      <img
+                        src={profilePhoto ? profilePhoto : "/default.jpg"}
+                        alt="Profile"
+                        className={styles.profilePic}
+                      />
+                    </div>
 
-                <div className={styles.formGroup}>
-                  <div className={styles.inputGroup}>
-                    <label>Mobile Number</label>
-                    <input
-                      className={styles.inputField}
-                      name="mobile"
-                      value={mobileNumber}
-                      onChange={(e) => setMobileNumber(e.target.value)}
-                      placeholder="+63 9XX XXX XXXX"
-                    />
-                  </div>
-                  <div className={styles.inputGroup}>
-                    <label>Position</label>
-                    <input
-                      className={styles.inputField}
-                      name="position"
-                      value={position}
-                      onChange={(e) => setPosition(e.target.value)}
-                      readOnly
-                    />
-                  </div>
-                </div>
+                    <div className={styles.profileRight}>
+                      <div className={styles.profileInfo}>
+                        <h1 className={styles.name}>
+                          {firstName} {lastName}
+                        </h1>
+                        <h2 className={styles.pos}>{position}</h2>
+                      </div>
 
-                <div className={styles.inputGroup}>
-                  <label>Department</label>
-                  <input
-                    className={styles.inputField}
-                    name="department"
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    readOnly
-                  />
-                </div>
+                      <div className={styles.uploadSection}>
+                        <button
+                          className={styles.uploadButton}
+                          onClick={() => setIsModalOpen(true)}
+                        >
+                          <img
+                            src="/camera-icon.svg"
+                            alt="camera"
+                            className={styles.icon}
+                          />
+                          Upload Photo
+                        </button>
+                        <UploadPhotoModal
+                          isOpen={isModalOpen}
+                          onClose={() => setIsModalOpen(false)}
+                          onUploadSuccess={(filename) => {
+                            setProfilePhoto(filename);
+                            setIsModalOpen(false);
+                          }}
+                        />
 
-                <div className={styles.buttonGroup}>
-                  <button className={styles.clearBtn} type="button">
-                    Cancel
-                  </button>
-                  <button className={styles.uploadBtn} type="submit">
-                    Save Changes
-                  </button>
+                        <p className={styles.note}>
+                          Upload a professional photo to personalize your
+                          account.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <form className={styles.form} onSubmit={handlePasswordSubmit}>
+                    <h2 className={styles.formTitle}>Change Password</h2>
+
+                    <label className={styles.label}>Current Password</label>
+                    <input
+                      type="password"
+                      className={styles.input}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                    />
+
+                    <label className={styles.label}>New Password</label>
+                    <input
+                      type="password"
+                      className={styles.input}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                    />
+
+                    <label className={styles.label}>Confirm New Password</label>
+                    <input
+                      type="password"
+                      className={styles.input}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+
+                    <div className={styles.buttonGroup}>
+                      <button type="button" className={styles.cancelButton}>
+                        Cancel
+                      </button>
+                      <button type="submit" className={styles.button}>
+                        Change Password
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
-            </form>
-          </div>
+
+              {/* Right: Personal Info Form */}
+              <div className={styles.rightColumn}>
+                <div className={styles.formContainer}>
+                  <form className={styles.form} onSubmit={handleSave}>
+                    <h2 className={styles.formTitle}>Personal Information</h2>
+
+                    <div className={styles.inputRow}>
+                      <div className={styles.inputGroup}>
+                        <label className={styles.label}>First Name</label>
+                        <input
+                          type="text"
+                          className={styles.input}
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                        />
+                      </div>
+                      <div className={styles.inputGroup}>
+                        <label className={styles.label}>Last Name</label>
+                        <input
+                          type="text"
+                          className={styles.input}
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className={styles.inputRow}>
+                      <div className={styles.inputGroup}>
+                        <label className={styles.label}>Email Address</label>
+                        <input
+                          type="text"
+                          className={styles.input}
+                          value={email}
+                          readOnly
+                        />
+                      </div>
+                      <div className={styles.inputGroup}>
+                        <label className={styles.label}>Employee ID</label>
+                        <input
+                          type="text"
+                          className={styles.input}
+                          value={employeeID}
+                          readOnly
+                        />
+                      </div>
+                    </div>
+
+                    <div className={styles.inputRow}>
+                      <div className={styles.inputGroup}>
+                        <label className={styles.label}>Mobile Number</label>
+                        <input
+                          type="text"
+                          className={styles.input}
+                          value={mobileNumber}
+                          onChange={(e) => setMobileNumber(e.target.value)}
+                        />
+                      </div>
+                      <div className={styles.inputGroup}>
+                        <label className={styles.label}>Position</label>
+                        <select
+                          className={styles.input}
+                          value={position} // ✅ Binds to state
+                          onChange={(e) => setPosition(e.target.value)} // ✅ Updates state when changed
+                        >
+                          <option value="">Select Position</option>
+                          <option value="it">IT Coordinator</option>
+                          <option value="manager">Manager</option>
+                          <option value="staff">Staff</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className={styles.inputGroup}>
+                      <label className={styles.label}>Department</label>
+                      <select className={styles.input}>
+                        <option value="">Select Department</option>
+                        <option value="hr">Human Resources</option>
+                        <option value="it">IT</option>
+                        <option value="finance">Finance</option>
+                      </select>
+                    </div>
+
+                    <div className={styles.buttonGroup}>
+                      <button type="button" className={styles.cancelButton}>
+                        Cancel
+                      </button>
+                      <button type="submit" className={styles.button}>
+                        Save Changes
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </main>
         </div>
-
-        {/* Profile Upload Modal */}
-        {isModalOpen && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modalContainer}>
-              <h2 className={styles.modalTitle}>Upload Profile Picture</h2>
-
-              {/* Image Preview */}
-              <div className={styles.previewContainer}>
-                {previewImage ? (
-                  <img src={previewImage} alt="Preview" className={styles.previewImage} />
-                ) : (
-                  <div className={styles.placeholder}>
-                    <p>No image selected</p>
-                  </div>
-                )}
-              </div>
-
-              {/* File Input */}
-              <label htmlFor="fileUpload" className={styles.uploadArea}>
-                <input
-                  id="fileUpload"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setSelectedFile(file);
-                      setPreviewImage(URL.createObjectURL(file));
-                    }
-                  }}
-                />
-                <p>Click or drag image here</p>
-              </label>
-
-              {/* Actions */}
-              <div className={styles.modalActions}>
-                <button
-                  onClick={async () => {
-                    if (selectedFile) {
-                      await handleUpload(selectedFile);
-                      setIsModalOpen(false);
-                    }
-                  }}
-                  className={styles.uploadBtn}
-                >
-                  Upload
-                </button>
-                <button
-                  onClick={() => {
-                    setIsModalOpen(false);
-                    setPreviewImage(null);
-                    setSelectedFile(null);
-                  }}
-                  className={styles.cancelBtn}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Success Modal */}
-        {isSuccessModalOpen && (
-          <div className={styles.successmodalOverlay}>
-            <div className={styles.modal}>
-              <h3 className={styles.successmodalTitle}>Upload Successful!</h3>
-              <p>Your profile picture has been updated.</p>
-              <div className={styles.successModalActions}>
-                <button
-                  onClick={() => {
-                    setIsSuccessModalOpen(false);
-                    window.location.reload();
-                  }}
-                  className={styles.closeButtonx}
-                >
-                  OK
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-
-       {isModalReq && (
-  <div className={styles.modalOverlay}>
-    <div className={styles.deletemodalContent}>
-      <p>{modalMessage}</p>
-      <div className={styles.modalActions}>
-        <button onClick={closeModal} className={styles.OKButtonModal}>
-          OK
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-    
-
-    </div>
+    </>
   );
 }

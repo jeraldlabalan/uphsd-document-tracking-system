@@ -79,6 +79,8 @@ export async function POST(request: NextRequest) {
         IsSigned: false,
         SignedAt: null,
         SignatureData: null,
+        // Fix: Ensure IsDeleted is set to false so placeholders can be re-signed
+        IsDeleted: false,
       },
     });
 

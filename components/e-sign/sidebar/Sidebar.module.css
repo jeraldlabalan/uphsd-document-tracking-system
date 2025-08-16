@@ -9,6 +9,8 @@
     padding-inline: calc(clamp(180px, 20vw, 250px) * 0.1);
     gap: 20px;
     flex-wrap: nowrap;
+    overflow: hidden; /* Prevent scrolling */
+    height: 100vh; /* Full height */
 }
 
 .senderButtons, .receiverButtons {
