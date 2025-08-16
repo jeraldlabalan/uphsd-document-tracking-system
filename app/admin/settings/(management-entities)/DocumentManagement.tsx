@@ -38,8 +38,6 @@ const DocumentTypeManagement: React.FC<DocumentTypeManagementProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const [confirmAdd, setConfirmAdd] = useState(false);
-
   useEffect(() => {
     fetchDocumentTypes();
   }, []);
@@ -103,28 +101,24 @@ const DocumentTypeManagement: React.FC<DocumentTypeManagementProps> = ({
       return;
     }
 
-    setConfirmAdd(true);
+    console.log("[DocumentManagement Debug] handleSaveClick - calling showModal for add operation");
     showModal({
       description: "Are you sure you want to add these document types?",
-      onConfirm: handleConfirm,
+      onConfirm: () => handleConfirmAdd(),
       onCancel: handleCancel,
       isLoading: false,
     });
   };
 
-  const handleConfirm = async () => {
-    if (confirmAdd) {
-      await saveDocumentTypes();
-    } else {
-      await handleConfirmDeletion();
-    }
+  const handleConfirmAdd = async () => {
+    console.log("[DocumentManagement Debug] handleConfirmAdd called");
+    await saveDocumentTypes();
   };
 
   const saveDocumentTypes = async () => {
     const validRows = rows.filter((r) => r.value.trim() !== "");
     if (validRows.length === 0) {
       toast.success("No changes to save.");
-      setConfirmAdd(false);
       return;
     }
     setIsLoading(true);
@@ -152,7 +146,6 @@ const DocumentTypeManagement: React.FC<DocumentTypeManagementProps> = ({
       toast.error("Error saving document types.");
     } finally {
       setIsLoading(false);
-      setConfirmAdd(false);
       // Close modal after action completes
       if (typeof window !== "undefined") {
         const event = new CustomEvent("closeModal");
@@ -162,33 +155,48 @@ const DocumentTypeManagement: React.FC<DocumentTypeManagementProps> = ({
   };
 
   const handleDeleteActiveItem = (id: number) => {
+    console.log("[DocumentManagement Debug] handleDeleteActiveItem - calling showModal for delete operation", { id });
     setSuccess(false);
     setRowToDelete(id);
-    setConfirmAdd(false);
     showModal({
       description: "Are you sure you want to delete this document type?",
-      onConfirm: handleConfirmDeletion,
+      onConfirm: () => handleConfirmDelete(id),
       onCancel: handleCancel,
       isLoading: false,
     });
   };
 
-  const handleConfirmDeletion = async () => {
-    if (rowToDelete === null) return;
+  const handleConfirmDelete = async (id: number) => {
+    console.log("[DocumentManagement Debug] handleConfirmDelete called for ID:", id);
     setIsLoading(true);
     setSuccess(false);
+    
     try {
+      console.log("[DocumentManagement Debug] Making DELETE request for ID:", id);
       const res = await fetch("/api/admin/settings/document-management", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: rowToDelete }),
+        body: JSON.stringify({ id: id }),
       });
+      
+      console.log("[DocumentManagement Debug] DELETE response status:", res.status);
+      
       if (res.ok) {
+        console.log("[DocumentManagement Debug] Delete successful, updating UI");
         setActiveItems((prev) =>
-          prev.filter((item) => item.id !== rowToDelete)
+          prev.filter((item) => item.id !== id)
         );
         setSuccess(true);
         toast.success("Document type successfully deleted.");
+        
+        // Close modal after successful deletion
+        if (typeof window !== "undefined") {
+          const event = new CustomEvent("closeModal");
+          window.dispatchEvent(event);
+        }
+      } else {
+        console.log("[DocumentManagement Debug] Delete failed with status:", res.status);
+        throw new Error("Delete failed");
       }
     } catch (error) {
       console.error("Delete error:", error);
@@ -196,11 +204,6 @@ const DocumentTypeManagement: React.FC<DocumentTypeManagementProps> = ({
     } finally {
       setIsLoading(false);
       setRowToDelete(null);
-      // Close modal after action completes
-      if (typeof window !== "undefined") {
-        const event = new CustomEvent("closeModal");
-        window.dispatchEvent(event);
-      }
     }
   };
 
