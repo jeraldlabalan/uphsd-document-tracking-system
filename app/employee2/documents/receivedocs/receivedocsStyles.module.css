@@ -597,6 +597,21 @@
   flex-direction: column;
 }
 
+
+/* ✅ New modal for NO-FILE documents (shorter height, no preview area) */
+.modalCardNoFile {
+  background: white;
+  width: 100%;
+  max-width: 700px;
+  height: auto;
+  border-radius: 10px;
+  padding: 2rem;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
 .closeButton {
   position: absolute;
   top: 1rem;
@@ -648,13 +663,31 @@
 }
 
 
+/* ✅ Preview section (for WITH files) */
 .previewContainer {
-  flex: 1;                          
-  overflow-y: auto;               
+  flex: 1;
   margin-bottom: 1rem;
   border: 1px solid #eee;
   padding: 0.5rem;
   border-radius: 6px;
+  overflow-y: auto;
+}
+
+.previewContainer iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  overflow: hidden;   /* hides scrollbars */
+}
+.noFileMessage {
+  margin: 2rem 0;
+  padding: 1rem;
+  text-align: center;
+  background: #f9f9f9;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+  color: #666;
+  font-size: 0.95rem;
 }
 
 .modalFooter {
@@ -669,6 +702,22 @@
   display: flex;
   gap: 10px; /* Space between buttons */
 }
+
+.footerRightOnly {
+  margin-left: auto; /* Pushes it to the right */
+  display: flex;
+  gap: 10px;
+}
+
+
+/* Align buttons to the right when there's no left section */
+.modalFooter .footerRightOnly {
+  display: flex;
+  justify-content: flex-end; /* Aligns to right */
+  gap: 10px; /* Space between buttons */
+  padding: 10px 20px; /* Optional padding */
+}
+
 
 
 .download,

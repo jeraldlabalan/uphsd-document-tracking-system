@@ -584,6 +584,23 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+}
+
+
+
+/* ✅ New modal for NO-FILE documents (shorter height, no preview area) */
+.modalCardNoFile {
+  background: white;
+  width: 100%;
+  max-width: 700px;
+  height: auto;
+  border-radius: 10px;
+  padding: 2rem;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
 }
 
 .modalCardRemarks {
@@ -660,14 +677,34 @@
   margin: 0.2rem 0 0;
 }
 
+/* ✅ Preview section (for WITH files) */
 .previewContainer {
-  flex: 1;                          
-  overflow-y: auto;               
+  flex: 1;
   margin-bottom: 1rem;
   border: 1px solid #eee;
   padding: 0.5rem;
   border-radius: 6px;
-  overflow-y: hidden;
+  overflow-y: auto;
+}
+
+.previewContainer iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  overflow: hidden;   /* hides scrollbars */
+}
+
+
+/* ✅ No-file message (for WITHOUT files) */
+.noFileMessage {
+  margin: 2rem 0;
+  padding: 1rem;
+  text-align: center;
+  background: #f9f9f9;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+  color: #666;
+  font-size: 0.95rem;
 }
 
 .modalFooter {
