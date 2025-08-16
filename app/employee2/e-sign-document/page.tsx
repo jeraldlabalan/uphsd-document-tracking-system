@@ -33,6 +33,8 @@ export default function ESignDocument() {
   const [originalPdfUrl, setOriginalPdfUrl] = useState<string | null>(null);
   const [isDocumentCreator, setIsDocumentCreator] = useState(false);
   const [isUndoing, setIsUndoing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Get document data from URL parameters
   const documentId = searchParams.get("docId");
@@ -58,6 +60,40 @@ export default function ESignDocument() {
   useEffect(() => {
     console.log("Full URL:", window.location.href);
     console.log("Search params:", window.location.search);
+    
+    // Test API connectivity
+    const testAPIConnectivity = async () => {
+      try {
+        console.log("🧪 Testing API connectivity...");
+        
+        // Test basic API endpoint
+        const testResponse = await fetch('/api/user/me');
+        console.log("✅ API connectivity test passed, status:", testResponse.status);
+        
+        if (testResponse.ok) {
+          const userData = await testResponse.json();
+          console.log("✅ Current user data:", userData);
+        } else {
+          console.error("❌ API test failed with status:", testResponse.status);
+          const errorText = await testResponse.text();
+          console.error("❌ Error response:", errorText);
+        }
+        
+        // Test if we can access the uploads directory
+        try {
+          const uploadsTest = await fetch('/uploads/documents/', { method: 'HEAD' });
+          console.log("📁 Uploads directory test status:", uploadsTest.status);
+        } catch (error) {
+          console.error("❌ Uploads directory test failed:", error);
+        }
+        
+      } catch (error) {
+        console.error("❌ API connectivity test failed:", error);
+        setError(`API connectivity test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    };
+    
+    testAPIConnectivity();
   }, []);
 
   // Parse approvers from URL parameter
@@ -88,6 +124,10 @@ export default function ESignDocument() {
   useEffect(() => {
     const determineUserRole = async () => {
       try {
+        setIsLoading(true);
+        setError(null);
+        console.log("🔍 Starting user role determination...");
+        
         // First check if userRole is explicitly set in URL params
         console.log("Checking userRole from URL params:", userRole);
         if (userRole === "receiver") {
@@ -98,10 +138,71 @@ export default function ESignDocument() {
           // Load existing placeholders for receiver
           if (documentId && documentId !== "unknown") {
             console.log("Loading placeholders for receiver, documentId:", documentId);
+            try {
+              const response = await fetch(`/api/employee/signature-placeholders?documentId=${documentId}`);
+              console.log("Placeholders API response status:", response.status);
+              
+              if (response.ok) {
+                const data = await response.json();
+                console.log("Placeholders loaded for receiver:", data.placeholders);
+                const existingPlaceholders = data.placeholders
+                  .filter((p: any) => !p.IsSigned && !p.IsDeleted) // Only load unsigned and non-deleted placeholders
+                  .map((p: {
+                    PlaceholderID: number;
+                    Page: number;
+                    X: number;
+                    Y: number;
+                    Width: number;
+                    Height: number;
+                    AssignedTo: {
+                      UserID: number;
+                      FirstName: string;
+                      LastName: string;
+                    };
+                    IsSigned: boolean;
+                    SignedAt: string | null;
+                    AssignedToID: number;
+                  }) => ({
+                    id: p.PlaceholderID,
+                    placeholderId: p.PlaceholderID,
+                    page: p.Page,
+                    x: p.X,
+                    y: p.Y,
+                    width: p.Width,
+                    height: p.Height,
+                    signee: p.AssignedTo.UserID.toString(),
+                    signeeName: `${p.AssignedTo.FirstName} ${p.AssignedTo.LastName}`,
+                    isSigned: p.IsSigned,
+                    signedAt: p.SignedAt,
+                    assignedToId: p.AssignedToID,
+                  }));
+                
+                setPlaceholders(existingPlaceholders);
+              } else {
+                console.error("Failed to load placeholders, status:", response.status);
+                const errorText = await response.text();
+                console.error("Error response:", errorText);
+                setError(`Failed to load placeholders: ${response.status} ${errorText}`);
+              }
+            } catch (error) {
+              console.error("Error fetching placeholders:", error);
+              setError(`Error fetching placeholders: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+          }
+          return;
+        }
+
+        // Check if user is the document creator
+        if (documentId && documentId !== "unknown") {
+          console.log("Checking if user is document creator for documentId:", documentId);
+          try {
             const response = await fetch(`/api/employee/signature-placeholders?documentId=${documentId}`);
+            console.log("Signature placeholders API response status:", response.status);
+            
             if (response.ok) {
               const data = await response.json();
-              console.log("Placeholders loaded for receiver:", data.placeholders);
+              console.log("Signature placeholders data:", data);
+              
               const existingPlaceholders = data.placeholders
                 .filter((p: any) => !p.IsSigned && !p.IsDeleted) // Only load unsigned and non-deleted placeholders
                 .map((p: {
@@ -135,89 +236,81 @@ export default function ESignDocument() {
                 }));
               
               setPlaceholders(existingPlaceholders);
-            }
-          }
-          return;
-        }
-
-        // Check if user is the document creator
-        if (documentId && documentId !== "unknown") {
-          const response = await fetch(`/api/employee/signature-placeholders?documentId=${documentId}`);
-          if (response.ok) {
-            const data = await response.json();
-            const existingPlaceholders = data.placeholders
-              .filter((p: any) => !p.IsSigned && !p.IsDeleted) // Only load unsigned and non-deleted placeholders
-              .map((p: {
-                PlaceholderID: number;
-                Page: number;
-                X: number;
-                Y: number;
-                Width: number;
-                Height: number;
-                AssignedTo: {
-                  UserID: number;
-                  FirstName: string;
-                  LastName: string;
-                };
-                IsSigned: boolean;
-                SignedAt: string | null;
-                AssignedToID: number;
-              }) => ({
-                id: p.PlaceholderID,
-                placeholderId: p.PlaceholderID,
-                page: p.Page,
-                x: p.X,
-                y: p.Y,
-                width: p.Width,
-                height: p.Height,
-                signee: p.AssignedTo.UserID.toString(),
-                signeeName: `${p.AssignedTo.FirstName} ${p.AssignedTo.LastName}`,
-                isSigned: p.IsSigned,
-                signedAt: p.SignedAt,
-                assignedToId: p.AssignedToID,
-              }));
-            
-            setPlaceholders(existingPlaceholders);
-            
-            // If placeholders exist, user is a receiver
-            if (existingPlaceholders.length > 0) {
-              // Check if user has any unsigned placeholders
-              // We need to get the current user's ID to compare
-              const currentUserResponse = await fetch('/api/user/me');
-              if (currentUserResponse.ok) {
-                const currentUser = await currentUserResponse.json();
-                const userPlaceholders = existingPlaceholders.filter((p: Placeholder) => 
-                  p.assignedToId === currentUser.UserID && !p.isSigned
-                );
-                
-                if (userPlaceholders.length > 0) {
-                  setRole("receiver");
-                  setIsDocumentCreator(false);
-                } else {
+              
+              // If placeholders exist, user is a receiver
+              if (existingPlaceholders.length > 0) {
+                // Check if user has any unsigned placeholders
+                // We need to get the current user's ID to compare
+                try {
+                  const currentUserResponse = await fetch('/api/user/me');
+                  console.log("Current user API response status:", currentUserResponse.status);
+                  
+                  if (currentUserResponse.ok) {
+                    const currentUser = await currentUserResponse.json();
+                    console.log("Current user data:", currentUser);
+                    
+                    const userPlaceholders = existingPlaceholders.filter((p: Placeholder) => 
+                      p.assignedToId === currentUser.UserID && !p.isSigned
+                    );
+                    
+                    if (userPlaceholders.length > 0) {
+                      console.log("User has unsigned placeholders, setting role to receiver");
+                      setRole("receiver");
+                      setIsDocumentCreator(false);
+                    } else {
+                      console.log("User has no unsigned placeholders, setting role to sender");
+                      setRole("sender");
+                      setIsDocumentCreator(true);
+                    }
+                  } else {
+                    console.error("Failed to get current user, status:", currentUserResponse.status);
+                    // Fallback: if we can't get current user, assume sender
+                    setRole("sender");
+                    setIsDocumentCreator(true);
+                  }
+                } catch (error) {
+                  console.error("Error fetching current user:", error);
+                  // Fallback: if we can't get current user, assume sender
                   setRole("sender");
                   setIsDocumentCreator(true);
                 }
               } else {
-                // Fallback: if we can't get current user, assume sender
+                // No placeholders yet, user is the creator
+                console.log("No placeholders found, user is the creator");
                 setRole("sender");
                 setIsDocumentCreator(true);
               }
             } else {
-              // No placeholders yet, user is the creator
+              console.error("Failed to fetch signature placeholders, status:", response.status);
+              const errorText = await response.text();
+              console.error("Error response:", errorText);
+              setError(`Failed to fetch signature placeholders: ${response.status} ${errorText}`);
+              
+              // Fallback to sender role
               setRole("sender");
               setIsDocumentCreator(true);
             }
+          } catch (error) {
+            console.error("Error fetching signature placeholders:", error);
+            setError(`Error fetching signature placeholders: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            // Fallback to sender role
+            setRole("sender");
+            setIsDocumentCreator(true);
           }
         } else {
           // No document ID, user is creating a new document
+          console.log("No document ID provided, user is creating a new document");
           setRole("sender");
           setIsDocumentCreator(true);
         }
       } catch (error) {
         console.error("Error determining user role:", error);
+        setError(`Error determining user role: ${error instanceof Error ? error.message : 'Unknown error'}`);
         // Fallback to sender role
         setRole("sender");
         setIsDocumentCreator(true);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -278,133 +371,163 @@ export default function ESignDocument() {
     console.log("File loading useEffect triggered with uploadedFile:", uploadedFile);
     
     const loadFile = async () => {
-      if (uploadedFile) {
-        console.log("Uploaded file param:", uploadedFile);
+      try {
+        setError(null);
         
-        // Handle different file URL formats
-        let finalUrl = uploadedFile;
-        
-        if (uploadedFile.startsWith('blob:')) {
-          // Local blob URL - use as is
-          console.log("Using blob URL:", uploadedFile);
-        } else if (uploadedFile.startsWith('/uploads/')) {
-          // Server file path - convert to full URL
-          finalUrl = `${window.location.origin}${uploadedFile}`;
-          console.log("Converted server file path to URL:", finalUrl);
-        } else if (uploadedFile.includes('uploads/documents/')) {
-          // File path without leading slash - add it
-          finalUrl = `${window.location.origin}/${uploadedFile}`;
-          console.log("Converted documents file path to URL:", finalUrl);
-        } else if (uploadedFile.includes('uploads/')) {
-          // File path without leading slash - add it
-          finalUrl = `${window.location.origin}/${uploadedFile}`;
-          console.log("Converted uploads file path to URL:", finalUrl);
-        } else {
-          // Try to construct the full URL
-          finalUrl = `${window.location.origin}/uploads/documents/${uploadedFile}`;
-          console.log("Constructed file URL:", finalUrl);
-        }
-        
-        // Test if the file is accessible
-        try {
-          console.log("Testing file accessibility for:", finalUrl);
-          const testResponse = await fetch(finalUrl, { method: 'HEAD' });
-          if (testResponse.ok) {
-            console.log("✅ File is accessible:", finalUrl);
-            setPdfUrl(finalUrl);
-            setOriginalPdfUrl(finalUrl);
+        if (uploadedFile) {
+          console.log("Uploaded file param:", uploadedFile);
+          
+          // Handle different file URL formats
+          let finalUrl = uploadedFile;
+          
+          if (uploadedFile.startsWith('blob:')) {
+            // Local blob URL - use as is
+            console.log("Using blob URL:", uploadedFile);
+            setPdfUrl(uploadedFile);
+            setOriginalPdfUrl(uploadedFile);
+            return;
+          } else if (uploadedFile.startsWith('/uploads/')) {
+            // Server file path - convert to full URL
+            finalUrl = `${window.location.origin}${uploadedFile}`;
+            console.log("Converted server file path to URL:", finalUrl);
+          } else if (uploadedFile.includes('uploads/documents/')) {
+            // File path without leading slash - add it
+            finalUrl = `${window.location.origin}/${uploadedFile}`;
+            console.log("Converted documents file path to URL:", finalUrl);
+          } else if (uploadedFile.includes('uploads/')) {
+            // File path without leading slash - add it
+            finalUrl = `${window.location.origin}/${uploadedFile}`;
+            console.log("Converted uploads file path to URL:", finalUrl);
           } else {
-            console.error("❌ File not accessible:", finalUrl, "Status:", testResponse.status);
-            // Try alternative path
-            const altUrl = `${window.location.origin}/uploads/documents/${uploadedFile.split('/').pop()}`;
-            console.log("Trying alternative URL:", altUrl);
+            // Try to construct the full URL
+            finalUrl = `${window.location.origin}/uploads/documents/${uploadedFile}`;
+            console.log("Constructed file URL:", finalUrl);
+          }
+          
+          // Test if the file is accessible
+          try {
+            console.log("Testing file accessibility for:", finalUrl);
+            const testResponse = await fetch(finalUrl, { method: 'HEAD' });
+            if (testResponse.ok) {
+              console.log("✅ File is accessible:", finalUrl);
+              setPdfUrl(finalUrl);
+              setOriginalPdfUrl(finalUrl);
+              return;
+            } else {
+              console.error("❌ File not accessible:", finalUrl, "Status:", testResponse.status);
+            }
+          } catch (error) {
+            console.error("❌ Error testing file accessibility:", error);
+          }
+          
+          // Try alternative path
+          const altUrl = `${window.location.origin}/uploads/documents/${uploadedFile.split('/').pop()}`;
+          console.log("Trying alternative URL:", altUrl);
+          
+          try {
             const altResponse = await fetch(altUrl, { method: 'HEAD' });
             if (altResponse.ok) {
               console.log("✅ Alternative URL works:", altUrl);
               setPdfUrl(altUrl);
               setOriginalPdfUrl(altUrl);
+              return;
             } else {
               console.error("❌ Alternative URL also failed:", altUrl, "Status:", altResponse.status);
-              // Set error state for missing file
-              setPdfUrl(null);
-              setOriginalPdfUrl(null);
             }
+          } catch (error) {
+            console.error("❌ Error testing alternative URL:", error);
           }
-        } catch (error) {
-          console.error("❌ Error testing file accessibility:", error);
+          
+          // If we get here, both URLs failed
+          console.error("🚨 All file URLs failed, setting error state");
+          setError("Failed to load document file. Please check if the file exists and try again.");
           setPdfUrl(null);
           setOriginalPdfUrl(null);
-        }
-      } else if (documentId && documentId !== "unknown") {
-        // If no uploadedFile but we have a documentId, try to fetch the file path from the API
-        console.log("No uploadedFile provided, fetching from API for documentId:", documentId);
-        try {
-          const response = await fetch(`/api/employee/documents/${documentId}`);
-          if (response.ok) {
-            const data = await response.json();
-            console.log("Document data from API:", data);
-            
-            if (data.latestVersion?.FilePath) {
-              const filePath = data.latestVersion.FilePath;
-              console.log("Found file path from API:", filePath);
+        } else if (documentId && documentId !== "unknown") {
+          // If no uploadedFile but we have a documentId, try to fetch the file path from the API
+          console.log("No uploadedFile provided, fetching from API for documentId:", documentId);
+          try {
+            const response = await fetch(`/api/employee/documents/${documentId}`);
+            if (response.ok) {
+              const data = await response.json();
+              console.log("Document data from API:", data);
               
-              // Test the file path
-              const fullUrl = `${window.location.origin}${filePath}`;
-              console.log("Testing file URL from API:", fullUrl);
-              
-              try {
-                const testResponse = await fetch(fullUrl, { method: 'HEAD' });
-                if (testResponse.ok) {
-                  console.log("✅ API file path is accessible:", fullUrl);
-                  setPdfUrl(fullUrl);
-                  setOriginalPdfUrl(fullUrl);
-                } else {
-                  console.error("❌ API file path not accessible:", fullUrl, "Status:", testResponse.status);
-                  
-                  // Try alternative path
-                  const fileName = filePath.split('/').pop();
-                  const altUrl = `${window.location.origin}/uploads/documents/${fileName}`;
-                  console.log("Trying alternative API file URL:", altUrl);
-                  
+              if (data.latestVersion?.FilePath) {
+                const filePath = data.latestVersion.FilePath;
+                console.log("Found file path from API:", filePath);
+                
+                // Test the file path
+                const fullUrl = `${window.location.origin}${filePath}`;
+                console.log("Testing file URL from API:", fullUrl);
+                
+                try {
+                  const testResponse = await fetch(fullUrl, { method: 'HEAD' });
+                  if (testResponse.ok) {
+                    console.log("✅ API file path is accessible:", fullUrl);
+                    setPdfUrl(fullUrl);
+                    setOriginalPdfUrl(fullUrl);
+                    return;
+                  } else {
+                    console.error("❌ API file path not accessible:", fullUrl, "Status:", testResponse.status);
+                  }
+                } catch (error) {
+                  console.error("❌ Error testing API file path:", error);
+                }
+                
+                // Try alternative path
+                const fileName = filePath.split('/').pop();
+                const altUrl = `${window.location.origin}/uploads/documents/${fileName}`;
+                console.log("Trying alternative API file URL:", altUrl);
+                
+                try {
                   const altResponse = await fetch(altUrl, { method: 'HEAD' });
                   if (altResponse.ok) {
                     console.log("✅ Alternative API URL works:", altUrl);
                     setPdfUrl(altUrl);
                     setOriginalPdfUrl(altUrl);
+                    return;
                   } else {
                     console.error("❌ Alternative API URL also failed:", altUrl, "Status:", altResponse.status);
-                    
-                    // File doesn't exist - show helpful error message
-                    console.error("🚨 CRITICAL: File not found on filesystem:", fileName);
-                    console.error("This suggests a database-file mismatch. The file path in the database doesn't match what's on the filesystem.");
-                    
-                    // Set error state
-                    setPdfUrl(null);
-                    setOriginalPdfUrl(null);
                   }
+                } catch (error) {
+                  console.error("❌ Error testing alternative API URL:", error);
                 }
-              } catch (error) {
-                console.error("❌ Error testing API file path:", error);
+                
+                // File doesn't exist - show helpful error message
+                console.error("🚨 CRITICAL: File not found on filesystem:", fileName);
+                console.error("This suggests a database-file mismatch. The file path in the database doesn't match what's on the filesystem.");
+                
+                setError(`Document file not found: ${fileName}. This suggests a database-file mismatch. Please contact the system administrator.`);
+                // Set error state
+                setPdfUrl(null);
+                setOriginalPdfUrl(null);
+              } else {
+                console.log("No file path found in API response for document:", documentId);
+                setError("No file path found for this document. Please contact the system administrator.");
                 setPdfUrl(null);
                 setOriginalPdfUrl(null);
               }
             } else {
-              console.log("No file path found in API response for document:", documentId);
+              console.log("Failed to fetch document details from API, status:", response.status);
+              setError(`Failed to fetch document details: ${response.status}. Please try again or contact support.`);
               setPdfUrl(null);
               setOriginalPdfUrl(null);
             }
-          } else {
-            console.log("Failed to fetch document details from API");
+          } catch (error) {
+            console.error("Error fetching file path from API:", error);
+            setError(`Error fetching document details: ${error instanceof Error ? error.message : 'Unknown error'}`);
             setPdfUrl(null);
             setOriginalPdfUrl(null);
           }
-        } catch (error) {
-          console.error("Error fetching file path from API:", error);
+        } else {
+          console.log("No uploadedFile parameter provided and no documentId to fetch from");
+          setError("No document file or ID provided. Please ensure you're accessing this page with proper parameters.");
           setPdfUrl(null);
           setOriginalPdfUrl(null);
         }
-      } else {
-        console.log("No uploadedFile parameter provided and no documentId to fetch from");
+      } catch (error) {
+        console.error("Unexpected error in loadFile:", error);
+        setError(`Unexpected error loading file: ${error instanceof Error ? error.message : 'Unknown error'}`);
         setPdfUrl(null);
         setOriginalPdfUrl(null);
       }
@@ -729,6 +852,9 @@ export default function ESignDocument() {
       // Show success message
       alert('Signatures undone successfully. Document has been reverted to unsigned state.');
 
+      // Refresh the page to ensure all state is properly reset
+      window.location.reload();
+
     } catch (error) {
       console.error('Error undoing signatures:', error);
       alert(`Failed to undo signatures: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -757,9 +883,9 @@ export default function ESignDocument() {
   };
 
   return (
-    <div className={styles.container}>
-      
-      {isSidebarOpen && (
+    <div className={styles.mainContainer}>
+      {/* Left Sidebar */}
+      <div className={styles.sidebar}>
         <Sidebar
           hasSigned={hasSigned}
           role={role}
@@ -787,95 +913,71 @@ export default function ESignDocument() {
           onUndoChanges={handleUndoChanges}
           isUndoing={isUndoing}
         />
-      )}
+      </div>
 
-
-      {/* Show error message if no PDF URL is available */}
-      {!pdfUrl && (
-        <div className={styles.errorContainer}>
-          <h3>⚠️ PDF File Not Found</h3>
-          <p><strong>Issue:</strong> The PDF file for this document could not be loaded.</p>
-          
-          {documentId && documentId !== "unknown" ? (
-            <div>
-              <p><strong>Document ID:</strong> {documentId}</p>
-              <p><strong>Possible Causes:</strong></p>
-              <ul>
-                <li>The file was never properly uploaded to the system</li>
-                <li>The file was deleted from the filesystem but the database wasn't updated</li>
-                <li>There's a mismatch between the file path in the database and the actual file location</li>
-                <li>The file upload process failed during document creation</li>
-              </ul>
-              
-              <div className={styles.troubleshootingActions}>
-                <h4>Troubleshooting Steps:</h4>
-                <ol>
-                  <li>Check if the document was properly created with a file upload</li>
-                  <li>Verify the file exists in the system's document storage</li>
-                  <li>Contact the system administrator to investigate the database-file mismatch</li>
-                  <li>Try recreating the document with a new file upload</li>
-                </ol>
-                
-                <button 
-                  onClick={() => window.location.reload()}
-                  className={styles.retryButton}
-                >
-                  🔄 Retry Loading
-                </button>
-                
-                <button 
-                  onClick={() => router.back()}
-                  className={styles.backButton}
-                >
-                  ← Go Back
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <p><strong>Issue:</strong> No document ID or file URL provided.</p>
-              <p>This usually happens when trying to access the e-sign page without proper parameters.</p>
-              
-              <button 
-                onClick={() => router.back()}
-                className={styles.backButton}
-              >
-                ← Go Back
-              </button>
+      {/* Right Content Area */}
+      <div className={styles.contentArea}>
+        {/* Header */}
+        {/* <Header /> */}
+        
+        {/* PDF Viewer Container */}
+        <div className={styles.pdfViewerContainer}>
+          {/* Show error message if no PDF URL is available */}
+          {!pdfUrl && (
+            <div className={styles.errorContainer}>
+              {isLoading ? (
+                <div className={styles.loadingContainer}>
+                  <h3>🔄 Loading Document...</h3>
+                  <p>Please wait while we load your document...</p>
+                  <div className={styles.spinner}></div>
+                </div>
+              ) : error ? (
+                <div>
+                  <h3>⚠️ Error Loading Document</h3>
+                  <p><strong>Issue:</strong> {error}</p>
+                  
+                  {documentId && documentId !== "unknown" ? (
+                    <div>
+                      <p><strong>Document ID:</strong> {documentId}</p>
+                      <p><strong>Possible Causes:</strong></p>
+                      <ul>
+                        <li>The file was not properly uploaded</li>
+                        <li>The file path is incorrect</li>
+                        <li>There's a server configuration issue</li>
+                      </ul>
+                    </div>
+                  ) : (
+                    <p>No document ID provided. Please try uploading a document again.</p>
+                  )}
+                  
+                  <div className={styles.errorActions}>
+                    <button onClick={() => window.location.reload()}>
+                      🔄 Refresh Page
+                    </button>
+                    <button onClick={() => router.back()}>
+                      ← Go Back
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h3>📄 No Document Selected</h3>
+                  <p>Please upload a PDF document to get started.</p>
+                  <div className={styles.errorActions}>
+                    <button onClick={() => router.push('/employee2/create-new-doc')}>
+                      ➕ Create New Document
+                    </button>
+                    <button onClick={() => router.push('/employee2/documents')}>
+                      📁 Browse Documents
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )}
 
-      {/* Show PDF viewer only if we have a valid PDF URL */}
-      {pdfUrl && (
-        <div className={styles.content}>
-          <Sidebar
-            role={role}
-            signees={SIGNEES}
-            onRoleChange={setRole}
-            onFileChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                handleFileUpload(file);
-              }
-            }}
-            placeholders={placeholders}
-            jumpToNextSignature={jumpToNextSignature}
-            setModalOpen={setModalOpen}
-            setDraggingEnabled={setDraggingEnabled}
-            hasSigned={hasSigned}
-            resetSignaturePreview={() => viewerRef.current?.resetSignaturePreview()}
-            setViewMode={setViewMode}
-            onSaveFile={handleSaveFile}
-            onSavePlaceholders={handleSavePlaceholders}
-            onBackToDashboard={handleBackToDashboard}
-            documentId={documentId || undefined}
-            isDocumentCreator={isDocumentCreator}
-            onUndoChanges={handleUndoChanges}
-          />
-
-          <div className={styles.mainContent}>
+          {/* PDF Viewer */}
+          {pdfUrl && (
             <PDFViewer
               ref={viewerRef}
               role={role}
@@ -898,9 +1000,9 @@ export default function ESignDocument() {
               setPdfUrl={setPdfUrl}
               setHasSigned={setHasSigned}
             />
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

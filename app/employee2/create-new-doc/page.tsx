@@ -464,7 +464,6 @@ export default function CreateNewDocument() {
     }
 
     try {
-
       // Create blob URL for the file
       const fileUrl = URL.createObjectURL(file);
 
@@ -491,8 +490,18 @@ export default function CreateNewDocument() {
         userRole: "sender", // The person creating the document is automatically the sender
       });
 
+      console.log("Opening e-sign interface with params:", params.toString());
+      console.log("File URL being passed:", fileUrl);
+
       // Open e-sign interface in new tab
-      window.open(`/employee2/e-sign-document?${params.toString()}`, "_blank");
+      const eSignUrl = `/employee2/e-sign-document?${params.toString()}`;
+      console.log("Full e-sign URL:", eSignUrl);
+      
+      const newWindow = window.open(eSignUrl, "_blank");
+      
+      if (!newWindow) {
+        alert("Popup blocked! Please allow popups for this site and try again.");
+      }
     } catch (error) {
       console.error("Error opening e-sign interface:", error);
       alert(

@@ -3,8 +3,19 @@
   position: relative;
   width: 100%;
   height: 100%;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   background-color: #f5f5f5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 10px;
+  scroll-behavior: smooth;
+}
+
+.documentContainer > * {
+  flex-shrink: 0; /* Prevent PDF pages from shrinking */
 }
 
 .pageContainer {
@@ -13,6 +24,35 @@
     border: 1px solid var(--color-grey);
     width: max-content;
     margin-inline: auto;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: fit-content;
+}
+
+.pageContainer canvas {
+    display: block;
+    max-width: none !important;
+    height: auto !important;
+    width: auto !important; /* Prevent width constraints */
+}
+
+.pageContainer .react-pdf__Page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+.pageContainer .react-pdf__Page__canvas {
+    max-width: none !important;
+    height: auto !important;
+    width: auto !important; /* Prevent width constraints */
 }
 
 .actualSignaturePlaceholder {
@@ -58,10 +98,11 @@
     align-items: center;
     justify-content: center;
     text-align: center;
+    padding: 2px;
     width: 100%;
     height: 100%;
     color: #155724;
-    padding: 2px;
+    /* REMOVED: padding: 2px - this was adding offset */
 }
 
 .signedLabel {

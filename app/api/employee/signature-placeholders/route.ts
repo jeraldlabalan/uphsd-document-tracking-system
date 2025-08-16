@@ -146,7 +146,7 @@ export async function PUT(request: NextRequest) {
 
     const decoded = verify(token, JWT_SECRET) as any;
     const body = await request.json();
-    const { placeholderId, signatureData } = body;
+    const { placeholderId, signatureData, isSigned, signedAt } = body;
 
     if (!placeholderId || !signatureData) {
       return NextResponse.json(
@@ -154,6 +154,14 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Debug: Log the authentication and placeholder data
+    console.log("PUT request debug:", {
+      placeholderId,
+      decodedUserId: decoded.UserID,
+      body: body,
+      token: token ? "present" : "missing"
+    });
 
     // Verify the user is assigned to this placeholder
     const placeholder = await db.signaturePlaceholder.findFirst({
@@ -164,6 +172,15 @@ export async function PUT(request: NextRequest) {
       },
     });
 
+    console.log("Placeholder lookup result:", {
+      placeholderFound: !!placeholder,
+      placeholderData: placeholder ? {
+        PlaceholderID: placeholder.PlaceholderID,
+        AssignedToID: placeholder.AssignedToID,
+        IsDeleted: placeholder.IsDeleted
+      } : null
+    });
+
     if (!placeholder) {
       return NextResponse.json(
         { message: "Placeholder not found or access denied" },
@@ -171,45 +188,89 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Update the placeholder with signature data
-    console.log("Updating placeholder with data:", {
-      placeholderId,
-      isSigned: true,
-      signedAt: new Date(),
-      signatureData: signatureData,
-      isDeleted: body.isDeleted || false,
-    });
+    // Check if this is a coordinate update or signature application
+    const isCoordinateUpdate = body.x !== undefined || body.y !== undefined;
     
-    const updatedPlaceholder = await db.signaturePlaceholder.update({
-      where: { PlaceholderID: parseInt(placeholderId) },
-      data: {
-        IsSigned: true,
-        SignedAt: new Date(),
-        SignatureData: signatureData,
-        IsDeleted: body.isDeleted || false, // Handle isDeleted field
-      },
-      include: {
-        AssignedTo: {
-          select: {
-            UserID: true,
-            FirstName: true,
-            LastName: true,
-            Email: true,
+    if (isCoordinateUpdate) {
+      // This is a coordinate update (from dragging)
+      console.log("Updating placeholder coordinates:", {
+        placeholderId,
+        x: body.x,
+        y: body.y,
+        width: body.width,
+        height: body.height
+      });
+      
+      const updatedPlaceholder = await db.signaturePlaceholder.update({
+        where: { PlaceholderID: parseInt(placeholderId) },
+        data: {
+          X: body.x,
+          Y: body.y,
+          Width: body.width,
+          Height: body.height,
+        },
+        include: {
+          AssignedTo: {
+            select: {
+              UserID: true,
+              FirstName: true,
+              LastName: true,
+              Email: true,
+            },
           },
         },
-      },
-    });
-    
-    console.log("Placeholder updated successfully:", updatedPlaceholder);
+      });
+      
+      return NextResponse.json({
+        message: "Placeholder coordinates updated successfully",
+        placeholder: updatedPlaceholder,
+      });
+    } else {
+      // This is a signature application
+      // Ensure SignedAt is properly formatted as ISO-8601 DateTime
+      const signedAtDate = signedAt ? new Date(signedAt) : new Date();
+      
+      console.log("Updating placeholder with signature data:", {
+        placeholderId,
+        isSigned: isSigned !== undefined ? isSigned : true,
+        signedAt: signedAtDate,
+        signatureData: signatureData,
+      });
+      
+      const updatedPlaceholder = await db.signaturePlaceholder.update({
+        where: { PlaceholderID: parseInt(placeholderId) },
+        data: {
+          IsSigned: isSigned !== undefined ? isSigned : true,
+          SignedAt: signedAtDate,
+          SignatureData: signatureData,
+          // Only set IsDeleted if explicitly provided, otherwise keep as false
+          ...(body.isDeleted !== undefined && { IsDeleted: body.isDeleted }),
+        },
+        include: {
+          AssignedTo: {
+            select: {
+              UserID: true,
+              FirstName: true,
+              LastName: true,
+              Email: true,
+            },
+          },
+        },
+      });
+      
+      console.log("Placeholder updated successfully:", updatedPlaceholder);
 
-    return NextResponse.json({
-      message: "Signature applied successfully",
-      placeholder: updatedPlaceholder,
-    });
+      return NextResponse.json({
+        message: "Signature applied successfully",
+        placeholder: updatedPlaceholder,
+      });
+    }
   } catch (error) {
     console.error("Error updating signature placeholder:", error);
+    // Provide more specific error information
+    const errorMessage = error instanceof Error ? error.message : "Unknown database error";
     return NextResponse.json(
-      { message: "Internal Server Error" },
+      { message: `Database update failed: ${errorMessage}` },
       { status: 500 }
     );
   }
