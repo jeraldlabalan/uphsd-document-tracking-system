@@ -58,22 +58,8 @@ function PDFViewer(
     setPlaceholders,
     resetSignaturePreview,
     undoChanges: () => {
-      // Reset the PDF to the original version and restore placeholders
-      if (originalPdfUrl && setPdfUrl && setHasSigned) {
-        setPdfUrl(originalPdfUrl);
-        setHasSigned(false);
-        
-        // Restore placeholders from the database if available
-        if (documentId) {
-          fetchPlaceholdersFromDatabase();
-        }
-        
-        // Reset signature preview
-        setSignatureImage(null);
-        setUploadedSignature(null);
-        
-        console.log("Changes undone - document restored to original state");
-      }
+      // This method is now deprecated - undo functionality is handled at the page level
+      console.log("undoChanges called - this method is deprecated");
     },
   }));
 

@@ -32,6 +32,7 @@ export default function ESignDocument() {
   const [draggingEnabled, setDraggingEnabled] = useState(false);
   const [originalPdfUrl, setOriginalPdfUrl] = useState<string | null>(null);
   const [isDocumentCreator, setIsDocumentCreator] = useState(false);
+  const [isUndoing, setIsUndoing] = useState(false);
 
   // Get document data from URL parameters
   const documentId = searchParams.get("docId");
@@ -576,9 +577,85 @@ export default function ESignDocument() {
   };
 
   // Handle undo changes
-  const handleUndoChanges = () => {
-    if (viewerRef.current) {
-      viewerRef.current.undoChanges();
+  const handleUndoChanges = async () => {
+    if (!documentId) {
+      console.error('No document ID available for undo operation');
+      return;
+    }
+
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      'Are you sure you want to undo all signatures? This action will:\n\n' +
+      '• Remove all signatures from the document\n' +
+      '• Revert the document to its unsigned state\n' +
+      '• Reset the document status\n\n' +
+      'This action cannot be undone. Continue?'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsUndoing(true);
+
+    try {
+      // Call the API to undo signatures in the database
+      const response = await fetch('/api/employee/undo-signature', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ documentId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to undo signatures');
+      }
+
+      const result = await response.json();
+      console.log('Signatures undone successfully:', result);
+
+      // Update local state
+      setHasSigned(false);
+      
+      // Restore original PDF URL if available
+      if (originalPdfUrl) {
+        setPdfUrl(originalPdfUrl);
+      }
+
+      // Update placeholders with the restored data from database
+      if (result.placeholders) {
+        const uiPlaceholders = result.placeholders.map((ph: any) => ({
+          id: ph.PlaceholderID,
+          placeholderId: ph.PlaceholderID,
+          page: ph.Page - 1, // Convert to 0-based indexing
+          x: ph.X,
+          y: ph.Y,
+          width: ph.Width,
+          height: ph.Height,
+          signee: ph.AssignedToID.toString(),
+          signeeName: ph.AssignedTo?.FirstName + ' ' + ph.AssignedTo?.LastName,
+          isSigned: ph.IsSigned,
+          signedAt: ph.SignedAt,
+          assignedToId: ph.AssignedToID,
+        }));
+        
+        setPlaceholders(uiPlaceholders);
+        console.log('Placeholders restored from database:', uiPlaceholders);
+      }
+
+      // Reset view mode to edit
+      setViewMode('edit');
+
+      // Show success message
+      alert('Signatures undone successfully. Document has been reverted to unsigned state.');
+
+    } catch (error) {
+      console.error('Error undoing signatures:', error);
+      alert(`Failed to undo signatures: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsUndoing(false);
     }
   };
 
@@ -611,6 +688,7 @@ export default function ESignDocument() {
           documentId={documentId || undefined}
           isDocumentCreator={isDocumentCreator}
           onUndoChanges={handleUndoChanges}
+          isUndoing={isUndoing}
         />
       )}
 
