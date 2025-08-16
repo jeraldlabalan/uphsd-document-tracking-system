@@ -581,130 +581,152 @@ if (loading) {
         </div>
 
 
-        {/* Modal */}
-        {selectedDoc && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modalCard} data-aos="zoom-in">
-              <button className={styles.closeButton} onClick={() => setSelectedDoc(null)} aria-label="Close">
-                <X size={20} />
-              </button>
+    {/* Modal for Documents WITH Files */}
+{selectedDoc && selectedDoc.latestVersion?.filePath && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalCard} data-aos="zoom-in">
+      <button
+        className={styles.closeButton}
+        onClick={() => setSelectedDoc(null)}
+        aria-label="Close"
+      >
+        <X size={20} />
+      </button>
 
-              <div className={styles.modalTop}>
-                <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
-                <span className={`${styles.badge} ${
-                  selectedDoc.status === "Completed" ? styles.completed : 
+      <div className={styles.modalTop}>
+        <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
+        <span className={`${styles.badge} ${
+          selectedDoc.status === "Completed" ? styles.completed :
+          selectedDoc.status === "In-Process" ? styles.inProcess :
+          selectedDoc.status === "Approved" ? styles.approved :
+          selectedDoc.status === "Awaiting Signatures" ? styles.pending :
+          selectedDoc.status === "Awaiting-Completion" ? styles.awaiting :
+          selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold" ? styles.onHold :
+          styles.pending
+        }`}>
+          {selectedDoc.status}
+        </span>
+      </div>
 
-                  selectedDoc.status === "In-Process" ? styles.inProcess :
-                  selectedDoc.status === "Approved" ? styles.approved :
+      <div className={styles.metaGrid}>
+        <div className={styles.metaLabelRow}>
+          <span>Creator:</span>
+          <span>Type:</span>
+          <span>Department:</span>
+          <span>Date:</span>
+        </div>
+        <div className={styles.metaValueRow}>
+          <p>{`${selectedDoc.creator.FirstName} ${selectedDoc.creator.LastName}`}</p>
+          <p>{selectedDoc.type}</p>
+          <p>{selectedDoc.department}</p>
+          <p>{new Date(selectedDoc.requestedAt).toLocaleDateString()}</p>
+        </div>
+      </div>
 
-                  selectedDoc.status === "Awaiting Signatures" ? styles.pending :
-                  selectedDoc.status === "Awaiting-Completion" ? styles.awaiting :
-                  selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold"
-                                                      ? styles.onHold :
-
-                  styles.pending
-                }`}>
-                  {selectedDoc.status}
-                </span>
-              </div>
-
-              <div className={styles.metaGrid}>
-                <div className={styles.metaLabelRow}>
-                  <span>Creator:</span>
-                  <span>Type:</span>
-                  <span>Department:</span>
-                  <span>Date:</span>
-                </div>
-                <div className={styles.metaValueRow}>
-                  <p>{`${selectedDoc.creator.FirstName} ${selectedDoc.creator.LastName}`}</p>
-                  <p>{selectedDoc.type}</p>
-                  <p>{selectedDoc.department}</p>
-                  <p>{new Date(selectedDoc.requestedAt).toLocaleDateString()}</p>
-                </div>
-              </div>
-
-              <div className={styles.previewContainer}>
-  {selectedDoc.latestVersion?.filePath ? (
-    (() => {
-      const isPDF = selectedDoc.latestVersion.filePath.match(/\.pdf$/i);
-      
-      if (isPDF) {
-        return (
-          <div>
-            <iframe
-              src={`${selectedDoc.latestVersion.filePath}#toolbar=0&navpanes=0&scrollbar=0`}
-              title="PDF Preview"
-              width="100%"
-              height="600px"
-              style={{ border: "none" }}
-              onError={(e) => {
-                console.error("Iframe error:", e);
-              }}
-              onLoad={() => {
-                console.log("PDF loaded successfully");
-              }}
-            />
-            <div style={{ marginTop: '10px', fontSize: '12px', color: '#666' }}>
-              <p>If the preview doesn't load, you can:</p>
-              <ul style={{ margin: '5px 0', paddingLeft: '20px' }}>
-                <li><a href={selectedDoc.latestVersion.filePath} target="_blank" rel="noopener noreferrer">Open the file in a new tab</a></li>
-                <li><a href={selectedDoc.latestVersion.filePath} download>Download the file directly</a></li>
-              </ul>
-            </div>
-          </div>
-        );
-      } else {
-        return (
+      {/* File Preview */}
+      <div className={styles.previewContainer}>
+        {selectedDoc.latestVersion.filePath.match(/\.pdf$/i) ? (
+          <iframe
+            src={`${selectedDoc.latestVersion.filePath}#toolbar=0&navpanes=0&scrollbar=0`}
+            title="PDF Preview"
+            width="100%"
+            height="600px"
+            style={{ border: "none" }}
+          />
+        ) : (
           <div>
             <p>File type: {selectedDoc.latestVersion.filePath.split('.').pop()?.toUpperCase()}</p>
             <p style={{ fontSize: '12px', color: '#666', marginBottom: '10px' }}>
               This file type cannot be previewed in the browser.
             </p>
             <a
-             
+              href={selectedDoc.latestVersion.filePath}
               target="_blank"
               rel="noopener noreferrer"
+              download
               className={styles.downloadLink}
-              href={selectedDoc.latestVersion.filePath} download
             >
               Download File
             </a>
           </div>
-        );
-      }
-    })()
-  ) : (
-    <div>
-      <p>No file available.</p>
-      <p style={{ fontSize: '12px', color: '#666' }}>
-        This document may not have an attached file or the file path is missing.
-      </p>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className={styles.modalFooter}>
+        <div className={styles.footerLeft}>
+          <button className={styles.download} onClick={handleDownload}>Download</button>
+          <button className={styles.print} onClick={() => {
+            window.open(selectedDoc.latestVersion.filePath, "_blank", "noopener,noreferrer");
+          }}>Print</button>
+        </div>
+
+        <div className={styles.footerRight}>
+          {!["Approved", "Awaiting-Completion", "Completed", "On-Hold"].includes(selectedDoc.status) && (
+            <>
+              <button className={styles.Approve} onClick={() => handleApprove(selectedDoc.requestID)} disabled={isApproving}>
+                {isApproving ? "Approving..." : "Approve"}
+              </button>
+              <button className={styles.OnHold} onClick={() => setShowOnHoldModal(true)}>On Hold</button>
+            </>
+          )}
+        </div>
+      </div>
     </div>
-  )}
-</div>
-
-              <div className={styles.modalFooter}>
-  {/* Left side buttons */}
-  <div className={styles.footerLeft}>
-    <button className={styles.download} onClick={handleDownload}>
-      Download
-    </button>
-    <button
-      className={styles.print}
-      onClick={() => {
-        if (selectedDoc.latestVersion?.filePath) {
-          window.open(selectedDoc.latestVersion.filePath, "_blank", "noopener,noreferrer");
-        } else {
-          alert("No file available to print.");
-        }
-      }}
-    >
-      Print
-    </button>
   </div>
+)}
 
-  {/* Right side buttons */}
-  <div className={styles.footerRight}>
+
+{/* Modal for Documents WITHOUT Files */}
+{selectedDoc && !selectedDoc.latestVersion?.filePath && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalCardNoFile} data-aos="zoom-in">
+      <button
+        className={styles.closeButton}
+        onClick={() => setSelectedDoc(null)}
+        aria-label="Close"
+      >
+        <X size={20} />
+      </button>
+
+      <div className={styles.modalTop}>
+        <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
+        <span className={`${styles.badge} ${
+          selectedDoc.status === "Completed" ? styles.completed :
+          selectedDoc.status === "In-Process" ? styles.inProcess :
+          selectedDoc.status === "Approved" ? styles.approved :
+          selectedDoc.status === "Awaiting Signatures" ? styles.pending :
+          selectedDoc.status === "Awaiting-Completion" ? styles.awaiting :
+          selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold" ? styles.onHold :
+          styles.pending
+        }`}>
+          {selectedDoc.status}
+        </span>
+      </div>
+
+      <div className={styles.metaGrid}>
+        <div className={styles.metaLabelRow}>
+          <span>Creator:</span>
+          <span>Type:</span>
+          <span>Department:</span>
+          <span>Date:</span>
+        </div>
+        <div className={styles.metaValueRow}>
+          <p>{`${selectedDoc.creator.FirstName} ${selectedDoc.creator.LastName}`}</p>
+          <p>{selectedDoc.type}</p>
+          <p>{selectedDoc.department}</p>
+          <p>{new Date(selectedDoc.requestedAt).toLocaleDateString()}</p>
+        </div>
+      </div>
+
+      {/* No file message */}
+      <div className={styles.noFileMessage}>
+        <p>This document has no attached files.</p>
+      </div>
+
+      {/* Footer */}
+<div className={styles.modalFooter}>
+  <div className={styles.footerRightOnly}>
     {!["Approved", "Awaiting-Completion", "Completed", "On-Hold"].includes(selectedDoc.status) && (
       <>
         <button
@@ -725,10 +747,10 @@ if (loading) {
   </div>
 </div>
 
+    </div>
+  </div>
+)}
 
-            </div>
-          </div>
-        )}
 
         {/* confirm restore modal */}
         {showOnHoldModal && (

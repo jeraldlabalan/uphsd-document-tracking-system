@@ -458,118 +458,203 @@ if (loading) {
 
         </div>
 
-        {/* Modal */}
-        {selectedDoc && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modalCard} data-aos="zoom-in">
-              <button
-                className={styles.closeButton}
-                onClick={() => setSelectedDoc(null)}
-                aria-label="Close"
-              >
-                <X size={20} />
-              </button>
+     {/* Modal for Documents WITH Files */}
+{selectedDoc && selectedDoc.latestVersion?.filePath && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalCard} data-aos="zoom-in">
+      <button
+        className={styles.closeButton}
+        onClick={() => setSelectedDoc(null)}
+        aria-label="Close"
+      >
+        <X size={20} />
+      </button>
 
-              <div className={styles.modalTop}>
-                <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
-                <span className={`${styles.badge} ${
-                  selectedDoc.status === "Completed" ? styles.completed : 
-
-                  selectedDoc.status === "In-Process" ? styles.inProcess :
-                  selectedDoc.status === "Approved" ? styles.approved :
-
-                  selectedDoc.status === "Awaiting Signatures" ? styles.pending :
-                  selectedDoc.status === "Awaiting-Completion" ? styles.awaiting :
-                  selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold"
-                                                      ? styles.onHold :
-
-                  styles.pending
-                }`}>
-                  {selectedDoc.status}
-                </span>
-              </div>
-
-              <div className={styles.metaGrid}>
-                <div className={styles.metaLabelRow}>
-                  <span>Creator:</span>
-                  <span>Type:</span>
-                  <span>Date:</span>
-                </div>
-                <div className={styles.metaValueRow}>
-                  <p>{selectedDoc.creator}</p>
-                  <p>{selectedDoc.type}</p>
-                  <p>{selectedDoc.date}</p>
-                </div>
-              </div>
-
-              <div className={styles.previewContainer}>
-  {selectedDoc.latestVersion?.filePath ? (
-    selectedDoc.latestVersion.filePath.match(/\.pdf$/i) ? (
-      <iframe
-        src={`${selectedDoc.latestVersion.filePath}#toolbar=0&navpanes=0&scrollbar=0`}
-        title="PDF Preview"
-        width="100%"
-        height="600px"
-        style={{ border: "none" }}
-      />
-    ) : (
-      <p>
-        <a
-          href={selectedDoc.latestVersion.filePath}
-          target="_blank"
-          rel="noopener noreferrer"
+      <div className={styles.modalTop}>
+        <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
+        <span
+          className={`${styles.badge} ${
+            selectedDoc.status === "Completed"
+              ? styles.completed
+              : selectedDoc.status === "In-Process"
+              ? styles.inProcess
+              : selectedDoc.status === "Approved"
+              ? styles.approved
+              : selectedDoc.status === "Awaiting Signatures"
+              ? styles.pending
+              : selectedDoc.status === "Awaiting-Completion"
+              ? styles.awaiting
+              : selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold"
+              ? styles.onHold
+              : styles.pending
+          }`}
         >
-          Download File
-        </a>
-      </p>
-    )
-  ) : (
-    <p>No file available.</p>
-  )}
-</div>
+          {selectedDoc.status}
+        </span>
+      </div>
 
+      <div className={styles.metaGrid}>
+        <div className={styles.metaLabelRow}>
+          <span>Creator:</span>
+          <span>Type:</span>
+          <span>Date:</span>
+        </div>
+        <div className={styles.metaValueRow}>
+          <p>{selectedDoc.creator}</p>
+          <p>{selectedDoc.type}</p>
+          <p>{selectedDoc.date}</p>
+        </div>
+      </div>
 
-              <div className={styles.modalFooter}>
-  <div className={styles.leftButtons}>
-    <button className={styles.download} onClick={handleDownload}>
-      Download
-    </button>
-    <button className={styles.print} onClick={handlePrint}>
-      Print
-    </button>
+      {/* File Preview */}
+      <div className={styles.previewContainer}>
+        {selectedDoc.latestVersion.filePath.match(/\.pdf$/i) ? (
+          <iframe
+             src={`${selectedDoc.latestVersion.filePath}#toolbar=0&navpanes=0`}
+            title="PDF Preview"
+            width="100%"
+            height="600px"
+            style={{ border: "none" }}
+          />
+        ) : (
+          <p>
+            <a
+              href={selectedDoc.latestVersion.filePath}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Download File
+            </a>
+          </p>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className={styles.modalFooter}>
+        <div className={styles.leftButtons}>
+          <button className={styles.download} onClick={handleDownload}>
+            Download
+          </button>
+          <button className={styles.print} onClick={handlePrint}>
+            Print
+          </button>
+        </div>
+
+        <div className={styles.rightButton}>
+          {!["Completed", "Awaiting-Completion"].includes(selectedDoc.status) && (
+            <Link href={`/employee2/edit-doc/${selectedDoc.id}`}>
+              <button className={styles.edit}>Edit</button>
+            </Link>
+          )}
+
+          {selectedDoc.status === "Awaiting-Completion" && (
+            <button
+              className={styles.markCompleteBtn}
+              onClick={handleMarkAsComplete}
+            >
+              Mark as Completed
+            </button>
+          )}
+
+          {selectedDoc.status === "On-Hold" && (
+            <button
+              className={styles.RemarksBtn}
+              onClick={() => setIsRemarksModalOpen(true)}
+            >
+              Remarks
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   </div>
-
-  <div className={styles.rightButton}>
-    {!["Completed", "Awaiting-Completion"].includes(selectedDoc.status) && (
-  <Link href={`/employee2/edit-doc/${selectedDoc.id}`}>
-    <button className={styles.edit}>Edit</button>
-  </Link>
 )}
 
-
-    {selectedDoc.status === "Awaiting-Completion" && (
+{/* Modal for Documents WITHOUT Files */}
+{selectedDoc && !selectedDoc.latestVersion?.filePath && (
+  <div className={styles.modalOverlay}>
+   <div className={styles.modalCardNoFile} data-aos="zoom-in">
       <button
-        className={styles.markCompleteBtn}
-        onClick={handleMarkAsComplete}
+        className={styles.closeButton}
+        onClick={() => setSelectedDoc(null)}
+        aria-label="Close"
       >
-        Mark as Completed
+        <X size={20} />
       </button>
-    )}
 
-    {selectedDoc.status === "On-Hold" && (
-      <button
-        className={styles.RemarksBtn}
-        onClick={() => setIsRemarksModalOpen(true)}
-      >
-        Remarks
-      </button>
-    )}
+      <div className={styles.modalTop}>
+        <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
+        <span
+          className={`${styles.badge} ${
+            selectedDoc.status === "Completed"
+              ? styles.completed
+              : selectedDoc.status === "In-Process"
+              ? styles.inProcess
+              : selectedDoc.status === "Approved"
+              ? styles.approved
+              : selectedDoc.status === "Awaiting Signatures"
+              ? styles.pending
+              : selectedDoc.status === "Awaiting-Completion"
+              ? styles.awaiting
+              : selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold"
+              ? styles.onHold
+              : styles.pending
+          }`}
+        >
+          {selectedDoc.status}
+        </span>
+      </div>
+
+      <div className={styles.metaGrid}>
+        <div className={styles.metaLabelRow}>
+          <span>Creator:</span>
+          <span>Type:</span>
+          <span>Date:</span>
+        </div>
+        <div className={styles.metaValueRow}>
+          <p>{selectedDoc.creator}</p>
+          <p>{selectedDoc.type}</p>
+          <p>{selectedDoc.date}</p>
+        </div>
+      </div>
+
+      {/* Instead of preview */}
+      <div className={styles.noFileMessage}>
+        <p>This document has no attached files.</p>
+      </div>
+
+      {/* Footer */}
+      <div className={styles.modalFooter}>
+        <div className={styles.rightButton}>
+          {!["Completed", "Awaiting-Completion"].includes(selectedDoc.status) && (
+            <Link href={`/employee2/edit-doc/${selectedDoc.id}`}>
+              <button className={styles.edit}>Edit</button>
+            </Link>
+          )}
+
+          {selectedDoc.status === "Awaiting-Completion" && (
+            <button
+              className={styles.markCompleteBtn}
+              onClick={handleMarkAsComplete}
+            >
+              Mark as Completed
+            </button>
+          )}
+
+          {selectedDoc.status === "On-Hold" && (
+            <button
+              className={styles.RemarksBtn}
+              onClick={() => setIsRemarksModalOpen(true)}
+            >
+              Remarks
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   </div>
-</div>
+)}
 
-            </div>
-          </div>
-        )}
 
         {isRemarksModalOpen && (
           <div className={styles.modalOverlay}>
