@@ -287,6 +287,7 @@ export default function EditUserPage() {
           <h2 className={styles.title}>Edit User</h2>
           <hr className={styles.separator} />
 
+          <div className={styles.profileContainer}>
           <div className={styles.profileBox}>
             {user.profilePicture ? (
               <img
@@ -302,6 +303,7 @@ export default function EditUserPage() {
             <p className={styles.userName}>
               {user.firstName} {user.lastName}
             </p>
+          </div>
           </div>
 
           <div className={styles.form}>

@@ -343,116 +343,127 @@ export default function DocumentOverview() {
           </div>
         </div>
 
-        {selectedDoc && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modalCard}>
-              <button
-                className={styles.closeButton}
-                onClick={() => setSelectedDoc(null)}
-                aria-label="Close Modal"
-              >
-                <X size={20} />
-              </button>
+        {/* View Document Modal */}
+{selectedDoc && !isModalOpen && (
+  <div
+    className={styles.modalOverlay}
+    onClick={(e) => e.target === e.currentTarget && setSelectedDoc(null)}
+  >
+    <div className={styles.modalCard}>
+      <button
+        className={styles.closeButton}
+        onClick={() => setSelectedDoc(null)}
+        aria-label="Close Modal"
+      >
+        <X size={20} />
+      </button>
 
-              {/* Top Section */}
-              <div className={styles.modalTop}>
-                <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
-                <span
-                  className={`${styles.badge} ${
-                    selectedDoc.status === "Completed"
-                      ? styles.completed
-                      : selectedDoc.status === "In-Process"
-                        ? styles.inProcess
-                        : selectedDoc.status === "Awaiting Signatures"
-                          ? styles.pending
-                          : selectedDoc.status === "Awaiting-Completion"
-                            ? styles.awaiting
-                            : selectedDoc.status === "On Hold" ||
-                                selectedDoc.status === "On-Hold"
-                              ? styles.onHold
-                              : styles.pending
-                  }`}
-                >
-                  {selectedDoc.status}
-                </span>
-              </div>
+      {/* Top Section */}
+      <div className={styles.modalTop}>
+        <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
+        <span
+          className={`${styles.badge} ${
+            selectedDoc.status === "Completed"
+              ? styles.completed
+              : selectedDoc.status === "In-Process"
+              ? styles.inProcess
+              : selectedDoc.status === "Awaiting Signatures"
+              ? styles.pending
+              : selectedDoc.status === "Awaiting-Completion"
+              ? styles.awaiting
+              : selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold"
+              ? styles.onHold
+              : styles.pending
+          }`}
+        >
+          {selectedDoc.status}
+        </span>
+      </div>
 
-              {/* Meta Data */}
-              <div className={styles.metaGrid}>
-                <div className={styles.metaLabelRow}>
-                  <span>Creator:</span>
-                  <span>Department:</span>
-                  <span>Type:</span>
-                  <span>Date:</span>
-                </div>
-                <div className={styles.metaValueRow}>
-                  <p>{selectedDoc.creator}</p>
-                  <p>{selectedDoc.department}</p>
-                  <p>{selectedDoc.type}</p>
-                  <p>{selectedDoc.dateCreated}</p>
-                </div>
-              </div>
+      {/* Meta Data */}
+      <div className={styles.metaGrid}>
+        <div className={styles.metaLabelRow}>
+          <span>Creator:</span>
+          <span>Department:</span>
+          <span>Type:</span>
+          <span>Date:</span>
+        </div>
+        <div className={styles.metaValueRow}>
+          <p>{selectedDoc.creator}</p>
+          <p>{selectedDoc.department}</p>
+          <p>{selectedDoc.type}</p>
+          <p>{selectedDoc.dateCreated}</p>
+        </div>
+      </div>
 
-              {/* Preview Section */}
-              <div className={styles.previewSection}>
-                <h4>Document Preview</h4>
-                {selectedDoc.previewUrl ? (
-                  <iframe
-                    src={`${selectedDoc.preview}#toolbar=0&navpanes=0&scrollbar=0`}
-                    title="Document Preview"
-                    className={styles.previewFrame}
-                  ></iframe>
-                ) : (
-                  <p className={styles.noPreview}>No preview available</p>
-                )}
-              </div>
-            </div>
-          </div>
+      {/* Preview Section */}
+      <div className={styles.previewSection}>
+        <h4>Document Preview</h4>
+        {selectedDoc.previewUrl ? (
+          <iframe
+            src={`${selectedDoc.previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+            title="Document Preview"
+            className={styles.previewFrame}
+          ></iframe>
+        ) : (
+          <p className={styles.noPreview}>No preview available</p>
         )}
+      </div>
+    </div>
+  </div>
+)}
 
-        {isModalOpen && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.deletemodalContent}>
-              <h3 className={styles.deletemodalTitle}>Confirm Deletion</h3>
-              <p>
-                Are you sure you want to delete this document? This action can
-                be undone by restore.
-              </p>
-              <div className={styles.modalActions}>
-                <button
-                  onClick={handleCloseModal}
-                  className={styles.deletecancelButton}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmDelete}
-                  className={styles.deleteButton}
-                >
-                  Continue
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+{/* Delete Confirmation Modal */}
+{isModalOpen && (
+  <div
+    className={styles.modalOverlay}
+    onClick={(e) => e.target === e.currentTarget && setIsModalOpen(false)}
+  >
+    <div className={styles.deletemodalContent}>
+      <h3 className={styles.deletemodalTitle}>Confirm Deletion</h3>
+      <p>
+        Are you sure you want to delete this document? This action can be
+        undone by restore.
+      </p>
+      <div className={styles.modalActions}>
+        <button
+          onClick={() => setIsModalOpen(false)}
+          className={styles.deletecancelButton}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleConfirmDelete}
+          className={styles.deleteButton}
+        >
+          Continue
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
-        {/* Success Modal */}
-        {showSuccessModal && (
-          <div className={styles.successmodalOverlay}>
-            <div className={styles.modal}>
-              <h3 className={styles.successmodalTitle}>Success!</h3>
-              <p>Document deleted successfully!</p>
-              <div className={styles.modalActions}>
-                <button
-                  onClick={handleCloseSuccess}
-                  className={styles.closeButtonx}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+{/* Success Modal */}
+{showSuccessModal && (
+  <div
+    className={styles.successmodalOverlay}
+    onClick={() => setShowSuccessModal(false)}
+  >
+    <div className={styles.modal}>
+      <h3 className={styles.successmodalTitle}>Success!</h3>
+      <p>Document deleted successfully!</p>
+      <div className={styles.modalActions}>
+        <button
+          onClick={() => setShowSuccessModal(false)}
+          className={styles.closeButtonx}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
       </div>
     </div>
   );

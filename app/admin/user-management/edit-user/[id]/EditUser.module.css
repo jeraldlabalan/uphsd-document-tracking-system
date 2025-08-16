@@ -37,34 +37,43 @@
   border-top: 1px solid #ccc;
 }
 
+
+.profileContainer {
+  display: flex;
+  flex-wrap: wrap;         /* Allow multiple rows */
+  justify-content: center; /* Center horizontally */
+  gap: 2rem;               /* Space between profile boxes */
+}
+
+.profileContainer {
+  display: flex;
+  flex-wrap: wrap;          /* Allow multiple rows */
+  justify-content: center;  /* Center horizontally */
+  gap: 2rem;                /* Space between profile boxes */
+}
+
 .profileBox {
   display: flex;
+  flex-direction: column;   /* Image on top, name below */
   align-items: center;
-  margin-bottom: 2rem;
-  gap: 1rem;
-  justify-content: center;
+  gap: 0.5rem;
 }
 
-.profileImage {
-  width: 64px;
-  height: 64px;
-  object-fit: cover;
+.profileImage,
+.fallbackInitials {
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   border: 2px solid #ccc;
-}
-
-.fallbackInitials {
-  width: 64px;
-  height: 64px;
-  background-color: #ddd;
+  object-fit: cover;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
   font-size: 1.5rem;
   color: #333;
-  border-radius: 50%;
 }
+
 
 .userName {
   font-size: 1.2rem;
@@ -89,6 +98,10 @@
   color: #333;
 }
 
+.label:focus {
+  border-color: 2px solid var(--color-maroon);
+}
+
 .input {
   padding: 0.5rem 0.75rem;
   border: 1px solid #ccc;
@@ -98,8 +111,7 @@
 }
 
 .input:focus {
-  outline: none;
-  border-color: #0070f3;
+  border-color: 2px solid var(--color-maroon);
 }
 
 .error {
