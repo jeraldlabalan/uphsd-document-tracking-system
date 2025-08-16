@@ -81,6 +81,16 @@ const Modal: React.FC<ModalProps> = ({
     }
   };
 
+  // Debug function to log modal interactions
+  const logModalAction = (action: string, details?: any) => {
+    console.log(`[Modal Debug] ${action}:`, {
+      showModal,
+      isProcessing,
+      description,
+      details
+    });
+  };
+
   return (
     showModal && (
       <div className={styles.modalOverlay} onClick={handleOverlayClick}>
@@ -102,6 +112,7 @@ const Modal: React.FC<ModalProps> = ({
                 <button
                   className={styles.cancelButton}
                   onClick={() => {
+                    logModalAction("Cancel button clicked");
                     onCancel(); // Trigger the cancel function
                     setShowModal(false); // Close the modal
                   }}
@@ -114,17 +125,37 @@ const Modal: React.FC<ModalProps> = ({
                   className={styles.confirmButton}
                   onClick={async () => {
                     try {
+                      logModalAction("Confirm button clicked", { 
+                        onConfirm: onConfirm.toString(),
+                        onConfirmType: typeof onConfirm,
+                        onConfirmName: onConfirm.name || 'anonymous'
+                      });
+                      
+                      // Check if onConfirm is properly defined
+                      if (typeof onConfirm !== 'function') {
+                        logModalAction("Error: onConfirm is not a function", { onConfirm });
+                        console.error("Modal Error: onConfirm is not a function:", onConfirm);
+                        return;
+                      }
+                      
                       setIsProcessing(true);
+                      logModalAction("Calling onConfirm function");
+                      console.log("[Modal Debug] Executing function:", onConfirm.toString());
                       await onConfirm(); // Await completion of the action
+                      logModalAction("onConfirm function completed successfully");
                       // Modal will close automatically after action completes
                       // The parent component will handle the toast and modal closing
+                    } catch (error) {
+                      logModalAction("Error in onConfirm function", { error });
+                      console.error("Error in modal confirm:", error);
                     } finally {
                       setIsProcessing(false);
+                      logModalAction("Processing state reset to false");
                     }
                   }}
                   disabled={isProcessing}
                 >
-                  {isProcessing ? "Processing..." : "Continue"}
+                  {isProcessing ? "Processing..." : "Confirm"}
                 </button>
               </>
             )}

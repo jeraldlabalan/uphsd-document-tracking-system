@@ -38,8 +38,6 @@ const PositionManagement: React.FC<PositionManagementProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const [confirmAdd, setConfirmAdd] = useState(false);
-
   useEffect(() => {
     fetchPositions();
   }, []);
@@ -100,28 +98,24 @@ const PositionManagement: React.FC<PositionManagementProps> = ({
       return;
     }
 
-    setConfirmAdd(true);
+    console.log("[PositionManagement Debug] handleSaveClick - calling showModal for add operation");
     showModal({
       description: "Are you sure you want to add these positions?",
-      onConfirm: handleConfirm,
+      onConfirm: () => handleConfirmAdd(),
       onCancel: handleCancel,
       isLoading: false,
     });
   };
 
-  const handleConfirm = async () => {
-    if (confirmAdd) {
-      await savePositions();
-    } else {
-      await handleConfirmDeletion();
-    }
+  const handleConfirmAdd = async () => {
+    console.log("[PositionManagement Debug] handleConfirmAdd called");
+    await savePositions();
   };
 
   const savePositions = async () => {
     const validRows = rows.filter((r) => r.value.trim() !== "");
     if (validRows.length === 0) {
       toast.success("No changes to save.");
-      setConfirmAdd(false);
       return;
     }
     setIsLoading(true);
@@ -150,7 +144,6 @@ const PositionManagement: React.FC<PositionManagementProps> = ({
       toast.error("Error saving positions.");
     } finally {
       setIsLoading(false);
-      setConfirmAdd(false);
       // Close modal after action completes
       if (typeof window !== "undefined") {
         const event = new CustomEvent("closeModal");
@@ -160,33 +153,48 @@ const PositionManagement: React.FC<PositionManagementProps> = ({
   };
 
   const handleDeleteActiveItem = (id: number) => {
+    console.log("[PositionManagement Debug] handleDeleteActiveItem - calling showModal for delete operation", { id });
     setSuccess(false);
     setRowToDelete(id);
-    setConfirmAdd(false);
     showModal({
       description: "Are you sure you want to delete this position?",
-      onConfirm: handleConfirmDeletion,
+      onConfirm: () => handleConfirmDelete(id),
       onCancel: handleCancel,
       isLoading: false,
     });
   };
 
-  const handleConfirmDeletion = async () => {
-    if (rowToDelete === null) return;
+  const handleConfirmDelete = async (id: number) => {
+    console.log("[PositionManagement Debug] handleConfirmDelete called for ID:", id);
     setIsLoading(true);
     setSuccess(false);
+    
     try {
+      console.log("[PositionManagement Debug] Making DELETE request for ID:", id);
       const res = await fetch("/api/admin/settings/position-management", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: rowToDelete }),
+        body: JSON.stringify({ id: id }),
       });
+      
+      console.log("[PositionManagement Debug] DELETE response status:", res.status);
+      
       if (res.ok) {
+        console.log("[PositionManagement Debug] Delete successful, updating UI");
         setActiveItems((prev) =>
-          prev.filter((item) => item.id !== rowToDelete)
+          prev.filter((item) => item.id !== id)
         );
         setSuccess(true);
         toast.success("Position successfully deleted.");
+        
+        // Close modal after successful deletion
+        if (typeof window !== "undefined") {
+          const event = new CustomEvent("closeModal");
+          window.dispatchEvent(event);
+        }
+      } else {
+        console.log("[PositionManagement Debug] Delete failed with status:", res.status);
+        throw new Error("Delete failed");
       }
     } catch (error) {
       console.error("Delete error:", error);
@@ -194,11 +202,6 @@ const PositionManagement: React.FC<PositionManagementProps> = ({
     } finally {
       setIsLoading(false);
       setRowToDelete(null);
-      // Close modal after action completes
-      if (typeof window !== "undefined") {
-        const event = new CustomEvent("closeModal");
-        window.dispatchEvent(event);
-      }
     }
   };
 

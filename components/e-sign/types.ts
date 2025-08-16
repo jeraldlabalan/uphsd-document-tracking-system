@@ -81,6 +81,7 @@ export type SidebarProps = {
   documentId?: string;
   isDocumentCreator?: boolean;
   onUndoChanges?: () => void; // New prop for undo functionality
+  isUndoing?: boolean; // Loading state for undo operation
 }
 
 export interface PDFViewerRef {

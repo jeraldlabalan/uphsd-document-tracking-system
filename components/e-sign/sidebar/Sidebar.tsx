@@ -20,6 +20,7 @@ export default function Sidebar({
   documentId,
   isDocumentCreator = false,
   onUndoChanges,
+  isUndoing = false,
 }: SidebarProps) {
   console.log("All placeholders", placeholders);
   console.log("Current role:", role);
@@ -202,8 +203,9 @@ export default function Sidebar({
             <button
               onClick={onUndoChanges}
               className={styles.undoChangesButton}
+              disabled={isUndoing}
             >
-              Undo Changes
+              {isUndoing ? 'Undoing...' : 'Undo Changes'}
             </button>
           )}
 
