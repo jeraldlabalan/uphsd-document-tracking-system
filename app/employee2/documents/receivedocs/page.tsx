@@ -6,7 +6,6 @@ import { Search as SearchIcon, X, FileText, Inbox, FileX } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 import { fetchFilterData, FilterData } from "@/lib/filterData";
-import Loading from "@/app/loading";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
@@ -309,9 +308,7 @@ const handleNext = () => {
 
 
 
-if (loading) {
-    return <Loading />;
-  }
+
 
   return (
     <div>
