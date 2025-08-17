@@ -79,24 +79,30 @@ export default function DocumentOverview() {
   }, []);
 
   const filteredDocs = documents.filter((doc) => {
-    const statusMatch =
-      !statusFilter ||
-      (doc.status || "").toLowerCase() === statusFilter.toLowerCase();
-    const typeMatch =
-      !typeFilter ||
-      (doc.type || "").toLowerCase() === typeFilter.toLowerCase();
-    const searchMatch =
-      !search || (doc.title || "").toLowerCase().includes(search.toLowerCase());
+  const statusMatch =
+    !statusFilter ||
+    (doc.status || "").toLowerCase() === statusFilter.toLowerCase();
 
-    const docDate = new Date(doc.dateCreated);
-    const fromDate = dateFrom ? new Date(dateFrom) : null;
-    const toDate = dateTo ? new Date(dateTo) : null;
+  const typeMatch =
+    !typeFilter ||
+    (doc.type || "").toLowerCase() === typeFilter.toLowerCase();
 
-    const dateMatch =
-      (!fromDate || docDate >= fromDate) && (!toDate || docDate <= toDate);
+  const searchMatch =
+    !search ||
+    (doc.title || "").toLowerCase().includes(search.toLowerCase()) ||
+    (doc.id?.toString() || "").includes(search); // also allow searching by ID
 
-    return statusMatch && typeMatch && searchMatch && dateMatch;
-  });
+  const docDate = new Date(doc.dateCreated);
+  const fromDate = dateFrom ? new Date(dateFrom) : null;
+  const toDate = dateTo ? new Date(dateTo) : null;
+
+  const dateMatch =
+    (!fromDate || docDate >= fromDate) && (!toDate || docDate <= toDate);
+
+  return (
+    statusMatch && typeMatch && searchMatch && dateMatch
+  );
+});
 
   const handleCloseModal = () => setIsModalOpen(false);
   const handleCloseSuccess = () => setShowSuccessModal(false);

@@ -598,7 +598,6 @@
 }
 
 
-/* ✅ New modal for NO-FILE documents (shorter height, no preview area) */
 .modalCardNoFile {
   background: white;
   width: 100%;
@@ -663,7 +662,6 @@
 }
 
 
-/* ✅ Preview section (for WITH files) */
 .previewContainer {
   flex: 1;
   margin-bottom: 1rem;
@@ -677,7 +675,7 @@
   width: 100%;
   height: 100%;
   border: none;
-  overflow: hidden;   /* hides scrollbars */
+  overflow: hidden;  
 }
 .noFileMessage {
   margin: 2rem 0;
@@ -692,7 +690,7 @@
 
 .modalFooter {
   display: flex;
-  justify-content: space-between; /* Space between left and right sections */
+  justify-content: space-between;
   align-items: center;
   margin-top: 1rem;
 }
@@ -700,22 +698,21 @@
 .footerLeft,
 .footerRight {
   display: flex;
-  gap: 10px; /* Space between buttons */
+  gap: 10px; 
 }
 
 .footerRightOnly {
-  margin-left: auto; /* Pushes it to the right */
+  margin-left: auto; 
   display: flex;
   gap: 10px;
 }
 
 
-/* Align buttons to the right when there's no left section */
 .modalFooter .footerRightOnly {
   display: flex;
-  justify-content: flex-end; /* Aligns to right */
-  gap: 10px; /* Space between buttons */
-  padding: 10px 20px; /* Optional padding */
+  justify-content: flex-end; 
+  gap: 10px; 
+  padding: 10px 20px;
 }
 
 

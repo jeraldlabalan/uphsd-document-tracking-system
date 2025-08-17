@@ -234,7 +234,7 @@ const handleNext = () => {
               <SearchIcon className={styles.searchIcon} size={18} />
               <input
                 type="text"
-                placeholder="Search documents..."
+                placeholder="Search..."
                 className={styles.searchInput}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}

@@ -323,110 +323,109 @@ if (loading) {
  </div>
       </div>
      {showModal && selectedDoc && currentVersion && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalCard} data-aos="zoom-in">
-            <button className={styles.closeButton} onClick={closeModal}>
-              <X size={20} />
-            </button>
-            
-            <div className={styles.modalContent}>
-              <h3 className={styles.modalTitle}>File Versions</h3>
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalCard} data-aos="zoom-in">
+      <button className={styles.closeButton} onClick={closeModal}>
+        <X size={20} />
+      </button>
 
-              <div className={styles.modalMeta}>
-                <p>
-                  <strong>File Name:</strong>{" "}
-                  <span className={styles.highlight}>
-                    {selectedDoc.Document.Title}
-                  </span>
-                </p>
-                <p>
-                  <strong>Type:</strong>{" "}
-                  <span className={styles.highlight}>
-                    {selectedDoc.Document.DocumentType.TypeName || "Unknown"}
-                  </span>
-                </p>
-                <p>
-                  <strong>Version:</strong>{" "}
-                  <select
-                    className={styles.versionDropdown}
-                    value={currentVersion.VersionNumber}
-                    onChange={(e) => handleVersionChange(Number(e.target.value))}
+      <div className={styles.modalContent}>
+        <h3 className={styles.modalTitle}>File Versions</h3>
+
+        <div className={styles.modalBody}>
+          {/* Left Column: Metadata */}
+          <div className={styles.metaColumn}>
+            <p>
+              <strong>File Name:</strong>{" "}
+              <span className={styles.highlight}>
+                {selectedDoc.Document.Title}
+              </span>
+            </p>
+            <p>
+              <strong>Type:</strong>{" "}
+              <span className={styles.highlight}>
+                {selectedDoc.Document.DocumentType.TypeName || "Unknown"}
+              </span>
+            </p>
+            <p>
+              <strong>Version:</strong>{" "}
+              <select
+                className={styles.versionDropdown}
+                value={currentVersion.VersionNumber}
+                onChange={(e) =>
+                  handleVersionChange(Number(e.target.value))
+                }
+              >
+                {getAvailableVersions().map((doc) => (
+                  <option key={doc.VersionID} value={doc.VersionNumber}>
+                    Version {doc.VersionNumber} -{" "}
+                    {new Date(doc.CreatedAt).toLocaleDateString()}
+                  </option>
+                ))}
+              </select>
+            </p>
+            <p>
+              <strong>Changed By:</strong>{" "}
+              <span className={styles.highlight}>
+                {currentVersion.ChangedByName}
+              </span>
+            </p>
+            <p>
+              <strong>Description:</strong>{" "}
+              <span className={styles.highlight}>
+                {currentVersion.ChangeDescription}
+              </span>
+            </p>
+            <p>
+              <strong>Created:</strong>{" "}
+              <span className={styles.highlight}>
+                {new Date(currentVersion.CreatedAt).toLocaleDateString()}
+              </span>
+            </p>
+          </div>
+
+          {/* Right Column: Preview */}
+          <div className={styles.previewColumn}>
+            {currentVersion.FilePath ? (
+              isViewableFile(currentVersion.FilePath) ? (
+                <div className={styles.pdfViewerContainer}>
+                  <iframe
+                    src={getFileUrl(currentVersion.FilePath)}
+                    title={`Document Preview - Version ${currentVersion.VersionNumber}`}
+                  />
+                </div>
+              ) : (
+                <div className={styles.fileError}>
+                  <FileText size={48} color="#666" />
+                  <h4>File Preview Not Available</h4>
+                  <p>
+                    This file type (
+                    {getFileExtension(currentVersion.FilePath)}) cannot be
+                    previewed in the browser.
+                  </p>
+                  <a
+                    href={getFileUrl(currentVersion.FilePath)}
+                    download
+                    className={styles.downloadBtn}
                   >
-                    {getAvailableVersions().map((doc) => (
-                      <option key={doc.VersionID} value={doc.VersionNumber}>
-                        Version {doc.VersionNumber} - {new Date(doc.CreatedAt).toLocaleDateString()}
-                      </option>
-                    ))}
-                  </select>
-                </p>
-                <p>
-                  <strong>Changed By:</strong>{" "}
-                  <span className={styles.highlight}>
-                    {currentVersion.ChangedByName}
-                  </span>
-                </p>
-                <p>
-                  <strong>Description:</strong>{" "}
-                  <span className={styles.highlight}>
-                    {currentVersion.ChangeDescription}
-                  </span>
-                </p>
-                <p>
-                  <strong>Created:</strong>{" "}
-                  <span className={styles.highlight}>
-                    {new Date(currentVersion.CreatedAt).toLocaleDateString()}
-                  </span>
-                </p>
+                    <Download size={16} /> Download File
+                  </a>
+                </div>
+              )
+            ) : (
+              <div className={styles.fileError}>
+                <FileText size={64} color="#ccc" />
+                <h4>No File Path Available</h4>
+                <p>This document version doesn't have an associated file.</p>
               </div>
-
-              <div className={styles.previewArea}>
-                {currentVersion.FilePath ? (
-                  isViewableFile(currentVersion.FilePath) ? (
-                    <div className={styles.pdfViewerContainer}>
-                      <iframe
-                        src={getFileUrl(currentVersion.FilePath)}
-                        width="100%"
-                        height="600px"
-                        title={`Document Preview - Version ${currentVersion.VersionNumber}`}
-                        style={{ 
-                          border: '2px solid #ccc',
-                          borderRadius: '4px',
-                          backgroundColor: '#f9f9f9'
-                        }}
-                        onLoad={() => console.log('Iframe loaded successfully')}
-                        onError={(e) => console.error('Iframe error:', e)}
-                      />
-                    </div>
-                  ) : (
-                    <div className={styles.fileInfo}>
-                      <FileText size={48} color="#666" />
-                      <h4>File Preview Not Available</h4>
-                      <p>This file type ({getFileExtension(currentVersion.FilePath)}) cannot be previewed in the browser.</p>
-                      <a 
-                        href={getFileUrl(currentVersion.FilePath)} 
-                        download 
-                        className={styles.downloadBtn}
-                      >
-                        <Download size={16} />
-                        Download File
-                      </a>
-                    </div>
-                  )
-                ) : (
-                  <div className={styles.fileInfo}>
-                    <FileText size={64} color="#ccc" />
-                    <h4>No File Path Available</h4>
-                    <p>This document version doesn't have an associated file.</p>
-                    <p style={{ fontSize: '0.9rem', color: '#888', marginTop: '0.5rem' }}>
-                      The file may have been moved or deleted from the system.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }

@@ -1,8 +1,31 @@
 "use client";
 
 import React, { useState } from "react";
-import styles from "./ProfileManagement.module.css"; // keep your styles
+import styles from "./ProfileManagement.module.css";
 import toast from "react-hot-toast";
+
+const passwordRequirements = [
+  {
+    label: "Password at least 8 characters",
+    test: (s: string) => s.length >= 8,
+  },
+  {
+    label: "Password at least one uppercase letter",
+    test: (s: string) => /[A-Z]/.test(s),
+  },
+  {
+    label: "Password at least one lowercase letter",
+    test: (s: string) => /[a-z]/.test(s),
+  },
+  {
+    label: "Password at least one number",
+    test: (s: string) => /\d/.test(s),
+  },
+  {
+    label: "Password at least one special character (!@#$%^&*)",
+    test: (s: string) => /[!@#$%^&*]/.test(s),
+  },
+];
 
 interface ChangePasswordForm {
   currentPassword: string;
@@ -16,6 +39,8 @@ const ChangePasswordForm: React.FC = () => {
     newPassword: "",
     confirmPassword: "",
   });
+
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
@@ -31,6 +56,30 @@ const ChangePasswordForm: React.FC = () => {
       newPassword: "",
       confirmPassword: "",
     });
+    setErrors({});
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (!formData.currentPassword) {
+      newErrors.currentPassword = "Current password is required.";
+    }
+
+    // Check password requirements
+    const failedReq = passwordRequirements.find(
+      (req) => !req.test(formData.newPassword)
+    );
+    if (failedReq) {
+      newErrors.newPassword = `Password does not meet requirement: ${failedReq.label}`;
+    }
+
+    if (formData.newPassword !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (
@@ -38,13 +87,8 @@ const ChangePasswordForm: React.FC = () => {
   ): Promise<void> => {
     e.preventDefault();
 
-    // Confirm passwords match
-    if (formData.newPassword !== formData.confirmPassword) {
-      toast.error("New password and confirm password do not match.");
-      return;
-    }
+    if (!validateForm()) return;
 
-    // Confirm dialog
     if (!window.confirm("Are you sure you want to change your password?")) {
       return;
     }
@@ -91,6 +135,9 @@ const ChangePasswordForm: React.FC = () => {
                 onChange={handleChange}
                 required
               />
+              {errors.currentPassword && (
+                <p className={styles.inputError}>{errors.currentPassword}</p>
+              )}
             </div>
 
             <div className={styles.dataForm}>
@@ -115,9 +162,13 @@ const ChangePasswordForm: React.FC = () => {
                 onChange={handleChange}
                 required
               />
+              {errors.confirmPassword && (
+                <p className={styles.inputError}>{errors.confirmPassword}</p>
+              )}
             </div>
           </div>
         </div>
+
         <div className={styles.changePasswordButtons}>
           <button type="button" onClick={handleClear}>
             Clear
@@ -125,6 +176,25 @@ const ChangePasswordForm: React.FC = () => {
           <button type="submit">Change Password</button>
         </div>
       </form>
+
+      {errors.newPassword && (
+                <p className={styles.inputError}>{errors.newPassword}</p>
+              )}
+
+              {/* Password Requirements */}
+              <ul className={styles.passwordRequirements}>
+                {passwordRequirements.map((req, index) => {
+                  const isValid = req.test(formData.newPassword);
+                  return (
+                    <li
+                      key={index}
+                      className={isValid ? styles.valid : styles.invalid}
+                    >
+                      {isValid ? "✔" : "✖"} {req.label}
+                    </li>
+                  );
+                })}
+              </ul>
     </div>
   );
 };
