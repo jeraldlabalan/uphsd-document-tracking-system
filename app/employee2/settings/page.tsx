@@ -8,6 +8,7 @@ import Image from "next/image";
 import Email from "next-auth/providers/email";
 import UploadPhotoModal from "@/components/shared/modalSettings/modal";
 
+
 export default function ProfileSettings() {
   useEffect(() => {
     AOS.init({ duration: 1000, once: true });
@@ -28,6 +29,12 @@ export default function ProfileSettings() {
   const [mobileNumber, setMobileNumber] = useState("");
   const [position, setPosition] = useState("");
   const [department, setDepartment] = useState("");
+  
+  const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+
+
   interface ProfilePayload {
     firstName: string;
     lastName: string;
@@ -39,8 +46,41 @@ export default function ProfileSettings() {
   interface ApiResponse {
     [key: string]: any;
   }
+  const showAlert = (message: string) => {
+  setAlertMessage(message);
+  setIsAlertModalOpen(true);
+};
+
+const closeAlert = () => {
+  setIsAlertModalOpen(false);
+  setAlertMessage("");
+};
+
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const passwordRequirements = [
+  {
+    label: "Password at least 8 characters",
+    test: (s: string) => s.length >= 8,
+  },
+  {
+    label: "Password at least one uppercase letter",
+    test: (s: string) => /[A-Z]/.test(s),
+  },
+  {
+    label: "Password at least one lowercase letter",
+    test: (s: string) => /[a-z]/.test(s),
+  },
+  {
+    label: "Password at least one number",
+    test: (s: string) => /\d/.test(s),
+  },
+  {
+    label: "Password at least one special character (!@#$%^&*)",
+    test: (s: string) => /[!@#$%^&*]/.test(s),
+  },
+];
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -72,75 +112,99 @@ export default function ProfileSettings() {
     fetchProfile();
   }, []);
 
-  const handleSave = async (
-  e: React.FormEvent<HTMLFormElement>
-): Promise<void> => {
+  const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
+  setIsConfirmModalOpen(true); // open modal first
+};
 
+
+const confirmSave = async () => {
   const payload: ProfilePayload = {
     firstName,
     lastName,
     mobileNumber,
     position,
-    department, // optional
+    department,
   };
 
-  const res: Response = await fetch("/api/employee/settings", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  try {
+    const res: Response = await fetch("/api/employee/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-  const data: ApiResponse = await res.json();
-  console.log(data);
+    const data: ApiResponse = await res.json();
+    console.log(data);
 
-  if (res.ok) {
-    // optional: show a success toast/modal before reload
-    window.location.reload();
+    if (res.ok) {
+      setIsConfirmModalOpen(false);
+      // optional: show success modal instead of reload
+      window.location.reload();
+    }
+  } catch (err) {
+    console.error(err);
+    setIsConfirmModalOpen(false);
   }
 };
 
 
+
   const handlePasswordSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (newPassword !== confirmPassword) {
-      alert("New passwords do not match.");
-      return;
+  // 1️⃣ Check requirements
+  const unmetRequirements = passwordRequirements.filter(
+    (req) => !req.test(newPassword)
+  );
+
+  if (unmetRequirements.length > 0) {
+    showAlert(
+      "Password requirement is not met"
+    );
+    return;
+  }
+
+  // 2️⃣ Check match
+  if (newPassword !== confirmPassword) {
+    showAlert("New passwords do not match.");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/employee/settings/password", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        currentPassword,
+        newPassword,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      showAlert("Password changed successfully!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setProfilePhoto(data.ProfilePhoto || "default.jpg");
+    } else {
+      showAlert(data.message || "Failed to update password");
     }
+  } catch (err) {
+    console.error(err);
+    showAlert("Something went wrong.");
+  }
+};
 
-    try {
-      const res = await fetch("/api/employee/settings/password", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-        }),
-      });
 
-      const data = await res.json();
+const clearPasswordFields = () => {
+  setCurrentPassword("");
+  setNewPassword("");
+  setConfirmPassword("");
+};
 
-      if (res.ok) {
-        alert("Password changed successfully!");
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        setProfilePhoto(data.ProfilePhoto || "default.jpg");
-      } else {
-        alert(data.message || "Failed to update password");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Something went wrong.");
-    }
-  };
-
-  const clearPasswordFields = () => {
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -243,14 +307,33 @@ export default function ProfileSettings() {
                 </div>
                 <div className={styles.buttonGroup}>
                   <button
-                    className={styles.clearBtn}
-                    onClick={clearPasswordFields}
-                  >
-                    Clear
-                  </button>
+  type="button"
+  className={styles.clearBtn}
+  onClick={clearPasswordFields}
+>
+  Clear
+</button>
+
                   <button className={styles.uploadBtn}>Change Password</button>
                 </div>
               </form>
+              
+              
+                            {/* Password Requirements */}
+                           <ul className={styles.requirementsList}>
+  {passwordRequirements.map((req, idx) => {
+    const passed = req.test(newPassword);
+    return (
+      <li
+        key={idx}
+        className={passed ? styles.requirementPassed : styles.requirementFailed}
+      >
+        {passed ? "✔" : "✖"} {req.label}
+      </li>
+    );
+  })}
+</ul>
+
             </div>
 
             {/* Right Column: Information Section */}
@@ -303,15 +386,21 @@ export default function ProfileSettings() {
 
                 <div className={styles.formGroup}>
                   <div className={styles.inputGroup}>
-                    <label>Mobile Number</label>
-                    <input
-                      className={styles.inputField}
-                      name="mobile"
-                      value={mobileNumber}
-                      onChange={(e) => setMobileNumber(e.target.value)}
-                      placeholder="+63 9XX XXX XXXX"
-                    />
-                  </div>
+  <label>Mobile Number</label>
+  <input
+    type="tel"
+    className={styles.inputField}
+    name="mobile"
+    value={mobileNumber}
+    onChange={(e) => {
+      const value = e.target.value.replace(/\D/g, ""); // remove non-digits
+      setMobileNumber(value);
+    }}
+    placeholder="09XXXXXXXXX"
+    maxLength={11} // restrict to PH format (11 digits)
+  />
+</div>
+
                   <div className={styles.inputGroup}>
                     <label>Position</label>
                     <input
@@ -368,6 +457,44 @@ export default function ProfileSettings() {
           />
         )}
       </div>
+
+      {isAlertModalOpen && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalCard}>
+      <p>{alertMessage}</p>
+      <button onClick={closeAlert} className={styles.closeBtn}>
+        OK
+      </button>
+    </div>
+  </div>
+)}
+
+{isConfirmModalOpen && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalContent}>
+      <h2 className={styles.editmodalTitle}>Confirm Save</h2>
+      <p>Are you sure you want to save these changes?</p>
+      <div className={styles.modalActions}>
+        <button
+          onClick={() => setIsConfirmModalOpen(false)}
+          className={styles.reactivatecancelButton}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={confirmSave}
+          className={styles.confirmButton}
+        >
+          Yes, Save
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
+      
     </div>
   );
 }
