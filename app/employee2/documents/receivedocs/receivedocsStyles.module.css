@@ -823,14 +823,14 @@
 
 /* Modal content box */
 .modalContent {
-  background-color: #fff;
-  border-radius: 12px;
+   background-color: #ffffff;
   padding: 2rem;
-  max-width: 500px;
-  width: 90%;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  animation: fadeIn 0.3s ease-in-out;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
 }
+
 
 /* On Hold Modal */
 .confirmRestoreContainer {
