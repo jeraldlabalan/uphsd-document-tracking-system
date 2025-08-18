@@ -370,6 +370,12 @@
   border: 1px solid #b8daff;
 }
 
+.pending {
+  background-color: #94ad7a;
+  color: #023b10;
+  border: 1px solid #bee5eb;
+}
+
 /* Awaiting Completion */
 .awaiting {
   background-color: #d1ecf1;
