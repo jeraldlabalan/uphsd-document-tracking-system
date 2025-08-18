@@ -69,7 +69,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Update signature placeholders to mark them as signed
+    // Update ALL signature placeholders assigned to this signer to mark them as signed
+    // This matches the frontend behavior where all placeholders get the signature applied
     await db.signaturePlaceholder.updateMany({
       where: { 
         DocumentID: documentID,

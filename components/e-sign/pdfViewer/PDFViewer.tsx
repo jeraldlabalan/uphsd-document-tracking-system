@@ -485,7 +485,31 @@ function PDFViewer(
       // The coordinates should be relative to the PDF content, not the container
       // We'll store them as-is since they're already relative to the PDF page
       const pdfX = dragRect.x;
-      const pdfY = dragRect.y;
+      
+      // FIX: Calculate Y-coordinate relative to the current page viewport
+      // Use the displayed page dimensions to get the actual viewport
+      let pdfY = dragRect.y;
+      
+      if (displayedPageDims) {
+        // The displayedPageDims contains the actual rendered page dimensions
+        // We need to calculate the Y relative to this page's viewport
+        const pageViewportHeight = displayedPageDims.height;
+        
+        // If the Y coordinate is larger than the page height, it's relative to document scroll
+        if (dragRect.y > pageViewportHeight) {
+          // Calculate how many pages we've scrolled past
+          const pagesScrolled = Math.floor(dragRect.y / pageViewportHeight);
+          pdfY = dragRect.y - (pagesScrolled * pageViewportHeight);
+          
+          console.log('🔍 Page-relative coordinate calculation:', {
+            dragRectY: dragRect.y,
+            pageViewportHeight: pageViewportHeight,
+            pagesScrolled: pagesScrolled,
+            calculatedPageY: pdfY,
+            note: 'Y-coordinate adjusted for document scroll'
+          });
+        }
+      }
       
       console.log('🔍 Creating new placeholder with coordinates:', {
         dragRect,
@@ -495,12 +519,12 @@ function PDFViewer(
         displayedPageDims,
         rawCoords: { x: dragRect.x, y: dragRect.y },
         storedCoords: { x: pdfX, y: pdfY },
-        note: 'Coordinates stored relative to PDF page, will be scaled during signature placement'
+        note: 'Y-coordinate adjusted to be page-relative during creation'
       });
       
       const newPlaceholder: Placeholder = {
         id: Date.now(),
-        page: dragPage,
+        page: dragPage, // This should be 0-indexed
         x: pdfX, // Store coordinates relative to PDF page
         y: pdfY, // Store coordinates relative to PDF page
         width: MIN_WIDTH,
@@ -510,14 +534,27 @@ function PDFViewer(
         isSigned: false,
         signedAt: null,
         initials: null,
-        assignedToId: userId, // Set the database user ID
+        assignedToId: userId,
       };
       
-      console.log('✅ New placeholder created:', newPlaceholder);
-      console.log('🔍 Coordinate analysis:', {
-        storedX: newPlaceholder.x,
-        storedY: newPlaceholder.y,
-        expectedPosition: 'Should be relative to PDF page, not container'
+      console.log('🔍 New placeholder created:', {
+        ...newPlaceholder,
+        note: 'Page number should be 0-indexed to match PDF pages array'
+      });
+      
+      // LOGGING: Track placeholder creation for debugging
+      console.log('📍 PLACEHOLDER CREATED:', {
+        id: newPlaceholder.id,
+        page: newPlaceholder.page,
+        coordinates: { x: newPlaceholder.x, y: newPlaceholder.y },
+        dimensions: { width: newPlaceholder.width, height: newPlaceholder.height },
+        assignedTo: { signee, signeeName, userId },
+        dragInfo: {
+          dragPage: dragPage,
+          dragRect: dragRect,
+          pageDims: displayedPageDims
+        },
+        note: 'New placeholder added to the system'
       });
 
       // Add the new placeholder to the state
@@ -596,28 +633,31 @@ function PDFViewer(
       // Use ISO string format for database compatibility with Prisma
       const timestamp = now.toISOString();
 
-      // For receivers, sign ONLY placeholders assigned to them that are unsigned
-      // Debug: Log all placeholder data to understand the structure
-      console.log("🔍 PLACEHOLDER FILTERING DEBUG:");
-      console.log("All placeholders:", placeholders);
-      console.log("Current user role:", role);
-      placeholders.forEach((p, i) => {
-        console.log(`Placeholder ${i}:`, {
-          id: p.id,
-          signee: p.signee,
-          signeeName: p.signeeName,
-          assignedToId: p.assignedToId,
-          isSigned: p.isSigned,
-          page: p.page,
-          coordinates: { x: p.x, y: p.y, width: p.width, height: p.height }
-        });
-      });
+      // Filter placeholders for the current user - sign ALL unsigned placeholders assigned to them
+      // We need to get the current user ID to filter properly
+      let currentUserId: number | null = null;
+      try {
+        const userResponse = await fetch('/api/user/me');
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          currentUserId = userData.UserID;
+        }
+      } catch (error) {
+        console.error("Error fetching current user:", error);
+      }
       
-      // Filter placeholders for the current user - only sign placeholders assigned to them
-      // For now, let's just sign the first unsigned placeholder to test positioning
-      const receiverPlaceholders = placeholders.filter(p => !p.isSigned).slice(0, 1);
+      const receiverPlaceholders = placeholders.filter(p => 
+        !p.isSigned && p.assignedToId === currentUserId
+      );
       
       console.log("Available placeholders for signing:", receiverPlaceholders);
+      console.log("Current user ID:", currentUserId);
+      console.log("All placeholders:", placeholders.map(p => ({
+        id: p.id,
+        assignedToId: p.assignedToId,
+        isSigned: p.isSigned,
+        signeeName: p.signeeName
+      })));
       
       if (receiverPlaceholders.length === 0) {
         alert("No unsigned placeholders found to sign.");
@@ -626,43 +666,101 @@ function PDFViewer(
 
       console.log(`Applying signature to ${receiverPlaceholders.length} placeholders`);
 
+      // LOGGING: Show all placeholders and their page distribution
+      console.log('🔍 PLACEHOLDER PAGE DISTRIBUTION:', {
+        totalPlaceholders: placeholders.length,
+        placeholdersByPage: placeholders.reduce((acc, p) => {
+          if (!acc[p.page]) acc[p.page] = [];
+          acc[p.page].push({
+            id: p.id,
+            x: p.x,
+            y: p.y,
+            width: p.width,
+            height: p.height,
+            isSigned: p.isSigned,
+            signeeName: p.signeeName
+          });
+          return acc;
+        }, {} as Record<number, any[]>),
+        note: 'Shows all placeholders grouped by page number'
+      });
+
+      // LOGGING: Show which placeholders are being signed
+      console.log('🔍 SIGNING THESE PLACEHOLDERS:', receiverPlaceholders.map(p => ({
+        id: p.id,
+        page: p.page,
+        x: p.x,
+        y: p.y,
+        width: p.width,
+        height: p.height,
+        signeeName: p.signeeName
+      })));
+
       // Sign all unsigned placeholders for the receiver
       receiverPlaceholders.forEach(placeholderToSign => {
-        const page = pages[placeholderToSign.page];
+        // IMPORTANT: Frontend stores 0-indexed page numbers, PDF pages array is also 0-indexed
+        // So we can use the page number directly without conversion
+        const pageIndex = placeholderToSign.page;
+        const page = pages[pageIndex];
+        
+        if (!page) {
+          console.error(`Page ${placeholderToSign.page} not found. Available pages: 0-${pages.length - 1}`);
+          console.error('Available page indices:', Array.from({ length: pages.length }, (_, i) => i));
+          return;
+        }
+        
         const { width: pdfPageWidth, height: pdfPageHeight } = page.getSize();
 
-        // FIXED: Use the simple and correct coordinate conversion from the previous version
-        // Convert from scaled screen space → actual PDF space
-        // FIXED X-COORDINATE: Don't divide by scale to prevent horizontal misalignment
-        // MANUAL OFFSET: Move signature to the left to align with placeholder
-        const pdfX = placeholderToSign.x - 80; // Move 20 pixels to the left
-        // FIXED Y-COORDINATE: Remove the height addition that was causing excessive downward offset
-        // PDF coordinates start from bottom-left, screen coordinates from top-left
-        // We need to flip Y but not add the height
-        const pdfY = pdfPageHeight - (placeholderToSign.y / scale);
-        // FIXED WIDTH/HEIGHT: Don't divide by scale to maintain proper dimensions
+        console.log('🔍 PAGE DEBUG:', {
+          requestedPage: placeholderToSign.page,
+          actualPageIndex: pageIndex,
+          totalPages: pages.length,
+          pageSize: { width: pdfPageWidth, height: pdfPageHeight },
+          note: 'Page numbers are 0-indexed in both frontend and PDF array'
+        });
+
+        // IMPROVED COORDINATE CONVERSION FOR MULTI-PAGE DOCUMENTS
+        // X-coordinate: Apply horizontal offset for alignment
+        const pdfX = placeholderToSign.x - 80; // Move 80 pixels to the left for alignment
+        
+        // Y-coordinate: Proper conversion for multi-page documents
+        // The Y coordinate from the frontend is now relative to the current page viewport
+        // We need to convert it to PDF coordinate system (bottom-left origin)
+        let pdfY = pdfPageHeight - placeholderToSign.y;
+        
+        // MANUAL OFFSET: Adjust Y-coordinate by 20px to fix positioning
+        pdfY -= 20;
+        
+        // DEBUG: Show the Y-coordinate calculation
+        console.log('🔍 Y-COORDINATE CALCULATION:', {
+          placeholderId: placeholderToSign.id,
+          page: placeholderToSign.page,
+          frontendY: placeholderToSign.y,
+          pdfPageHeight: pdfPageHeight,
+          calculatedPdfY: pdfPageHeight - placeholderToSign.y,
+          adjustedPdfY: pdfY,
+          offset: '-20px',
+          note: 'Shows the Y-coordinate conversion process with manual offset'
+        });
+        
+        // Width/Height: Use original dimensions
         const pdfWidth = placeholderToSign.width;
         const pdfHeight = placeholderToSign.height;
         const padding = 6;
 
-        console.log('🔍 FIXED COORDINATE CONVERSION:', {
+        console.log('🔍 IMPROVED COORDINATE CONVERSION:', {
           placeholderId: placeholderToSign.id,
+          page: placeholderToSign.page,
+          pageIndex: pageIndex,
           screenCoords: { x: placeholderToSign.x, y: placeholderToSign.y, width: placeholderToSign.width, height: placeholderToSign.height },
-          scale: scale,
           pdfCoords: { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight },
           pdfPageSize: { width: pdfPageWidth, height: pdfPageHeight },
-          note: 'X and dimensions not scaled to prevent horizontal misalignment, only Y is flipped for PDF coordinate system'
-        });
-
-        // ADDITIONAL DEBUGGING: Show the exact coordinate calculations
-        console.log('🔍 COORDINATE DEBUG:', {
-          originalX: placeholderToSign.x,
-          originalY: placeholderToSign.y,
-          scale: scale,
-          manualOffset: -20,
-          pdfX: pdfX,
-          pdfY: pdfY,
-          note: 'X moved 20px left with manual offset, Y flipped for PDF coordinate system'
+          coordinateSystem: {
+            frontend: 'top-left origin, Y increases downward',
+            pdf: 'bottom-left origin, Y increases upward',
+            conversion: 'pdfY = pdfPageHeight - frontendY'
+          },
+          note: 'Y coordinate properly converted for multi-page documents'
         });
 
         // Draw signature box with border
@@ -674,6 +772,22 @@ function PDFViewer(
           borderColor: rgb(0, 0, 0),
           borderWidth: 1,
           borderDashArray: [3, 3],
+        });
+
+        // LOGGING: Log the signature placement details
+        console.log('✅ SIGNATURE PLACED:', {
+          placeholderId: placeholderToSign.id,
+          page: placeholderToSign.page,
+          pageIndex: pageIndex,
+          originalCoords: { x: placeholderToSign.x, y: placeholderToSign.y },
+          pdfCoords: { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight },
+          pageDimensions: { width: pdfPageWidth, height: pdfPageHeight },
+          signatureBox: {
+            x: pdfX,
+            y: pdfY,
+            width: pdfWidth,
+            height: pdfHeight
+          }
         });
 
         const halfWidth = pdfWidth / 2;
@@ -702,6 +816,16 @@ function PDFViewer(
           height: scaledHeight,
         });
 
+        // LOGGING: Log the signature image placement
+        console.log('🖼️ SIGNATURE IMAGE PLACED:', {
+          placeholderId: placeholderToSign.id,
+          page: placeholderToSign.page,
+          imageCoords: { x: imgX, y: imgY, width: scaledWidth, height: scaledHeight },
+          originalImageSize: { width: originalWidth, height: originalHeight },
+          scaling: { imageScale, scale: scale },
+          note: 'Actual signature image placement coordinates'
+        });
+
         // Draw signature information text
         const textBlockX = pdfX + halfWidth + padding;
         const signeeName = placeholderToSign.signeeName || "Unknown Signee";
@@ -716,6 +840,21 @@ function PDFViewer(
         const textStartY =
           pdfY + (pdfHeight + totalTextHeight) / 2 - lineHeight;
         
+        // LOGGING: Log the text placement area
+        console.log('📝 SIGNATURE TEXT PLACEMENT:', {
+          placeholderId: placeholderToSign.id,
+          page: placeholderToSign.page,
+          textArea: {
+            x: textBlockX,
+            y: textStartY,
+            width: halfWidth - padding * 2,
+            height: totalTextHeight
+          },
+          textLines: textLines.length,
+          lineHeight: lineHeight,
+          note: 'Signature information text placement area'
+        });
+
         textLines.forEach((line, i) => {
           const textWidth = font.widthOfTextAtSize(line.text, line.size);
           const textX =
@@ -733,6 +872,27 @@ function PDFViewer(
             color: textColor,
           });
         });
+      });
+
+      // LOGGING: Summary of all signatures placed
+      console.log('🎯 SIGNATURE PLACEMENT SUMMARY:', {
+        totalPlaceholdersSigned: receiverPlaceholders.length,
+        signaturesByPage: receiverPlaceholders.reduce((acc, p) => {
+          if (!acc[p.page]) acc[p.page] = [];
+          acc[p.page].push({
+            id: p.id,
+            originalCoords: { x: p.x, y: p.y },
+            pdfCoords: { 
+              x: p.x - 80, 
+              y: pages[p.page]?.getSize().height - p.y,
+              width: p.width,
+              height: p.height
+            },
+            pageDimensions: pages[p.page]?.getSize()
+          });
+          return acc;
+        }, {} as Record<number, any[]>),
+        note: 'Final summary of where all signatures were placed'
       });
 
       // Update placeholders in the database - only once
@@ -935,6 +1095,20 @@ function PDFViewer(
           file={pdfUrl}
           onLoadSuccess={({ numPages }) => {
             console.log("PDF loaded successfully with", numPages, "pages");
+            console.log("🔍 PDF Page Indexing Debug:", {
+              totalPages: numPages,
+              pageIndices: Array.from({ length: numPages }, (_, i) => i),
+              note: "Page indices are 0-indexed (0, 1, 2, ...)"
+            });
+            
+            // LOGGING: Show PDF structure for debugging
+            console.log('📄 PDF STRUCTURE LOADED:', {
+              totalPages: numPages,
+              pageIndices: Array.from({ length: numPages }, (_, i) => i),
+              expectedPageNumbers: Array.from({ length: numPages }, (_, i) => i + 1),
+              note: 'Shows the relationship between page indices and page numbers'
+            });
+            
             setNumPages(numPages);
             setPdfError(null);
             setPdfLoading(false);
