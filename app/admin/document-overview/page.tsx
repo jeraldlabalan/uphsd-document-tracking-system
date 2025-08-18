@@ -363,7 +363,7 @@ export default function DocumentOverview() {
              </button>
        
              <div className={styles.modalTop}>
-               <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
+               <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
                <span
                  className={`${styles.badge} ${
                    selectedDoc.status === "Completed"
@@ -439,7 +439,7 @@ export default function DocumentOverview() {
              </button>
        
              <div className={styles.modalTop}>
-               <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
+               <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
                <span
                  className={`${styles.badge} ${
                    selectedDoc.status === "Completed"

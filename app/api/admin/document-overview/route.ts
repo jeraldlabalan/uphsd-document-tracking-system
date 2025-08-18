@@ -56,6 +56,11 @@ export async function GET(req: NextRequest) {
             Creator: { select: { FirstName: true, LastName: true } },
             Department: { select: { Name: true } },
             DocumentType: { select: { TypeName: true } },
+            Versions: {
+              orderBy: { CreatedAt: "desc" },
+              take: 1,
+              select: { FilePath: true }
+            },
           },
         }),
       ]);
@@ -69,6 +74,9 @@ export async function GET(req: NextRequest) {
         `${doc.Creator?.FirstName ?? ""} ${doc.Creator?.LastName ?? ""}`.trim(),
       status: doc.Status ?? "Unknown",
       dateCreated: doc.CreatedAt.toISOString().split("T")[0],
+      latestVersion: doc.Versions?.[0] ? {
+        filePath: doc.Versions[0].FilePath
+      } : undefined,
     }));
 
     return NextResponse.json({
