@@ -372,13 +372,18 @@
   border: 1px solid #b8daff;
 }
 
+.pending {
+  background-color: #94ad7a;
+  color: #023b10;
+  border: 1px solid #bee5eb;
+}
+
 /* Awaiting Completion */
 .awaiting {
   background-color: #d1ecf1;
   color: #0c5460;
   border: 1px solid #bee5eb;
 }
-
 
 
 .actions a {
@@ -928,14 +933,16 @@
 }
 
 .modalContent {
-    background-color: #ffffff;
-  padding: 2rem;
-  border-radius: 12px;
-  max-width: 400px;
-  width: 100%;
-  text-align: center;
+    background: #fff;
+    padding: 60px 24px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 450px;
+    position: relative;
+    text-align: center;
+    height: 50%;
+    height: 300px;
 }
-
 
 /* confirm modal */
 

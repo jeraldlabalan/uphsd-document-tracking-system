@@ -336,11 +336,7 @@
   border: 1px solid #ffd59f;
 }
 
-.inProcess {
-  background-color: #d1ecf1;
-  color: #0c5460;
-}
-
+/* Completed */
 .completed {
   background-color: #d4edda;
   color: #155724;
@@ -361,12 +357,20 @@
   border: 1px solid #b8daff;
 }
 
+.pending {
+  background-color: #94ad7a;
+  color: #023b10;
+  border: 1px solid #bee5eb;
+}
+
 /* Awaiting Completion */
 .awaiting {
   background-color: #d1ecf1;
   color: #0c5460;
   border: 1px solid #bee5eb;
 }
+
+
 
 
 
@@ -437,11 +441,40 @@
   max-width: 1000px;
   height: 90vh;                     
   border-radius: 10px;
-  padding: 1.5rem;
+  padding: 2rem;
   position: relative;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+}
+
+.modalCardNoFile {
+  background: white;
+  width: 100%;
+  max-width: 700px;
+  height: auto;
+  border-radius: 10px;
+  padding: 2rem;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.modalCardRemarks {
+  background: white;
+  width: 100%;
+  max-width: 700px;
+  height: auto;                     
+  border-radius: 10px;
+  padding: 2rem;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; 
 }
 
 .closeButton {
@@ -458,7 +491,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  padding-top: 1rem;
+}
+
+.modalTopRemarks {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
   padding-top: 1rem;
 }
 
@@ -468,8 +508,10 @@
   color: var(--color-maroon);
 }
 
-.metaGrid {
-  margin-bottom: 1.5rem;
+.modalFooterRemarks {
+  display: flex;
+  justify-content: center;
+  margin-top: auto; 
 }
 
 .metaLabelRow,
@@ -494,21 +536,31 @@
   margin: 0.2rem 0 0;
 }
 
-
 .previewContainer {
-  flex: 1;                          
-  overflow-y: auto;               
+  flex: 1;
   margin-bottom: 1rem;
   border: 1px solid #eee;
   padding: 0.5rem;
   border-radius: 6px;
+  overflow-y: auto;
 }
 
-.modalFooter {
-  display: flex;
-  justify-content: space-between;
-  padding-top: 1rem;
-  border-top: 1px solid #ddd;
+.previewContainer iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  overflow: hidden;  
+}
+
+.noFileMessage {
+  margin: 2rem 0;
+  padding: 1rem;
+  text-align: center;
+  background: #f9f9f9;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+  color: #666;
+  font-size: 0.95rem;
 }
 
 .download,

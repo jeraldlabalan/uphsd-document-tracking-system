@@ -80,6 +80,8 @@ export default function EditUserPage() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
+  const [showConfirm, setShowConfirm] = useState(false);
+
 
   const fetchPositionsByRole = async (roleId: number) => {
     const res = await fetch(`/api/user/position?roleId=${roleId}`);
@@ -216,61 +218,63 @@ export default function EditUserPage() {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!user) return;
+  const handleSubmitClick = () => {
+  if (!user) return;
 
-    const errs: { [key: string]: string } = {};
-    if (!emailRegex.test(user.email)) errs.email = "Invalid email";
-    if (!user.firstName && !user.lastName) {
-      errs.firstName = "Either Firstname or Lastname must be provided";
-      errs.lastName = "Either Firstname or Lastname must be provided";
-    }
-    if (!user.firstName) errs.firstName = "Required";
-    if (!user.lastName) errs.lastName = "Required";
-    if (user.password && !validatePassword(user.password))
-      errs.password = "Weak password";
-    if (!/^09\d{9}$/.test(user.mobileNumber))
-      errs.mobileNumber = "Invalid number";
+  const errs: { [key: string]: string } = {};
+  if (!emailRegex.test(user.email)) errs.email = "Invalid email";
+  if (!user.firstName && !user.lastName) {
+    errs.firstName = "Either Firstname or Lastname must be provided";
+    errs.lastName = "Either Firstname or Lastname must be provided";
+  }
+  if (!user.firstName) errs.firstName = "Required";
+  if (!user.lastName) errs.lastName = "Required";
+  if (user.password && !validatePassword(user.password))
+    errs.password = "Weak password";
+  if (!/^09\d{9}$/.test(user.mobileNumber))
+    errs.mobileNumber = "Invalid number";
 
-    if (Object.keys(errs).length) {
-      setErrors(errs);
-      return;
-    }
+  if (Object.keys(errs).length) {
+    setErrors(errs);
+    return;
+  }
 
-    // ✅ Add confirmation here
-    const confirmed = window.confirm(
-      "Are you sure you want to save these changes?"
-    );
-    if (!confirmed) return;
+  // ✅ Instead of window.confirm, open modal
+  setShowConfirm(true);
+};
 
-    const payload: UserUpdatePayload = {
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      password: user.password || undefined,
-      mobile: user.mobileNumber.replace(/^0/, "+63"),
-      sex: user.sex,
-      roleId: user.roleID,
-      positionId: user.positionID,
-      departmentId: isAdminRole(user.roleID, roles)
-        ? null
-        : (user.departmentID ?? null),
-      employeeId: user.employeeID,
-    };
+const confirmSubmit = async () => {
+  if (!user) return;
 
-    const res = await fetch(`/api/admin/user-management/users/${user.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (res.ok) {
-      toast.success("User updated!");
-      router.push("/admin/user-management");
-    } else {
-      toast.error("Failed to update user");
-    }
+  const payload: UserUpdatePayload = {
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    password: user.password || undefined,
+    mobile: user.mobileNumber.replace(/^0/, "+63"),
+    sex: user.sex,
+    roleId: user.roleID,
+    positionId: user.positionID,
+    departmentId: isAdminRole(user.roleID, roles)
+      ? null
+      : (user.departmentID ?? null),
+    employeeId: user.employeeID,
   };
+
+  const res = await fetch(`/api/admin/user-management/users/${user.id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (res.ok) {
+    toast.success("User updated!");
+    router.push("/admin/user-management");
+  } else {
+    toast.error("Failed to update user");
+  }
+};
+
 
   if (!user)
     return (
@@ -477,15 +481,44 @@ export default function EditUserPage() {
             </div>
 
             <button
-              className={styles.submitBtn}
-              onClick={handleSubmit}
-              disabled={Object.values(errors).some(Boolean)}
-            >
-              Save Changes
-            </button>
+  className={styles.submitBtn}
+  onClick={handleSubmitClick}
+  disabled={Object.values(errors).some(Boolean)}
+>
+  Save Changes
+</button>
+
           </div>
         </div>
       </div>
+      {showConfirm && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalCard}>
+      <h3 className={styles.modalTitle}>Confirm Changes</h3>
+      <p className={styles.modalMessage}>
+        Are you sure you want to save these changes?
+      </p>
+      <div className={styles.modalActions}>
+        <button
+          className={styles.cancelBtn}
+          onClick={() => setShowConfirm(false)}
+        >
+          Cancel
+        </button>
+        <button
+          className={styles.confirmBtn}
+          onClick={() => {
+            setShowConfirm(false);
+            confirmSubmit();
+          }}
+        >
+          Yes, Save
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }

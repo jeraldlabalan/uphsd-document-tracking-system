@@ -16,9 +16,11 @@ interface OverviewDocument {
   dateCreated: string;
   creator: string;
   type: string;
-  previewUrl?: string;
-  preview?: string;
+  latestVersion?: {
+    filePath: string;
+  };
 }
+
 
 export default function DocumentOverview() {
   const [search, setSearch] = useState("");
@@ -283,33 +285,32 @@ export default function DocumentOverview() {
                     <td>{doc.title}</td>
                     <td>{doc.department}</td>
                     <td>
-                      <span
-                        className={`${styles.badge} ${
-                          doc.status === "Completed"
-                            ? styles.completed
-                            : doc.status === "In-Process"
-                              ? styles.inProcess
-                              : doc.status === "Awaiting Signatures"
-                                ? styles.pending
-                                : doc.status === "Awaiting-Completion"
-                                  ? styles.awaiting
-                                  : doc.status === "On Hold"
-                                    ? styles.onHold
-                                    : styles.pending
-                        }`}
-                      >
-                        {doc.status}
-                      </span>
+                      <span className={`${styles.badge} ${
+                  doc.status === "Completed" ? styles.completed : 
+                  doc.status === "In-Process" ? styles.inProcess : 
+
+                  doc.status === "Approved" ? styles.approved : 
+                  doc.status === "Awaiting Signatures" ? styles.pending :
+                  doc.status === "Awaiting-Completion" ? styles.awaiting :
+                  doc.status === "On Hold" || doc.status === "On-Hold"
+
+                                                      ? styles.onHold :
+
+                  styles.pending
+                }`}>
+                  {doc.status}
+                </span>
                     </td>
                     <td>{doc.dateCreated}</td>
                     <td>
-                      <a
-                        href="#"
-                        onClick={() => setSelectedDoc(doc)}
-                        className={`${styles.actionBtn} ${styles.viewBtn}`}
-                      >
-                        View
-                      </a>{" "}
+                      <button
+  type="button"
+  onClick={() => setSelectedDoc(doc)}
+  className={`${styles.actionBtn} ${styles.viewBtn}`}
+>
+  View
+</button> {" "}
+
                       <button
                         className={`${styles.actionBtn} ${styles.deleteBtn}`}
                         onClick={() => {
@@ -349,76 +350,141 @@ export default function DocumentOverview() {
           </div>
         </div>
 
-        {/* View Document Modal */}
-{selectedDoc && !isModalOpen && (
-  <div
-    className={styles.modalOverlay}
-    onClick={(e) => e.target === e.currentTarget && setSelectedDoc(null)}
-  >
-    <div className={styles.modalCard}>
-      <button
-        className={styles.closeButton}
-        onClick={() => setSelectedDoc(null)}
-        aria-label="Close Modal"
-      >
-        <X size={20} />
-      </button>
-
-      {/* Top Section */}
-      <div className={styles.modalTop}>
-        <h3 className={styles.modalTitle}>{selectedDoc.title}</h3>
-        <span
-          className={`${styles.badge} ${
-            selectedDoc.status === "Completed"
-              ? styles.completed
-              : selectedDoc.status === "In-Process"
-              ? styles.inProcess
-              : selectedDoc.status === "Awaiting Signatures"
-              ? styles.pending
-              : selectedDoc.status === "Awaiting-Completion"
-              ? styles.awaiting
-              : selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold"
-              ? styles.onHold
-              : styles.pending
-          }`}
-        >
-          {selectedDoc.status}
-        </span>
-      </div>
-
-      {/* Meta Data */}
-      <div className={styles.metaGrid}>
-        <div className={styles.metaLabelRow}>
-          <span>Creator:</span>
-          <span>Department:</span>
-          <span>Type:</span>
-          <span>Date:</span>
-        </div>
-        <div className={styles.metaValueRow}>
-          <p>{selectedDoc.creator}</p>
-          <p>{selectedDoc.department}</p>
-          <p>{selectedDoc.type}</p>
-          <p>{selectedDoc.dateCreated}</p>
-        </div>
-      </div>
-
-      {/* Preview Section */}
-      <div className={styles.previewSection}>
-        <h4>Document Preview</h4>
-        {selectedDoc.previewUrl ? (
-          <iframe
-            src={`${selectedDoc.previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-            title="Document Preview"
-            className={styles.previewFrame}
-          ></iframe>
-        ) : (
-          <p className={styles.noPreview}>No preview available</p>
-        )}
-      </div>
-    </div>
-  </div>
-)}
-
+        {/* Modal for Documents WITH Files */}
+       {selectedDoc && selectedDoc.latestVersion?.filePath && (
+         <div className={styles.modalOverlay}>
+           <div className={styles.modalCard} data-aos="zoom-in">
+             <button
+               className={styles.closeButton}
+               onClick={() => setSelectedDoc(null)}
+               aria-label="Close"
+             >
+               <X size={20} />
+             </button>
+       
+             <div className={styles.modalTop}>
+               <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
+               <span
+                 className={`${styles.badge} ${
+                   selectedDoc.status === "Completed"
+                     ? styles.completed
+                     : selectedDoc.status === "In-Process"
+                     ? styles.inProcess
+                     : selectedDoc.status === "Approved"
+                     ? styles.approved
+                     : selectedDoc.status === "Awaiting Signatures"
+                     ? styles.pending
+                     : selectedDoc.status === "Awaiting-Completion"
+                     ? styles.awaiting
+                     : selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold"
+                     ? styles.onHold
+                     : styles.pending
+                 }`}
+               >
+                 {selectedDoc.status}
+               </span>
+             </div>
+       
+             <div className={styles.metaGrid}>
+               <div className={styles.metaLabelRow}>
+                 <span>Creator:</span>
+                 <span>Type:</span>
+                 <span>Date:</span>
+               </div>
+               <div className={styles.metaValueRow}>
+                 <p>{selectedDoc.creator}</p>
+                 <p>{selectedDoc.type}</p>
+                 <p>{selectedDoc.dateCreated}</p>
+               </div>
+             </div>
+       
+             {/* File Preview */}
+             <div className={styles.previewContainer}>
+               {selectedDoc.latestVersion.filePath.match(/\.pdf$/i) ? (
+                 <iframe
+                    src={`${selectedDoc.latestVersion.filePath}#toolbar=0&navpanes=0`}
+                   title="PDF Preview"
+                   width="100%"
+                   height="600px"
+                   style={{ border: "none" }}
+                 />
+               ) : (
+                 <p>
+                   <a
+                     href={selectedDoc.latestVersion.filePath}
+                     target="_blank"
+                     rel="noopener noreferrer"
+                   >
+                     Download File
+                   </a>
+                 </p>
+               )}
+             </div>
+       
+        
+           </div>
+         </div>
+       )}
+       
+       {/* Modal for Documents WITHOUT Files */}
+       {selectedDoc && !selectedDoc.latestVersion?.filePath && (
+         <div className={styles.modalOverlay}>
+          <div className={styles.modalCardNoFile} data-aos="zoom-in">
+             <button
+               className={styles.closeButton}
+               onClick={() => setSelectedDoc(null)}
+               aria-label="Close"
+             >
+               <X size={20} />
+             </button>
+       
+             <div className={styles.modalTop}>
+               <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
+               <span
+                 className={`${styles.badge} ${
+                   selectedDoc.status === "Completed"
+                     ? styles.completed
+                     : selectedDoc.status === "In-Process"
+                     ? styles.inProcess
+                     : selectedDoc.status === "Approved"
+                     ? styles.approved
+                     : selectedDoc.status === "Awaiting Signatures"
+                     ? styles.pending
+                     : selectedDoc.status === "Awaiting-Completion"
+                     ? styles.awaiting
+                     : selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold"
+                     ? styles.onHold
+                     : styles.pending
+                 }`}
+               >
+                 {selectedDoc.status}
+               </span>
+             </div>
+       
+             <div className={styles.metaGrid}>
+               <div className={styles.metaLabelRow}>
+                 <span>Creator:</span>
+                 <span>Type:</span>
+                 <span>Date:</span>
+               </div>
+               <div className={styles.metaValueRow}>
+                 <p>{selectedDoc.creator}</p>
+                 <p>{selectedDoc.type}</p>
+                 <p>{selectedDoc.dateCreated}</p>
+               </div>
+             </div>
+       
+             {/* Instead of preview */}
+             <div className={styles.noFileMessage}>
+               <p>This document has no attached files.</p>
+             </div>
+       
+            
+              
+           </div>
+         </div>
+       )}
+       
 {/* Delete Confirmation Modal */}
 {isModalOpen && (
   <div
