@@ -10,6 +10,7 @@ interface UploadPhotoModalProps {
 const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
   isOpen,
   onClose,
+  onUploadSuccess, // Added missing prop
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
@@ -36,10 +37,10 @@ const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
     }
 
     const formData = new FormData();
-    formData.append("file", selectedFile);
+    formData.append("profilePicture", selectedFile); // Changed from "file" to "profilePicture"
 
     try {
-      const res = await fetch("/api/employee/settings/photo", {
+      const res = await fetch("/api/employee/settings/upload-profile-picture", { // Fixed endpoint
         method: "POST",
         body: formData,
       });
@@ -47,9 +48,11 @@ const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
       console.log("Selected file:", selectedFile);
 
       if (res.ok) {
-        const data = await res.json(); // assume this includes the filename
+        const data = await res.json(); // Get full response data
+        console.log("Upload API response:", data);
+        console.log("Using profilePicture:", data.profilePicture);
         alert("Profile photo updated!");
-        onUploadSuccess(data.filename); // 👈 notify parent
+        onUploadSuccess(data); // Pass full response data like admin system
         onClose(); // Close modal
       } else {
         const err = await res.json();

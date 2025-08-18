@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
       PositionID: user.PositionID,
       Position: user.Position?.Name || null, // ✅ Get name from relation
       Department: user.Department?.Name || null,
-      ProfilePicture: user.ProfilePicture,
+      ProfilePicture: user.ProfilePicture, // Return ProfilePicture directly like admin
     });
   } catch (error) {
     console.error(error);

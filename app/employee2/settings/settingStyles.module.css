@@ -13,8 +13,6 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-
-
 .pageTitle {
   color: var(--color-maroon);
   font-size: 24px;
@@ -30,6 +28,7 @@
   border: 0;
   border-top: 1px solid #ccc;
 }
+
 .profileContainer {
   display: flex;
   justify-content: flex-start;
@@ -97,9 +96,6 @@
   margin-top: 0.5rem;
 }
 
-
-
-
 .uploadBtn {
   position: relative;
   background-color: var(--color-maroon);
@@ -134,13 +130,10 @@
   color: black; 
 }
 
-
 .photoNote {
   font-size: 0.8rem;
   color: #555;
 }
-
-
 
 .clearBtn {
   position: relative;
@@ -175,8 +168,6 @@
 .clearBtn:hover {
   color: white; 
 }
-
-
 
 /* Password Form */
 .passwordSection h3 {
@@ -253,7 +244,6 @@
   color: black;
 }
 
-
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -306,307 +296,7 @@
   color: #555;
 }
 
-
-
-/* Overlay */
-.modalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.4); /* soft overlay */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-}
-
-/* Modal container */
-.modalContainer {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 15px 30px rgba(0,0,0,0.2);
-  padding: 2rem;
-  width: 400px;
-  max-width: 90%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  animation: fadeIn 0.3s ease;
-}
-
-/* Modal Title */
-.modalTitle {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  text-align: center;
-}
-
-/* Image Preview */
-.previewContainer {
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
-  overflow: hidden;
-  margin-bottom: 1rem;
-  background: #f5f5f5;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.previewImage {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.placeholder {
-  color: #999;
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-/* Upload area */
-.uploadArea {
-  width: 100%;
-  padding: 1rem;
-  border: 2px dashed #ccc;
-  border-radius: 12px;
-  text-align: center;
-  cursor: pointer;
-  margin-bottom: 1rem;
-  transition: border 0.3s ease;
-}
-
-.uploadArea:hover {
-  border-color: var(--color-maroon);
-}
-
-.uploadArea input {
-  display: none;
-}
-
-/* Modal actions */
-.modalActions {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-}
-
-/* Fade-in animation */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-
-
-.preview {
-  width: 120px;
-  height: 120px;
-  object-fit: cover;
-  margin: 10px auto;
-  border-radius: 50%;
-  border: 2px solid #ccc;
-}
-
-.placeholder {
-  width: 120px;
-  height: 120px;
-  margin: 10px auto;
-  border-radius: 50%;
-  background: #f0f0f0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #888;
-}
-
-.actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 15px;
-}
-
-.uploadBtn {
-  position: relative;
-  background-color: var(--color-maroon);
-  color: white;
-  font-weight: bold;
-  padding: 10px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  overflow: hidden;
-  z-index: 0;
-  transition: color 0.3s ease;
-}
-
-.uploadBtn::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background-color: var(--color-yellow);
-  transition: left 0.4s ease;
-  z-index: -1;
-}
-
-.uploadBtn:hover::before {
-  left: 0;
-}
-
-.uploadBtn:hover {
-  color: black; 
-}
-
-.cancelBtn {
-  position: relative;
-  background-color: white;
-  color: var(--color-maroon);
-  font-weight: bold;
-  padding: 10px;
-  border-radius: 6px;
-  border: 2px solid var(--color-maroon);
-  cursor: pointer;
-  overflow: hidden;
-  z-index: 0;
-  transition: color 0.3s ease;
-}
-
-.cancelBtn::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background-color: #ccc;
-  transition: left 0.4s ease;
-  z-index: -1;
-}
-
-.cancelBtn:hover::before {
-  left: 0;
-}
-
-.cancelBtn:hover {
-  color: var(--color-maroon); 
-}
-
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-
-.modal {
-  background-color: #ffffff;
-  padding: 2rem;
-  border-radius: 12px;
-  max-width: 400px;
-  width: 100%;
-  text-align: center;
-}
-
-.successModalActions {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.successmodalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-}
-
-.successmodalTitle {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #177054;
-  margin-bottom: 1rem;
-}
-
-.closeButtonx {
-  background-color: #177054;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  width: 50%;
-}
-
-.modalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-}
-
-.deletemodalContent {
-  background-color: #ffffff;
-  padding: 2rem;
-  border-radius: 12px;
-  max-width: 400px;
-  width: 100%;
-  text-align: center;
-}
-
-.deletemodalTitle {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #AD191B;
-  margin-bottom: 1rem;
-}
-
-
-.modalActions {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-
-.OKButtonModal {
-  background-color: #0F72B8;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  width: 50%;
-}
-
 @media (max-width: 768px) {
-
-
-  .contentSection{
-    justify-items: center;
-  }
-
   .contentContainer {
     padding: 40px 5%;
   }
@@ -622,10 +312,6 @@
 
   .leftColumn, .rightColumn {
     padding: 0%;
-  }
-
-  .photoNote {
-    text-align: center;
   }
 
   .buttonGroup {
