@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import toast from "react-hot-toast";
 import styles from "./EditUser.module.css";
 import AdminHeader from "@/components/shared/adminHeader";
+import Loading from "@/app/loading";
 
 interface Role {
   RoleID: number;
@@ -273,10 +274,7 @@ export default function EditUserPage() {
 
   if (!user)
     return (
-      <div className={styles.loadingContainer}>
-        <div className={styles.spinner}></div>
-        <p>Loading users...</p>
-      </div>
+      <Loading/>
     );
 
   return (

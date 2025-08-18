@@ -40,21 +40,21 @@
 
 .profileContainer {
   display: flex;
-  flex-wrap: wrap;         /* Allow multiple rows */
-  justify-content: center; /* Center horizontally */
-  gap: 2rem;               /* Space between profile boxes */
+  flex-wrap: wrap;         
+  justify-content: center; 
+  gap: 2rem;               
 }
 
 .profileContainer {
   display: flex;
-  flex-wrap: wrap;          /* Allow multiple rows */
-  justify-content: center;  /* Center horizontally */
-  gap: 2rem;                /* Space between profile boxes */
+  flex-wrap: wrap;          
+  justify-content: center;  
+  gap: 2rem;                
 }
 
 .profileBox {
   display: flex;
-  flex-direction: column;   /* Image on top, name below */
+  flex-direction: column;   
   align-items: center;
   gap: 0.5rem;
 }

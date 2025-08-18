@@ -587,9 +587,6 @@
   overflow-y: auto;
 }
 
-
-
-/* ✅ New modal for NO-FILE documents (shorter height, no preview area) */
 .modalCardNoFile {
   background: white;
   width: 100%;
@@ -677,7 +674,6 @@
   margin: 0.2rem 0 0;
 }
 
-/* ✅ Preview section (for WITH files) */
 .previewContainer {
   flex: 1;
   margin-bottom: 1rem;
@@ -691,11 +687,9 @@
   width: 100%;
   height: 100%;
   border: none;
-  overflow: hidden;   /* hides scrollbars */
+  overflow: hidden;  
 }
 
-
-/* ✅ No-file message (for WITHOUT files) */
 .noFileMessage {
   margin: 2rem 0;
   padding: 1rem;
