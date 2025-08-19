@@ -680,47 +680,30 @@ function PDFViewer(
           note: 'Page numbers are 0-indexed in both frontend and PDF array'
         });
 
-        // MANUAL OFFSET FIX: Add manual adjustments to align signature with placeholder
-        // Based on visual comparison between placeholder and signature positions
-        const manualOffsetX = -80;   // Move signature left to align with placeholder
-        const manualOffsetY =  120;   // Move signature up to align with placeholder
+        // Use coordinate transformation utility for consistent PDF placement
+        const coords = transformCoordinates(
+          { 
+            x: placeholderToSign.x, 
+            y: placeholderToSign.y, 
+            width: placeholderToSign.width, 
+            height: placeholderToSign.height 
+          }, 
+          pdfPageHeight
+        );
         
-        const pdfX = placeholderToSign.x + manualOffsetX;
-        let pdfY = pdfPageHeight - (placeholderToSign.y + placeholderToSign.height) + manualOffsetY;
-        const pdfWidth = placeholderToSign.width;
-        const pdfHeight = placeholderToSign.height;
+        const { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight } = coords;
         
-        console.log('🔍 MANUAL OFFSET ADJUSTMENT:', {
+        console.log('🔍 COORDINATE TRANSFORMATION:', {
           placeholderId: placeholderToSign.id,
           page: placeholderToSign.page,
-          storedCoords: { x: placeholderToSign.x, y: placeholderToSign.y, width: placeholderToSign.width, height: placeholderToSign.height },
-          manualOffsets: { x: manualOffsetX, y: manualOffsetY },
-          adjustedPdfCoords: { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight },
-          pdfPageSize: { width: pdfPageWidth, height: pdfPageHeight },
-          note: 'Manual offsets applied to align signature with placeholder position'
+          originalCoords: coords.original,
+          transformedCoords: coords.transformed,
+          finalCoords: { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight },
+          note: 'Using utility function for consistent coordinate transformation'
         });
         
-        // BOUNDARY CHECK: Ensure Y-coordinate is within page bounds
-        if (pdfY < 0) {
-          pdfY = 0; // Place at top of page if negative
-          console.log('⚠️ Y-coordinate was negative, placed at top of page:', {
-            originalY: placeholderToSign.y,
-            calculatedPdfY: pdfY,
-            finalPdfY: pdfY,
-            pageHeight: pdfPageHeight,
-            note: 'Coordinate was outside page, adjusted to top'
-          });
-        } else if (pdfY > pdfPageHeight - pdfHeight) {
-          pdfY = pdfPageHeight - pdfHeight; // Place at bottom if too low
-          console.log('⚠️ Y-coordinate was too low, placed at bottom of page:', {
-            originalY: placeholderToSign.y,
-            calculatedPdfY: pdfY,
-            finalPdfY: pdfY,
-            pageHeight: pdfPageHeight,
-            placeholderHeight: pdfHeight,
-            note: 'Coordinate was below page, adjusted to bottom'
-          });
-        }
+        // Boundary check is now handled by transformCoordinates utility
+        // The coordinates are already bounded and ready for use
         
         // DEBUG: Show the coordinate usage
         console.log('🔍 COORDINATE USAGE:', {
@@ -729,7 +712,7 @@ function PDFViewer(
           storedY: placeholderToSign.y,
           pdfPageHeight: pdfPageHeight,
           finalPdfY: pdfY,
-          note: 'Shows the coordinate usage process - NO scale conversion needed'
+          note: 'Shows the coordinate usage process - WITH scale conversion'
         });
         
         // Width/Height: Use converted dimensions
@@ -741,7 +724,7 @@ function PDFViewer(
           storedCoordinates: { x: placeholderToSign.x, y: placeholderToSign.y, width: placeholderToSign.width, height: placeholderToSign.height },
           pdfCoordinates: { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight },
           pageDimensions: { width: pdfPageWidth, height: pdfPageHeight },
-          note: 'Using stored coordinates directly - NO scale conversion needed'
+          note: 'Using scaled coordinates for consistent PDF placement'
         });
 
         // Draw signature box with border
@@ -863,8 +846,8 @@ function PDFViewer(
           
           // Use the EXACT same coordinate calculation as signature placement
           const pageHeight = pages[p.page]?.getSize().height || 842;
-          const pdfX = p.x; // Direct coordinate usage - NO scale conversion
-          const pdfY = pageHeight - (p.y + p.height); // Direct coordinate usage - NO scale conversion
+          const pdfX = p.x * scale; // Scale conversion to match signature placement
+          const pdfY = p.y * scale; // Scale conversion to match signature placement
           
           acc[p.page].push({
             id: p.id,
@@ -872,11 +855,11 @@ function PDFViewer(
             pdfCoords: { 
               x: pdfX, 
               y: pdfY,
-              width: p.width,
-              height: p.height
+              width: p.width * scale,
+              height: p.height * scale
             },
             pageDimensions: pages[p.page]?.getSize(),
-            note: 'Coordinates match exactly what was used for signature placement - NO scale conversion'
+            note: 'Coordinates match exactly what was used for signature placement - WITH scale conversion'
           });
           return acc;
         }, {} as Record<number, any[]>),
@@ -997,6 +980,27 @@ function PDFViewer(
     signee: string;
     signeeName: string;
   } | null>(null);
+
+  // Coordinate transformation utility function
+  const transformCoordinates = (uiCoords: { x: number; y: number; width: number; height: number }, pageHeight: number) => {
+    // Transform UI coordinates to PDF coordinates
+    const pdfX = uiCoords.x * scale;
+    const pdfY = uiCoords.y * scale;
+    const pdfWidth = uiCoords.width * scale;
+    const pdfHeight = uiCoords.height * scale;
+    
+    // Ensure coordinates are within page bounds
+    const boundedY = Math.max(0, Math.min(pdfY, pageHeight - pdfHeight));
+    
+    return {
+      x: pdfX,
+      y: boundedY,
+      width: pdfWidth,
+      height: pdfHeight,
+      original: uiCoords,
+      transformed: { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight }
+    };
+  };
 
   const [resizingEnabled, setResizingEnabled] = useState(true);
 
