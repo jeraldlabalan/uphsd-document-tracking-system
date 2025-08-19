@@ -200,6 +200,14 @@ export default function EditUserPage() {
             : value,
     });
 
+    // Clear EmployeeID error when user types
+    if (name === "employeeID") {
+      setErrors((prev) => ({
+        ...prev,
+        employeeID: "",
+      }));
+    }
+
     // Validation logic for firstName and lastName:
     if (name === "firstName" || name === "lastName") {
       if (!user.firstName && !user.lastName) {
@@ -233,6 +241,11 @@ export default function EditUserPage() {
     errs.password = "Weak password";
   if (!/^09\d{9}$/.test(user.mobileNumber))
     errs.mobileNumber = "Invalid number";
+  
+  // Validate EmployeeID is not empty
+  if (!user.employeeID || user.employeeID.trim() === "") {
+    errs.employeeID = "Employee ID is required";
+  }
 
   if (Object.keys(errs).length) {
     setErrors(errs);
@@ -271,7 +284,12 @@ const confirmSubmit = async () => {
     toast.success("User updated!");
     router.push("/admin/user-management");
   } else {
-    toast.error("Failed to update user");
+    try {
+      const errorData = await res.json();
+      toast.error(errorData.message || "Failed to update user");
+    } catch {
+      toast.error("Failed to update user");
+    }
   }
 };
 
@@ -317,6 +335,9 @@ const confirmSubmit = async () => {
                 value={user.employeeID}
                 onChange={handleChange}
               />
+              {errors.employeeID && (
+                <p className={styles.error}>{errors.employeeID}</p>
+              )}
             </div>
 
             <div className={styles.formGroup}>

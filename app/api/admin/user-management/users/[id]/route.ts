@@ -117,7 +117,25 @@ export async function PUT(request: Request, { params }: { params: Params }) {
     if (roleId !== undefined) updatedUserData.RoleID = roleId;
     if (positionId !== undefined) updatedUserData.PositionID = positionId;
 
-    if (employeeId !== undefined) updatedUserData.EmployeeID = employeeId;
+    if (employeeId !== undefined) {
+      // Check if the new EmployeeID already exists for another user
+      if (employeeId) {
+        const existingUser = await db.user.findFirst({
+          where: {
+            EmployeeID: employeeId,
+            UserID: { not: userId }, // Exclude current user
+          },
+        });
+        
+        if (existingUser) {
+          return NextResponse.json(
+            { message: `Employee ID "${employeeId}" is already assigned to another user.` },
+            { status: 400 }
+          );
+        }
+      }
+      updatedUserData.EmployeeID = employeeId;
+    }
 
     // For DepartmentID, enforce Admin role condition:
     if (departmentId !== undefined) {

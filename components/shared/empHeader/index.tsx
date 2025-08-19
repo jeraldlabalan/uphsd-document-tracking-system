@@ -123,12 +123,25 @@ const handleLogout = async () => {
     });
 
     if (res.ok) {
-      router.push("/login");
+      // Clear any cached form data
+      if (typeof window !== "undefined") {
+        // Clear any localStorage data
+        localStorage.clear();
+        // Clear any sessionStorage data
+        sessionStorage.clear();
+      }
+      
+      // Force a hard navigation to login to clear all state
+      window.location.href = "/login";
     } else {
       console.error("Logout failed");
+      // Even if logout fails, redirect to login
+      window.location.href = "/login";
     }
   } catch (err) {
     console.error("Logout error:", err);
+    // Even if error occurs, redirect to login
+    window.location.href = "/login";
   }
 };
 

@@ -40,6 +40,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Add cache control headers to prevent caching of protected routes
+  const response = NextResponse.next();
+  response.headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
+  response.headers.set("Pragma", "no-cache");
+  response.headers.set("Expires", "0");
+
   try {
     if (!token) {
       console.log("No token found, redirecting to login");

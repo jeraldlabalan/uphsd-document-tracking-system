@@ -92,6 +92,9 @@ interface DashboardData {
 }
 
 export default function AdminDashboard() {
+
+
+
   useEffect(() => {
     AOS.init({ duration: 1000, once: true });
 
@@ -187,6 +190,8 @@ export default function AdminDashboard() {
     // Cleanup interval on component unmount
     return () => clearInterval(intervalId);
   }, []);
+
+
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

@@ -21,6 +21,19 @@ export default function Login() {
       duration: 1000,
       once: true,
     });
+
+    // Clear any cached form data on component mount
+    setFormData({
+      email: "",
+      password: "",
+    });
+    setIsEmailValid(true);
+
+    // Clear any localStorage/sessionStorage that might affect login
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("loginFormData");
+      sessionStorage.removeItem("loginFormData");
+    }
   }, []);
 
   const router = useRouter();
@@ -42,7 +55,9 @@ export default function Login() {
     }));
 
     if (name === "email") {
-      setIsEmailValid(value.toLowerCase().endsWith("@cvsu.edu.ph"));
+      // Reset validation state and check if email is valid
+      const isValid = value === "" || value.toLowerCase().endsWith("@cvsu.edu.ph");
+      setIsEmailValid(isValid);
     }
   }
 
@@ -86,26 +101,33 @@ export default function Login() {
 
       setIsLoading(false); // ✅ Reset before navigation
 
+      // Clear form data after successful login
+      setFormData({
+        email: "",
+        password: "",
+      });
+      setIsEmailValid(true);
+
       // Check if user has complete profile
       if (!data.hasCompleteProfile) {
         toast.error("Please complete your profile first");
         if (data.role === "Admin") {
           await new Promise((r) => setTimeout(r, 100)); // slight delay
-          router.push("/admin/settings");
+          window.location.href = "/admin/settings";
         } else if (data.role === "Employee") {
           await new Promise((r) => setTimeout(r, 100)); // slight delay
-          router.push("/employee2/settings");
+          window.location.href = "/employee2/settings";
         }
       } else {
         toast.success("Login successful!");
         if (data.role === "Admin") {
           await new Promise((r) => setTimeout(r, 100)); // slight delay
-          router.push("/admin/dashboard");
+          window.location.href = "/admin/dashboard";
         } else if (data.role === "Employee") {
           await new Promise((r) => setTimeout(r, 100)); // slight delay
-          router.push("/employee2/dashboard");
+          window.location.href = "/employee2/dashboard";
         } else {
-          router.push("/");
+          window.location.href = "/";
         }
       }
     } catch (error) {

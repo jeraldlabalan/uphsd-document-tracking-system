@@ -46,32 +46,17 @@ export default function AdminHeader() {
     fetchUser();
   }, [router]);
 
-  // Function to refresh user info (can be called from other components)
-  const refreshUserInfo = async () => {
-    try {
-      const res = await fetch("/api/user/me");
-      const data = await res.json();
-      if (res.ok) {
-        setUserInfo(data);
-      }
-    } catch (err) {
-      console.error("Failed to refresh user info");
-    }
-  };
-
-  // Listen for custom events to automatically refresh user info
   useEffect(() => {
-    const handleUserInfoUpdate = () => {
-      refreshUserInfo();
-    };
-
-    // Listen for custom event when user info is updated
-    window.addEventListener("userInfoUpdated", handleUserInfoUpdate);
-
-    return () => {
-      window.removeEventListener("userInfoUpdated", handleUserInfoUpdate);
+    // Force refresh so it checks auth on back navigation
+    window.onpageshow = function (event) {
+      if (event.persisted) {
+        window.location.reload();
+      }
     };
   }, []);
+
+
+
 
   const handleLogout = async () => {
     try {
@@ -80,12 +65,25 @@ export default function AdminHeader() {
       });
 
       if (res.ok) {
-        router.push("/login");
+        // Clear any cached form data
+        if (typeof window !== "undefined") {
+          // Clear any localStorage data
+          localStorage.clear();
+          // Clear any sessionStorage data
+          sessionStorage.clear();
+        }
+        
+        // Force a hard navigation to login to clear all state
+        window.location.href = "/login";
       } else {
         console.error("Logout failed");
+        // Even if logout fails, redirect to login
+        window.location.href = "/login";
       }
     } catch (err) {
       console.error("Logout error:", err);
+      // Even if error occurs, redirect to login
+      window.location.href = "/login";
     }
   };
 
