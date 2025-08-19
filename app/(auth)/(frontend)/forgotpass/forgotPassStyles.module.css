@@ -97,14 +97,13 @@
   padding: 10px;
   color: black;
   border-radius: 6px;
-  border: 1px solid #800000;
+  border: 1px solid var(--color-maroon);
   background-color: white;
   font-size: 14px;
 }
 
 .input:focus {
-  outline: none;
-  border-color: #7a0c1b;
+  outline: var(--color-maroon) solid 2px;
   box-shadow: 0 0 5px rgba(122, 12, 27, 0.5);
 }
 
@@ -248,14 +247,14 @@
   height: 50px;
   font-size: 1.5rem;
   text-align: center;
-  border: 2px solid #ccc;
+  border: 1px solid var(--color-maroon);
   border-radius: 8px;
   transition: 0.2s ease;
 }
 
 .otpInput:focus {
-  border-color: #7a0c1b;
-  outline: none;
+  outline: var(--color-maroon) solid 2px;
+  box-shadow: 0 0 5px rgba(122, 12, 27, 0.5);
 }
 
 /* mobile respo */

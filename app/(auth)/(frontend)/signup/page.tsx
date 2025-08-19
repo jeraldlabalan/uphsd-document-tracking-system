@@ -458,7 +458,7 @@ export default function Signup() {
 
       {isTermsModalOpen && (
         <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
+          <div data-aos="zoom-in" className={styles.modal}>
             {/* Modal Header with Title and X */}
             <div className={styles.modalHeader}>
               <h2>Terms and Conditions</h2>
