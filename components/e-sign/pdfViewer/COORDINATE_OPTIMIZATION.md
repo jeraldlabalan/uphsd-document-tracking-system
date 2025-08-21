@@ -166,3 +166,4 @@ This optimization eliminates the need for manual coordinate offsets while provid
 The system now works as intended: **what you see is what you get** - signatures appear exactly where placeholders are positioned, without any manual adjustments or hardcoded offsets.
 
 
+

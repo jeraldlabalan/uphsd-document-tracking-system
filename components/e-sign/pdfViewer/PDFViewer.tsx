@@ -426,68 +426,13 @@ function PDFViewer(
         return;
       }
 
-      // Get the actual rendered PDF dimensions for accurate coordinate conversion
-      const displayedPageDims = pageDims[dragPage];
-      if (!displayedPageDims) {
-        console.error('No page dimensions available for page', dragPage);
-        return;
-      }
-      
-      // FIXED: Store coordinates in the same coordinate system used for signature placement
-      // The coordinates should be relative to the PDF content, not the container
-      // We'll store them as-is since they're already relative to the PDF page
-      const pdfX = dragRect.x;
-      
-      // FIX: Calculate Y-coordinate relative to the current page viewport
-      // Use the displayed page dimensions to get the actual viewport
-      let pdfY = dragRect.y;
-      
-      if (displayedPageDims) {
-        // The displayedPageDims contains the actual rendered page dimensions
-        // We need to calculate the Y relative to this page's viewport
-        const pageViewportHeight = displayedPageDims.height;
-        
-        // If the Y coordinate is larger than the page height, it's relative to document scroll
-        if (dragRect.y > pageViewportHeight) {
-          // Calculate how many pages we've scrolled past
-          const pagesScrolled = Math.floor(dragRect.y / pageViewportHeight);
-          pdfY = dragRect.y - (pagesScrolled * pageViewportHeight);
-          
-          console.log('🔍 Page-relative coordinate calculation:', {
-            dragRectY: dragRect.y,
-            pageViewportHeight: pageViewportHeight,
-            pagesScrolled: pagesScrolled,
-            calculatedPageY: pdfY,
-            note: 'Y-coordinate adjusted for document scroll'
-          });
-        }
-      }
-      
-      console.log('🔍 COORDINATE CONVERSION - Screen to PDF:', {
-        dragRect,
-        page: dragPage,
-        displayedPageDims,
-        screenCoords: { x: dragRect.x, y: dragRect.y },
-        pdfCoords: { x: pdfX, y: pdfY },
-        note: 'Converting screen coordinates to PDF coordinates for storage'
-      });
-      
-      console.log('🔍 Creating new placeholder with coordinates:', {
-        dragRect,
-        MIN_WIDTH,
-        MIN_HEIGHT,
-        page: dragPage,
-        displayedPageDims,
-        rawCoords: { x: dragRect.x, y: dragRect.y },
-        storedCoords: { x: pdfX, y: pdfY },
-        note: 'Y-coordinate adjusted to be page-relative during creation'
-      });
-      
+      // Use the same coordinate system as the prototype - store coordinates as-is
+      // The coordinates are already relative to the PDF page container
       const newPlaceholder: Placeholder = {
         id: Date.now(),
         page: dragPage, // This should be 0-indexed
-        x: pdfX, // Store PDF coordinates (not screen coordinates)
-        y: pdfY, // Store PDF coordinates (not screen coordinates)
+        x: dragRect.x, // Store coordinates as-is (relative to page container)
+        y: dragRect.y, // Store coordinates as-is (relative to page container)
         width: MIN_WIDTH,
         height: MIN_HEIGHT,
         signee,
@@ -500,7 +445,7 @@ function PDFViewer(
       
       console.log('🔍 New placeholder created:', {
         ...newPlaceholder,
-        note: 'Page number should be 0-indexed to match PDF pages array'
+        note: 'Coordinates stored as-is (relative to page container)'
       });
       
       // LOGGING: Track placeholder creation for debugging
@@ -512,8 +457,7 @@ function PDFViewer(
         assignedTo: { signee, signeeName, userId },
         dragInfo: {
           dragPage: dragPage,
-          dragRect: dragRect,
-          pageDims: displayedPageDims
+          dragRect: dragRect
         },
         note: 'New placeholder added to the system'
       });
@@ -680,51 +624,61 @@ function PDFViewer(
           note: 'Page numbers are 0-indexed in both frontend and PDF array'
         });
 
-        // Use coordinate transformation utility for consistent PDF placement
-        const coords = transformCoordinates(
-          { 
-            x: placeholderToSign.x, 
-            y: placeholderToSign.y, 
-            width: placeholderToSign.width, 
-            height: placeholderToSign.height 
-          }, 
-          pdfPageHeight
-        );
+        // Use the same coordinate system as placeholders - but flip Y-coordinate for PDF
+        // PDF coordinates have (0,0) at bottom-left, screen coordinates have (0,0) at top-left
+        // IMPORTANT: Use the same scaling logic as the prototype
+        const scaleX = pdfPageWidth / 800; // Use base width like prototype
+        const scaleY = pdfPageHeight / 1000; // Use base height like prototype
         
-        const { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight } = coords;
+        const pdfX = placeholderToSign.x * scaleX;
+        const pdfY = (1000 - placeholderToSign.y - placeholderToSign.height) * scaleY;
+        const pdfWidth = placeholderToSign.width * scaleX;
+        const pdfHeight = placeholderToSign.height * scaleY;
         
-        console.log('🔍 COORDINATE TRANSFORMATION:', {
-          placeholderId: placeholderToSign.id,
-          page: placeholderToSign.page,
-          originalCoords: coords.original,
-          transformedCoords: coords.transformed,
-          finalCoords: { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight },
-          note: 'Using utility function for consistent coordinate transformation'
-        });
-        
-        // Boundary check is now handled by transformCoordinates utility
-        // The coordinates are already bounded and ready for use
-        
-        // DEBUG: Show the coordinate usage
         console.log('🔍 COORDINATE USAGE:', {
           placeholderId: placeholderToSign.id,
           page: placeholderToSign.page,
-          storedY: placeholderToSign.y,
-          pdfPageHeight: pdfPageHeight,
-          finalPdfY: pdfY,
-          note: 'Shows the coordinate usage process - WITH scale conversion'
+          storedCoords: { x: placeholderToSign.x, y: placeholderToSign.y },
+          pdfCoords: { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight },
+          pageDimensions: { width: pdfPageWidth, height: pdfPageHeight },
+          containerDims: containerDims,
+          scaling: { scaleX, scaleY },
+          note: 'Y-coordinate flipped and scaled for PDF coordinate system (bottom-left origin)'
         });
         
-        // Width/Height: Use converted dimensions
+        // DEBUG: Check if coordinates are valid
+        if (pdfX < 0 || pdfY < 0 || pdfWidth <= 0 || pdfHeight <= 0) {
+          console.error('❌ INVALID COORDINATES:', {
+            placeholderId: placeholderToSign.id,
+            pdfX, pdfY, pdfWidth, pdfHeight,
+            original: { x: placeholderToSign.x, y: placeholderToSign.y, width: placeholderToSign.width, height: placeholderToSign.height },
+            scaling: { scaleX, scaleY },
+            containerDims,
+            pageDimensions: { width: pdfPageWidth, height: pdfPageHeight }
+          });
+          return; // Skip this placeholder if coordinates are invalid
+        }
+        
+        // DEBUG: Check if coordinates are within page bounds
+        if (pdfX + pdfWidth > pdfPageWidth || pdfY + pdfHeight > pdfPageHeight) {
+          console.warn('⚠️ COORDINATES OUT OF BOUNDS:', {
+            placeholderId: placeholderToSign.id,
+            pdfX, pdfY, pdfWidth, pdfHeight,
+            pageBounds: { width: pdfPageWidth, height: pdfPageHeight },
+            calculatedBounds: { right: pdfX + pdfWidth, bottom: pdfY + pdfHeight }
+          });
+        }
+        
+        // Width/Height: Use stored dimensions directly
         const padding = 6;
 
-        console.log('🔍 IMPROVED COORDINATE CONVERSION:', {
+        console.log('🔍 COORDINATE CONVERSION:', {
           placeholderId: placeholderToSign.id,
           page: placeholderToSign.page,
           storedCoordinates: { x: placeholderToSign.x, y: placeholderToSign.y, width: placeholderToSign.width, height: placeholderToSign.height },
           pdfCoordinates: { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight },
           pageDimensions: { width: pdfPageWidth, height: pdfPageHeight },
-          note: 'Using scaled coordinates for consistent PDF placement'
+          note: 'Using stored coordinates directly for consistent PDF placement'
         });
 
         // Draw signature box with border
@@ -786,7 +740,7 @@ function PDFViewer(
           page: placeholderToSign.page,
           imageCoords: { x: imgX, y: imgY, width: scaledWidth, height: scaledHeight },
           originalImageSize: { width: originalWidth, height: originalHeight },
-          scaling: { imageScale, scale: scale },
+          scaling: { imageScale },
           note: 'Actual signature image placement coordinates'
         });
 
@@ -846,8 +800,12 @@ function PDFViewer(
           
           // Use the EXACT same coordinate calculation as signature placement
           const pageHeight = pages[p.page]?.getSize().height || 842;
-          const pdfX = p.x * scale; // Scale conversion to match signature placement
-          const pdfY = p.y * scale; // Scale conversion to match signature placement
+          const pageWidth = pages[p.page]?.getSize().width || 595;
+          const scaleX = pageWidth / containerDims.width;
+          const scaleY = pageHeight / containerDims.height;
+          
+          const pdfX = p.x * scaleX; // Scale conversion to match signature placement
+          const pdfY = (containerDims.height - p.y - p.height) * scaleY; // Flip Y-coordinate for PDF
           
           acc[p.page].push({
             id: p.id,
@@ -855,11 +813,13 @@ function PDFViewer(
             pdfCoords: { 
               x: pdfX, 
               y: pdfY,
-              width: p.width * scale,
-              height: p.height * scale
+              width: p.width * scaleX,
+              height: p.height * scaleY
             },
             pageDimensions: pages[p.page]?.getSize(),
-            note: 'Coordinates match exactly what was used for signature placement - WITH scale conversion'
+            containerDims: containerDims,
+            scaling: { scaleX, scaleY },
+            note: 'Coordinates match exactly what was used for signature placement - Y-coordinate flipped and scaled for PDF'
           });
           return acc;
         }, {} as Record<number, any[]>),
@@ -916,6 +876,14 @@ function PDFViewer(
         type: "application/pdf",
       });
       const url = URL.createObjectURL(blob);
+      
+      console.log('🎯 PDF GENERATED SUCCESSFULLY:', {
+        url: url,
+        blobSize: blob.size,
+        pdfBytesLength: pdfBytes.length,
+        note: 'PDF generated and URL created - returning to modal'
+      });
+      
       return url;
     } catch (err) {
       console.error("Error applying signature:", err);
@@ -981,26 +949,7 @@ function PDFViewer(
     signeeName: string;
   } | null>(null);
 
-  // Coordinate transformation utility function
-  const transformCoordinates = (uiCoords: { x: number; y: number; width: number; height: number }, pageHeight: number) => {
-    // Transform UI coordinates to PDF coordinates
-    const pdfX = uiCoords.x * scale;
-    const pdfY = uiCoords.y * scale;
-    const pdfWidth = uiCoords.width * scale;
-    const pdfHeight = uiCoords.height * scale;
-    
-    // Ensure coordinates are within page bounds
-    const boundedY = Math.max(0, Math.min(pdfY, pageHeight - pdfHeight));
-    
-    return {
-      x: pdfX,
-      y: boundedY,
-      width: pdfWidth,
-      height: pdfHeight,
-      original: uiCoords,
-      transformed: { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight }
-    };
-  };
+  // Remove the transformCoordinates utility function - no longer needed
 
   const [resizingEnabled, setResizingEnabled] = useState(true);
 
@@ -1198,17 +1147,17 @@ function PDFViewer(
                 .map((ph) => (
                     <Rnd
                       size={{
-                        width: ph.width * scale,
-                        height: ph.height * scale,
+                        width: ph.width,
+                        height: ph.height,
                       }}
                       position={{
-                        x: ph.x * scale,
-                        y: ph.y * scale,
+                        x: ph.x,
+                        y: ph.y,
                       }}
-                      minWidth={MIN_WIDTH * scale}
-                      maxWidth={MAX_WIDTH * scale}
-                      minHeight={MIN_HEIGHT * scale}
-                      maxHeight={MIN_HEIGHT * scale}
+                      minWidth={MIN_WIDTH}
+                      maxWidth={MAX_WIDTH}
+                      minHeight={MIN_HEIGHT}
+                      maxHeight={MIN_HEIGHT}
                       enableResizing={
                         role === "sender" && !ph.isSigned
                           ? {
@@ -1231,8 +1180,8 @@ function PDFViewer(
                             p.id === ph.id
                               ? {
                                   ...p,
-                                  x: d.x / scale,
-                                  y: d.y / scale,
+                                  x: d.x,
+                                  y: d.y,
                                 }
                               : p
                           )
@@ -1245,10 +1194,10 @@ function PDFViewer(
                             p.id === ph.id
                               ? {
                                   ...p,
-                                  width: parseInt(ref.style.width) / scale,
-                                  height: parseInt(ref.style.height) / scale,
-                                  x: position.x / scale,
-                                  y: position.y / scale,
+                                  width: parseInt(ref.style.width),
+                                  height: parseInt(ref.style.height),
+                                  x: position.x,
+                                  y: position.y,
                                 }
                               : p
                           )
