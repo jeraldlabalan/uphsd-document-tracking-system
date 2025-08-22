@@ -162,6 +162,11 @@ export async function PATCH(req: NextRequest) {
           });
         }
 
+        // Delete any Signatures associated with the document
+        await db.signaturePlaceholder.deleteMany({
+          where: { DocumentID: parseInt(documentId)  }
+        });
+
         // Delete the document itself
         await db.document.delete({
           where: { DocumentID: parseInt(documentId) },

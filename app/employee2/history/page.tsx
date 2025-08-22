@@ -123,7 +123,26 @@ export default function History() {
   fetchAllData();
 }, []);
 
+const handleDownload = () => {
+  if (!currentVersion?.FilePath) return;
+  const url = getFileUrl(currentVersion.FilePath);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${selectedDoc?.Document.Title || "document"}_v${currentVersion.VersionNumber}`;
+  link.click();
+};
 
+const handlePrint = () => {
+  if (!currentVersion?.FilePath) return;
+  const url = getFileUrl(currentVersion.FilePath);
+  const printWindow = window.open(url, "_blank");
+  if (printWindow) {
+    printWindow.addEventListener("load", () => {
+      printWindow.focus();
+      printWindow.print();
+    });
+  }
+};
 
 
 const filtered = history.filter((item) => {
@@ -382,6 +401,14 @@ if (loading) {
                 {new Date(currentVersion.CreatedAt).toLocaleDateString()}
               </span>
             </p>
+           <div className={styles.modalFooter}>
+  <button className={styles.downloadBtn} onClick={handleDownload}>
+    ⬇ Download
+  </button>
+  <button className={styles.printBtn} onClick={handlePrint}>
+    🖨 Print
+  </button>
+</div>
           </div>
 
           {/* Right Column: Preview */}

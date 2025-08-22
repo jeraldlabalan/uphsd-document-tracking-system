@@ -278,7 +278,7 @@ export default function DeletedDocuments() {
                       <td>{doc.DocumentType.TypeName}</td>
                       <td>{doc.Status}</td>
                       <td>{new Date(doc.UpdatedAt).toLocaleDateString()}</td>
-                      <td>
+                      <td className="${styles.actionCell}">
                         <button
                           className={`${styles.actionBtn} ${styles.restoreBtn}`}
                           onClick={() => {
@@ -288,7 +288,7 @@ export default function DeletedDocuments() {
                         >
                           Restore
                         </button>{" "}
-                        {/* <button
+                        <button
             className={`${styles.actionBtn} ${styles.deleteBtn}`}
             onClick={() => {
               setSelectedDoc(doc);
@@ -296,7 +296,7 @@ export default function DeletedDocuments() {
             }}
           >
             Permanently Delete
-          </button> */}
+          </button>
                       </td>
                     </tr>
                   ))

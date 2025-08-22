@@ -47,10 +47,9 @@ export default function CreateNewDocument() {
   const toggleSelectOpen2 = () => setOpenSelect2((prev) => !prev);
 
   // Handle department select
-  const handleDepartmentSelect = (name: string, id: number) => {
-    console.log("Selected Department:", name, "ID:", id); // Log selected department
-    setDepartment(name); // Update department value
-    setDepartmentID(id); // Update department ID
+  const handleDepartmentSelect = (name: string, id: number | null) => {
+    setDepartment(name);
+    setDepartmentID(id); // keep null as null
     setOpenSelect2(false);
   };
 
@@ -112,12 +111,12 @@ export default function CreateNewDocument() {
       }));
   };
 
-   useEffect(() => {
-            AOS.init({
-              duration: 1000,
-              once: true,
-            });
-          }, []);
+  useEffect(() => {
+    AOS.init({
+      duration: 1000,
+      once: true,
+    });
+  }, []);
 
   useEffect(() => {
     async function fetchDepartments() {
@@ -288,47 +287,103 @@ export default function CreateNewDocument() {
     setApproverIDs(newApproverIDs); // Update the state with the new array
   };
 
- const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-  setError(null);
-  setSuccess(false);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
 
-  try {
-    if (files && files.length > 0) {
-      for (const fileItem of files) {
-        if (!fileItem.file || fileItem.file.size === 0) {
-          setModalMessage("Please ensure all uploaded files are valid");
-          setShowModal(true);
-          setLoading(false);
-          return;
+    try {
+      if (files && files.length > 0) {
+        for (const fileItem of files) {
+          if (!fileItem.file || fileItem.file.size === 0) {
+            setModalMessage("Please ensure all uploaded files are valid");
+            setShowModal(true);
+            setLoading(false);
+            return;
+          }
         }
       }
-    }
 
-    const savedDocumentData = localStorage.getItem("documentWithPlaceholdersData");
-    const savedDocumentPlaceholders = localStorage.getItem("documentWithPlaceholdersPlaceholders");
-    const savedDocumentId = localStorage.getItem("documentWithPlaceholdersId");
+      const savedDocumentData = localStorage.getItem("documentWithPlaceholdersData");
+      const savedDocumentPlaceholders = localStorage.getItem("documentWithPlaceholdersPlaceholders");
+      const savedDocumentId = localStorage.getItem("documentWithPlaceholdersId");
 
-    if (savedDocumentData && savedDocumentPlaceholders) {
-      try {
-        const placeholders = JSON.parse(savedDocumentPlaceholders);
+      if (savedDocumentData && savedDocumentPlaceholders) {
+        try {
+          const placeholders = JSON.parse(savedDocumentPlaceholders);
 
+          const formData = new FormData();
+          formData.append("Title", title);
+          formData.append("TypeID", selectedTypeID?.toString() ?? "");
+          formData.append("Description", description);
+          formData.append("DepartmentID", departmentID?.toString() ?? "");
+          formData.append(
+            "ApproverIDs",
+            JSON.stringify(approverIDs.filter((id) => id !== 0))
+          );
+
+          const base64Response = await fetch(savedDocumentData);
+          const blob = await base64Response.blob();
+          const file = new File([blob], `document-with-placeholders.pdf`, { type: 'application/pdf' });
+          formData.append("files", file);
+          formData.append("Placeholders", JSON.stringify(placeholders));
+
+          const res = await fetch("/api/employee/create-document", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || "Failed to upload document");
+          }
+
+          localStorage.removeItem("documentWithPlaceholdersData");
+          localStorage.removeItem("documentWithPlaceholdersTitle");
+          localStorage.removeItem("documentWithPlaceholdersId");
+          localStorage.removeItem("documentWithPlaceholdersType");
+          localStorage.removeItem("documentWithPlaceholdersDepartment");
+          localStorage.removeItem("documentWithPlaceholdersApprovers");
+          localStorage.removeItem("documentWithPlaceholdersDescription");
+          localStorage.removeItem("documentWithPlaceholdersPlaceholders");
+
+          setSuccess(true);
+          setTitle("");
+          setDescription("");
+          setSelectedTypeID(0);
+          setDepartmentID(0);
+          setFiles([]);
+          setApprovers([]);
+          setSavedDocument(null);
+
+          setModalMessage("Document with placeholders successfully created!");
+          setShowModal(true);
+        } catch (error) {
+          console.error("Error creating document with placeholders:", error);
+          throw new Error("Failed to create document with placeholders");
+        }
+      } else {
         const formData = new FormData();
         formData.append("Title", title);
         formData.append("TypeID", selectedTypeID?.toString() ?? "");
         formData.append("Description", description);
         formData.append("DepartmentID", departmentID?.toString() ?? "");
-        formData.append(
-          "ApproverIDs",
-          JSON.stringify(approverIDs.filter((id) => id !== 0))
-        );
 
-        const base64Response = await fetch(savedDocumentData);
-        const blob = await base64Response.blob();
-        const file = new File([blob], `document-with-placeholders.pdf`, { type: 'application/pdf' });
-        formData.append("files", file);
-        formData.append("Placeholders", JSON.stringify(placeholders));
+        if (approverIDs.filter((id) => id !== 0).length > 0) {
+          formData.append(
+            "ApproverIDs",
+            JSON.stringify(approverIDs.filter((id) => id !== 0))
+          );
+        } else {
+          formData.append("ApproverIDs", JSON.stringify([]));
+        }
+
+        if (files && files.length > 0) {
+          files.forEach((item) => {
+            formData.append("files", item.file);
+          });
+        }
 
         const res = await fetch("/api/employee/create-document", {
           method: "POST",
@@ -340,15 +395,6 @@ export default function CreateNewDocument() {
           throw new Error(data.error || "Failed to upload document");
         }
 
-        localStorage.removeItem("documentWithPlaceholdersData");
-        localStorage.removeItem("documentWithPlaceholdersTitle");
-        localStorage.removeItem("documentWithPlaceholdersId");
-        localStorage.removeItem("documentWithPlaceholdersType");
-        localStorage.removeItem("documentWithPlaceholdersDepartment");
-        localStorage.removeItem("documentWithPlaceholdersApprovers");
-        localStorage.removeItem("documentWithPlaceholdersDescription");
-        localStorage.removeItem("documentWithPlaceholdersPlaceholders");
-
         setSuccess(true);
         setTitle("");
         setDescription("");
@@ -356,73 +402,26 @@ export default function CreateNewDocument() {
         setDepartmentID(0);
         setFiles([]);
         setApprovers([]);
-        setSavedDocument(null);
 
-        setModalMessage("Document with placeholders successfully created!");
+        if (files && files.length > 0 && approverIDs.filter((id) => id !== 0).length > 0) {
+          setModalMessage("Document successfully created with files and specific approvers!");
+        } else if (files && files.length > 0) {
+          setModalMessage("Document successfully created with files! Document requests have been created for all department members so they can review and take action on the document.");
+        } else if (approverIDs.filter((id) => id !== 0).length > 0) {
+          setModalMessage("Document successfully created! This is a hardcopy document that requires wet signatures.");
+        } else {
+          setModalMessage("Document successfully created! Document requests have been created for all department members so they can track the hardcopy document status, put it on hold, or add remarks about any issues.");
+        }
+
         setShowModal(true);
-      } catch (error) {
-        console.error("Error creating document with placeholders:", error);
-        throw new Error("Failed to create document with placeholders");
       }
-    } else {
-      const formData = new FormData();
-      formData.append("Title", title);
-      formData.append("TypeID", selectedTypeID?.toString() ?? "");
-      formData.append("Description", description);
-      formData.append("DepartmentID", departmentID?.toString() ?? "");
-      
-      if (approverIDs.filter((id) => id !== 0).length > 0) {
-        formData.append(
-          "ApproverIDs",
-          JSON.stringify(approverIDs.filter((id) => id !== 0))
-        );
-      } else {
-        formData.append("ApproverIDs", JSON.stringify([]));
-      }
-
-      if (files && files.length > 0) {
-        files.forEach((item) => {
-          formData.append("files", item.file);
-        });
-      }
-
-      const res = await fetch("/api/employee/create-document", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to upload document");
-      }
-
-      setSuccess(true);
-      setTitle("");
-      setDescription("");
-      setSelectedTypeID(0);
-      setDepartmentID(0);
-      setFiles([]);
-      setApprovers([]);
-
-      if (files && files.length > 0 && approverIDs.filter((id) => id !== 0).length > 0) {
-        setModalMessage("Document successfully created with files and specific approvers!");
-      } else if (files && files.length > 0) {
-        setModalMessage("Document successfully created with files! Document requests have been created for all department members so they can review and take action on the document.");
-      } else if (approverIDs.filter((id) => id !== 0).length > 0) {
-        setModalMessage("Document successfully created! This is a hardcopy document that requires wet signatures.");
-      } else {
-        setModalMessage("Document successfully created! Document requests have been created for all department members so they can track the hardcopy document status, put it on hold, or add remarks about any issues.");
-      }
-
+    } catch (err: any) {
+      setModalMessage(err.message || "Something went wrong");
       setShowModal(true);
+    } finally {
+      setLoading(false);
     }
-  } catch (err: any) {
-    setModalMessage(err.message || "Something went wrong");
-    setShowModal(true);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -496,9 +495,9 @@ export default function CreateNewDocument() {
       // Open e-sign interface in new tab
       const eSignUrl = `/employee2/e-sign-document?${params.toString()}`;
       console.log("Full e-sign URL:", eSignUrl);
-      
+
       const newWindow = window.open(eSignUrl, "_blank");
-      
+
       if (!newWindow) {
         alert("Popup blocked! Please allow popups for this site and try again.");
       }
@@ -651,6 +650,15 @@ export default function CreateNewDocument() {
                 <ul
                   className={`${styles.dropdown} ${openSelect2 ? styles.open : ""}`}
                 >
+                  {/* All option */}
+                  <li
+                    key="all-departments"
+                    onClick={() => handleDepartmentSelect("All Departments", null)}
+                  >
+                    All Departments
+                  </li>
+
+                  {/* Dynamic department list */}
                   {departments.map((dep) => (
                     <li
                       key={dep.DepartmentID}
@@ -658,7 +666,7 @@ export default function CreateNewDocument() {
                         handleDepartmentSelect(dep.Name, dep.DepartmentID)
                       }
                     >
-                      {dep.Name} {/* Display department name */}
+                      {dep.Name}
                     </li>
                   ))}
                 </ul>
@@ -726,108 +734,108 @@ export default function CreateNewDocument() {
             </div>
 
             <div className={styles.sectionHeader}>
-  <div className={styles.sectionTitle}>Document Files</div>
-  <div className={styles.sectionDescription}>
-    Upload a PDF file for digital documents, or leave empty for hardcopy documents.
-    Document requests will be created for all department members so they can track status,
-    take actions, and add remarks about any issues.
-  </div>
-</div>
+              <div className={styles.sectionTitle}>Document Files</div>
+              <div className={styles.sectionDescription}>
+                Upload a PDF file for digital documents, or leave empty for hardcopy documents.
+                Document requests will be created for all department members so they can track status,
+                take actions, and add remarks about any issues.
+              </div>
+            </div>
 
-<div className={styles.inputGroup}>
-  <label htmlFor="file" className={styles.label}>
-    Document File (Optional)
-  </label>
+            <div className={styles.inputGroup}>
+              <label htmlFor="file" className={styles.label}>
+                Document File (Optional)
+              </label>
 
-  {/* Show upload container if no files, or show replace option if file exists */}
-  {files.length === 0 ? (
-    <div className={styles.fileUpload}>
-      <input
-        type="file"
-        id="file"
-        accept=".pdf"
-        onChange={handleFileChange}
-        className={styles.fileInput}
-      />
-      <label htmlFor="file" className={styles.fileLabel}>
-        <FileUp size={20} />
-        <span>Choose a PDF file or drag and drop</span>
-      </label>
-    </div>
-  ) : (
-    <div className={styles.fileUpload}>
-      <input
-        type="file"
-        id="replaceFile"
-        accept=".pdf"
-        onChange={handleFileChange}
-        className={styles.fileInput}
-      />
-      <label htmlFor="replaceFile" className={styles.fileLabel}>
-        <FileUp size={20} />
-        <span>Replace current file</span>
-      </label>
-    </div>
-  )}
+              {/* Show upload container if no files, or show replace option if file exists */}
+              {files.length === 0 ? (
+                <div className={styles.fileUpload}>
+                  <input
+                    type="file"
+                    id="file"
+                    accept=".pdf"
+                    onChange={handleFileChange}
+                    className={styles.fileInput}
+                  />
+                  <label htmlFor="file" className={styles.fileLabel}>
+                    <FileUp size={20} />
+                    <span>Choose a PDF file or drag and drop</span>
+                  </label>
+                </div>
+              ) : (
+                <div className={styles.fileUpload}>
+                  <input
+                    type="file"
+                    id="replaceFile"
+                    accept=".pdf"
+                    onChange={handleFileChange}
+                    className={styles.fileInput}
+                  />
+                  <label htmlFor="replaceFile" className={styles.fileLabel}>
+                    <FileUp size={20} />
+                    <span>Replace current file</span>
+                  </label>
+                </div>
+              )}
 
-  {/* Show file list if files exist */}
-  {files.length > 0 && (
-    <div className={styles.fileList}>
-      {files.map((item, index) => (
-        <div key={index} className={styles.fileItem}>
-          <div className={styles.fileInfo}>
-            <span className={styles.fileName}>{item.file.name}</span>
-            {item.requireEsign && (
-              <span className={styles.eSignBadge}>E-Sign Required</span>
-            )}
-          </div>
+              {/* Show file list if files exist */}
+              {files.length > 0 && (
+                <div className={styles.fileList}>
+                  {files.map((item, index) => (
+                    <div key={index} className={styles.fileItem}>
+                      <div className={styles.fileInfo}>
+                        <span className={styles.fileName}>{item.file.name}</span>
+                        {item.requireEsign && (
+                          <span className={styles.eSignBadge}>E-Sign Required</span>
+                        )}
+                      </div>
 
-          <div className={styles.fileActions}>
-            <label className={styles.switchContainer}>
-              <input
-                type="checkbox"
-                checked={item.requireEsign}
-                onChange={() => handleToggleEsign(index)}
-              />
-              <span className={styles.switchSlider}></span>
-              <span className={styles.switchLabel}>Require E-sign</span>
-            </label>
+                      <div className={styles.fileActions}>
+                        <label className={styles.switchContainer}>
+                          <input
+                            type="checkbox"
+                            checked={item.requireEsign}
+                            onChange={() => handleToggleEsign(index)}
+                          />
+                          <span className={styles.switchSlider}></span>
+                          <span className={styles.switchLabel}>Require E-sign</span>
+                        </label>
 
-            <button
-              type="button"
-              className={styles.removeBtn}
-              onClick={() => handleRemoveFile(index)}
-              aria-label="Remove file"
-            >
-              <X size={20} />
-            </button>
+                        <button
+                          type="button"
+                          className={styles.removeBtn}
+                          onClick={() => handleRemoveFile(index)}
+                          aria-label="Remove file"
+                        >
+                          <X size={20} />
+                        </button>
 
-            {item.requireEsign && (
-              <button
-                type="button"
-                className={styles.eSignBtn}
-                onClick={() => handleOpenESign(item.file, index)}
-                aria-label="Open e-sign interface"
-              >
-                Open E-Sign
-              </button>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  )}
+                        {item.requireEsign && (
+                          <button
+                            type="button"
+                            className={styles.eSignBtn}
+                            onClick={() => handleOpenESign(item.file, index)}
+                            aria-label="Open e-sign interface"
+                          >
+                            Open E-Sign
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-  {/* Message if no files */}
-  {files.length === 0 && (
-    <div className={styles.noFilesMessage}>
-      <p>No file uploaded. This will be treated as a hardcopy document requiring wet signatures.</p>
-    </div>
-  )}
-</div>
+              {/* Message if no files */}
+              {files.length === 0 && (
+                <div className={styles.noFilesMessage}>
+                  <p>No file uploaded. This will be treated as a hardcopy document requiring wet signatures.</p>
+                </div>
+              )}
+            </div>
 
 
-            
+
 
             <div className={styles.formGroup}>
               <button
@@ -860,7 +868,7 @@ export default function CreateNewDocument() {
                   View Document with Placeholders
                 </a>
               </p>
-              
+
               {/* Display Signature Placeholders */}
               {savedDocument.placeholders && savedDocument.placeholders.length > 0 && (
                 <div className={styles.placeholdersSection}>
@@ -887,7 +895,7 @@ export default function CreateNewDocument() {
                   </div>
                 </div>
               )}
-              
+
               {/* Current Document File */}
               {savedDocument.url && (
                 <div className={styles.currentDocumentSection}>
@@ -914,14 +922,14 @@ export default function CreateNewDocument() {
                   </div>
                 </div>
               )}
-              
+
               <div className={styles.statusInfo}>
                 <p>✅ Document has been saved with signature placeholders</p>
                 <p>📧 Signees have been notified automatically</p>
                 <p>⏳ Waiting for all signatures to be completed</p>
                 <p>🔄 You can continue editing this document or wait for signatures</p>
               </div>
-              
+
               {/* Action Buttons */}
               <div className={styles.actionButtons}>
                 <button
@@ -936,7 +944,7 @@ export default function CreateNewDocument() {
                         .then(response => response.blob())
                         .then(blob => {
                           const file = new File([blob], `document-with-placeholders.pdf`, { type: 'application/pdf' });
-                          
+
                           // Prepare approvers data
                           const approversData = approverIDs.filter(id => id !== 0).map(id => {
                             const approver = approvers.find(a => a.UserID === id);
@@ -973,28 +981,28 @@ export default function CreateNewDocument() {
             </div>
           </div>
         )}
-  </div>
+      </div>
 
- {showModal && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.deletemodalContent}>
-              
-              <p>{modalMessage}</p>
-              <div className={styles.modalActions}>
-                <button onClick={() => {
-        setShowModal(false);
-        if (modalMessage.includes("successfully")) {
-          router.push("/employee2/dashboard");
-        }
-      }} className={styles.OKButton}>OK</button>
-                
-              </div>
+      {showModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.deletemodalContent}>
+
+            <p>{modalMessage}</p>
+            <div className={styles.modalActions}>
+              <button onClick={() => {
+                setShowModal(false);
+                if (modalMessage.includes("successfully")) {
+                  router.push("/employee2/dashboard");
+                }
+              }} className={styles.OKButton}>OK</button>
+
             </div>
           </div>
-        )}
-    
+        </div>
+      )}
 
-    
+
+
     </div>
   );
 }

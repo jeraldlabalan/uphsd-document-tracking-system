@@ -573,4 +573,34 @@
     flex-direction: column;
     gap: 0.5rem;
   }
+  .modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.printBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #10b981; /* green */
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  margin-top: 1rem;
+  transition: background-color 0.2s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.printBtn:hover {
+  background-color: #059669;
+}
+  .printBtn:disabled {
+    background-color: #6b7280; /* gray */
+    cursor: not-allowed;
+  }
 }

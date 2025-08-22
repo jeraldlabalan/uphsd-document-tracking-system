@@ -26,9 +26,8 @@ export async function POST(req: NextRequest) {
     const Title = (formData.get("Title") as string) ?? "";
     const Description = (formData.get("Description") as string) ?? "";
     const TypeID = Number(formData.get("TypeID"));
-    const DepartmentID = formData.get("DepartmentID")
-      ? Number(formData.get("DepartmentID"))
-      : null;
+    const depValue = formData.get("DepartmentID");
+    const DepartmentID = depValue ? Number(depValue) : null;;
     const ApproverIDs = JSON.parse(
       (formData.get("ApproverIDs") as string) || "[]"
     ) as number[];
@@ -489,6 +488,127 @@ export async function PUT(req: NextRequest) {
         
         return { reqRec, notif };
       });
+      
+} else if (DepartmentID === null) {
+  // --- Case 2: ALL departments
+
+  // Handle new version only if files are provided
+  let newVersion = null;
+  if (files && files.length > 0) {
+    const latestVersion = await db.documentVersion.findFirst({
+      where: { DocumentID },
+      orderBy: { VersionNumber: "desc" },
+    });
+    const versionNumber = (latestVersion?.VersionNumber || 0) + 1;
+
+    const file = files[0];
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const fileExtension = file.name.split(".").pop() || "pdf";
+    const filename = `${uuidv4()}.${fileExtension}`;
+    const uploadDir = path.join(process.cwd(), "public", "uploads", "documents");
+    await mkdir(uploadDir, { recursive: true });
+    const filePath = path.join(uploadDir, filename);
+    await writeFile(filePath, buffer);
+
+    newVersion = await db.documentVersion.create({
+      data: {
+        DocumentID,
+        FilePath: `/uploads/documents/${filename}`,
+        VersionNumber: versionNumber,
+        ChangedBy: editorID,
+        ChangeDescription: "Document updated and shared with all departments",
+      },
+    });
+  }
+
+  // Get all active users (except the editor)
+  const allMembers = await db.user.findMany({
+    where: {
+      UserID: { not: editorID },
+      IsActive: true,
+      IsDeleted: false,
+    },
+    select: { UserID: true },
+  });
+
+  // Get existing requests for this doc
+  const existingRequests = await db.documentRequest.findMany({
+    where: { DocumentID },
+  });
+  const existingUserIDs = new Set(existingRequests.map((req) => req.RecipientUserID));
+
+  const updatesAndCreates = allMembers.map(async (member) => {
+    if (existingUserIDs.has(member.UserID)) {
+      // ✅ Update existing request
+      const updated = await db.documentRequest.updateMany({
+        where: {
+          DocumentID,
+          RecipientUserID: member.UserID,
+        },
+        data: {
+          StatusID: inProcess.StatusID,
+          Priority: "Normal",
+          Remarks: "Document updated and remains shared with all departments",
+        },
+      });
+
+      await db.notification.create({
+        data: {
+          SenderID: editorID,
+          ReceiverID: member.UserID,
+          Title: "Document Updated",
+          Message: `The document "${Title}" has been updated${newVersion ? ` to version ${newVersion.VersionNumber}` : ""}.`,
+        },
+      });
+
+      await db.activityLog.create({
+        data: {
+          PerformedBy: editorID,
+          Action: "Updated All-Departments Document Request",
+          TargetType: "DocumentRequest",
+          Remarks: `Request updated for user ${member.UserID} on document ${DocumentID}`,
+          TargetID: DocumentID,
+        },
+      });
+
+      return updated;
+    } else {
+      // ✅ Create new request
+      const created = await db.documentRequest.create({
+        data: {
+          RequestedByID: editorID,
+          RecipientUserID: member.UserID,
+          DocumentID,
+          StatusID: inProcess.StatusID,
+          Priority: "Normal",
+          Remarks: "Document shared with all departments",
+        },
+      });
+
+      await db.notification.create({
+        data: {
+          SenderID: editorID,
+          ReceiverID: member.UserID,
+          Title: "Document Shared",
+          Message: `The document "${Title}"${newVersion ? ` (v${newVersion.VersionNumber})` : ""} has been shared with all departments.`,
+        },
+      });
+
+      await db.activityLog.create({
+        data: {
+          PerformedBy: editorID,
+          Action: "Created All-Departments Document Request",
+          TargetType: "DocumentRequest",
+          Remarks: `Request created for user ${member.UserID} on document ${DocumentID}`,
+          TargetID: created.RequestID,
+        },
+      });
+
+      return created;
+    }
+  });
+
+  await Promise.all(updatesAndCreates);
     } else if (DepartmentID) {
       // No approvers required, but send notifications to all department members
       const departmentMembers = await db.user.findMany({

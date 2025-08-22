@@ -55,11 +55,12 @@ export default function EditDocument() {
   const toggleSelectOpen2 = () => setOpenSelect2((prev) => !prev);
 
   // Handle department select
-  const handleDepartmentSelect = (name: string, id: number) => {
-    console.log("Selected Department:", name, "ID:", id); // Log selected department
-    setDepartment(name); // Update department value
-    setDepartmentID(id); // Update department ID
+  const handleDepartmentSelect = (name: string, id: number | null) => {
+    setDepartment(name);
+    setDepartmentID(id); // keep null as null
+    setOpenSelect2(false);
   };
+
 
   useEffect(() => {
               AOS.init({
@@ -761,9 +762,18 @@ export default function EditDocument() {
                   </span>
                 </div>
 
-                <ul
+ <ul
                   className={`${styles.dropdown} ${openSelect2 ? styles.open : ""}`}
                 >
+                  {/* All option */}
+                  <li
+                    key="all-departments"
+                    onClick={() => handleDepartmentSelect("All Departments", null)}
+                  >
+                    All Departments
+                  </li>
+
+                  {/* Dynamic department list */}
                   {departments.map((dep) => (
                     <li
                       key={dep.DepartmentID}
@@ -771,7 +781,7 @@ export default function EditDocument() {
                         handleDepartmentSelect(dep.Name, dep.DepartmentID)
                       }
                     >
-                      {dep.Name} {/* Display department name */}
+                      {dep.Name}
                     </li>
                   ))}
                 </ul>

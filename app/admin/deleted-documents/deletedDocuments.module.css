@@ -336,6 +336,13 @@ background-color: #ff0000;
   margin: 0 0.25rem;
 }
 
+.actionCell {
+  display: flex;
+  gap: 10px;         /* spacing between buttons */
+  justify-content: flex-start; /* or center if you prefer */
+  align-items: center;
+}
+
 .actions a:hover {
   text-decoration: underline;
 }

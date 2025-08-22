@@ -27,9 +27,8 @@ export async function POST(req: NextRequest) {
     const Title = formData.get("Title") as string;
     const Description = formData.get("Description") as string;
     const TypeID = Number(formData.get("TypeID"));
-    const DepartmentID = formData.get("DepartmentID")
-      ? Number(formData.get("DepartmentID"))
-      : null;
+    const depValue = formData.get("DepartmentID");
+    const DepartmentID = depValue ? Number(depValue) : null;;
     const approverIDs = JSON.parse(
       formData.get("ApproverIDs") as string
     ) as number[];
@@ -136,7 +135,6 @@ export async function POST(req: NextRequest) {
 
     // Step 4: Create requests for approvers and send notifications
     let requests: Promise<any>[] = [];
-    let notifs: Promise<any>[] = [];
 
     if (approverIDs && approverIDs.length > 0) {
       // Specific approvers are specified
@@ -173,6 +171,50 @@ export async function POST(req: NextRequest) {
 
         return reqRec;
       });
+      } else if (DepartmentID === null) {
+  // --- Case 2: ALL departments
+  const allMembers = await db.user.findMany({
+    where: {
+      UserID: { not: creatorID }, // exclude the creator
+      IsActive: true,
+      IsDeleted: false,
+    },
+    select: { UserID: true },
+  });
+
+  requests = allMembers.map(async (member) => {
+    const reqRec = await db.documentRequest.create({
+      data: {
+        RequestedByID: creatorID,
+        RecipientUserID: member.UserID,
+        DocumentID: newDocument.DocumentID,
+        StatusID: pendingStatus.StatusID,
+        Priority: "Normal",
+        Remarks: "Document shared with all departments",
+      },
+    });
+
+    await db.notification.create({
+      data: {
+        SenderID: creatorID,
+        ReceiverID: member.UserID,
+        Title: "New Document Shared",
+        Message: `A new document "${Title}" has been shared across all departments.`,
+      },
+    });
+
+    await db.activityLog.create({
+      data: {
+        PerformedBy: creatorID,
+        Action: "Created All-Departments Document Request",
+        TargetType: "DocumentRequest",
+        Remarks: `Request created for user ${member.UserID} (All Departments) on document ${newDocument.DocumentID}`,
+        TargetID: reqRec.RequestID,
+      },
+    });
+
+    return reqRec;
+  });
     } else if (DepartmentID) {
       // No approvers required, but send notifications to all department members
       const departmentMembers = await db.user.findMany({
@@ -240,7 +282,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    await Promise.all([...requests, ...notifs]);
+    await Promise.all(requests);
 
     // Step 6: Create signature placeholders if provided
     if (placeholders && placeholders.length > 0) {
