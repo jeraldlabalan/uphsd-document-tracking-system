@@ -401,14 +401,7 @@ if (loading) {
                 {new Date(currentVersion.CreatedAt).toLocaleDateString()}
               </span>
             </p>
-           <div className={styles.modalFooter}>
-  <button className={styles.downloadBtn} onClick={handleDownload}>
-    ⬇ Download
-  </button>
-  <button className={styles.printBtn} onClick={handlePrint}>
-    🖨 Print
-  </button>
-</div>
+         
           </div>
 
           {/* Right Column: Preview */}
@@ -449,6 +442,14 @@ if (loading) {
           </div>
         </div>
       </div>
+        <div className={styles.modalFooter}>
+  <button className={styles.downloadBtn} onClick={handleDownload}>
+    Download
+  </button>
+  <button className={styles.downloadBtn} onClick={handlePrint}>
+    Print
+  </button>
+</div>
     </div>
   </div>
 )}

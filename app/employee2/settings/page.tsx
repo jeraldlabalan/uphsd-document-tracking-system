@@ -454,6 +454,7 @@ const clearPasswordFields = () => {
               // Refresh the profile data to get updated information
               window.location.reload();
             }}
+            uploadUrl="/api/employee/settings/upload-profile-picture"
           />
         )}
       </div>

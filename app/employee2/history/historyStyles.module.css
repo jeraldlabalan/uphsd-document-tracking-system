@@ -185,7 +185,7 @@
 .metaColumn {
   background: #f8f9fa;
   border-radius: 8px;
-  padding: 1rem;
+  padding: 0.5rem;
   overflow-y: auto;
 }
 
@@ -229,6 +229,13 @@
   border-radius: 10px;
 }
 
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap; 
+  gap: 0.5rem;
+}
 
 .highlight {
   background-color: var(--color-maroon);
