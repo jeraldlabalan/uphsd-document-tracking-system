@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import styles from "./ManagementStyles.module.css";
-import Modal from "../(modal)/Modal";
 
 interface InputRow {
   id: string | number;
@@ -15,16 +14,29 @@ interface ActiveItem {
   checked: boolean;
 }
 
-const DocumentTypeManagement: React.FC = () => {
+interface DocumentTypeDTO {
+  TypeID: number;
+  TypeName: string;
+}
+
+interface DocumentTypeManagementProps {
+  showModal: (data: {
+    description: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+    isLoading: boolean;
+  }) => void;
+}
+
+const DocumentTypeManagement: React.FC<DocumentTypeManagementProps> = ({
+  showModal,
+}) => {
   const [rows, setRows] = useState<InputRow[]>([{ id: Date.now(), value: "" }]);
   const [activeItems, setActiveItems] = useState<ActiveItem[]>([]);
 
-  const [showModal, setShowModal] = useState(false);
   const [rowToDelete, setRowToDelete] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-
-  const [confirmAdd, setConfirmAdd] = useState(false);
 
   useEffect(() => {
     fetchDocumentTypes();
@@ -34,9 +46,9 @@ const DocumentTypeManagement: React.FC = () => {
     try {
       const res = await fetch("/api/admin/settings/document-management");
       if (!res.ok) throw new Error("Failed to fetch document types");
-      const data = await res.json();
+      const data: DocumentTypeDTO[] = await res.json();
       setActiveItems(
-        data.map((dt: any) => ({
+        data.map((dt: DocumentTypeDTO) => ({
           id: dt.TypeID,
           name: dt.TypeName,
           checked: true,
@@ -73,11 +85,14 @@ const DocumentTypeManagement: React.FC = () => {
     const validRows = rows.filter((r) => r.value.trim() !== "");
 
     if (rows.some((r) => r.value.trim() === "")) {
-      toast.error("Please fill out all document type fields before saving.");
+      toast.error("Please complete all Document Type fields before saving.");
       return;
     }
 
-    if (validRows.length === 0) return;
+    if (validRows.length === 0) {
+      toast.error("Please complete all Document Type fields before saving.");
+      return;
+    }
 
     if (hasDuplicates()) {
       toast.error(
@@ -86,23 +101,24 @@ const DocumentTypeManagement: React.FC = () => {
       return;
     }
 
-    setConfirmAdd(true);
-    setShowModal(true);
+    console.log("[DocumentManagement Debug] handleSaveClick - calling showModal for add operation");
+    showModal({
+      description: "Are you sure you want to add these document types?",
+      onConfirm: () => handleConfirmAdd(),
+      onCancel: handleCancel,
+      isLoading: false,
+    });
   };
 
-  const handleConfirm = async () => {
-    if (confirmAdd) {
-      await saveDocumentTypes();
-    } else {
-      await handleConfirmDeletion();
-    }
+  const handleConfirmAdd = async () => {
+    console.log("[DocumentManagement Debug] handleConfirmAdd called");
+    await saveDocumentTypes();
   };
 
   const saveDocumentTypes = async () => {
     const validRows = rows.filter((r) => r.value.trim() !== "");
     if (validRows.length === 0) {
-      setShowModal(false);
-      setConfirmAdd(false);
+      toast.success("No changes to save.");
       return;
     }
     setIsLoading(true);
@@ -130,34 +146,57 @@ const DocumentTypeManagement: React.FC = () => {
       toast.error("Error saving document types.");
     } finally {
       setIsLoading(false);
-      setShowModal(false);
-      setConfirmAdd(false);
+      // Close modal after action completes
+      if (typeof window !== "undefined") {
+        const event = new CustomEvent("closeModal");
+        window.dispatchEvent(event);
+      }
     }
   };
 
   const handleDeleteActiveItem = (id: number) => {
+    console.log("[DocumentManagement Debug] handleDeleteActiveItem - calling showModal for delete operation", { id });
     setSuccess(false);
     setRowToDelete(id);
-    setConfirmAdd(false);
-    setShowModal(true);
+    showModal({
+      description: "Are you sure you want to delete this document type?",
+      onConfirm: () => handleConfirmDelete(id),
+      onCancel: handleCancel,
+      isLoading: false,
+    });
   };
 
-  const handleConfirmDeletion = async () => {
-    if (rowToDelete === null) return;
+  const handleConfirmDelete = async (id: number) => {
+    console.log("[DocumentManagement Debug] handleConfirmDelete called for ID:", id);
     setIsLoading(true);
     setSuccess(false);
+    
     try {
+      console.log("[DocumentManagement Debug] Making DELETE request for ID:", id);
       const res = await fetch("/api/admin/settings/document-management", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: rowToDelete }),
+        body: JSON.stringify({ id: id }),
       });
+      
+      console.log("[DocumentManagement Debug] DELETE response status:", res.status);
+      
       if (res.ok) {
+        console.log("[DocumentManagement Debug] Delete successful, updating UI");
         setActiveItems((prev) =>
-          prev.filter((item) => item.id !== rowToDelete)
+          prev.filter((item) => item.id !== id)
         );
         setSuccess(true);
         toast.success("Document type successfully deleted.");
+        
+        // Close modal after successful deletion
+        if (typeof window !== "undefined") {
+          const event = new CustomEvent("closeModal");
+          window.dispatchEvent(event);
+        }
+      } else {
+        console.log("[DocumentManagement Debug] Delete failed with status:", res.status);
+        throw new Error("Delete failed");
       }
     } catch (error) {
       console.error("Delete error:", error);
@@ -165,15 +204,10 @@ const DocumentTypeManagement: React.FC = () => {
     } finally {
       setIsLoading(false);
       setRowToDelete(null);
-      setShowModal(false);
     }
   };
 
-  const handleCancel = () => {
-    setShowModal(false);
-    setRowToDelete(null);
-    setConfirmAdd(false);
-  };
+  const handleCancel = () => {};
 
   return (
     <div className={styles.managementContainer}>
@@ -225,47 +259,41 @@ const DocumentTypeManagement: React.FC = () => {
           </table>
         </div>
 
-        <div className={styles.activeContainer}>
-          <p>Active Document Types</p>
-          <div className={styles.activeList}>
-            <div className={styles.scrollable}>
-              <ul>
-                {activeItems.length > 0 ? (
-                  activeItems.map((item) => (
-                    <li className={styles.entryItem} key={item.id}>
-                      <div className={styles.entryCheckbox}>
-                        <input
-                          title="document-type"
-                          type="checkbox"
-                          checked={item.checked}
-                          readOnly
-                        />
-                        <label>{item.name}</label>
-                      </div>
-                      <button
-                        title="delete"
-                        className={styles.deleteButton}
-                        onClick={() => handleDeleteActiveItem(item.id)}
-                        disabled={isLoading}
-                      >
-                        <svg width="10" height="10" viewBox="0 0 10 10">
-                          <path
-                            d="M1 1L9 9M1 9L9 1"
-                            stroke="black"
-                            strokeWidth="2"
-                          />
-                        </svg>
-                      </button>
-                    </li>
-                  ))
-                ) : (
-                  <li key="no-active">No active document types found.</li>
-                )}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
+       <div className={styles.activeContainer}>
+  <p>Active Document Types</p>
+  <div className={styles.activeList}>
+    <div className={styles.scrollable}>
+      <ul>
+        {activeItems.length > 0 ? (
+          activeItems.map((item) => (
+            <li className={styles.entryItem} key={item.id}>
+              <div className={styles.entryLabel}>
+                <span>{item.name}</span>
+              </div>
+              <button
+                title="delete"
+                className={styles.deleteButton}
+                onClick={() => handleDeleteActiveItem(item.id)}
+                disabled={isLoading}
+              >
+                <svg width="10" height="10" viewBox="0 0 10 10">
+                  <path
+                    d="M1 1L9 9M1 9L9 1"
+                    stroke="black"
+                    strokeWidth="2"
+                  />
+                </svg>
+              </button>
+            </li>
+          ))
+        ) : (
+          <li key="no-active">No active document types found.</li>
+        )}
+      </ul>
+    </div>
+  </div>
+</div>
+</div>
 
       <div className={styles.managementActionButtons}>
         <button
@@ -279,20 +307,7 @@ const DocumentTypeManagement: React.FC = () => {
         </button>
       </div>
 
-      <Modal
-        showModal={showModal}
-        setShowModal={setShowModal}
-        description={
-          confirmAdd
-            ? "Are you sure you want to add these document types?"
-            : success
-              ? "Document type successfully deleted."
-              : "Are you sure you want to delete this document type?"
-        }
-        onConfirm={handleConfirm}
-        onCancel={handleCancel}
-        isLoading={isLoading}
-      />
+      {/* Modal is now handled by the parent page */}
     </div>
   );
 };

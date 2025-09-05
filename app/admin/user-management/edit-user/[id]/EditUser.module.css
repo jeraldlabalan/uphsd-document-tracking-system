@@ -37,34 +37,43 @@
   border-top: 1px solid #ccc;
 }
 
+
+.profileContainer {
+  display: flex;
+  flex-wrap: wrap;         
+  justify-content: center; 
+  gap: 2rem;               
+}
+
+.profileContainer {
+  display: flex;
+  flex-wrap: wrap;          
+  justify-content: center;  
+  gap: 2rem;                
+}
+
 .profileBox {
   display: flex;
+  flex-direction: column;   
   align-items: center;
-  margin-bottom: 2rem;
-  gap: 1rem;
-  justify-content: center;
+  gap: 0.5rem;
 }
 
-.profileImage {
-  width: 64px;
-  height: 64px;
-  object-fit: cover;
+.profileImage,
+.fallbackInitials {
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   border: 2px solid #ccc;
-}
-
-.fallbackInitials {
-  width: 64px;
-  height: 64px;
-  background-color: #ddd;
+  object-fit: cover;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
   font-size: 1.5rem;
   color: #333;
-  border-radius: 50%;
 }
+
 
 .userName {
   font-size: 1.2rem;
@@ -89,6 +98,10 @@
   color: #333;
 }
 
+.label:focus {
+  border-color: 2px solid var(--color-maroon);
+}
+
 .input {
   padding: 0.5rem 0.75rem;
   border: 1px solid #ccc;
@@ -98,8 +111,7 @@
 }
 
 .input:focus {
-  outline: none;
-  border-color: #0070f3;
+  border-color: 2px solid var(--color-maroon);
 }
 
 .error {
@@ -199,6 +211,63 @@
 .submitBtn:hover {
   color: black;
 }
+
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modalCard {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 400px;
+  max-width: 90%;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.modalTitle {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.modalMessage {
+  margin-bottom: 1.5rem;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.cancelBtn {
+  background: #ccc;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.confirmBtn {
+  background: #006400;
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
 
 @media (max-width: 768px) {
   .contentContainer {

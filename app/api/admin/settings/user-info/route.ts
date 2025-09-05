@@ -18,9 +18,15 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    let decoded: any;
+    interface JwtPayload {
+      email?: string;
+      UserID?: number;
+      iat?: number;
+      exp?: number;
+    }
+    let decoded: JwtPayload;
     try {
-      decoded = verify(token, JWT_SECRET);
+      decoded = verify(token, JWT_SECRET) as JwtPayload;
       console.log("Decoded token:", decoded);
     } catch (err) {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 });

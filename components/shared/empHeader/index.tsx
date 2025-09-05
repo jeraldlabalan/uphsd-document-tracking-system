@@ -4,6 +4,7 @@ import Image from "next/image";
 import styles from "./empHeaderStyles.module.css";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import ProfilePicture from "../ProfilePicture";
 
 import {
   LayoutDashboard,
@@ -26,8 +27,12 @@ export default function EmpDashboard() {
   const [user, setUser] = useState<{
     FirstName: string;
     LastName: string;
-    ProfilePicture?: string;
+    ProfilePicture?: string | null;
   } | null>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -57,6 +62,60 @@ export default function EmpDashboard() {
     };
   }, []);
 
+    useEffect(() => {
+  const fetchNotifications = async () => {
+    try {
+      setLoadingNotifications(true);
+      const response = await fetch("/api/employee/notification");
+      const data = await response.json();
+
+      console.log("Raw notifications:", data);
+
+      const mapped = (data || [])
+        .map((notif: any) => {
+          const id = Number(notif.NotificationID ?? notif.id);
+
+          if (isNaN(id)) {
+            console.error("❌ Invalid ID detected:", notif);
+            return null;
+          }
+
+          return {
+            ...notif,
+            id,
+            status: notif.status,
+          };
+        })
+        .filter((notif: any) => notif !== null);
+
+      console.log("Mapped notifications:", mapped);
+
+      setNotifications(mapped);
+
+      // Count unread notifications
+      const unread = mapped.filter(
+        (notif: any) => notif.status !== "Read"
+      ).length;
+      setUnreadCount(unread);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      setNotifications([]);
+      setUnreadCount(0);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
+  // Run immediately
+  fetchNotifications();
+
+  // ✅ Poll every 5 seconds for updates
+  const interval = setInterval(fetchNotifications, 5000);
+
+  return () => clearInterval(interval);
+}, []);
+
+
 const handleLogout = async () => {
   try {
     const res = await fetch("/api/user/logout", {
@@ -64,17 +123,31 @@ const handleLogout = async () => {
     });
 
     if (res.ok) {
-      router.push("/login");
+      // Clear any cached form data
+      if (typeof window !== "undefined") {
+        // Clear any localStorage data
+        localStorage.clear();
+        // Clear any sessionStorage data
+        sessionStorage.clear();
+      }
+      
+      // Force a hard navigation to login to clear all state
+      window.location.href = "/login";
     } else {
       console.error("Logout failed");
+      // Even if logout fails, redirect to login
+      window.location.href = "/login";
     }
   } catch (err) {
     console.error("Logout error:", err);
+    // Even if error occurs, redirect to login
+    window.location.href = "/login";
   }
 };
 
 
-  const firstInitial = user?.FirstName?.charAt(0).toUpperCase() || "U";
+
+
 
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
@@ -127,9 +200,15 @@ const handleLogout = async () => {
                 : ""
             }`}
           >
-            <Bell size={18} className={styles.icon} />
+            <div className={styles.iconWrapper}>
+              <Bell size={18} className={styles.icon} />
+              {unreadCount > 0 && (
+                <span className={styles.badge}>{unreadCount}</span>
+              )}
+            </div>
             Notification
           </a>
+
 
           <a
             href="/employee2/history"
@@ -162,12 +241,19 @@ const handleLogout = async () => {
       <header className={styles.header}>
         <div className={styles.logoWrapper}>
           <button
-            className={styles.menuButton}
-            onClick={toggleSidebar}
-            aria-label="Toggle Menu"
-          >
-            &#9776;
-          </button>
+  className={styles.menuButton}
+  onClick={toggleSidebar}
+  aria-label="Toggle Menu"
+>
+  &#9776;
+
+  {unreadCount > 0 && (
+    <span className={styles.badgeMenu}>
+      {unreadCount}
+    </span>
+  )}
+</button>
+
           <Image src="/dms-logo.png" alt="Logo" width={180} height={50} />
         </div>
 
@@ -177,7 +263,12 @@ const handleLogout = async () => {
               Welcome, {user ? `${user.FirstName} ${user.LastName}!` : ""}
             </span>
 
-            <div className={styles.userIcon}>{firstInitial}</div>
+            <ProfilePicture
+              profilePicture={user?.ProfilePicture}
+              firstName={user?.FirstName || ""}
+              lastName={user?.LastName || ""}
+              className={styles.userIcon}
+            />
           </div>
         </div>
       </header>

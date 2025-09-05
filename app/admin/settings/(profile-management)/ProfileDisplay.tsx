@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import styles from "./ProfileManagement.module.css";
 import Image from "next/image";
 import toast from "react-hot-toast";
+import UploadPhotoModal from "@/components/shared/modalSettings/modal";
 
 // Define types for the ProfileDisplay component
 interface ProfileDisplayProps {
@@ -21,6 +22,7 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
 }) => {
   const [image, setImage] = useState(profileImage);
   const [isUploading, setIsUploading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Update local image state when profileImage prop changes
   useEffect(() => {
@@ -53,61 +55,21 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
     return names[0].charAt(0).toUpperCase(); // Only first letter of firstname
   };
 
-  // Handle image upload
-  const handleImageUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("File size must be less than 5MB");
-      return;
-    }
-
-    setIsUploading(true);
-
+  const handleUploadSuccess = (data: any) => {
     try {
-      const formData = new FormData();
-      formData.append("profilePicture", file);
-
-      const response = await fetch(
-        "/api/admin/settings/upload-profile-picture",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-
-        // Update local state immediately
-        setImage(data.profilePicture);
-
-        // Update parent component if callback provided
+      const newUrl = data?.profilePicture || "";
+      if (newUrl) {
+        setImage(newUrl);
         if (onProfileUpdate) {
-          onProfileUpdate(data.profilePicture);
+          onProfileUpdate(newUrl);
         }
-
-        // Dispatch custom event to automatically update admin header
         window.dispatchEvent(new CustomEvent("userInfoUpdated"));
-
         toast.success("Profile picture updated successfully!");
       } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || "Failed to upload profile picture");
+        toast.error("Upload succeeded but no profile URL returned.");
       }
-    } catch (error) {
-      console.error("Error uploading profile picture:", error);
-      toast.error("An error occurred while uploading");
+    } catch (e) {
+      toast.error("An error occurred after upload.");
     } finally {
       setIsUploading(false);
     }
@@ -178,12 +140,22 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
 
       {/* Section 3: Upload Photo Button */}
       <div className={styles.profileItem}>
-        <label
-          htmlFor="upload-photo"
+        <button
+          type="button"
+          onClick={() => setIsModalOpen(true)}
           style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            backgroundColor: "#8a1538",
+            color: "white",
+            padding: "8px 12px",
+            borderRadius: "6px",
+            border: "none",
+            cursor: "pointer",
             opacity: isUploading ? 0.6 : 1,
-            cursor: isUploading ? "not-allowed" : "pointer",
           }}
+          disabled={isUploading}
         >
           <svg
             width="11"
@@ -197,25 +169,23 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
               fill="white"
             />
           </svg>
-
-          <span>{isUploading ? "Uploading..." : "upload photo"}</span>
-        </label>
-
-        <input
-          id="upload-photo"
-          title="upload"
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          className={styles.uploadButton}
-          disabled={isUploading}
-        />
+          <span>{isUploading ? "Uploading..." : "Upload Photo"}</span>
+        </button>
       </div>
 
       {/* Section 4: Description Text */}
       <div className={styles.profileItem}>
         <p>{description}</p>
       </div>
+
+      {isModalOpen && (
+        <UploadPhotoModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onUploadSuccess={handleUploadSuccess}
+          uploadUrl="/api/admin/settings/upload-profile-picture"
+        />
+      )}
     </div>
   );
 };

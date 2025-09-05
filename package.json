@@ -2,13 +2,16 @@
   "name": "uphsd-document-tracking-system",
   "version": "0.1.0",
   "private": true,
+
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:network": "next dev --hostname 0.0.0.0",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest"
   },
+
   "dependencies": {
     "@prisma/client": "^6.12.0",
     "@prisma/extension-accelerate": "^2.0.2",
@@ -27,6 +30,7 @@
     "multer": "^2.0.2",
     "next": "15.4.1",
     "next-auth": "^4.24.11",
+    "node": "^24.6.0",
     "nodemailer": "^6.10.1",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^3.11.174",

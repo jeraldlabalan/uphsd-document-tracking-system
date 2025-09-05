@@ -431,6 +431,41 @@
   color: var(--color-yellow);
 }
 
+/* 🔴 Inline field error text */
+.inputError {
+  color: #d8000c;         /* bright red */
+  font-size: 0.8rem;      /* smaller than normal text */
+  margin-top: 0.25rem;
+  margin-left: 2px;
+}
+
+/* ✅ Password requirements list */
+.passwordRequirements {
+  margin-top: 0.5rem;
+  padding-left: 1rem;
+  font-size: 0.85rem;
+  list-style: none;
+}
+
+.passwordRequirements li {
+  margin-bottom: 4px;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Green for met requirements */
+.valid {
+  color: #28a745;  /* Bootstrap green */
+}
+
+/* Red for unmet requirements */
+.invalid {
+  color: #d8000c;
+}
+
+
 @media (width >= 1200px) {
   .profileGrid {
     grid-template-columns: 1fr 1fr;

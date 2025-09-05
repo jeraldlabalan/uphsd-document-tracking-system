@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import Loading from "@/app/loading";
 
 interface User {
   id: number;
@@ -54,6 +55,7 @@ export default function UserManagement() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
+        setLoading(true); // ✅ start loader
         const res = await fetch("/api/admin/user-management/users");
         const data = await res.json();
 
@@ -73,7 +75,7 @@ export default function UserManagement() {
         setError("Failed to fetch users");
         setUsers([]);
       } finally {
-        setLoading(false);
+        setLoading(false); // ✅ stop loader
       }
     };
 
@@ -234,6 +236,9 @@ export default function UserManagement() {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   };
 
+  if (loading) {
+    return <Loading />;
+  }
   return (
     <div>
       <AdminHeader />
@@ -254,7 +259,7 @@ export default function UserManagement() {
               <span className={styles.count}>
                 {loading ? "..." : users.length}
               </span>
-              <span>Total User</span>
+              <span>Total Users</span>
             </div>
             <div className={`${styles.card} ${styles.green}`}>
               <Activity className={styles.icon} />
@@ -263,7 +268,7 @@ export default function UserManagement() {
                   ? "..."
                   : users.filter((u) => u.status === "Active").length}
               </span>
-              <span>Active User</span>
+              <span>Active Users</span>
             </div>
             <div className={`${styles.card} ${styles.orange}`}>
               <PauseCircle className={styles.icon} />
@@ -272,7 +277,7 @@ export default function UserManagement() {
                   ? "..."
                   : users.filter((u) => u.status === "Inactive").length}
               </span>
-              <span>Inactive User</span>
+              <span>Inactive Users</span>
             </div>
             <div className={`${styles.card} ${styles.red}`}>
               <UserX className={styles.icon} />
@@ -281,7 +286,7 @@ export default function UserManagement() {
                   ? "..."
                   : users.filter((u) => u.status === "Terminated").length}
               </span>
-              <span>Terminated User</span>
+              <span>Terminated Users</span>
             </div>
           </div>
 

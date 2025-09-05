@@ -5,7 +5,7 @@ import EmpHeader from "@/components/shared/empHeader";
 import { Search as SearchIcon, X, FileText, Inbox, FileX } from "lucide-react";
 import Link from "next/link";
 import { fetchFilterData, FilterData } from "@/lib/filterData";
-import Loading from "@/app/loading";
+
 import AOS from "aos";
 import "aos/dist/aos.css";
 
@@ -37,6 +37,8 @@ export default function MyDocuments() {
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [documents, setDocuments] = useState<document[]>([]);
   const [loading, setLoading] = useState(true);
+  const [departmentFilter, setDepartmentFilter] = useState("");
+
   
   const [filterData, setFilterData] = useState<FilterData>({
     documentTypes: [],
@@ -88,18 +90,29 @@ export default function MyDocuments() {
 
 
   const filteredDocs = documents.filter((doc) => {
-    const matchesSearch =
-      doc.name.toLowerCase().includes(search.toLowerCase()) ||
-      doc.id.toString().includes(search);
-    const matchesStatus = !statusFilter || doc.status === statusFilter;
-    const matchesType = !typeFilter || doc.type === typeFilter;
-    const docDate = new Date(doc.date);
-    const fromDate = dateFrom ? new Date(dateFrom) : null;
-    const toDate = dateTo ? new Date(dateTo) : null;
-    const matchesDate =
-      (!fromDate || docDate >= fromDate) && (!toDate || docDate <= toDate);
-    return matchesSearch && matchesStatus && matchesType && matchesDate;
-  });
+  const matchesSearch =
+    doc.name.toLowerCase().includes(search.toLowerCase()) ||
+    doc.id.toString().includes(search);
+
+  const matchesStatus = !statusFilter || doc.status === statusFilter;
+  const matchesType = !typeFilter || doc.type === typeFilter;
+  const matchesDepartment = !departmentFilter || doc.department === departmentFilter;
+
+  const docDate = new Date(doc.date);
+  const fromDate = dateFrom ? new Date(dateFrom) : null;
+  const toDate = dateTo ? new Date(dateTo) : null;
+  const matchesDate =
+    (!fromDate || docDate >= fromDate) && (!toDate || docDate <= toDate);
+
+  return (
+    matchesSearch &&
+    matchesStatus &&
+    matchesType &&
+    matchesDepartment &&
+    matchesDate
+  );
+});
+
 
   const handleDownload = () => {
     if (!selectedDoc?.latestVersion?.filePath) return;
@@ -157,9 +170,7 @@ const handleNext = () => {
 
 
 
-if (loading) {
-  return <Loading />;
-}
+
 
   return (
     <div>
@@ -223,7 +234,7 @@ if (loading) {
               <SearchIcon className={styles.searchIcon} size={18} />
               <input
                 type="text"
-                placeholder="Search documents..."
+                placeholder="Search..."
                 className={styles.searchInput}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -244,17 +255,18 @@ if (loading) {
             </select>
 
             <select
-              className={styles.dropdown}
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="">All Types</option>
-              {filterData.documentTypes.map((type) => (
-                <option key={type.TypeID} value={type.TypeName}>
-                  {type.TypeName}
-                </option>
-              ))}
-            </select>
+                className={styles.dropdown}
+                value={departmentFilter}
+                onChange={(e) => setDepartmentFilter(e.target.value)}
+              >
+                <option value="">All Departments</option>
+                {filterData.departments.map((dept) => (
+                  <option key={dept.DepartmentID} value={dept.Name}>
+                    {dept.Name}
+                  </option>
+                ))}
+              </select>
+
 
             <div className={styles.dateFilterWrapper}>
               <div className={styles.dateGroup}>
@@ -329,24 +341,21 @@ if (loading) {
                       <td>{doc.name}</td>
                       <td>{doc.type}</td>
                       <td>
-                        <span
-                          className={`${styles.badge} 
-                  ${
-                    doc.status === "In-Process"
-                      ? styles.inProcess
-                      : doc.status === "Completed"
-                        ? styles.completed
-                        : doc.status === "On-Hold"
-                          ? styles.onHold
-                          : doc.status === "Approved"
-                            ? styles.approved
-                            : doc.status === "Awaiting-Completion"
-                              ? styles.awaiting
-                              : ""
-                  }`}
-                        >
-                          {doc.status}
-                        </span>
+                        <span className={`${styles.badge} ${
+                  doc.status === "Completed" ? styles.completed : 
+                  doc.status === "In-Process" ? styles.inProcess : 
+
+                  doc.status === "Approved" ? styles.approved : 
+                  doc.status === "Awaiting Signatures" ? styles.pending :
+                  doc.status === "Awaiting-Completion" ? styles.awaiting :
+                  doc.status === "On Hold" || doc.status === "On-Hold"
+
+                                                      ? styles.onHold :
+
+                  styles.pending
+                }`}>
+                  {doc.status}
+                </span>
                       </td>
                       <td>{doc.date}</td>
                       <td className={styles.actions}>
@@ -382,24 +391,21 @@ if (loading) {
                   <div key={doc.id} className={styles.cardItem}>
                     <div className={styles.cardTop}>
                       <h3 className={styles.highlighted}>{doc.name}</h3>
-                      <span
-                        className={`${styles.badge} 
-                ${
-                  doc.status === "In-Process"
-                    ? styles.inProcess
-                    : doc.status === "Completed"
-                      ? styles.completed
-                      : doc.status === "On-Hold"
-                        ? styles.onHold
-                        : doc.status === "Approved"
-                          ? styles.approved
-                          : doc.status === "Awaiting-Completion"
-                            ? styles.awaiting
-                            : ""
-                }`}
-                      >
-                        {doc.status}
-                      </span>
+                      <span className={`${styles.badge} ${
+                  doc.status === "Completed" ? styles.completed : 
+                  doc.status === "In-Process" ? styles.inProcess : 
+
+                  doc.status === "Approved" ? styles.approved : 
+                  doc.status === "Awaiting Signatures" ? styles.pending :
+                  doc.status === "Awaiting-Completion" ? styles.awaiting :
+                  doc.status === "On Hold" || doc.status === "On-Hold"
+
+                                                      ? styles.onHold :
+
+                  styles.pending
+                }`}>
+                  {doc.status}
+                </span>
                     </div>
                     <p>
                       <strong className={styles.highlighted}>File:</strong>{" "}
@@ -450,122 +456,203 @@ if (loading) {
 
         </div>
 
-        {/* Modal */}
-        {selectedDoc && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modalCard} data-aos="zoom-in">
-              <button
-                className={styles.closeButton}
-                onClick={() => setSelectedDoc(null)}
-                aria-label="Close"
-              >
-                <X size={20} />
-              </button>
+     {/* Modal for Documents WITH Files */}
+{selectedDoc && selectedDoc.latestVersion?.filePath && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalCard} data-aos="zoom-in">
+      <button
+        className={styles.closeButton}
+        onClick={() => setSelectedDoc(null)}
+        aria-label="Close"
+      >
+        <X size={20} />
+      </button>
 
-              <div className={styles.modalTop}>
-                <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
-                <span
-                  className={`${styles.badge} 
-                                ${
-                                  selectedDoc.status === "In-Process"
-                                    ? styles.inProcess
-                                    : selectedDoc.status === "Completed"
-                                      ? styles.completed
-                                      : selectedDoc.status === "On-Hold"
-                                        ? styles.onHold
-                                        : selectedDoc.status === "Approved"
-                                          ? styles.approved
-                                          : selectedDoc.status ===
-                                              "Awaiting-Completion"
-                                            ? styles.awaiting
-                                            : ""
-                                }`}
-                >
-                  {selectedDoc.status}
-                </span>
-              </div>
-
-              <div className={styles.metaGrid}>
-                <div className={styles.metaLabelRow}>
-                  <span>Creator:</span>
-                  <span>Type:</span>
-                  <span>Date:</span>
-                </div>
-                <div className={styles.metaValueRow}>
-                  <p>{selectedDoc.creator}</p>
-                  <p>{selectedDoc.type}</p>
-                  <p>{selectedDoc.date}</p>
-                </div>
-              </div>
-
-              <div className={styles.previewContainer}>
-  {selectedDoc.latestVersion?.filePath ? (
-    selectedDoc.latestVersion.filePath.match(/\.pdf$/i) ? (
-      <iframe
-        src={`${selectedDoc.latestVersion.filePath}#toolbar=0&navpanes=0&scrollbar=0`}
-        title="PDF Preview"
-        width="100%"
-        height="600px"
-        style={{ border: "none" }}
-      />
-    ) : (
-      <p>
-        <a
-          href={selectedDoc.latestVersion.filePath}
-          target="_blank"
-          rel="noopener noreferrer"
+      <div className={styles.modalTop}>
+        <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
+        <span
+          className={`${styles.badge} ${
+            selectedDoc.status === "Completed"
+              ? styles.completed
+              : selectedDoc.status === "In-Process"
+              ? styles.inProcess
+              : selectedDoc.status === "Approved"
+              ? styles.approved
+              : selectedDoc.status === "Awaiting Signatures"
+              ? styles.pending
+              : selectedDoc.status === "Awaiting-Completion"
+              ? styles.awaiting
+              : selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold"
+              ? styles.onHold
+              : styles.pending
+          }`}
         >
-          Download File
-        </a>
-      </p>
-    )
-  ) : (
-    <p>No file available.</p>
-  )}
-</div>
+          {selectedDoc.status}
+        </span>
+      </div>
 
+      <div className={styles.metaGrid}>
+        <div className={styles.metaLabelRow}>
+          <span>Creator:</span>
+          <span>Type:</span>
+          <span>Date:</span>
+        </div>
+        <div className={styles.metaValueRow}>
+          <p>{selectedDoc.creator}</p>
+          <p>{selectedDoc.type}</p>
+          <p>{selectedDoc.date}</p>
+        </div>
+      </div>
 
-              <div className={styles.modalFooter}>
-  <div className={styles.leftButtons}>
-    <button className={styles.download} onClick={handleDownload}>
-      Download
-    </button>
-    <button className={styles.print} onClick={handlePrint}>
-      Print
-    </button>
+      {/* File Preview */}
+      <div className={styles.previewContainer}>
+        {selectedDoc.latestVersion.filePath.match(/\.pdf$/i) ? (
+          <iframe
+             src={`${selectedDoc.latestVersion.filePath}#toolbar=0&navpanes=0`}
+            title="PDF Preview"
+            width="100%"
+            height="600px"
+            style={{ border: "none" }}
+          />
+        ) : (
+          <p>
+            <a
+              href={selectedDoc.latestVersion.filePath}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Download File
+            </a>
+          </p>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className={styles.modalFooter}>
+        <div className={styles.leftButtons}>
+          <button className={styles.download} onClick={handleDownload}>
+            Download
+          </button>
+          <button className={styles.print} onClick={handlePrint}>
+            Print
+          </button>
+        </div>
+
+        <div className={styles.rightButton}>
+          {!["Completed", "Awaiting-Completion"].includes(selectedDoc.status) && (
+            <Link href={`/employee2/edit-doc/${selectedDoc.id}`}>
+              <button className={styles.edit}>Edit</button>
+            </Link>
+          )}
+
+          {selectedDoc.status === "Awaiting-Completion" && (
+            <button
+              className={styles.markCompleteBtn}
+              onClick={handleMarkAsComplete}
+            >
+              Mark as Completed
+            </button>
+          )}
+
+          {selectedDoc.status === "On-Hold" && (
+            <button
+              className={styles.RemarksBtn}
+              onClick={() => setIsRemarksModalOpen(true)}
+            >
+              Remarks
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   </div>
-
-  <div className={styles.rightButton}>
-    {!["Completed", "Awaiting-Completion", "On-Hold"].includes(selectedDoc.status) && (
-  <Link href={`/employee2/edit-doc/${selectedDoc.id}`}>
-    <button className={styles.edit}>Edit</button>
-  </Link>
 )}
 
-
-    {selectedDoc.status === "Awaiting-Completion" && (
+{/* Modal for Documents WITHOUT Files */}
+{selectedDoc && !selectedDoc.latestVersion?.filePath && (
+  <div className={styles.modalOverlay}>
+   <div className={styles.modalCardNoFile} data-aos="zoom-in">
       <button
-        className={styles.markCompleteBtn}
-        onClick={handleMarkAsComplete}
+        className={styles.closeButton}
+        onClick={() => setSelectedDoc(null)}
+        aria-label="Close"
       >
-        Mark as Completed
+        <X size={20} />
       </button>
-    )}
 
-    {selectedDoc.status === "On-Hold" && (
-      <button
-        className={styles.RemarksBtn}
-        onClick={() => setIsRemarksModalOpen(true)}
-      >
-        Remarks
-      </button>
-    )}
+      <div className={styles.modalTop}>
+        <h3 className={styles.modalTitle}>{selectedDoc.name}</h3>
+        <span
+          className={`${styles.badge} ${
+            selectedDoc.status === "Completed"
+              ? styles.completed
+              : selectedDoc.status === "In-Process"
+              ? styles.inProcess
+              : selectedDoc.status === "Approved"
+              ? styles.approved
+              : selectedDoc.status === "Awaiting Signatures"
+              ? styles.pending
+              : selectedDoc.status === "Awaiting-Completion"
+              ? styles.awaiting
+              : selectedDoc.status === "On Hold" || selectedDoc.status === "On-Hold"
+              ? styles.onHold
+              : styles.pending
+          }`}
+        >
+          {selectedDoc.status}
+        </span>
+      </div>
+
+      <div className={styles.metaGrid}>
+        <div className={styles.metaLabelRow}>
+          <span>Creator:</span>
+          <span>Type:</span>
+          <span>Date:</span>
+        </div>
+        <div className={styles.metaValueRow}>
+          <p>{selectedDoc.creator}</p>
+          <p>{selectedDoc.type}</p>
+          <p>{selectedDoc.date}</p>
+        </div>
+      </div>
+
+      {/* Instead of preview */}
+      <div className={styles.noFileMessage}>
+        <p>This document has no attached files.</p>
+      </div>
+
+      {/* Footer */}
+      <div className={styles.modalFooter}>
+        <div className={styles.rightButton}>
+          {!["Completed", "Awaiting-Completion"].includes(selectedDoc.status) && (
+            <Link href={`/employee2/edit-doc/${selectedDoc.id}`}>
+              <button className={styles.edit}>Edit</button>
+            </Link>
+          )}
+
+          {selectedDoc.status === "Awaiting-Completion" && (
+            <button
+              className={styles.markCompleteBtn}
+              onClick={handleMarkAsComplete}
+            >
+              Mark as Completed
+            </button>
+          )}
+
+          {selectedDoc.status === "On-Hold" && (
+            <button
+              className={styles.RemarksBtn}
+              onClick={() => setIsRemarksModalOpen(true)}
+            >
+              Remarks
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   </div>
-</div>
+)}
 
-            </div>
-          </div>
-        )}
 
         {isRemarksModalOpen && (
           <div className={styles.modalOverlay}>

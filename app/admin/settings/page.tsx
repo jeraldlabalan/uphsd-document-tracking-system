@@ -8,8 +8,10 @@ import DocumentManagement from "./(management-entities)/DocumentManagement";
 import InformationForm from "./(profile-management)/InformationForm";
 import ChangePasswordForm from "./(profile-management)/ChangePasswordForm";
 import ProfileDisplay from "./(profile-management)/ProfileDisplay";
-
 import Modal from "./(modal)/Modal";
+import Loading from "@/app/loading";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 interface UserInfo {
   FirstName: string | null;
@@ -27,22 +29,77 @@ interface UserInfo {
 
 export default function Settings() {
   const [showModal, setShowModal] = useState(false); // Modal visibility state
-  const [rowToDelete, setRowToDelete] = useState<string | null>(null); // Row to delete
+  const [modalData, setModalData] = useState({
+    description: "",
+    onConfirm: () => {
+      console.log("[Settings Debug] Default onConfirm called - this should not happen");
+    },
+    onCancel: () => {
+      console.log("[Settings Debug] Default onCancel called - this should not happen");
+      setShowModal(false);
+    },
+    isLoading: false,
+  });
   const [isLoading, setIsLoading] = useState(false); // For loading effect
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Function to show modal from child components
+  const showModalFromChild = (data: {
+    description: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+    isLoading: boolean;
+  }) => {
+    console.log("[Settings Debug] showModalFromChild called with:", {
+      description: data.description,
+      onConfirm: data.onConfirm.toString(),
+      onCancel: data.onCancel.toString(),
+      isLoading: data.isLoading
+    });
+    setModalData(data);
+    setShowModal(true);
+    console.log("[Settings Debug] Modal state set to true");
+  };
+
+  // Debug logging for modal state changes
+  useEffect(() => {
+    console.log("[Settings Debug] Modal state changed:", { 
+      showModal, 
+      modalData: {
+        description: modalData.description,
+        onConfirm: modalData.onConfirm.toString(),
+        onCancel: modalData.onCancel.toString(),
+        isLoading: modalData.isLoading
+      }
+    });
+  }, [showModal, modalData]);
+
+  useEffect(() => {
+    AOS.init({
+      duration: 1000,
+      once: true,
+    });
+  }, []);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
+        setLoading(true);
         const response = await fetch("/api/admin/settings/user-info");
+
         if (response.ok) {
           const data = await response.json();
           setUserInfo(data);
         } else {
           console.error("Failed to fetch user info");
+          setUserInfo(null);
         }
       } catch (error) {
         console.error("Error fetching user info:", error);
+        setUserInfo(null);
+      } finally {
+        setLoading(false); // ✅ stop loader
       }
     };
 
@@ -53,10 +110,17 @@ export default function Settings() {
       fetchUserInfo();
     };
 
+    // Listen for custom event to close modal
+    const handleCloseModal = () => {
+      setShowModal(false);
+    };
+
     window.addEventListener("userInfoUpdated", handleUserInfoUpdate);
+    window.addEventListener("closeModal", handleCloseModal);
 
     return () => {
       window.removeEventListener("userInfoUpdated", handleUserInfoUpdate);
+      window.removeEventListener("closeModal", handleCloseModal);
     };
   }, []);
 
@@ -90,17 +154,20 @@ export default function Settings() {
     // Simulate async task (e.g., delete operation)
     setIsLoading(true); // Start loading
     setTimeout(() => {
-      console.log(`Row ${rowToDelete} deleted`);
+      console.log("Row deleted");
       setIsLoading(false); // End loading
-      setRowToDelete(null); // Clear row after deletion
+      setShowModal(false); // Close modal after deletion
     }, 2000); // Simulate 2-second delay
   };
 
+  if (loading) {
+    return <Loading />;
+  }
   return (
     <div>
       <AdminHeader />
 
-      <div className={styles.container}>
+      <div className={styles.container} data-aos="fade-up">
         <div className={styles.rightContent}>
           <h1>Settings</h1>
 
@@ -123,24 +190,24 @@ export default function Settings() {
 
             {/* Document and Management Section */}
             <div className={styles.documentContainer}>
-              <DocumentManagement />
+              <DocumentManagement showModal={showModalFromChild} />
               <hr />
-              <DepartmentManagement />
+              <DepartmentManagement showModal={showModalFromChild} />
               <hr />
-              <PositionManagement />
+              <PositionManagement showModal={showModalFromChild} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modal for Confirmation */}
+      {/* Modal rendered at page level */}
       <Modal
-        showModal={showModal} // Pass the modal visibility
-        setShowModal={setShowModal} // Pass the setShowModal function
-        description={`Are you sure you want to delete this department?`} // Dynamic description
-        onConfirm={handleRemoveRow} // Pass the confirm action function
-        onCancel={() => setShowModal(false)} // Close modal on cancel
-        isLoading={isLoading} // Show loading spinner during action
+        showModal={showModal}
+        setShowModal={setShowModal}
+        description={modalData.description}
+        onConfirm={modalData.onConfirm}
+        onCancel={modalData.onCancel}
+        isLoading={modalData.isLoading}
       />
     </div>
   );

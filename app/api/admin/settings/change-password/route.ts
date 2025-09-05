@@ -6,6 +6,12 @@ import { verify } from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
+interface JwtPayload {
+  UserID: number;
+  iat?: number;
+  exp?: number;
+}
+
 export async function PATCH(req: NextRequest) {
   // Await cookies() because it returns a Promise
   const cookieStore = await cookies();
@@ -15,15 +21,18 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
   }
 
-  let decoded: any;
+  let decoded: JwtPayload;
   try {
-    decoded = verify(token, JWT_SECRET);
+    decoded = verify(token, JWT_SECRET) as JwtPayload;
   } catch (err) {
     return NextResponse.json({ message: "Invalid token" }, { status: 401 });
   }
 
   const body = await req.json();
-  const { currentPassword, newPassword } = body;
+  const { currentPassword, newPassword } = body as {
+    currentPassword?: string;
+    newPassword?: string;
+  };
 
   if (!currentPassword || !newPassword) {
     return NextResponse.json({ message: "Missing passwords" }, { status: 400 });

@@ -110,6 +110,7 @@ export async function GET(req: Request) {
         creator: `${doc.Creator?.FirstName || "Unknown"} ${doc.Creator?.LastName || "Unknown"}`,
         preview: latestFilepath || "",
         userRole: isCreator ? "creator" : "approver", // Track user's role
+        department: doc.Department?.Name ?? "Unassigned"
       };
     });
 

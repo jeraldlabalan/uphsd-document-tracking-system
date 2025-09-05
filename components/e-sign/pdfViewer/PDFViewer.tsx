@@ -8,7 +8,19 @@ import styles from "./PDFViewer.module.css";
 import type { PDFViewerProps, PDFViewerRef, Placeholder } from "../types";
 import SignatureModal from "../signatureModal/SignatureModal";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// Fix PDF.js worker loading - try multiple sources
+try {
+  // Try CDN first
+  pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+} catch (error) {
+  console.warn("Failed to set CDN worker, trying unpkg:", error);
+  try {
+    pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+  } catch (error2) {
+    console.warn("Failed to set unpkg worker, trying jsdelivr:", error2);
+    pdfjs.GlobalWorkerOptions.workerSrc = `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+  }
+}
 
 function PDFViewer(
   {
@@ -26,10 +38,16 @@ function PDFViewer(
     originalPdfUrl,
     hasSigned,
     signees, // Add signees prop
+    documentId,
+    onSavePlaceholders,
+    setPdfUrl,
+    setHasSigned,
   }: PDFViewerProps,
   ref: React.Ref<PDFViewerRef>
 ) {
   const [numPages, setNumPages] = useState<number>(0);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState<boolean>(false);
 
   const [uploadedSignature, setUploadedSignature] = useState<string | null>(
     null
@@ -37,9 +55,75 @@ function PDFViewer(
 
   useImperativeHandle(ref, () => ({
     applySignature,
+    generatePdfWithoutPlaceholders,
+    generateCleanPdf,
+    addPlaceholder: (placeholder: Placeholder) => {
+      setPlaceholders((prev) => [...prev, placeholder]);
+    },
+    removePlaceholder: (id: number) => {
+      setPlaceholders((prev) => prev.filter((p) => p.id !== id));
+    },
+    updatePlaceholder: (id: number, updates: Partial<Placeholder>) => {
+      setPlaceholders((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
+      );
+    },
+    getPlaceholders: () => placeholders,
+    setPlaceholders,
     resetSignaturePreview,
-    generatePdfWithPlaceholders,
+    undoChanges: () => {
+      // This method is now deprecated - undo functionality is handled at the page level
+      console.log("undoChanges called - this method is deprecated");
+    },
   }));
+
+
+
+  // Function to fetch placeholders from database
+  const fetchPlaceholdersFromDatabase = async () => {
+    try {
+      const response = await fetch(`/api/employee/signature-placeholders?documentId=${documentId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.placeholders) {
+          // Convert database placeholders to UI format
+          const uiPlaceholders = data.placeholders.map((ph: any) => ({
+            id: ph.PlaceholderID,
+            placeholderId: ph.PlaceholderID,
+            page: ph.Page - 1, // Convert to 0-based indexing
+            x: ph.X,
+            y: ph.Y,
+            width: ph.Width,
+            height: ph.Height,
+            signee: ph.AssignedToID.toString(),
+            signeeName: ph.AssignedTo?.FirstName + ' ' + ph.AssignedTo?.LastName,
+            isSigned: ph.IsSigned,
+            signedAt: ph.SignedAt,
+            assignedToId: ph.AssignedToID,
+          }));
+          
+          console.log("🔍 DATABASE PLACEHOLDERS DEBUG:", {
+            rawData: data.placeholders,
+            convertedPlaceholders: uiPlaceholders,
+            coordinateAnalysis: uiPlaceholders.map((ph: any) => ({
+              id: ph.id,
+              x: ph.x,
+              y: ph.y,
+              width: ph.width,
+              height: ph.height,
+              page: ph.page,
+              isSigned: ph.isSigned
+            }))
+          });
+          
+          setPlaceholders(uiPlaceholders);
+          console.log("Placeholders restored from database:", uiPlaceholders);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching placeholders from database:", error);
+    }
+  };
 
   const resetSignaturePreview = () => {
     setSignatureImage(null);
@@ -62,6 +146,13 @@ function PDFViewer(
   const containerRef = useRef<HTMLDivElement | null>(null);
   const BASE_WIDTH = 800;
   const [scale, setScale] = useState(1); // ← this is the original PDF width you expect
+  const [containerDims, setContainerDims] = useState<{
+    width: number;
+    height: number;
+  }>({ width: 800, height: 1000 });
+  const [pageDims, setPageDims] = useState<
+    Record<number, { width: number; height: number }>
+  >({});
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -85,16 +176,14 @@ function PDFViewer(
     // Set initial dimensions
     const rect = containerRef.current.getBoundingClientRect();
     setContainerDims({ width: rect.width, height: rect.height });
-    
+
     return () => {
       resizeObserver.disconnect();
       clearTimeout(timeout);
     };
   }, []);
 
-  const [pageDims, setPageDims] = useState<
-    Record<number, { width: number; height: number }>
-  >({});
+  // Remove zoom controls - no zoom functionality needed
 
   const [imgDims, setImgDims] = useState<{
     width: number;
@@ -123,11 +212,6 @@ function PDFViewer(
   const MIN_HEIGHT = 40;
   const MAX_HEIGHT = 150;
 
-  const [containerDims, setContainerDims] = useState<{
-    width: number;
-    height: number;
-  }>({ width: 800, height: 1000 });
-
   const canSign = placeholders.some((p) => p.signee === role && !p.isSigned);
   const [selectedPlaceholder, setSelectedPlaceholder] =
     useState<Placeholder | null>(null);
@@ -145,6 +229,8 @@ function PDFViewer(
     height: number;
     editingId?: number;
     existingId?: number;
+    clickX?: number;
+    clickY?: number;
   } | null>(null);
 
   const [search, setSearch] = useState("");
@@ -152,6 +238,55 @@ function PDFViewer(
   const filteredSignees = signees.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Function to calculate optimal modal position based on click coordinates
+  const calculateModalPosition = (clickX: number, clickY: number) => {
+    const modalWidth = 220;
+    const modalHeight = 300;
+    
+    // Calculate left position (center modal on click)
+    let left = clickX - (modalWidth / 2);
+    
+    // Ensure modal doesn't go off-screen
+    if (left < 10) left = 10;
+    if (left + modalWidth > window.innerWidth - 10) {
+      left = window.innerWidth - modalWidth - 10;
+    }
+    
+    // Calculate top position (above click point)
+    let top = clickY - modalHeight - 20;
+    
+    // If modal would go above screen, position below click point
+    if (top < 10) {
+      top = clickY + 20;
+    }
+    
+    // Ensure modal doesn't go below screen
+    if (top + modalHeight > window.innerHeight - 10) {
+      top = window.innerHeight - modalHeight - 10;
+    }
+    
+    // Additional check: if click is too close to edges, adjust position
+    if (clickX < modalWidth + 20) {
+      left = 20; // Position from left edge
+    } else if (clickX > window.innerWidth - modalWidth - 20) {
+      left = window.innerWidth - modalWidth - 20; // Position from right edge
+    }
+    
+    // Debug logging
+    console.log('Modal positioning:', {
+      clickX,
+      clickY,
+      calculatedLeft: left,
+      calculatedTop: top,
+      windowWidth: window.innerWidth,
+      windowHeight: window.innerHeight,
+      modalWidth,
+      modalHeight
+    });
+    
+    return { left, top };
+  };
 
 
 
@@ -178,16 +313,34 @@ function PDFViewer(
   ) => {
     if (!draggingEnabled || role !== "sender" || modalOpen) return;
     
-    const rect = e.currentTarget.getBoundingClientRect();
+    // Get coordinates relative to the page container (same as drop and Rnd positioning)
+    // This ensures consistency across all coordinate systems
+    const pageContainer = e.currentTarget;
+    const rect = pageContainer.getBoundingClientRect();
+    
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+    
+    console.log('✅ Using page container coordinates (consistent):', { 
+      x, 
+      y, 
+      rect,
+      pageIndex: page,
+      note: 'Coordinates relative to page container (same as drop and Rnd positioning)'
+    });
+    
     setDragStart({ x, y });
     setDragPage(page);
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!dragStart || dragPage === null) return;
-    const rect = e.currentTarget.getBoundingClientRect();
+    
+    // Get coordinates relative to the page container (same as drop and Rnd positioning)
+    // This ensures consistency across all coordinate systems
+    const pageContainer = e.currentTarget;
+    const rect = pageContainer.getBoundingClientRect();
+    
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
@@ -196,6 +349,18 @@ function PDFViewer(
     const originX = Math.min(x, dragStart.x);
     const originY = Math.min(y, dragStart.y);
 
+    console.log('🔍 Mouse Move - Page Container coordinates:', { 
+      x, 
+      y, 
+      dragStart, 
+      width, 
+      height, 
+      originX, 
+      originY,
+      rect,
+      note: 'Coordinates relative to page container (consistent with drop and Rnd positioning)'
+    });
+    
     setDragRect({ x: originX, y: originY, width, height });
   };
 
@@ -208,6 +373,8 @@ function PDFViewer(
         y: dragRect.y,
         width: dragRect.width,
         height: dragRect.height,
+        clickX: e.clientX,
+        clickY: e.clientY,
       });
 
       setSelectedAssignee(null);
@@ -261,11 +428,13 @@ function PDFViewer(
         return;
       }
 
+      // Use the same coordinate system as the prototype - store coordinates as-is
+      // The coordinates are already relative to the PDF page container
       const newPlaceholder: Placeholder = {
         id: Date.now(),
-        page: dragPage,
-        x: dragRect.x,
-        y: dragRect.y,
+        page: dragPage, // This should be 0-indexed
+        x: dragRect.x, // Store coordinates as-is (relative to page container)
+        y: dragRect.y, // Store coordinates as-is (relative to page container)
         width: MIN_WIDTH,
         height: MIN_HEIGHT,
         signee,
@@ -273,8 +442,27 @@ function PDFViewer(
         isSigned: false,
         signedAt: null,
         initials: null,
-        assignedToId: userId, // Set the database user ID
+        assignedToId: userId,
       };
+      
+      console.log('🔍 New placeholder created:', {
+        ...newPlaceholder,
+        note: 'Coordinates stored as-is (relative to page container)'
+      });
+      
+      // LOGGING: Track placeholder creation for debugging
+      console.log('📍 PLACEHOLDER CREATED:', {
+        id: newPlaceholder.id,
+        page: newPlaceholder.page,
+        coordinates: { x: newPlaceholder.x, y: newPlaceholder.y },
+        dimensions: { width: newPlaceholder.width, height: newPlaceholder.height },
+        assignedTo: { signee, signeeName, userId },
+        dragInfo: {
+          dragPage: dragPage,
+          dragRect: dragRect
+        },
+        note: 'New placeholder added to the system'
+      });
 
       // Add the new placeholder to the state
       setPlaceholders((prev) => {
@@ -349,28 +537,306 @@ function PDFViewer(
         hour: "2-digit",
         minute: "2-digit",
       });
-      const timestamp = now.toLocaleString();
+      // Use ISO string format for database compatibility with Prisma
+      const timestamp = now.toISOString();
 
-      // For receivers, sign ALL their unsigned placeholders
-      const receiverPlaceholders = placeholders.filter(p => !p.isSigned);
+      // Filter placeholders for the current user - sign ALL unsigned placeholders assigned to them
+      // We need to get the current user ID to filter properly
+      let currentUserId: number | null = null;
+      try {
+        const userResponse = await fetch('/api/user/me');
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          currentUserId = userData.UserID;
+        }
+      } catch (error) {
+        console.error("Error fetching current user:", error);
+      }
+      
+      const receiverPlaceholders = placeholders.filter(p => 
+        !p.isSigned && p.assignedToId === currentUserId
+      );
+      
+      console.log("Available placeholders for signing:", receiverPlaceholders);
+      console.log("Current user ID:", currentUserId);
+      console.log("All placeholders:", placeholders.map(p => ({
+        id: p.id,
+        assignedToId: p.assignedToId,
+        isSigned: p.isSigned,
+        signeeName: p.signeeName
+      })));
+      
       if (receiverPlaceholders.length === 0) {
-        alert("No placeholders found to sign.");
-        return;
+        alert("No unsigned placeholders found to sign.");
+        return undefined;
       }
 
       console.log(`Applying signature to ${receiverPlaceholders.length} placeholders`);
 
+      // DEBUG: Test coordinate transformation for each placeholder
+      console.log('🔍 COORDINATE TRANSFORMATION DEBUG:', receiverPlaceholders.map(p => {
+        const renderedPageDims = pageDims[p.page];
+        if (!renderedPageDims) {
+          return { placeholderId: p.id, error: `No rendered page dimensions for page ${p.page}` };
+        }
+        
+        const page = pages[p.page];
+        if (!page) {
+          return { placeholderId: p.id, error: `No PDF page found for index ${p.page}` };
+        }
+        
+        const { width: pdfPageWidth, height: pdfPageHeight } = page.getSize();
+        const scaleX = pdfPageWidth / renderedPageDims.width;
+        const scaleY = pdfPageHeight / renderedPageDims.height;
+        
+        const pdfX = p.x * scaleX;
+        const pdfY = (renderedPageDims.height - p.y - p.height) * scaleY;
+        const pdfWidth = p.width * scaleX;
+        const pdfHeight = p.height * scaleY;
+        
+        // CRITICAL DEBUG: Show the exact Y-coordinate calculation
+        const yCalculation = `${renderedPageDims.height} - ${p.y} - ${p.height} = ${renderedPageDims.height - p.y - p.height}`;
+        
+        return {
+          placeholderId: p.id,
+          page: p.page,
+          storedCoords: { x: p.x, y: p.y, width: p.width, height: p.height },
+          renderedPageDims,
+          pdfPageDims: { width: pdfPageWidth, height: pdfPageHeight },
+          transformation: { scaleX, scaleY },
+          pdfCoords: { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight },
+          yCalculation,
+          isValid: pdfX >= 0 && pdfY >= 0 && pdfWidth > 0 && pdfHeight > 0,
+          isInBounds: pdfX + pdfWidth <= pdfPageWidth && pdfY + pdfHeight <= pdfPageHeight
+        };
+      }));
+
+      // LOGGING: Show all placeholders and their page distribution
+      console.log('🔍 PLACEHOLDER PAGE DISTRIBUTION:', {
+        totalPlaceholders: placeholders.length,
+        placeholdersByPage: placeholders.reduce((acc, p) => {
+          if (!acc[p.page]) acc[p.page] = [];
+          acc[p.page].push({
+            id: p.id,
+            x: p.x,
+            y: p.y,
+            width: p.width,
+            height: p.height,
+            isSigned: p.isSigned,
+            signeeName: p.signeeName
+          });
+          return acc;
+        }, {} as Record<number, any[]>),
+        note: 'Shows all placeholders grouped by page number'
+      });
+
+      // LOGGING: Show which placeholders are being signed
+      console.log('🔍 SIGNING THESE PLACEHOLDERS:', receiverPlaceholders.map(p => ({
+        id: p.id,
+        page: p.page,
+        x: p.x,
+        y: p.y,
+        width: p.width,
+        height: p.height,
+        signeeName: p.signeeName
+      })));
+
       // Sign all unsigned placeholders for the receiver
       receiverPlaceholders.forEach(placeholderToSign => {
-        const page = pages[placeholderToSign.page];
+        // IMPORTANT: Frontend stores 0-indexed page numbers, PDF pages array is also 0-indexed
+        // So we can use the page number directly without conversion
+        const pageIndex = placeholderToSign.page;
+        const page = pages[pageIndex];
+        
+        if (!page) {
+          console.error(`Page ${placeholderToSign.page} not found. Available pages: 0-${pages.length - 1}`);
+          console.error('Available page indices:', Array.from({ length: pages.length }, (_, i) => i));
+          return;
+        }
+        
         const { width: pdfPageWidth, height: pdfPageHeight } = page.getSize();
 
-        // Convert from scaled screen space → actual PDF space
-        const pdfX = placeholderToSign.x / scale;
-        const pdfY = pdfPageHeight - (placeholderToSign.y + placeholderToSign.height) / scale;
-        const pdfWidth = placeholderToSign.width / scale;
-        const pdfHeight = placeholderToSign.height / scale;
+        console.log('🔍 PAGE DEBUG:', {
+          requestedPage: placeholderToSign.page,
+          actualPageIndex: pageIndex,
+          totalPages: pages.length,
+          pageSize: { width: pdfPageWidth, height: pdfPageHeight },
+          note: 'Page numbers are 0-indexed in both frontend and PDF array'
+        });
+
+        // FIXED: Use proper coordinate transformation instead of manual scaling
+        // Get the rendered page dimensions from React-PDF
+        const renderedPageDims = pageDims[pageIndex];
+        if (!renderedPageDims) {
+          console.error(`No rendered page dimensions found for page ${pageIndex}`);
+          return;
+        }
+
+        // Calculate the transformation matrix from rendered coordinates to PDF coordinates
+        const scaleX = pdfPageWidth / renderedPageDims.width;
+        const scaleY = pdfPageHeight / renderedPageDims.height;
+
+        // CRITICAL FIX: The coordinate systems are misaligned
+        // We need to use the SAME coordinate system that React-PDF uses for rendering
+        // Instead of trying to transform coordinates, let's measure the actual rendered position
+        
+                 // CRITICAL FIX: The coordinate systems are fundamentally different
+         // We need to transform from React-PDF's coordinate system to PDF.js coordinate system
+         
+         // Get the actual rendered position of the placeholder from the DOM
+         const placeholderElement = placeholderRefs.current[placeholderToSign.id];
+         let actualX: number, actualY: number;
+         
+         if (placeholderElement) {
+           // Get the placeholder's position relative to the PDF page
+           const placeholderRect = placeholderElement.getBoundingClientRect();
+           const pageElement = placeholderElement.closest(`.${styles.pageContainer}`);
+           
+           if (pageElement) {
+             const pageRect = pageElement.getBoundingClientRect();
+             
+             // CRITICAL: The stored coordinates are relative to the page container
+             // But we need to account for any scaling or positioning differences
+             
+             // First, let's check if there's a scale difference
+             const storedWidth = placeholderToSign.width;
+             const actualWidth = placeholderRect.width;
+             const widthScale = actualWidth / storedWidth;
+             
+             const storedHeight = placeholderToSign.height;
+             const actualHeight = placeholderRect.height;
+             const heightScale = actualHeight / storedHeight;
+             
+             // Apply the scale transformation to get the real coordinates
+             actualX = placeholderToSign.x * widthScale;
+             actualY = placeholderToSign.y * heightScale;
+             
+             console.log('🔍 DOM COORDINATE MEASUREMENT SUCCESS:', {
+               placeholderId: placeholderToSign.id,
+               storedCoords: { x: placeholderToSign.x, y: placeholderToSign.y },
+               actualRenderedCoords: { x: actualX, y: actualY },
+               pageRect: { left: pageRect.left, top: pageRect.top },
+               placeholderRect: { left: placeholderRect.left, top: placeholderRect.top },
+               scaling: { widthScale, heightScale },
+               note: 'Applied scaling transformation to stored coordinates'
+             });
+           } else {
+             console.warn(`No page container found for placeholder ${placeholderToSign.id}, using stored coordinates`);
+             actualX = placeholderToSign.x;
+             actualY = placeholderToSign.y;
+           }
+         } else {
+           console.warn(`No placeholder element found for ID ${placeholderToSign.id}, using stored coordinates`);
+           actualX = placeholderToSign.x;
+           actualY = placeholderToSign.y;
+         }
+        
+                 // CRITICAL: Now we need to account for React-PDF's internal scaling
+         // The stored coordinates are relative to the rendered PDF, but we need PDF.js coordinates
+         
+         // Get the React-PDF page element to understand its scaling
+         const reactPdfPage = document.querySelector(`[data-page-number="${placeholderToSign.page + 1}"]`);
+         let reactPdfScale = 1;
+         
+         if (reactPdfPage) {
+           const reactPdfRect = reactPdfPage.getBoundingClientRect();
+           // Calculate the scale factor between React-PDF rendering and stored coordinates
+           const expectedWidth = renderedPageDims.width;
+           const actualRenderedWidth = reactPdfRect.width;
+           reactPdfScale = actualRenderedWidth / expectedWidth;
+           
+           console.log('🔍 REACT-PDF SCALING DETECTED:', {
+             placeholderId: placeholderToSign.id,
+             expectedWidth,
+             actualRenderedWidth,
+             reactPdfScale,
+             note: 'Scale factor between React-PDF rendering and stored coordinates'
+           });
+         }
+         
+         // Apply React-PDF scaling to get the real coordinates
+         const realX = actualX / reactPdfScale;
+         const realY = actualY / reactPdfScale;
+         
+         // Now transform these real coordinates to PDF coordinates
+         const pdfX = realX * scaleX;
+         const pdfY = (renderedPageDims.height - realY - placeholderToSign.height) * scaleY;
+         const pdfWidth = placeholderToSign.width * scaleX;
+         const pdfHeight = placeholderToSign.height * scaleY;
+        
+                 console.log('🔍 COMPREHENSIVE COORDINATE TRANSFORMATION:', {
+           placeholderId: placeholderToSign.id,
+           storedCoords: { x: placeholderToSign.x, y: placeholderToSign.y },
+           domMeasuredCoords: { x: actualX, y: actualY },
+           reactPdfScale,
+           realCoords: { x: realX, y: realY },
+           pdfCoords: { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight },
+           transformationSteps: {
+             step1: 'Stored coordinates from database',
+             step2: 'DOM measurement with scaling',
+             step3: 'React-PDF scale correction',
+             step4: 'PDF.js coordinate transformation',
+             step5: 'Y-coordinate flip for PDF'
+           },
+           note: 'Multi-step coordinate transformation accounting for all scaling factors'
+         });
+        
+        // DEBUG: Verify Y-coordinate calculation
+        console.log('🔍 Y-COORDINATE DEBUG:', {
+          placeholderId: placeholderToSign.id,
+          placeholderY: placeholderToSign.y,
+          placeholderHeight: placeholderToSign.height,
+          renderedPageHeight: renderedPageDims.height,
+          calculation: `${renderedPageDims.height} - ${placeholderToSign.y} - ${placeholderToSign.height} = ${renderedPageDims.height - placeholderToSign.y - placeholderToSign.height}`,
+          finalPdfY: pdfY,
+          note: 'Y-coordinate should be flipped: top-left (0) becomes bottom-left (pageHeight)'
+        });
+        
+        console.log('🔍 COORDINATE TRANSFORMATION:', {
+          placeholderId: placeholderToSign.id,
+          page: placeholderToSign.page,
+          renderedCoords: { x: placeholderToSign.x, y: placeholderToSign.y, width: placeholderToSign.width, height: placeholderToSign.height },
+          renderedPageDims: renderedPageDims,
+          pdfPageDims: { width: pdfPageWidth, height: pdfPageHeight },
+          transformation: { scaleX, scaleY },
+          pdfCoords: { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight },
+          note: 'Using PDF.js coordinate transformation for accurate signature placement'
+        });
+        
+        // DEBUG: Check if coordinates are valid
+        if (pdfX < 0 || pdfY < 0 || pdfWidth <= 0 || pdfHeight <= 0) {
+          console.error('❌ INVALID COORDINATES:', {
+            placeholderId: placeholderToSign.id,
+            pdfX, pdfY, pdfWidth, pdfHeight,
+            original: { x: placeholderToSign.x, y: placeholderToSign.y, width: placeholderToSign.width, height: placeholderToSign.height },
+            transformation: { scaleX, scaleY },
+            renderedPageDims,
+            pdfPageDimensions: { width: pdfPageWidth, height: pdfPageHeight }
+          });
+          return; // Skip this placeholder if coordinates are invalid
+        }
+        
+        // DEBUG: Check if coordinates are within page bounds
+        if (pdfX + pdfWidth > pdfPageWidth || pdfY + pdfHeight > pdfPageHeight) {
+          console.warn('⚠️ COORDINATES OUT OF BOUNDS:', {
+            placeholderId: placeholderToSign.id,
+            pdfX, pdfY, pdfWidth, pdfHeight,
+            pageBounds: { width: pdfPageWidth, height: pdfPageHeight },
+            calculatedBounds: { right: pdfX + pdfWidth, bottom: pdfY + pdfHeight }
+          });
+        }
+        
+        // Width/Height: Use transformed dimensions
         const padding = 6;
+
+        console.log('🔍 COORDINATE CONVERSION:', {
+          placeholderId: placeholderToSign.id,
+          page: placeholderToSign.page,
+          storedCoordinates: { x: placeholderToSign.x, y: placeholderToSign.y, width: placeholderToSign.width, height: placeholderToSign.height },
+          pdfCoordinates: { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight },
+          pageDimensions: { width: pdfPageWidth, height: pdfPageHeight },
+          note: 'Using transformed coordinates for consistent PDF placement'
+        });
 
         // Draw signature box with border
         page.drawRectangle({
@@ -381,6 +847,22 @@ function PDFViewer(
           borderColor: rgb(0, 0, 0),
           borderWidth: 1,
           borderDashArray: [3, 3],
+        });
+
+        // LOGGING: Log the signature placement details
+        console.log('✅ SIGNATURE PLACED:', {
+          placeholderId: placeholderToSign.id,
+          page: placeholderToSign.page,
+          pageIndex: pageIndex,
+          originalCoords: { x: placeholderToSign.x, y: placeholderToSign.y },
+          pdfCoords: { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight },
+          pageDimensions: { width: pdfPageWidth, height: pdfPageHeight },
+          signatureBox: {
+            x: pdfX,
+            y: pdfY,
+            width: pdfWidth,
+            height: pdfHeight
+          }
         });
 
         const halfWidth = pdfWidth / 2;
@@ -409,6 +891,16 @@ function PDFViewer(
           height: scaledHeight,
         });
 
+        // LOGGING: Log the signature image placement
+        console.log('🖼️ SIGNATURE IMAGE PLACED:', {
+          placeholderId: placeholderToSign.id,
+          page: placeholderToSign.page,
+          imageCoords: { x: imgX, y: imgY, width: scaledWidth, height: scaledHeight },
+          originalImageSize: { width: originalWidth, height: originalHeight },
+          scaling: { imageScale },
+          note: 'Actual signature image placement coordinates'
+        });
+
         // Draw signature information text
         const textBlockX = pdfX + halfWidth + padding;
         const signeeName = placeholderToSign.signeeName || "Unknown Signee";
@@ -422,6 +914,21 @@ function PDFViewer(
         const totalTextHeight = textLines.length * lineHeight;
         const textStartY =
           pdfY + (pdfHeight + totalTextHeight) / 2 - lineHeight;
+        
+        // LOGGING: Log the text placement area
+        console.log('📝 SIGNATURE TEXT PLACEMENT:', {
+          placeholderId: placeholderToSign.id,
+          page: placeholderToSign.page,
+          textArea: {
+            x: textBlockX,
+            y: textStartY,
+            width: halfWidth - padding * 2,
+            height: totalTextHeight
+          },
+          textLines: textLines.length,
+          lineHeight: lineHeight,
+          note: 'Signature information text placement area'
+        });
 
         textLines.forEach((line, i) => {
           const textWidth = font.widthOfTextAtSize(line.text, line.size);
@@ -442,18 +949,50 @@ function PDFViewer(
         });
       });
 
-      // Update ALL placeholders as signed
-      setPlaceholders(prev => prev.map(p => 
-        !p.isSigned 
-          ? { ...p, isSigned: true, signedAt: timestamp }
-          : p
-      ));
+      // LOGGING: Summary of all signatures placed
+      console.log('🎯 SIGNATURE PLACEMENT SUMMARY:', {
+        totalPlaceholdersSigned: receiverPlaceholders.length,
+        signaturesByPage: receiverPlaceholders.reduce((acc, p) => {
+          if (!acc[p.page]) acc[p.page] = [];
+          
+          // Use the EXACT same coordinate transformation as signature placement
+          const renderedPageDims = pageDims[p.page];
+          if (!renderedPageDims) return acc;
+          
+          const pageHeight = pages[p.page]?.getSize().height || 842;
+          const pageWidth = pages[p.page]?.getSize().width || 595;
+          const scaleX = pageWidth / renderedPageDims.width;
+          const scaleY = pageHeight / renderedPageDims.height;
+          
+          const pdfX = p.x * scaleX; // Transform coordinates to match signature placement
+          const pdfY = (renderedPageDims.height - p.y - p.height) * scaleY; // Flip Y-coordinate for PDF
+          
+          acc[p.page].push({
+            id: p.id,
+            storedCoords: { x: p.x, y: p.y },
+            pdfCoords: { 
+              x: pdfX, 
+              y: pdfY,
+              width: p.width * scaleX,
+              height: p.height * scaleY
+            },
+            pageDimensions: pages[p.page]?.getSize(),
+            renderedPageDims: renderedPageDims,
+            transformation: { scaleX, scaleY },
+            note: 'Coordinates transformed using the same logic as signature placement - Y-coordinate flipped and scaled for PDF'
+          });
+          return acc;
+        }, {} as Record<number, any[]>),
+        note: 'Final summary of where all signatures were placed using proper coordinate transformation'
+      });
 
-      // Update placeholders in the database
+      // Update placeholders in the database - only once
       try {
+        console.log("Updating placeholders in database:", receiverPlaceholders);
         await Promise.all(
           receiverPlaceholders.map(async (placeholder) => {
             if (placeholder.placeholderId) {
+              console.log(`Updating placeholder ${placeholder.placeholderId} as signed`);
               const response = await fetch('/api/employee/signature-placeholders', {
                 method: 'PUT',
                 headers: {
@@ -462,18 +1001,34 @@ function PDFViewer(
                 body: JSON.stringify({
                   placeholderId: placeholder.placeholderId,
                   signatureData: signatureImage, // Store the signature image data
+                  isSigned: true, // Mark as signed in database
+                  signedAt: timestamp, // Add timestamp
                 }),
               });
               
               if (!response.ok) {
                 console.error(`Failed to update placeholder ${placeholder.placeholderId} in database`);
+                const errorText = await response.text();
+                console.error("Error response:", errorText);
+                throw new Error(`Database update failed: ${errorText}`);
+              } else {
+                console.log(`Successfully updated placeholder ${placeholder.placeholderId} in database`);
               }
             }
           })
         );
+        
+        // Remove signed placeholders from UI state immediately
+        console.log("Removing placeholders from UI state:", receiverPlaceholders.map(p => p.id));
+        setPlaceholders(prev => {
+          const filtered = prev.filter(p => !receiverPlaceholders.some(rp => rp.id === p.id));
+          console.log("Placeholders after filtering:", filtered);
+          return filtered;
+        });
       } catch (error) {
         console.error('Error updating placeholders in database:', error);
-        // Continue with the signature process even if database update fails
+        // Don't continue with the signature process if database update fails
+        throw new Error(`Failed to update placeholders in database: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
 
       const pdfBytes = await pdfDoc.save();
@@ -481,15 +1036,24 @@ function PDFViewer(
         type: "application/pdf",
       });
       const url = URL.createObjectURL(blob);
+      
+      console.log('🎯 PDF GENERATED SUCCESSFULLY:', {
+        url: url,
+        blobSize: blob.size,
+        pdfBytesLength: pdfBytes.length,
+        note: 'PDF generated and URL created - returning to modal'
+      });
+      
       return url;
     } catch (err) {
       console.error("Error applying signature:", err);
       alert("Failed to apply signature. See console for details.");
+      return undefined; // Return undefined on error so modal can handle it
     }
   };
 
-  // Function to generate PDF with placeholders visible (for sender to save)
-  const generatePdfWithPlaceholders = async (): Promise<string | null> => {
+  // Function to generate PDF WITHOUT embedding placeholders (placeholders exist in database only)
+  const generatePdfWithoutPlaceholders = async (): Promise<string | null> => {
     try {
       if (!pdfUrl || !originalPdfUrl) {
         console.error("No PDF URL provided");
@@ -504,73 +1068,38 @@ function PDFViewer(
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
       const pages = pdfDoc.getPages();
 
-      // Add all placeholders to the PDF
-      placeholders.forEach((ph) => {
-        const page = pages[ph.page];
-        if (!page) return; // Skip if page doesn't exist
-
-        // Convert from scaled screen space to actual PDF space
-        const pdfX = ph.x / scale;
-        // Adjust Y coordinate to account for PDF coordinate system offset
-        const pdfY = page.getSize().height - (ph.y + ph.height) / scale + 8;
-        const pdfWidth = ph.width / scale;
-        const pdfHeight = ph.height / scale;
-
-        // Draw placeholder rectangle with better visibility
-        page.drawRectangle({
-          x: pdfX,
-          y: pdfY,
-          width: pdfWidth,
-          height: pdfHeight,
-          borderColor: rgb(0, 0, 0),
-          borderWidth: 2,
-          borderDashArray: [5, 5],
-          color: rgb(0.95, 0.95, 1), // Light blue background
-        });
-
-        // Add placeholder text with better positioning
-        const signeeName = ph.signeeName || 'Unknown Signee';
-        const placeholderText = `Signature for: ${signeeName}`;
-        const textSize = Math.min(10, pdfHeight / 3); // Adaptive text size
-        const textWidth = font.widthOfTextAtSize(placeholderText, textSize);
-        
-        // Center text horizontally and vertically
-        const textX = pdfX + (pdfWidth - textWidth) / 2;
-        const textY = pdfY + pdfHeight / 2 + textSize / 3;
-
-        page.drawText(placeholderText, {
-          x: textX,
-          y: textY,
-          size: textSize,
-          font,
-          color: rgb(0, 0, 0),
-        });
-
-        // Add "Click to sign" instruction below
-        const instructionText = "Click to sign";
-        const instructionSize = Math.min(8, textSize * 0.8);
-        const instructionWidth = font.widthOfTextAtSize(instructionText, instructionSize);
-        const instructionX = pdfX + (pdfWidth - instructionWidth) / 2;
-        const instructionY = pdfY + pdfHeight / 2 - instructionSize;
-
-        page.drawText(instructionText, {
-          x: instructionX,
-          y: instructionY,
-          size: instructionSize,
-          font,
-          color: rgb(0.5, 0.5, 0.5),
-        });
-      });
-
+      // DON'T embed placeholders in the PDF - they're already saved in the database
+      // This prevents duplicate placeholders from appearing
+      console.log("NOT embedding placeholders in PDF - they exist in database only");
+      
+      // Just return the original PDF without any placeholder modifications
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([new Uint8Array(pdfBytes)], {
         type: "application/pdf",
       });
       const url = URL.createObjectURL(blob);
       return url;
-    } catch (err) {
-      console.error("Error generating PDF with placeholders:", err);
-      alert("Failed to generate PDF with placeholders. See console for details.");
+    } catch (error) {
+      console.error("Error generating PDF with placeholders:", error);
+      return null;
+    }
+  };
+
+  // Function to generate a clean PDF without any placeholders (for signed documents)
+  const generateCleanPdf = async (): Promise<string | null> => {
+    try {
+      if (!pdfUrl || !originalPdfUrl) {
+        console.error("No PDF URL provided");
+        return null;
+      }
+
+      console.log("Generating clean PDF without placeholders");
+      
+      // Just return the original PDF without any modifications
+      // This ensures no placeholders are embedded
+      return originalPdfUrl;
+    } catch (error) {
+      console.error("Error generating clean PDF:", error);
       return null;
     }
   };
@@ -579,6 +1108,8 @@ function PDFViewer(
     signee: string;
     signeeName: string;
   } | null>(null);
+
+  // Remove the transformCoordinates utility function - no longer needed
 
   const [resizingEnabled, setResizingEnabled] = useState(true);
 
@@ -600,6 +1131,59 @@ function PDFViewer(
 
   if (!pdfUrl) return <p>Please upload a PDF document.</p>;
 
+  // Check if we should use fallback iframe viewer
+  if (pdfUrl.includes('?fallback=true')) {
+    return (
+      <div className={styles.fallbackContainer}>
+        <h3>PDF Viewer (Browser Fallback)</h3>
+        <p>Using browser's built-in PDF viewer as React-PDF encountered issues.</p>
+        <button 
+          onClick={() => pdfUrl && setPdfUrl?.(pdfUrl.replace('?fallback=true', ''))}
+          className={styles.retryButton}
+        >
+          Try React-PDF Again
+        </button>
+        <iframe 
+          src={pdfUrl ? pdfUrl.replace('?fallback=true', '') : ''} 
+          width="100%" 
+          height="800px"
+          style={{ border: '1px solid #ccc', marginTop: '1rem' }}
+          title="PDF Fallback Viewer"
+        />
+      </div>
+    );
+  }
+
+  if (pdfError) {
+    return (
+      <div className={styles.errorContainer}>
+        <h3>PDF Loading Error</h3>
+        <p><strong>Error:</strong> {pdfError}</p>
+        <p><strong>URL:</strong> {pdfUrl}</p>
+        <div className={styles.errorActions}>
+          <button onClick={() => setPdfError(null)}>Retry with React-PDF</button>
+          <button onClick={() => {
+            // Fallback to iframe viewer
+            setPdfError(null);
+            pdfUrl && setPdfUrl?.(pdfUrl + "?fallback=true");
+          }}>Use Browser PDF Viewer</button>
+        </div>
+        
+        {/* Fallback iframe viewer */}
+        <div className={styles.fallbackViewer}>
+          <h4>Fallback PDF Viewer</h4>
+          <iframe 
+            src={pdfUrl} 
+            width="100%" 
+            height="600px"
+            style={{ border: '1px solid #ccc' }}
+            title="PDF Fallback Viewer"
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       {/* Document Container */}
@@ -610,9 +1194,41 @@ function PDFViewer(
       >
         <Document
           file={pdfUrl}
-          onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-          onLoadError={console.error}
+          onLoadSuccess={({ numPages }) => {
+            console.log("PDF loaded successfully with", numPages, "pages");
+            console.log("🔍 PDF Page Indexing Debug:", {
+              totalPages: numPages,
+              pageIndices: Array.from({ length: numPages }, (_, i) => i),
+              note: "Page indices are 0-indexed (0, 1, 2, ...)"
+            });
+            
+            // LOGGING: Show PDF structure for debugging
+            console.log('📄 PDF STRUCTURE LOADED:', {
+              totalPages: numPages,
+              pageIndices: Array.from({ length: numPages }, (_, i) => i),
+              expectedPageNumbers: Array.from({ length: numPages }, (_, i) => i + 1),
+              note: 'Shows the relationship between page indices and page numbers'
+            });
+            
+            setNumPages(numPages);
+            setPdfError(null);
+            setPdfLoading(false);
+          }}
+          onLoadError={(error) => {
+            console.error("PDF loading error:", error);
+            setPdfError(`Failed to load PDF: ${error.message || 'Unknown error'}`);
+            setPdfLoading(false);
+          }}
+          onLoadProgress={({ loaded, total }) => {
+            console.log("PDF loading progress:", loaded, "/", total);
+            setPdfLoading(true);
+          }}
         >
+          {pdfLoading && (
+            <div className={styles.loadingContainer}>
+              <p>Loading PDF...</p>
+            </div>
+          )}
           {Array.from(new Array(numPages), (_, i) => (
             <div
               key={`page_${i + 1}`}
@@ -625,9 +1241,24 @@ function PDFViewer(
                 e.preventDefault();
                 const data = e.dataTransfer.getData("text/plain");
                 if (data === "add-signature") {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const dropX = e.clientX - rect.left;
-                  const dropY = e.clientY - rect.top;
+                  // Get coordinates relative to the page container (same as Rnd positioning)
+                  // This ensures consistency between drop coordinates and display coordinates
+                  const pageContainer = e.currentTarget;
+                  const rect = pageContainer.getBoundingClientRect();
+                  
+                  let dropX = e.clientX - rect.left;
+                  let dropY = e.clientY - rect.top;
+                  
+                  console.log('🔍 DROP COORDINATES - Page Container:', {
+                    clientX: e.clientX,
+                    clientY: e.clientY,
+                    containerLeft: rect.left,
+                    containerTop: rect.top,
+                    calculatedDropX: dropX,
+                    calculatedDropY: dropY,
+                    pageIndex: i,
+                    note: 'Coordinates relative to page container (same as Rnd positioning)'
+                  });
 
                   // Offset by half of the placeholder dimensions to center it
                   const centeredX = dropX - MIN_WIDTH / 2;
@@ -648,6 +1279,8 @@ function PDFViewer(
                     y: centeredY,
                     width: MIN_WIDTH,
                     height: MIN_HEIGHT,
+                    clickX: e.clientX,
+                    clickY: e.clientY,
                   });
 
                   setSelectedAssignee(null);
@@ -674,17 +1307,17 @@ function PDFViewer(
                 .map((ph) => (
                     <Rnd
                       size={{
-                        width: ph.width * scale,
-                        height: ph.height * scale,
+                        width: ph.width,
+                        height: ph.height,
                       }}
                       position={{
-                        x: ph.x * scale,
-                        y: ph.y * scale,
+                        x: ph.x,
+                        y: ph.y,
                       }}
-                      minWidth={MIN_WIDTH * scale}
-                      maxWidth={MAX_WIDTH * scale}
-                      minHeight={MIN_HEIGHT * scale}
-                      maxHeight={MIN_HEIGHT * scale}
+                      minWidth={MIN_WIDTH}
+                      maxWidth={MAX_WIDTH}
+                      minHeight={MIN_HEIGHT}
+                      maxHeight={MIN_HEIGHT}
                       enableResizing={
                         role === "sender" && !ph.isSigned
                           ? {
@@ -707,8 +1340,8 @@ function PDFViewer(
                             p.id === ph.id
                               ? {
                                   ...p,
-                                  x: d.x / scale,
-                                  y: d.y / scale,
+                                  x: d.x,
+                                  y: d.y,
                                 }
                               : p
                           )
@@ -721,10 +1354,10 @@ function PDFViewer(
                             p.id === ph.id
                               ? {
                                   ...p,
-                                  width: parseInt(ref.style.width) / scale,
-                                  height: parseInt(ref.style.height) / scale,
-                                  x: position.x / scale,
-                                  y: position.y / scale,
+                                  width: parseInt(ref.style.width),
+                                  height: parseInt(ref.style.height),
+                                  x: position.x,
+                                  y: position.y,
                                 }
                               : p
                           )
@@ -773,6 +1406,8 @@ function PDFViewer(
                                 width: ph.width,
                                 height: ph.height,
                                 visible: true,
+                                clickX: e.clientX,
+                                clickY: e.clientY,
                               });
                               setSelectedAssignee({
                                 signee: ph.signee ?? "",
@@ -837,10 +1472,10 @@ function PDFViewer(
                   className={styles.draggedPlaceholder}
                   style={{
                     position: "absolute",
-                    left: dragRect.x * scale,
-                    top: dragRect.y * scale,
-                    width: dragRect.width * scale,
-                    height: dragRect.height * scale,
+                    left: dragRect.x,
+                    top: dragRect.y,
+                    width: dragRect.width,
+                    height: dragRect.height,
                     border: "2px dashed #007bff",
                     backgroundColor: "rgba(0, 123, 255, 0.1)",
                     pointerEvents: "none",
@@ -855,7 +1490,7 @@ function PDFViewer(
             <div className={styles.editAssignedSigneeContainer}>
               <h4>Edit Placeholder</h4>
               <button
-                onClick={() => {
+                onClick={(e) => {
                   setAssignModal({
                     visible: true,
                     page: selectedPlaceholder.page,
@@ -864,6 +1499,8 @@ function PDFViewer(
                     width: selectedPlaceholder.width,
                     height: selectedPlaceholder.height,
                     editingId: selectedPlaceholder.id,
+                    clickX: e.clientX,
+                    clickY: e.clientY,
                   });
                   setSelectedPlaceholder(null);
                 }}
@@ -890,6 +1527,24 @@ function PDFViewer(
         </Document>
       </div>
 
+      {/* Click Position Indicator */}
+      {assignModal?.visible && assignModal.clickX && assignModal.clickY && (
+        <div
+          style={{
+            position: 'fixed',
+            left: assignModal.clickX - 5,
+            top: assignModal.clickY - 5,
+            width: '10px',
+            height: '10px',
+            backgroundColor: '#007bff',
+            borderRadius: '50%',
+            zIndex: 999,
+            pointerEvents: 'none',
+            animation: 'pulse 1s infinite',
+          }}
+        />
+      )}
+
       {/* Assign Modal - moved outside the page loop */}
       {assignModal?.visible && (
         <div
@@ -897,16 +1552,22 @@ function PDFViewer(
           className={styles.assignModalContainer}
           style={{
             position: 'fixed',
-            left: Math.min(
-              Math.max(
-                (assignModal.x * scale) + 12,
-                10
-              ),
-              window.innerWidth - 220
-            ),
-            top: Math.min(
-              Math.max((assignModal.y * scale), 10),
-              window.innerHeight - 300
+            ...(assignModal.clickX && assignModal.clickY 
+              ? calculateModalPosition(assignModal.clickX, assignModal.clickY)
+              : {
+                  // Fallback to original positioning
+                  left: Math.min(
+                    Math.max(
+                      assignModal.x + 12,
+                      10
+                    ),
+                    window.innerWidth - 220
+                  ),
+                  top: Math.min(
+                    Math.max(assignModal.y, 10),
+                    window.innerHeight - 300
+                  ),
+                }
             ),
             zIndex: 1000,
             minWidth: '200px',

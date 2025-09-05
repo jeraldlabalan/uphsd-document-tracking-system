@@ -32,6 +32,14 @@ export default function ESignDocument() {
   const [draggingEnabled, setDraggingEnabled] = useState(false);
   const [originalPdfUrl, setOriginalPdfUrl] = useState<string | null>(null);
   const [isDocumentCreator, setIsDocumentCreator] = useState(false);
+  const [isUndoing, setIsUndoing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [onOk, setOnOk] = useState<(() => void) | null>(null);
+  const [onCancel, setOnCancel] = useState<(() => void) | null>(null);
+
 
   // Get document data from URL parameters
   const documentId = searchParams.get("docId");
@@ -57,6 +65,40 @@ export default function ESignDocument() {
   useEffect(() => {
     console.log("Full URL:", window.location.href);
     console.log("Search params:", window.location.search);
+    
+    // Test API connectivity
+    const testAPIConnectivity = async () => {
+      try {
+        console.log("🧪 Testing API connectivity...");
+        
+        // Test basic API endpoint
+        const testResponse = await fetch('/api/user/me');
+        console.log("✅ API connectivity test passed, status:", testResponse.status);
+        
+        if (testResponse.ok) {
+          const userData = await testResponse.json();
+          console.log("✅ Current user data:", userData);
+        } else {
+          console.error("❌ API test failed with status:", testResponse.status);
+          const errorText = await testResponse.text();
+          console.error("❌ Error response:", errorText);
+        }
+        
+        // Test if we can access the uploads directory
+        try {
+          const uploadsTest = await fetch('/uploads/documents/', { method: 'HEAD' });
+          console.log("📁 Uploads directory test status:", uploadsTest.status);
+        } catch (error) {
+          console.error("❌ Uploads directory test failed:", error);
+        }
+        
+      } catch (error) {
+        console.error("❌ API connectivity test failed:", error);
+        setError(`API connectivity test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    };
+    
+    testAPIConnectivity();
   }, []);
 
   // Parse approvers from URL parameter
@@ -87,6 +129,10 @@ export default function ESignDocument() {
   useEffect(() => {
     const determineUserRole = async () => {
       try {
+        setIsLoading(true);
+        setError(null);
+        console.log("🔍 Starting user role determination...");
+        
         // First check if userRole is explicitly set in URL params
         console.log("Checking userRole from URL params:", userRole);
         if (userRole === "receiver") {
@@ -97,41 +143,55 @@ export default function ESignDocument() {
           // Load existing placeholders for receiver
           if (documentId && documentId !== "unknown") {
             console.log("Loading placeholders for receiver, documentId:", documentId);
-            const response = await fetch(`/api/employee/signature-placeholders?documentId=${documentId}`);
-            if (response.ok) {
-              const data = await response.json();
-              console.log("Placeholders loaded for receiver:", data.placeholders);
-              const existingPlaceholders = data.placeholders.map((p: {
-                PlaceholderID: number;
-                Page: number;
-                X: number;
-                Y: number;
-                Width: number;
-                Height: number;
-                AssignedTo: {
-                  UserID: number;
-                  FirstName: string;
-                  LastName: string;
-                };
-                IsSigned: boolean;
-                SignedAt: string | null;
-                AssignedToID: number;
-              }) => ({
-                id: p.PlaceholderID,
-                placeholderId: p.PlaceholderID,
-                page: p.Page,
-                x: p.X,
-                y: p.Y,
-                width: p.Width,
-                height: p.Height,
-                signee: p.AssignedTo.UserID.toString(),
-                signeeName: `${p.AssignedTo.FirstName} ${p.AssignedTo.LastName}`,
-                isSigned: p.IsSigned,
-                signedAt: p.SignedAt,
-                assignedToId: p.AssignedToID,
-              }));
+            try {
+              const response = await fetch(`/api/employee/signature-placeholders?documentId=${documentId}`);
+              console.log("Placeholders API response status:", response.status);
               
-              setPlaceholders(existingPlaceholders);
+              if (response.ok) {
+                const data = await response.json();
+                console.log("Placeholders loaded for receiver:", data.placeholders);
+                const existingPlaceholders = data.placeholders
+                  .filter((p: any) => !p.IsSigned && !p.IsDeleted) // Only load unsigned and non-deleted placeholders
+                  .map((p: {
+                    PlaceholderID: number;
+                    Page: number;
+                    X: number;
+                    Y: number;
+                    Width: number;
+                    Height: number;
+                    AssignedTo: {
+                      UserID: number;
+                      FirstName: string;
+                      LastName: string;
+                    };
+                    IsSigned: boolean;
+                    SignedAt: string | null;
+                    AssignedToID: number;
+                  }) => ({
+                    id: p.PlaceholderID,
+                    placeholderId: p.PlaceholderID,
+                    page: p.Page,
+                    x: p.X,
+                    y: p.Y,
+                    width: p.Width,
+                    height: p.Height,
+                    signee: p.AssignedTo.UserID.toString(),
+                    signeeName: `${p.AssignedTo.FirstName} ${p.AssignedTo.LastName}`,
+                    isSigned: p.IsSigned,
+                    signedAt: p.SignedAt,
+                    assignedToId: p.AssignedToID,
+                  }));
+                
+                setPlaceholders(existingPlaceholders);
+              } else {
+                console.error("Failed to load placeholders, status:", response.status);
+                const errorText = await response.text();
+                console.error("Error response:", errorText);
+                setError(`Failed to load placeholders: ${response.status} ${errorText}`);
+              }
+            } catch (error) {
+              console.error("Error fetching placeholders:", error);
+              setError(`Error fetching placeholders: ${error instanceof Error ? error.message : 'Unknown error'}`);
             }
           }
           return;
@@ -139,80 +199,123 @@ export default function ESignDocument() {
 
         // Check if user is the document creator
         if (documentId && documentId !== "unknown") {
-          const response = await fetch(`/api/employee/signature-placeholders?documentId=${documentId}`);
-          if (response.ok) {
-            const data = await response.json();
-            const existingPlaceholders = data.placeholders.map((p: {
-              PlaceholderID: number;
-              Page: number;
-              X: number;
-              Y: number;
-              Width: number;
-              Height: number;
-              AssignedTo: {
-                UserID: number;
-                FirstName: string;
-                LastName: string;
-              };
-              IsSigned: boolean;
-              SignedAt: string | null;
-              AssignedToID: number;
-            }) => ({
-              id: p.PlaceholderID,
-              placeholderId: p.PlaceholderID,
-              page: p.Page,
-              x: p.X,
-              y: p.Y,
-              width: p.Width,
-              height: p.Height,
-              signee: p.AssignedTo.UserID.toString(),
-              signeeName: `${p.AssignedTo.FirstName} ${p.AssignedTo.LastName}`,
-              isSigned: p.IsSigned,
-              signedAt: p.SignedAt,
-              assignedToId: p.AssignedToID,
-            }));
+          console.log("Checking if user is document creator for documentId:", documentId);
+          try {
+            const response = await fetch(`/api/employee/signature-placeholders?documentId=${documentId}`);
+            console.log("Signature placeholders API response status:", response.status);
             
-            setPlaceholders(existingPlaceholders);
-            
-            // If placeholders exist, user is a receiver
-            if (existingPlaceholders.length > 0) {
-              // Check if user has any unsigned placeholders
-              // We need to get the current user's ID to compare
-              const currentUserResponse = await fetch('/api/user/me');
-              if (currentUserResponse.ok) {
-                const currentUser = await currentUserResponse.json();
-                const userPlaceholders = existingPlaceholders.filter((p: Placeholder) => 
-                  p.assignedToId === currentUser.UserID && !p.isSigned
-                );
-                
-                if (userPlaceholders.length > 0) {
-                  setRole("receiver");
-                  setIsDocumentCreator(false);
-                } else {
+            if (response.ok) {
+              const data = await response.json();
+              console.log("Signature placeholders data:", data);
+              
+              const existingPlaceholders = data.placeholders
+                .filter((p: any) => !p.IsSigned && !p.IsDeleted) // Only load unsigned and non-deleted placeholders
+                .map((p: {
+                  PlaceholderID: number;
+                  Page: number;
+                  X: number;
+                  Y: number;
+                  Width: number;
+                  Height: number;
+                  AssignedTo: {
+                    UserID: number;
+                    FirstName: string;
+                    LastName: string;
+                  };
+                  IsSigned: boolean;
+                  SignedAt: string | null;
+                  AssignedToID: number;
+                }) => ({
+                  id: p.PlaceholderID,
+                  placeholderId: p.PlaceholderID,
+                  page: p.Page,
+                  x: p.X,
+                  y: p.Y,
+                  width: p.Width,
+                  height: p.Height,
+                  signee: p.AssignedTo.UserID.toString(),
+                  signeeName: `${p.AssignedTo.FirstName} ${p.AssignedTo.LastName}`,
+                  isSigned: p.IsSigned,
+                  signedAt: p.SignedAt,
+                  assignedToId: p.AssignedToID,
+                }));
+              
+              setPlaceholders(existingPlaceholders);
+              
+              // If placeholders exist, user is a receiver
+              if (existingPlaceholders.length > 0) {
+                // Check if user has any unsigned placeholders
+                // We need to get the current user's ID to compare
+                try {
+                  const currentUserResponse = await fetch('/api/user/me');
+                  console.log("Current user API response status:", currentUserResponse.status);
+                  
+                  if (currentUserResponse.ok) {
+                    const currentUser = await currentUserResponse.json();
+                    console.log("Current user data:", currentUser);
+                    
+                    const userPlaceholders = existingPlaceholders.filter((p: Placeholder) => 
+                      p.assignedToId === currentUser.UserID && !p.isSigned
+                    );
+                    
+                    if (userPlaceholders.length > 0) {
+                      console.log("User has unsigned placeholders, setting role to receiver");
+                      setRole("receiver");
+                      setIsDocumentCreator(false);
+                    } else {
+                      console.log("User has no unsigned placeholders, setting role to sender");
+                      setRole("sender");
+                      setIsDocumentCreator(true);
+                    }
+                  } else {
+                    console.error("Failed to get current user, status:", currentUserResponse.status);
+                    // Fallback: if we can't get current user, assume sender
+                    setRole("sender");
+                    setIsDocumentCreator(true);
+                  }
+                } catch (error) {
+                  console.error("Error fetching current user:", error);
+                  // Fallback: if we can't get current user, assume sender
                   setRole("sender");
                   setIsDocumentCreator(true);
                 }
               } else {
-                // Fallback: if we can't get current user, assume sender
+                // No placeholders yet, user is the creator
+                console.log("No placeholders found, user is the creator");
                 setRole("sender");
                 setIsDocumentCreator(true);
               }
             } else {
-              // No placeholders yet, user is the creator
+              console.error("Failed to fetch signature placeholders, status:", response.status);
+              const errorText = await response.text();
+              console.error("Error response:", errorText);
+              setError(`Failed to fetch signature placeholders: ${response.status} ${errorText}`);
+              
+              // Fallback to sender role
               setRole("sender");
               setIsDocumentCreator(true);
             }
+          } catch (error) {
+            console.error("Error fetching signature placeholders:", error);
+            setError(`Error fetching signature placeholders: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            // Fallback to sender role
+            setRole("sender");
+            setIsDocumentCreator(true);
           }
         } else {
           // No document ID, user is creating a new document
+          console.log("No document ID provided, user is creating a new document");
           setRole("sender");
           setIsDocumentCreator(true);
         }
       } catch (error) {
         console.error("Error determining user role:", error);
+        setError(`Error determining user role: ${error instanceof Error ? error.message : 'Unknown error'}`);
         // Fallback to sender role
         setRole("sender");
         setIsDocumentCreator(true);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -273,57 +376,165 @@ export default function ESignDocument() {
     console.log("File loading useEffect triggered with uploadedFile:", uploadedFile);
     
     const loadFile = async () => {
-      if (uploadedFile) {
-        console.log("Uploaded file param:", uploadedFile);
-        if (uploadedFile.startsWith('blob:')) {
-          // Local blob URL
-          console.log("Setting blob URL:", uploadedFile);
-          setPdfUrl(uploadedFile);
-          setOriginalPdfUrl(uploadedFile);
-        } else if (uploadedFile.startsWith('/uploads/')) {
-          // Server file path - convert to full URL
-          const fullUrl = `${window.location.origin}${uploadedFile}`;
-          console.log("Setting server file URL:", fullUrl);
-          setPdfUrl(fullUrl);
-          setOriginalPdfUrl(fullUrl);
-        } else if (uploadedFile.includes('uploads/documents/')) {
-          // File path without leading slash - add it
-          const fullUrl = `${window.location.origin}/${uploadedFile}`;
-          console.log("Setting documents file URL:", fullUrl);
-          setPdfUrl(fullUrl);
-          setOriginalPdfUrl(fullUrl);
-        } else {
-          // Try to construct the full URL
-          const fullUrl = `${window.location.origin}/uploads/documents/${uploadedFile}`;
-          console.log("Setting constructed file URL:", fullUrl);
-          setPdfUrl(fullUrl);
-          setOriginalPdfUrl(fullUrl);
-        }
-      } else if (documentId && documentId !== "unknown") {
-        // If no uploadedFile but we have a documentId, try to fetch the file path from the API
-        console.log("No uploadedFile provided, fetching from API for documentId:", documentId);
-        try {
-          const response = await fetch(`/api/employee/documents/${documentId}`);
-          if (response.ok) {
-            const data = await response.json();
-            if (data.latestVersion?.FilePath) {
-              const filePath = data.latestVersion.FilePath;
-              console.log("Found file path from API:", filePath);
-              const fullUrl = `${window.location.origin}${filePath}`;
-              console.log("Setting file URL from API:", fullUrl);
-              setPdfUrl(fullUrl);
-              setOriginalPdfUrl(fullUrl);
-            } else {
-              console.log("No file path found in API response for document:", documentId);
-            }
+      try {
+        setError(null);
+        
+        if (uploadedFile) {
+          console.log("Uploaded file param:", uploadedFile);
+          
+          // Handle different file URL formats
+          let finalUrl = uploadedFile;
+          
+          if (uploadedFile.startsWith('blob:')) {
+            // Local blob URL - use as is
+            console.log("Using blob URL:", uploadedFile);
+            setPdfUrl(uploadedFile);
+            setOriginalPdfUrl(uploadedFile);
+            return;
+          } else if (uploadedFile.startsWith('/uploads/')) {
+            // Server file path - convert to full URL
+            finalUrl = `${window.location.origin}${uploadedFile}`;
+            console.log("Converted server file path to URL:", finalUrl);
+          } else if (uploadedFile.includes('uploads/documents/')) {
+            // File path without leading slash - add it
+            finalUrl = `${window.location.origin}/${uploadedFile}`;
+            console.log("Converted documents file path to URL:", finalUrl);
+          } else if (uploadedFile.includes('uploads/')) {
+            // File path without leading slash - add it
+            finalUrl = `${window.location.origin}/${uploadedFile}`;
+            console.log("Converted uploads file path to URL:", finalUrl);
           } else {
-            console.log("Failed to fetch document details from API");
+            // Try to construct the full URL
+            finalUrl = `${window.location.origin}/uploads/documents/${uploadedFile}`;
+            console.log("Constructed file URL:", finalUrl);
           }
-        } catch (error) {
-          console.error("Error fetching file path from API:", error);
+          
+          // Test if the file is accessible
+          try {
+            console.log("Testing file accessibility for:", finalUrl);
+            const testResponse = await fetch(finalUrl, { method: 'HEAD' });
+            if (testResponse.ok) {
+              console.log("✅ File is accessible:", finalUrl);
+              setPdfUrl(finalUrl);
+              setOriginalPdfUrl(finalUrl);
+              return;
+            } else {
+              console.error("❌ File not accessible:", finalUrl, "Status:", testResponse.status);
+            }
+          } catch (error) {
+            console.error("❌ Error testing file accessibility:", error);
+          }
+          
+          // Try alternative path
+          const altUrl = `${window.location.origin}/uploads/documents/${uploadedFile.split('/').pop()}`;
+          console.log("Trying alternative URL:", altUrl);
+          
+          try {
+            const altResponse = await fetch(altUrl, { method: 'HEAD' });
+            if (altResponse.ok) {
+              console.log("✅ Alternative URL works:", altUrl);
+              setPdfUrl(altUrl);
+              setOriginalPdfUrl(altUrl);
+              return;
+            } else {
+              console.error("❌ Alternative URL also failed:", altUrl, "Status:", altResponse.status);
+            }
+          } catch (error) {
+            console.error("❌ Error testing alternative URL:", error);
+          }
+          
+          // If we get here, both URLs failed
+          console.error("🚨 All file URLs failed, setting error state");
+          setError("Failed to load document file. Please check if the file exists and try again.");
+          setPdfUrl(null);
+          setOriginalPdfUrl(null);
+        } else if (documentId && documentId !== "unknown") {
+          // If no uploadedFile but we have a documentId, try to fetch the file path from the API
+          console.log("No uploadedFile provided, fetching from API for documentId:", documentId);
+          try {
+            const response = await fetch(`/api/employee/documents/${documentId}`);
+            if (response.ok) {
+              const data = await response.json();
+              console.log("Document data from API:", data);
+              
+              if (data.latestVersion?.FilePath) {
+                const filePath = data.latestVersion.FilePath;
+                console.log("Found file path from API:", filePath);
+                
+                // Test the file path
+                const fullUrl = `${window.location.origin}${filePath}`;
+                console.log("Testing file URL from API:", fullUrl);
+                
+                try {
+                  const testResponse = await fetch(fullUrl, { method: 'HEAD' });
+                  if (testResponse.ok) {
+                    console.log("✅ API file path is accessible:", fullUrl);
+                    setPdfUrl(fullUrl);
+                    setOriginalPdfUrl(fullUrl);
+                    return;
+                  } else {
+                    console.error("❌ API file path not accessible:", fullUrl, "Status:", testResponse.status);
+                  }
+                } catch (error) {
+                  console.error("❌ Error testing API file path:", error);
+                }
+                
+                // Try alternative path
+                const fileName = filePath.split('/').pop();
+                const altUrl = `${window.location.origin}/uploads/documents/${fileName}`;
+                console.log("Trying alternative API file URL:", altUrl);
+                
+                try {
+                  const altResponse = await fetch(altUrl, { method: 'HEAD' });
+                  if (altResponse.ok) {
+                    console.log("✅ Alternative API URL works:", altUrl);
+                    setPdfUrl(altUrl);
+                    setOriginalPdfUrl(altUrl);
+                    return;
+                  } else {
+                    console.error("❌ Alternative API URL also failed:", altUrl, "Status:", altResponse.status);
+                  }
+                } catch (error) {
+                  console.error("❌ Error testing alternative API URL:", error);
+                }
+                
+                // File doesn't exist - show helpful error message
+                console.error("🚨 CRITICAL: File not found on filesystem:", fileName);
+                console.error("This suggests a database-file mismatch. The file path in the database doesn't match what's on the filesystem.");
+                
+                setError(`Document file not found: ${fileName}. This suggests a database-file mismatch. Please contact the system administrator.`);
+                // Set error state
+                setPdfUrl(null);
+                setOriginalPdfUrl(null);
+              } else {
+                console.log("No file path found in API response for document:", documentId);
+                setError("No file path found for this document. Please contact the system administrator.");
+                setPdfUrl(null);
+                setOriginalPdfUrl(null);
+              }
+            } else {
+              console.log("Failed to fetch document details from API, status:", response.status);
+              setError(`Failed to fetch document details: ${response.status}. Please try again or contact support.`);
+              setPdfUrl(null);
+              setOriginalPdfUrl(null);
+            }
+          } catch (error) {
+            console.error("Error fetching file path from API:", error);
+            setError(`Error fetching document details: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            setPdfUrl(null);
+            setOriginalPdfUrl(null);
+          }
+        } else {
+          console.log("No uploadedFile parameter provided and no documentId to fetch from");
+          setError("No document file or ID provided. Please ensure you're accessing this page with proper parameters.");
+          setPdfUrl(null);
+          setOriginalPdfUrl(null);
         }
-      } else {
-        console.log("No uploadedFile parameter provided and no documentId to fetch from");
+      } catch (error) {
+        console.error("Unexpected error in loadFile:", error);
+        setError(`Unexpected error loading file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setPdfUrl(null);
+        setOriginalPdfUrl(null);
       }
     };
 
@@ -332,249 +543,374 @@ export default function ESignDocument() {
 
   // Handle saving signature placeholders (for sender)
   const handleSavePlaceholders = async (placeholdersToSave: Placeholder[]) => {
-    console.log("handleSavePlaceholders called with:", {
-      documentId,
-      placeholdersToSave,
-      placeholdersToSaveLength: placeholdersToSave.length
-    });
-    
-    console.log("Current placeholders state:", placeholders);
-    console.log("Placeholders to save:", placeholdersToSave);
-    
-    // If no documentId or documentId is "unknown", this is a new document being created
-    if (!documentId || documentId === "unknown") {
-      console.log("No documentId - saving to localStorage for new document");
-      try {
-        // Generate PDF with placeholders and save to localStorage
-        if (viewerRef.current) {
-          const pdfWithPlaceholders = await viewerRef.current.generatePdfWithPlaceholders();
-          
-          if (pdfWithPlaceholders) {
-            console.log("PDF with placeholders generated successfully");
-            
-            // Convert blob URL to base64 data for localStorage storage
-            const response = await fetch(pdfWithPlaceholders);
-            const blob = await response.blob();
-            const reader = new FileReader();
-            
-            reader.onload = () => {
-              const base64Data = reader.result as string;
-              
-              // Store the base64 data and additional information for the redirect
-              localStorage.setItem('documentWithPlaceholdersData', base64Data);
-              localStorage.setItem('documentWithPlaceholdersTitle', documentTitle || 'Untitled Document');
-              localStorage.setItem('documentWithPlaceholdersId', 'new'); // Mark as new document
-              localStorage.setItem('documentWithPlaceholdersType', documentType || 'Unknown Type');
-              localStorage.setItem('documentWithPlaceholdersDepartment', department || 'Unknown Department');
-              localStorage.setItem('documentWithPlaceholdersApprovers', approvers || '');
-              localStorage.setItem('documentWithPlaceholdersDescription', ''); // No description in URL params
-              
-              // Store placeholder information for display
-              localStorage.setItem('documentWithPlaceholdersPlaceholders', JSON.stringify(placeholdersToSave));
-              
-              alert('Signature placeholders saved successfully! Document with placeholders has been saved. Redirecting back to document page...');
-              
-              // Close the current tab and redirect back to the original page
-              setTimeout(() => {
-                window.close();
-              }, 2000);
-            };
-            
-            reader.readAsDataURL(blob);
-          } else {
-            console.error("Failed to generate PDF with placeholders");
-            alert("Failed to generate PDF with placeholders. Please try again.");
-          }
-        } else {
-          console.error("PDFViewer ref is not available");
-          alert("PDF viewer is not available. Please try again.");
-        }
-        return;
-      } catch (error) {
-        console.error('Error saving placeholders for new document:', error);
-        alert('Failed to save placeholders. Please try again.');
-        return;
-      }
-    }
+  console.log("handleSavePlaceholders called with:", {
+    documentId,
+    placeholdersToSave,
+    placeholdersToSaveLength: placeholdersToSave.length,
+  });
 
+  console.log("Current placeholders state:", placeholders);
+  console.log("Placeholders to save:", placeholdersToSave);
+
+  // If no documentId or documentId is "unknown", this is a new document being created
+  if (!documentId || documentId === "unknown") {
+    console.log("No documentId - saving to localStorage for new document");
     try {
-      // First, save placeholders to database
-      const response = await fetch('/api/employee/signature-placeholders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          documentId: parseInt(documentId),
-          placeholders: placeholdersToSave.map(p => ({
-            page: p.page,
-            x: p.x,
-            y: p.y,
-            width: p.width,
-            height: p.height,
-            assignedToId: p.assignedToId,
-            signee: p.signee,
-          })),
-        }),
-      });
+      if (viewerRef.current) {
+        const pdfWithoutPlaceholders = await viewerRef.current.generatePdfWithoutPlaceholders();
 
-      if (response.ok) {
-        const result = await response.json();
-        
-        // Update placeholders with database IDs
-        setPlaceholders(prev => prev.map((p, index) => ({
-          ...p,
-          placeholderId: result.placeholders[index]?.PlaceholderID || p.placeholderId,
-        })));
+        if (pdfWithoutPlaceholders) {
+          console.log("PDF without embedded placeholders generated successfully");
 
-        // Now generate PDF with placeholders and save it
-        if (viewerRef.current) {
-          const pdfWithPlaceholders = await viewerRef.current.generatePdfWithPlaceholders();
-          
-          if (pdfWithPlaceholders) {
-            // Convert blob URL to File object for upload
-            const response2 = await fetch(pdfWithPlaceholders);
-            const blob = await response2.blob();
-            const file = new File([blob], `with-placeholders-${documentTitle || 'document'}.pdf`, { type: 'application/pdf' });
-            
-            // Create FormData for upload
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('documentTitle', documentTitle || 'Untitled Document');
-            formData.append('documentId', documentId);
-            
-            // Upload to backend
-            const uploadResponse = await fetch('/api/employee/save-document-with-placeholders', {
-              method: 'POST',
-              body: formData,
+          const response = await fetch(pdfWithoutPlaceholders);
+          const blob = await response.blob();
+          const reader = new FileReader();
+
+          reader.onload = () => {
+            const base64Data = reader.result as string;
+
+            // Store metadata in localStorage
+            localStorage.setItem("documentWithPlaceholdersData", base64Data);
+            localStorage.setItem("documentWithPlaceholdersTitle", documentTitle || "Untitled Document");
+            localStorage.setItem("documentWithPlaceholdersId", "new");
+            localStorage.setItem("documentWithPlaceholdersType", documentType || "Unknown Type");
+            localStorage.setItem("documentWithPlaceholdersDepartment", department || "Unknown Department");
+            localStorage.setItem("documentWithPlaceholdersApprovers", approvers || "");
+            localStorage.setItem("documentWithPlaceholdersDescription", "");
+            localStorage.setItem("documentWithPlaceholdersPlaceholders", JSON.stringify(placeholdersToSave));
+
+            // ✅ Show success modal instead of alert
+            setModalMessage(
+              "Signature placeholders saved successfully! Document saved with placeholders stored in database. Signees will be notified. Redirecting back to document page..."
+            );
+            setOnOk(() => () => {
+              setTimeout(() => window.close(), 2000);
             });
-            
-            if (uploadResponse.ok) {
-              const uploadResult = await uploadResponse.json();
-              
-              // Store the new file URL and additional information for the redirect
-              localStorage.setItem('documentWithPlaceholdersUrl', uploadResult.fileUrl);
-              localStorage.setItem('documentWithPlaceholdersTitle', documentTitle || 'Untitled Document');
-              localStorage.setItem('documentWithPlaceholdersId', documentId);
-              localStorage.setItem('documentWithPlaceholdersType', documentType || 'Unknown Type');
-              localStorage.setItem('documentWithPlaceholdersDepartment', department || 'Unknown Department');
-              localStorage.setItem('documentWithPlaceholdersApprovers', approvers || '');
-              localStorage.setItem('documentWithPlaceholdersDescription', ''); // No description in URL params
-              
-              // Store placeholder information for display
-              localStorage.setItem('documentWithPlaceholdersPlaceholders', JSON.stringify(placeholdersToSave));
-              
-              alert('Signature placeholders saved successfully! Document with placeholders has been saved. Signees will be notified. Redirecting back to document page...');
-              
-              // Close the current tab and redirect back to the original page
-              setTimeout(() => {
-                window.close();
-              }, 2000);
-            } else {
-              throw new Error('Failed to save document with placeholders');
-            }
-          }
+            setOnCancel(null);
+            setShowModal(true);
+          };
+
+          reader.readAsDataURL(blob);
+        } else {
+          console.error("Failed to generate PDF with placeholders");
+          setModalMessage("Failed to generate PDF with placeholders. Please try again.");
+          setOnOk(null);
+          setOnCancel(null);
+          setShowModal(true);
         }
       } else {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to save placeholders');
+        console.error("PDFViewer ref is not available");
+        setModalMessage("PDF viewer is not available. Please try again.");
+        setOnOk(null);
+        setOnCancel(null);
+        setShowModal(true);
       }
+      return;
     } catch (error) {
-      console.error('Error saving placeholders:', error);
-      alert('Failed to save placeholders. Please try again.');
+      console.error("Error saving placeholders for new document:", error);
+      setModalMessage("Failed to save placeholders. Please try again.");
+      setOnOk(null);
+      setOnCancel(null);
+      setShowModal(true);
+      return;
     }
-  };
+  }
+
+  try {
+    // Save placeholders to database
+    const response = await fetch("/api/employee/signature-placeholders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        documentId: parseInt(documentId),
+        placeholders: placeholdersToSave.map((p) => ({
+          page: p.page,
+          x: p.x,
+          y: p.y,
+          width: p.width,
+          height: p.height,
+          assignedToId: p.assignedToId,
+          signee: p.signee,
+        })),
+      }),
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+
+      setPlaceholders((prev) =>
+        prev.map((p, index) => ({
+          ...p,
+          placeholderId: result.placeholders[index]?.PlaceholderID || p.placeholderId,
+        }))
+      );
+
+      if (viewerRef.current) {
+        const pdfWithoutPlaceholders = await viewerRef.current.generatePdfWithoutPlaceholders();
+
+        if (pdfWithoutPlaceholders) {
+          const response2 = await fetch(pdfWithoutPlaceholders);
+          const blob = await response2.blob();
+          const file = new File([blob], `with-placeholders-${documentTitle || "document"}.pdf`, {
+            type: "application/pdf",
+          });
+
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("documentTitle", documentTitle || "Untitled Document");
+          formData.append("documentId", documentId);
+
+          const uploadResponse = await fetch("/api/employee/save-document-with-placeholders", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (uploadResponse.ok) {
+            const uploadResult = await uploadResponse.json();
+
+            localStorage.setItem("documentWithPlaceholdersUrl", uploadResult.fileUrl);
+            localStorage.setItem("documentWithPlaceholdersTitle", documentTitle || "Untitled Document");
+            localStorage.setItem("documentWithPlaceholdersId", documentId);
+            localStorage.setItem("documentWithPlaceholdersType", documentType || "Unknown Type");
+            localStorage.setItem("documentWithPlaceholdersDepartment", department || "Unknown Department");
+            localStorage.setItem("documentWithPlaceholdersApprovers", approvers || "");
+            localStorage.setItem("documentWithPlaceholdersDescription", "");
+            localStorage.setItem("documentWithPlaceholdersPlaceholders", JSON.stringify(placeholdersToSave));
+
+            // ✅ Show success modal instead of alert
+            setModalMessage(
+              "Signature placeholders saved successfully! Document with placeholders has been saved. Signees will be notified. Redirecting back to document page..."
+            );
+            setOnOk(() => () => {
+              setTimeout(() => window.close(), 2000);
+            });
+            setOnCancel(null);
+            setShowModal(true);
+          } else {
+            throw new Error("Failed to save document with placeholders");
+          }
+        }
+      }
+    } else {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to save placeholders");
+    }
+  } catch (error) {
+    console.error("Error saving placeholders:", error);
+    setModalMessage("Failed to save placeholders. Please try again.");
+    setOnOk(null);
+    setOnCancel(null);
+    setShowModal(true);
+  }
+};
 
   // Handle saving the e-signed file (for receiver)
   const handleSaveFile = async () => {
-    // Get current user's ID to check for their signatures
-    let currentUserId: number | null = null;
-    try {
-      const userResponse = await fetch('/api/user/me');
-      if (userResponse.ok) {
-        const userData = await userResponse.json();
-        currentUserId = userData.UserID;
-      }
-    } catch (error) {
-      console.error("Error fetching current user:", error);
+  let currentUserId: number | null = null;
+  try {
+    const userResponse = await fetch('/api/user/me');
+    if (userResponse.ok) {
+      const userData = await userResponse.json();
+      currentUserId = userData.UserID;
     }
-    
-    // Check if there are any signed placeholders assigned to the current user
-    const userSignedPlaceholders = placeholders.filter(p => 
-      p.isSigned && p.assignedToId === currentUserId
-    );
-    const hasAnySignatures = userSignedPlaceholders.length > 0;
-    
-    console.log("handleSaveFile called - userSignedPlaceholders:", userSignedPlaceholders);
-    console.log("handleSaveFile called - hasAnySignatures:", hasAnySignatures);
-    console.log("handleSaveFile called - pdfUrl:", pdfUrl);
-    console.log("handleSaveFile called - originalPdfUrl:", originalPdfUrl);
-    
-    if (hasAnySignatures || (pdfUrl && pdfUrl !== originalPdfUrl)) {
-      try {
-        if (!pdfUrl) {
-          console.error("No PDF URL available for saving");
-          alert('No PDF available to save. Please try again.');
-          return;
-        }
-        
-        // Convert blob URL to File object for upload
-        const response = await fetch(pdfUrl);
-        const blob = await response.blob();
-        const file = new File([blob], `e-signed-${documentTitle || 'document'}.pdf`, { type: 'application/pdf' });
-        
-        // Create FormData for upload
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('documentTitle', documentTitle || 'Untitled Document');
-        formData.append('documentId', documentId || '');
-        
-        // Upload to backend
-        const uploadResponse = await fetch('/api/employee/e-sign-document', {
-          method: 'POST',
-          body: formData,
-        });
-        
-        if (uploadResponse.ok) {
-          const result = await uploadResponse.json();
-          
-          // Show success message
-          alert('E-signed document has been saved successfully!');
-          
-          // Store the new file URL in localStorage for CreateNewDocument to access
+  } catch (error) {
+    console.error("Error fetching current user:", error);
+  }
+
+  const userSignedPlaceholders = placeholders.filter(
+    (p) => p.isSigned && p.assignedToId === currentUserId
+  );
+  const hasAnySignatures = userSignedPlaceholders.length > 0;
+
+  console.log("handleSaveFile called - userSignedPlaceholders:", userSignedPlaceholders);
+  console.log("handleSaveFile called - hasAnySignatures:", hasAnySignatures);
+  console.log("handleSaveFile called - pdfUrl:", pdfUrl);
+  console.log("handleSaveFile called - originalPdfUrl:", originalPdfUrl);
+
+  if (hasAnySignatures || (pdfUrl && pdfUrl !== originalPdfUrl)) {
+    try {
+      if (!pdfUrl) {
+        console.error("No PDF URL available for saving");
+        setModalMessage("No PDF available to save. Please try again.");
+        setOnOk(null);
+        setOnCancel(null);
+        setShowModal(true);
+        return;
+      }
+
+      const response = await fetch(pdfUrl);
+      const blob = await response.blob();
+      const file = new File([blob], `e-signed-${documentTitle || 'document'}.pdf`, {
+        type: 'application/pdf',
+      });
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('documentTitle', documentTitle || 'Untitled Document');
+      formData.append('documentId', documentId || '');
+
+      const uploadResponse = await fetch('/api/employee/e-sign-document', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (uploadResponse.ok) {
+        const result = await uploadResponse.json();
+
+        // ✅ Show success modal instead of alert
+        setModalMessage("E-signed document has been saved successfully!");
+        setOnOk(() => () => {
           localStorage.setItem('eSignedDocumentUrl', result.fileUrl);
           localStorage.setItem('eSignedDocumentTitle', documentTitle || 'Untitled Document');
-          
-          // Close the current tab and return to CreateNewDocument
           window.close();
-        } else {
-          throw new Error('Upload failed');
-        }
-      } catch (error) {
-        console.error('Error saving e-signed document:', error);
-        alert('Failed to save e-signed document. Please try again.');
+        });
+        setOnCancel(null);
+        setShowModal(true);
+
+      } else {
+        throw new Error('Upload failed');
       }
-    } else {
-      alert('No changes detected. Please add signatures before saving.');
+    } catch (error) {
+      console.error('Error saving e-signed document:', error);
+      setModalMessage('Failed to save e-signed document. Please try again.');
+      setOnOk(null);
+      setOnCancel(null);
+      setShowModal(true);
     }
-  };
+  } else {
+    setModalMessage('No changes detected. Please add signatures before saving.');
+    setOnOk(null);
+    setOnCancel(null);
+    setShowModal(true);
+  }
+};
 
   // Handle back to dashboard
   const handleBackToDashboard = () => {
-    // In a real implementation, this would redirect to the user's dashboard
-    // For now, we'll go back to the previous page
-    if (window.history.length > 1) {
-      window.history.back();
-    } else {
-      // Fallback to employee dashboard
-      router.push('/employee2/dashboard');
+  if (window.history.length > 1) {
+    window.history.back();
+  } else {
+    router.push('/employee2/dashboard');
+  }
+};
+
+// Handle undo changes using modal
+const handleUndoChanges = async () => {
+  if (!documentId) {
+    console.error('No document ID available for undo operation');
+    return;
+  }
+
+  // Show confirmation modal instead of window.confirm
+  setModalMessage(
+    'Are you sure you want to undo all signatures? This action will:\n\n' +
+    '• Remove all signatures from the document\n' +
+    '• Revert the document to its unsigned state\n' +
+    '• Reset the document status\n\n' +
+    'This action cannot be undone. Continue?'
+  );
+  
+  setOnOk(() => async () => {
+    setShowModal(false);
+    setIsUndoing(true);
+
+    try {
+      const response = await fetch('/api/employee/undo-signature', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to undo signatures');
+      }
+
+      const result = await response.json();
+      console.log('Signatures undone successfully:', result);
+
+      setHasSigned(false);
+      if (originalPdfUrl) setPdfUrl(originalPdfUrl);
+
+      if (result.placeholders) {
+        const uiPlaceholders = result.placeholders.map((ph: any) => ({
+          id: ph.PlaceholderID,
+          placeholderId: ph.PlaceholderID,
+          page: ph.Page - 1,
+          x: ph.X,
+          y: ph.Y,
+          width: ph.Width,
+          height: ph.Height,
+          signee: ph.AssignedToID.toString(),
+          signeeName: ph.AssignedTo?.FirstName + ' ' + ph.AssignedTo?.LastName,
+          isSigned: ph.IsSigned,
+          signedAt: ph.SignedAt,
+          assignedToId: ph.AssignedToID,
+        }));
+        setPlaceholders(uiPlaceholders);
+        console.log('Placeholders restored from database:', uiPlaceholders);
+      }
+
+      setViewMode('edit');
+
+      // Show success modal
+      setModalMessage('Signatures undone successfully. Document has been reverted to unsigned state.');
+      setOnOk(() => () => {
+        window.location.reload();
+      });
+      setOnCancel(null);
+      setShowModal(true);
+
+    } catch (error) {
+      console.error('Error undoing signatures:', error);
+      setModalMessage(`Failed to undo signatures: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setOnOk(null);
+      setOnCancel(null);
+      setShowModal(true);
+    } finally {
+      setIsUndoing(false);
     }
-  };
+  });
+
+  setOnCancel(() => () => setShowModal(false));
+  setShowModal(true);
+};
+
+  const handleApplyComplete = (signedUrl: string) => {
+  console.log("onApplyComplete called with signedUrl:", signedUrl);
+
+  // Update PDF URL with signed version
+  setPdfUrl(signedUrl);
+  setHasSigned(true);
+  console.log("PDF URL updated and hasSigned set to true");
+
+  // Remove all placeholders from UI state immediately
+  console.log("Removing all placeholders from UI state");
+  setPlaceholders([]);
+  console.log("Placeholders removed from UI state");
+
+  // Show success modal
+  setModalMessage('E-signature has been successfully applied to the document.');
+  setOnOk(() => () => {
+    setShowModal(false); // Close modal on OK
+  });
+  setOnCancel(null);
+  setShowModal(true);
+
+  // Additional debugging
+  console.log("State after signature application:");
+  console.log("- hasSigned:", true);
+  console.log("- placeholders count:", 0);
+  console.log("- pdfUrl updated to:", signedUrl);
+};
+
 
   return (
-    <div className={styles.container}>
-      
-      {isSidebarOpen && (
+    <div className={styles.mainContainer}>
+      {/* Left Sidebar */}
+      <div className={styles.sidebar}>
         <Sidebar
           hasSigned={hasSigned}
           role={role}
@@ -599,52 +935,73 @@ export default function ESignDocument() {
           onBackToDashboard={handleBackToDashboard}
           documentId={documentId || undefined}
           isDocumentCreator={isDocumentCreator}
+          onUndoChanges={handleUndoChanges}
+          isUndoing={isUndoing}
         />
-      )}
+      </div>
 
-      <div
-        className={`${styles.mainContent} ${
-          isSidebarOpen ? styles.withSidebar : styles.fullWidth
-        }`}
-      >
-        <header className={styles.header}>
-          <button onClick={() => setSidebarOpen(!isSidebarOpen)}>
-            {isSidebarOpen ? (
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 30 31"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12.7017 15.3622L0.034668 2.69521L2.33339 0.396484L15.0004 13.0633L27.6673 0.396484L29.966 2.69521L17.2991 15.3622L29.966 28.029L27.6673 30.3279L15.0004 17.6609L2.33339 30.3279L0.034668 28.029L12.7017 15.3622Z"
-                  fill="white"
-                />
-              </svg>
-            ) : (
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 39 35"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M0.375 0.5H38.625V4.75H0.375V0.5ZM0.375 15.375H38.625V19.625H0.375V15.375ZM0.375 30.25H38.625V34.5H0.375V30.25Z"
-                  fill="#F6ECEC"
-                />
-              </svg>
-            )}
-          </button>
-          <Image src={logo} className={styles.headerLogo} alt="upshd logo" />
-          <div className={styles.documentInfo}>
-            <h3>{documentTitle || "Document"}</h3>
-            <p>Type: {documentType || "N/A"} | Department: {department || "N/A"}</p>
-          </div>
-        </header>
+      {/* Right Content Area */}
+      <div className={styles.contentArea}>
+        {/* Header */}
+        {/* <Header /> */}
         
-        <div className={styles.pdfViewer}>
+        {/* PDF Viewer Container */}
+        <div className={styles.pdfViewerContainer}>
+          {/* Show error message if no PDF URL is available */}
+          {!pdfUrl && (
+            <div className={styles.errorContainer}>
+              {isLoading ? (
+                <div className={styles.loadingContainer}>
+                  <h3>🔄 Loading Document...</h3>
+                  <p>Please wait while we load your document...</p>
+                  <div className={styles.spinner}></div>
+                </div>
+              ) : error ? (
+                <div>
+                  <h3>⚠️ Error Loading Document</h3>
+                  <p><strong>Issue:</strong> {error}</p>
+                  
+                  {documentId && documentId !== "unknown" ? (
+                    <div>
+                      <p><strong>Document ID:</strong> {documentId}</p>
+                      <p><strong>Possible Causes:</strong></p>
+                      <ul>
+                        <li>The file was not properly uploaded</li>
+                        <li>The file path is incorrect</li>
+                        <li>There's a server configuration issue</li>
+                      </ul>
+                    </div>
+                  ) : (
+                    <p>No document ID provided. Please try uploading a document again.</p>
+                  )}
+                  
+                  <div className={styles.errorActions}>
+                    <button onClick={() => window.location.reload()}>
+                      🔄 Refresh Page
+                    </button>
+                    <button onClick={() => router.back()}>
+                      ← Go Back
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h3>📄 No Document Selected</h3>
+                  <p>Please upload a PDF document to get started.</p>
+                  <div className={styles.errorActions}>
+                    <button onClick={() => router.push('/employee2/create-new-doc')}>
+                      ➕ Create New Document
+                    </button>
+                    <button onClick={() => router.push('/employee2/documents')}>
+                      📁 Browse Documents
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* PDF Viewer */}
           {pdfUrl && (
             <PDFViewer
               ref={viewerRef}
@@ -657,21 +1014,7 @@ export default function ESignDocument() {
               setModalOpen={setModalOpen}
               draggingEnabled={draggingEnabled}
               setDraggingEnabled={setDraggingEnabled}
-                             onApplyComplete={(signedUrl) => {
-                 console.log("onApplyComplete called with signedUrl:", signedUrl);
-                 setPdfUrl(signedUrl); // Update PDF URL with signed version
-                 setHasSigned(true);
-                 console.log("PDF URL updated and hasSigned set to true");
-                 
-                 // Update placeholders to mark them as signed
-                 setPlaceholders(prev => prev.map(p => ({
-                   ...p,
-                   isSigned: true,
-                   signedAt: new Date().toLocaleString()
-                 })));
-                 
-                 console.log("Placeholders updated to signed state");
-               }}
+              onApplyComplete={handleApplyComplete}
               viewMode={viewMode}
               setViewMode={setViewMode}
               originalPdfUrl={originalPdfUrl}
@@ -679,10 +1022,43 @@ export default function ESignDocument() {
               signees={SIGNEES}
               documentId={documentId || undefined}
               onSavePlaceholders={handleSavePlaceholders}
+              setPdfUrl={setPdfUrl}
+              setHasSigned={setHasSigned}
             />
           )}
         </div>
       </div>
+
+      {showModal && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.deletemodalContent}>
+      <p>{modalMessage}</p>
+      <div className={styles.modalActions}>
+        {onCancel && (
+          <button
+            className={styles.cancelButton}
+            onClick={() => {
+              onCancel();
+              setShowModal(false);
+            }}
+          >
+            Cancel
+          </button>
+        )}
+        <button
+          className={styles.OKButton}
+          onClick={() => {
+            if (onOk) onOk();
+            setShowModal(false);
+          }}
+        >
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }

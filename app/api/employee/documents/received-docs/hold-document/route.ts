@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     await db.document.update({
       where: { DocumentID: documentId },
       data: {
-        Status: "On Hold",
+        Status: "On-Hold",
       },
     });
 

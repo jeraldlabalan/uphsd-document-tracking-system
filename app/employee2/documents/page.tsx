@@ -21,6 +21,7 @@ type Document = {
   type: string;
   creator: string;
   preview: string;
+  department: string;
 };
 
 export default function Documents() {
@@ -32,6 +33,7 @@ export default function Documents() {
   const [dateTo, setDateTo] = useState("");
   const [dateError, setDateError] = useState("");
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [departmentFilter, setDepartmentFilter] = useState("");
   const [filterData, setFilterData] = useState<FilterData>({
     documentTypes: [],
     departments: [],
@@ -95,9 +97,25 @@ useEffect(() => {
         setDocuments([]);
       }
 
+      // Debug: Log department information for each document
+      if (dataDocs.docs && Array.isArray(dataDocs.docs)) {
+        console.log("📋 Document departments:", dataDocs.docs.map(doc => ({
+          id: doc.id,
+          name: doc.name,
+          department: doc.department
+        })));
+      }
+
       // Fetch filter data
       const filterData = await fetchFilterData();
       setFilterData(filterData);
+      
+      // Debug: Log filter data
+      console.log("🔍 Filter data loaded:", {
+        departments: filterData.departments?.length || 0,
+        statuses: filterData.statuses?.length || 0,
+        documentTypes: filterData.documentTypes?.length || 0
+      });
 
     } catch (err) {
       console.error("Failed to fetch data", err);
@@ -150,22 +168,30 @@ useEffect(() => {
 
 
   const filteredDocs = documents.filter((doc) => {
-    const matchesSearch =
-      doc.name.toLowerCase().includes(search.toLowerCase()) ||
-      doc.id.toString().includes(search);
+  const matchesSearch =
+    doc.name.toLowerCase().includes(search.toLowerCase()) ||
+    doc.id.toString().includes(search);
 
-    const matchesStatus = !statusFilter || doc.status === statusFilter;
-    const matchesType = !typeFilter || doc.type === typeFilter;
+  const matchesStatus = !statusFilter || doc.status === statusFilter;
+  const matchesType = !typeFilter || doc.type === typeFilter;
+  const matchesDepartment = !departmentFilter || doc.department === departmentFilter;
 
-    const docDate = new Date(doc.date);
-    const fromDate = dateFrom ? new Date(dateFrom) : null;
-    const toDate = dateTo ? new Date(dateTo) : null;
+  const docDate = new Date(doc.date);
+  const fromDate = dateFrom ? new Date(dateFrom) : null;
+  const toDate = dateTo ? new Date(dateTo) : null;
 
-    const matchesDate =
-      (!fromDate || docDate >= fromDate) && (!toDate || docDate <= toDate);
+  const matchesDate =
+    (!fromDate || docDate >= fromDate) &&
+    (!toDate || docDate <= toDate);
 
-    return matchesSearch && matchesStatus && matchesType && matchesDate;
-  });
+  return (
+    matchesSearch &&
+    matchesStatus &&
+    matchesType &&
+    matchesDepartment &&
+    matchesDate
+  );
+});
 
   const handleDownload = () => {
     if (!selectedDoc?.preview) return;
@@ -236,7 +262,7 @@ useEffect(() => {
             </Link>
           </div>
 
-          <div className={styles.filters}>
+          {/* <div className={styles.filters}>
             <div className={styles.searchWrapper}>
               <SearchIcon className={styles.searchIcon} size={18} />
               <input
@@ -262,6 +288,19 @@ useEffect(() => {
             </select>
 
             <select
+                className={styles.dropdown}
+                value={departmentFilter}
+                onChange={(e) => setDepartmentFilter(e.target.value)}
+              >
+                <option value="">All Departments</option>
+                {filterData.departments.map((dept) => (
+                  <option key={dept.DepartmentID} value={dept.Name}>
+                    {dept.Name}
+                  </option>
+                ))}
+              </select>
+
+            <select
               className={styles.dropdown}
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
@@ -273,7 +312,24 @@ useEffect(() => {
                 </option>
               ))}
             </select>
-            <div className={styles.dateFilterWrapper}>
+              
+                          <button
+                className={styles.resetButton}
+                onClick={() => {
+                  setSearch("");
+                  setStatusFilter("");
+                  setTypeFilter("");
+                  setDepartmentFilter("");
+                  setDateFrom("");
+                  setDateTo("");
+                  setDateError("");
+                  setCurrentPage(1);
+                }}
+              >
+                Reset Filters
+              </button>
+
+              <div className={styles.dateFilterWrapper}>
               <div className={styles.dateGroup}>
                 <span className={styles.dateLabel}>From:</span>
                 <input
@@ -319,6 +375,7 @@ useEffect(() => {
                 <th>ID</th>
                 <th>Document</th>
                 <th>File</th>
+                <th>Department</th>
                 <th>Status</th>
                 <th>Date</th>
                 <th>Actions</th>
@@ -331,6 +388,7 @@ useEffect(() => {
         <td>{doc.id}</td>
         <td>{doc.name}</td>
         <td>{doc.preview ? doc.preview.split('.').pop()?.toUpperCase() || 'File' : 'No file'}</td>
+        <td>{doc.department}</td>
         <td>
           <span className={`${styles.badge} ${
                   doc.status === "Completed" ? styles.completed : 
@@ -363,7 +421,7 @@ useEffect(() => {
     ))
   ) : (
     <tr className={styles.noDataRow}>
-      <td colSpan={6} style={{ textAlign: "center" }}>
+      <td colSpan={7} style={{ textAlign: "center" }}>
         No documents found.
       </td>
     </tr>
@@ -372,7 +430,7 @@ useEffect(() => {
 
           </table>
                     {/* Pagination controls */}
-<div className={styles.pagination}>
+{/* <div className={styles.pagination}>
   <button onClick={handlePrev} disabled={currentPage === 1}>
     Previous
   </button>
@@ -486,10 +544,10 @@ useEffect(() => {
                     </p>
                   </div>
                 )}
-              </div>
+              </div> */}
 
               {/* Footer Buttons */}
-              <div className={styles.modalFooter}>
+              {/* <div className={styles.modalFooter}>
                 <button className={styles.download} onClick={handleDownload}>
                   Download
                 </button>
@@ -505,7 +563,8 @@ useEffect(() => {
   <div className={styles.errorBox}>
     <p className={styles.errorText}>{dateError}</p>
   </div>
-)}
+)}  */}
+</div>
 
       </div>
     </div>

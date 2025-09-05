@@ -1,26 +1,17 @@
-import { verify } from "jsonwebtoken";
-import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
+import { verifyAdminAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { NextResponse } from "next/server";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("session")?.value;
+    const authResult = await verifyAdminAuth(request);
 
-    if (!token) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
-
-    const decoded = verify(token, process.env.JWT_SECRET!) as { role: string };
-
-    if (decoded.role !== "Admin") {
-      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    if (!authResult) {
+      return NextResponse.json({ error: "Not authorized" }, { status: 401 });
     }
 
     // Get current date and calculate date ranges
     const now = new Date();
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
 
     // Fetch all required data in parallel
     const [totalUsers, totalDocs, totalDepartments, pendingSignatures] =
@@ -40,7 +31,7 @@ export async function GET(request: Request) {
             Status: {
               in: [
                 "In-Process",
-                "On Hold",
+                "On-Hold",
                 "Approved",
                 "Completed",
                 "Awaiting-Completion",
@@ -107,14 +98,14 @@ export async function GET(request: Request) {
       }
 
       // Count documents CREATED in this week of the month
-      const weeklyStats = await db.document.groupBy({
+      const weeklyStats = (await db.document.groupBy({
         by: ["Status"],
         where: {
           IsDeleted: false,
           Status: {
             in: [
               "In-Process",
-              "On Hold",
+              "On-Hold",
               "Approved",
               "Completed",
               "Awaiting-Completion",
@@ -123,16 +114,16 @@ export async function GET(request: Request) {
           CreatedAt: { gte: weekStart, lte: weekEnd },
         },
         _count: { Status: true },
-      });
+      })) as Array<{ Status: string; _count: { Status: number } }>;
 
-      weeklyStats.forEach((stat: any) => {
+      weeklyStats.forEach((stat) => {
         const status = stat.Status;
         // Use exact status matching for accurate counting
         if (status === "In-Process")
           weeklyData.inProcess[week] = stat._count.Status;
         else if (status === "Completed")
           weeklyData.completed[week] = stat._count.Status;
-        else if (status === "On Hold")
+        else if (status === "On-Hold")
           weeklyData.onHold[week] = stat._count.Status;
         else if (status === "Approved")
           weeklyData.approved[week] = stat._count.Status;
@@ -155,32 +146,33 @@ export async function GET(request: Request) {
       const monthStart = new Date(now.getFullYear(), i, 1);
       const monthEnd = new Date(now.getFullYear(), i + 1, 0, 23, 59, 59);
 
-      const monthlyStats = await db.document.groupBy({
+      const monthlyStats = (await db.document.groupBy({
         by: ["Status"],
         where: {
           IsDeleted: false,
           Status: {
             in: [
               "In-Process",
-              "On Hold",
+              "On-Hold",
               "Approved",
               "Completed",
               "Awaiting-Completion",
             ],
           },
+
           CreatedAt: { gte: monthStart, lte: monthEnd },
         },
         _count: { Status: true },
-      });
+      })) as Array<{ Status: string; _count: { Status: number } }>;
 
-      monthlyStats.forEach((stat: any) => {
+      monthlyStats.forEach((stat) => {
         const status = stat.Status;
         // Use exact status matching for accurate counting
         if (status === "In-Process")
           monthlyData.inProcess[i] = stat._count.Status;
         else if (status === "Completed")
           monthlyData.completed[i] = stat._count.Status;
-        else if (status === "On Hold")
+        else if (status === "On-Hold")
           monthlyData.onHold[i] = stat._count.Status;
         else if (status === "Approved")
           monthlyData.approved[i] = stat._count.Status;
@@ -205,14 +197,14 @@ export async function GET(request: Request) {
       const yearStart = new Date(year, 0, 1);
       const yearEnd = new Date(year, 11, 31, 23, 59, 59);
 
-      const yearlyStats = await db.document.groupBy({
+      const yearlyStats = (await db.document.groupBy({
         by: ["Status"],
         where: {
           IsDeleted: false,
           Status: {
             in: [
               "In-Process",
-              "On Hold",
+              "On-Hold",
               "Approved",
               "Completed",
               "Awaiting-Completion",
@@ -221,7 +213,7 @@ export async function GET(request: Request) {
           CreatedAt: { gte: yearStart, lte: yearEnd },
         },
         _count: { Status: true },
-      });
+      })) as Array<{ Status: string; _count: { Status: number } }>;
 
       // Initialize counts for this year
       let inProcess = 0,
@@ -230,12 +222,12 @@ export async function GET(request: Request) {
         approved = 0,
         awaitingCompletion = 0;
 
-      yearlyStats.forEach((stat: any) => {
+      yearlyStats.forEach((stat) => {
         const status = stat.Status;
         // Use exact status matching instead of includes() to avoid false matches
         if (status === "In-Process") inProcess = stat._count.Status;
         else if (status === "Completed") completed = stat._count.Status;
-        else if (status === "On Hold") onHold = stat._count.Status;
+        else if (status === "On-Hold") onHold = stat._count.Status;
         else if (status === "Approved") approved = stat._count.Status;
         else if (status === "Awaiting-Completion")
           awaitingCompletion = stat._count.Status;
@@ -271,11 +263,10 @@ export async function GET(request: Request) {
         },
       }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Dashboard API error:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
-    );
+    const message =
+      error instanceof Error ? error.message : "Internal server error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

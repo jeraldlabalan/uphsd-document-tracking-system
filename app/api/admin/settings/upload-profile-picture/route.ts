@@ -28,9 +28,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let decoded: any;
+    interface JwtPayload {
+      email?: string;
+      UserID?: number;
+      iat?: number;
+      exp?: number;
+    }
+    let decoded: JwtPayload;
     try {
-      decoded = verify(token, JWT_SECRET);
+      decoded = verify(token, JWT_SECRET) as JwtPayload;
     } catch (err) {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 });
     }

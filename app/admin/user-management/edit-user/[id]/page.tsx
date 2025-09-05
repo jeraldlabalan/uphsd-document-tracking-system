@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import toast from "react-hot-toast";
 import styles from "./EditUser.module.css";
 import AdminHeader from "@/components/shared/adminHeader";
+import Loading from "@/app/loading";
 
 interface Role {
   RoleID: number;
@@ -79,6 +80,8 @@ export default function EditUserPage() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
+  const [showConfirm, setShowConfirm] = useState(false);
+
 
   const fetchPositionsByRole = async (roleId: number) => {
     const res = await fetch(`/api/user/position?roleId=${roleId}`);
@@ -197,6 +200,14 @@ export default function EditUserPage() {
             : value,
     });
 
+    // Clear EmployeeID error when user types
+    if (name === "employeeID") {
+      setErrors((prev) => ({
+        ...prev,
+        employeeID: "",
+      }));
+    }
+
     // Validation logic for firstName and lastName:
     if (name === "firstName" || name === "lastName") {
       if (!user.firstName && !user.lastName) {
@@ -215,68 +226,77 @@ export default function EditUserPage() {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!user) return;
+  const handleSubmitClick = () => {
+  if (!user) return;
 
-    const errs: { [key: string]: string } = {};
-    if (!emailRegex.test(user.email)) errs.email = "Invalid email";
-    if (!user.firstName && !user.lastName) {
-      errs.firstName = "Either Firstname or Lastname must be provided";
-      errs.lastName = "Either Firstname or Lastname must be provided";
-    }
-    if (!user.firstName) errs.firstName = "Required";
-    if (!user.lastName) errs.lastName = "Required";
-    if (user.password && !validatePassword(user.password))
-      errs.password = "Weak password";
-    if (!/^09\d{9}$/.test(user.mobileNumber))
-      errs.mobileNumber = "Invalid number";
+  const errs: { [key: string]: string } = {};
+  if (!emailRegex.test(user.email)) errs.email = "Invalid email";
+  if (!user.firstName && !user.lastName) {
+    errs.firstName = "Either Firstname or Lastname must be provided";
+    errs.lastName = "Either Firstname or Lastname must be provided";
+  }
+  if (!user.firstName) errs.firstName = "Required";
+  if (!user.lastName) errs.lastName = "Required";
+  if (user.password && !validatePassword(user.password))
+    errs.password = "Weak password";
+  if (!/^09\d{9}$/.test(user.mobileNumber))
+    errs.mobileNumber = "Invalid number";
+  
+  // Validate EmployeeID is not empty
+  if (!user.employeeID || user.employeeID.trim() === "") {
+    errs.employeeID = "Employee ID is required";
+  }
 
-    if (Object.keys(errs).length) {
-      setErrors(errs);
-      return;
-    }
+  if (Object.keys(errs).length) {
+    setErrors(errs);
+    return;
+  }
 
-    // ✅ Add confirmation here
-    const confirmed = window.confirm(
-      "Are you sure you want to save these changes?"
-    );
-    if (!confirmed) return;
+  // ✅ Instead of window.confirm, open modal
+  setShowConfirm(true);
+};
 
-    const payload: UserUpdatePayload = {
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      password: user.password || undefined,
-      mobile: user.mobileNumber.replace(/^0/, "+63"),
-      sex: user.sex,
-      roleId: user.roleID,
-      positionId: user.positionID,
-      departmentId: isAdminRole(user.roleID, roles)
-        ? null
-        : (user.departmentID ?? null),
-      employeeId: user.employeeID,
-    };
+const confirmSubmit = async () => {
+  if (!user) return;
 
-    const res = await fetch(`/api/admin/user-management/users/${user.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+  const payload: UserUpdatePayload = {
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    password: user.password || undefined,
+    mobile: user.mobileNumber.replace(/^0/, "+63"),
+    sex: user.sex,
+    roleId: user.roleID,
+    positionId: user.positionID,
+    departmentId: isAdminRole(user.roleID, roles)
+      ? null
+      : (user.departmentID ?? null),
+    employeeId: user.employeeID,
+  };
 
-    if (res.ok) {
-      toast.success("User updated!");
-      router.push("/admin/user-management");
-    } else {
+  const res = await fetch(`/api/admin/user-management/users/${user.id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (res.ok) {
+    toast.success("User updated!");
+    router.push("/admin/user-management");
+  } else {
+    try {
+      const errorData = await res.json();
+      toast.error(errorData.message || "Failed to update user");
+    } catch {
       toast.error("Failed to update user");
     }
-  };
+  }
+};
+
 
   if (!user)
     return (
-      <div className={styles.loadingContainer}>
-        <div className={styles.spinner}></div>
-        <p>Loading users...</p>
-      </div>
+      <Loading/>
     );
 
   return (
@@ -287,6 +307,7 @@ export default function EditUserPage() {
           <h2 className={styles.title}>Edit User</h2>
           <hr className={styles.separator} />
 
+          <div className={styles.profileContainer}>
           <div className={styles.profileBox}>
             {user.profilePicture ? (
               <img
@@ -303,6 +324,7 @@ export default function EditUserPage() {
               {user.firstName} {user.lastName}
             </p>
           </div>
+          </div>
 
           <div className={styles.form}>
             <div className={styles.formGroup}>
@@ -313,6 +335,9 @@ export default function EditUserPage() {
                 value={user.employeeID}
                 onChange={handleChange}
               />
+              {errors.employeeID && (
+                <p className={styles.error}>{errors.employeeID}</p>
+              )}
             </div>
 
             <div className={styles.formGroup}>
@@ -477,15 +502,44 @@ export default function EditUserPage() {
             </div>
 
             <button
-              className={styles.submitBtn}
-              onClick={handleSubmit}
-              disabled={Object.values(errors).some(Boolean)}
-            >
-              Save Changes
-            </button>
+  className={styles.submitBtn}
+  onClick={handleSubmitClick}
+  disabled={Object.values(errors).some(Boolean)}
+>
+  Save Changes
+</button>
+
           </div>
         </div>
       </div>
+      {showConfirm && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalCard}>
+      <h3 className={styles.modalTitle}>Confirm Changes</h3>
+      <p className={styles.modalMessage}>
+        Are you sure you want to save these changes?
+      </p>
+      <div className={styles.modalActions}>
+        <button
+          className={styles.cancelBtn}
+          onClick={() => setShowConfirm(false)}
+        >
+          Cancel
+        </button>
+        <button
+          className={styles.confirmBtn}
+          onClick={() => {
+            setShowConfirm(false);
+            confirmSubmit();
+          }}
+        >
+          Yes, Save
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }

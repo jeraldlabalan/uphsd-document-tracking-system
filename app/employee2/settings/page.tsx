@@ -5,9 +5,9 @@ import EmpHeader from "@/components/shared/empHeader";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import Image from "next/image";
-import Loading from "@/app/loading";
 import Email from "next-auth/providers/email";
 import UploadPhotoModal from "@/components/shared/modalSettings/modal";
+
 
 export default function ProfileSettings() {
   useEffect(() => {
@@ -29,38 +29,10 @@ export default function ProfileSettings() {
   const [mobileNumber, setMobileNumber] = useState("");
   const [position, setPosition] = useState("");
   const [department, setDepartment] = useState("");
-
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [previewImage, setPreviewImage] = useState(null);
-
-  const [loading, setLoading] = useState(true);
-
-
-  const handleUpload = async (file: File) => {
-    try {
-      const formData = new FormData();
-      formData.append("file", file); // ✅ must match backend key
-
-      const res = await fetch("/api/employee/settings/photo", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-      console.log("Upload response:", data);
-
-      if (res.ok && data.url) {
-        setTempPreview(data.url); // ✅ use backend's returned URL
-        setIsSuccessModalOpen(true);
-      } else {
-        alert(data.error || "Failed to upload profile picture.");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Something went wrong while uploading.");
-    }
-  };
+  
+  const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
 
   interface ProfilePayload {
@@ -74,14 +46,48 @@ export default function ProfileSettings() {
   interface ApiResponse {
     [key: string]: any;
   }
+  const showAlert = (message: string) => {
+  setAlertMessage(message);
+  setIsAlertModalOpen(true);
+};
+
+const closeAlert = () => {
+  setIsAlertModalOpen(false);
+  setAlertMessage("");
+};
+
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const passwordRequirements = [
+  {
+    label: "Password at least 8 characters",
+    test: (s: string) => s.length >= 8,
+  },
+  {
+    label: "Password at least one uppercase letter",
+    test: (s: string) => /[A-Z]/.test(s),
+  },
+  {
+    label: "Password at least one lowercase letter",
+    test: (s: string) => /[a-z]/.test(s),
+  },
+  {
+    label: "Password at least one number",
+    test: (s: string) => /\d/.test(s),
+  },
+  {
+    label: "Password at least one special character (!@#$%^&*)",
+    test: (s: string) => /[!@#$%^&*]/.test(s),
+  },
+];
+
   useEffect(() => {
-  const fetchProfile = async () => {
-    try {
+    const fetchProfile = async () => {
       const res = await fetch("/api/employee/settings");
       const data = await res.json();
+
+       console.log("Profile data:", data); // <--- Add this
 
       setEmail(data.Email || "");
       setEmployeeID(data.EmployeeID || "");
@@ -90,45 +96,38 @@ export default function ProfileSettings() {
       setDepartment(data.Department || "");
       setFirstName(data.FirstName || "");
       setLastName(data.LastName || "");
+
+      // Simple profile picture logic - use ProfilePicture field like admin system
       if (data.ProfilePicture) {
-        setTempPreview(data.ProfilePicture || "/uploads/default.jpg");
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false); // ✅ stop loading after fetch
-    }
-  };
-
-  fetchProfile();
-}, []);
-
-
-  useEffect(() => {
-    // Fetch user data here (e.g. from /api/user/me)
-    const fetchUser = async () => {
-      const res = await fetch("/api/user/me");
-      if (res.ok) {
-        const data = await res.json();
-        setProfilePicture(data.ProfilePicture || "/uploads/default.jpg");
+        console.log("Using ProfilePicture:", data.ProfilePicture);
+        setProfilePicture(data.ProfilePicture);
+        setTempPreview(data.ProfilePicture);
+      } else {
+        console.log("No profile picture found, using default");
+        setProfilePicture("/default.jpg");
+        setTempPreview("/default.jpg");
       }
     };
-    fetchUser();
+
+    fetchProfile();
   }, []);
 
-  const handleSave = async (
-    e: React.FormEvent<HTMLFormElement>
-  ): Promise<void> => {
-    e.preventDefault();
+  const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setIsConfirmModalOpen(true); // open modal first
+};
 
-    const payload: ProfilePayload = {
-      firstName,
-      lastName,
-      mobileNumber,
-      position,
-      department, // optional
-    };
 
+const confirmSave = async () => {
+  const payload: ProfilePayload = {
+    firstName,
+    lastName,
+    mobileNumber,
+    position,
+    department,
+  };
+
+  try {
     const res: Response = await fetch("/api/employee/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -139,51 +138,73 @@ export default function ProfileSettings() {
     console.log(data);
 
     if (res.ok) {
-      // optional: show a success toast/modal before reload
+      setIsConfirmModalOpen(false);
+      // optional: show success modal instead of reload
       window.location.reload();
     }
-  };
+  } catch (err) {
+    console.error(err);
+    setIsConfirmModalOpen(false);
+  }
+};
+
+
 
   const handlePasswordSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (newPassword !== confirmPassword) {
-      alert("New passwords do not match.");
-      return;
+  // 1️⃣ Check requirements
+  const unmetRequirements = passwordRequirements.filter(
+    (req) => !req.test(newPassword)
+  );
+
+  if (unmetRequirements.length > 0) {
+    showAlert(
+      "Password requirement is not met"
+    );
+    return;
+  }
+
+  // 2️⃣ Check match
+  if (newPassword !== confirmPassword) {
+    showAlert("New passwords do not match.");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/employee/settings/password", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        currentPassword,
+        newPassword,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      showAlert("Password changed successfully!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setProfilePhoto(data.ProfilePhoto || "default.jpg");
+    } else {
+      showAlert(data.message || "Failed to update password");
     }
+  } catch (err) {
+    console.error(err);
+    showAlert("Something went wrong.");
+  }
+};
 
-    try {
-      const res = await fetch("/api/employee/settings/password", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-        }),
-      });
 
-      const data = await res.json();
+const clearPasswordFields = () => {
+  setCurrentPassword("");
+  setNewPassword("");
+  setConfirmPassword("");
+};
 
-      if (res.ok) {
-        alert("Password changed successfully!");
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        setProfilePhoto(data.ProfilePhoto || "default.jpg");
-      } else {
-        alert(data.message || "Failed to update password");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Something went wrong.");
-    }
-  };
-
-  const clearPasswordFields = () => {
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -199,13 +220,6 @@ export default function ProfileSettings() {
     }
   };
 
-  if (loading) {
-  return (
-    <Loading/>
-  );
-}
-
-
   return (
     <div>
       <EmpHeader />
@@ -218,39 +232,44 @@ export default function ProfileSettings() {
           <hr className={styles.separator} />
           <div className={styles.profileContainer}>
             <div className={styles.leftColumn}>
-
               {/* Profile Photo + Name */}
               <div className={styles.profileInfo}>
                 <Image
-                  src={tempPreview || "/placeholder.png"}
-                  alt="Profile"
-                  className={styles.avatar}
-                  width={150}
-                  height={150}
-                  onClick={() => setIsModalOpen(true)}
-                  style={{ cursor: "pointer" }}
-                />
+                    src={tempPreview || profilePicture || "/default.jpg"}
+                    alt="Profile"
+                    className={styles.avatar}
+                    width={150}
+                    height={150}
+                    onClick={() => setIsModalOpen(true)}
+                    style={{ cursor: "pointer" }}
+                    onError={(e) => {
+                      console.error("Image failed to load:", e.currentTarget.src);
+                      console.log("Falling back to default image");
+                      e.currentTarget.src = "/default.jpg";
+                    }}
+                    onLoad={() => {
+                      console.log("Image loaded successfully:", tempPreview || profilePicture || "/default.jpg");
+                    }}
+                  />
                 <div className={styles.profileDetails}>
                   <h3 className={styles.name}>
                     {firstName} {lastName}
                   </h3>
                   <p className={styles.role}>{position}</p>
                 </div>
-
               </div>
-            </div>
 
-            {/* Upload Photo Section */}
-            <div className={styles.uploadSection}>
-              <button
-                className={styles.uploadBtn}
-                onClick={() => setIsModalOpen(true)}
-              >
-                Upload Photo
-              </button>
-              <p className={styles.photoNote}>
-                Upload a professional photo to personalize your account.
-              </p>
+              {/* Upload Photo Section */}
+              <div className={styles.uploadSection}>
+                <button
+                  className={styles.uploadBtn}
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  Upload Photo
+                </button>
+                <p className={styles.photoNote}>
+                  Upload a professional photo to personalize your account.
+                </p>
               </div>
 
               {/* Change Password Form */}
@@ -288,14 +307,33 @@ export default function ProfileSettings() {
                 </div>
                 <div className={styles.buttonGroup}>
                   <button
-                    className={styles.clearBtn}
-                    onClick={clearPasswordFields}
-                  >
-                    Clear
-                  </button>
+  type="button"
+  className={styles.clearBtn}
+  onClick={clearPasswordFields}
+>
+  Clear
+</button>
+
                   <button className={styles.uploadBtn}>Change Password</button>
                 </div>
               </form>
+              
+              
+                            {/* Password Requirements */}
+                           <ul className={styles.requirementsList}>
+  {passwordRequirements.map((req, idx) => {
+    const passed = req.test(newPassword);
+    return (
+      <li
+        key={idx}
+        className={passed ? styles.requirementPassed : styles.requirementFailed}
+      >
+        {passed ? "✔" : "✖"} {req.label}
+      </li>
+    );
+  })}
+</ul>
+
             </div>
 
             {/* Right Column: Information Section */}
@@ -348,15 +386,21 @@ export default function ProfileSettings() {
 
                 <div className={styles.formGroup}>
                   <div className={styles.inputGroup}>
-                    <label>Mobile Number</label>
-                    <input
-                      className={styles.inputField}
-                      name="mobile"
-                      value={mobileNumber}
-                      onChange={(e) => setMobileNumber(e.target.value)}
-                      placeholder="+63 9XX XXX XXXX"
-                    />
-                  </div>
+  <label>Mobile Number</label>
+  <input
+    type="tel"
+    className={styles.inputField}
+    name="mobile"
+    value={mobileNumber}
+    onChange={(e) => {
+      const value = e.target.value.replace(/\D/g, ""); // remove non-digits
+      setMobileNumber(value);
+    }}
+    placeholder="09XXXXXXXXX"
+    maxLength={11} // restrict to PH format (11 digits)
+  />
+</div>
+
                   <div className={styles.inputGroup}>
                     <label>Position</label>
                     <input
@@ -393,64 +437,56 @@ export default function ProfileSettings() {
           </div>
         </div>
 
-
-        {/* ✅ Modern Profile Upload Modal */}
-{isModalOpen && (
-  <div className={styles.modalOverlay}>
-    <div className={styles.modalContainer}>
-      <h2 className={styles.modalTitle}>Upload Profile Picture</h2>
-
-      {/* Image Preview */}
-      <div className={styles.previewContainer}>
-        {previewImage ? (
-          <img src={previewImage} alt="Preview" className={styles.previewImage} />
-        ) : (
-          <div className={styles.placeholder}>
-            <p>No image selected</p>
-          </div>
+        {/* ✅ Modal */}
+        {isModalOpen && (
+          <UploadPhotoModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onUploadSuccess={(data: any) => {
+              console.log("Profile picture uploaded:", data);
+              
+              // Use profilePicture field from response like admin system
+              if (data.profilePicture) {
+                setTempPreview(data.profilePicture);
+                setProfilePicture(data.profilePicture);
+              }
+              setIsModalOpen(false);
+              // Refresh the profile data to get updated information
+              window.location.reload();
+            }}
+            uploadUrl="/api/employee/settings/upload-profile-picture"
+          />
         )}
-
       </div>
 
-      {/* File Input */}
-      <label htmlFor="fileUpload" className={styles.uploadArea}>
-        <input
-          id="fileUpload"
-          type="file"
-          accept="image/*"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) {
-              setSelectedFile(file);
-              setPreviewImage(URL.createObjectURL(file));
-            }
-          }}
-        />
-        <p>Click or drag image here</p>
-      </label>
+      {isAlertModalOpen && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalCard}>
+      <p>{alertMessage}</p>
+      <button onClick={closeAlert} className={styles.closeBtn}>
+        OK
+      </button>
+    </div>
+  </div>
+)}
 
-      {/* Actions */}
+{isConfirmModalOpen && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalContent}>
+      <h2 className={styles.editmodalTitle}>Confirm Save</h2>
+      <p>Are you sure you want to save these changes?</p>
       <div className={styles.modalActions}>
         <button
-          onClick={async () => {
-            if (selectedFile) {
-              await handleUpload(selectedFile);
-              setIsModalOpen(false);
-            }
-          }}
-          className={styles.uploadBtn}
-        >
-          Upload
-        </button>
-        <button
-          onClick={() => {
-            setIsModalOpen(false);
-            setPreviewImage(null);
-            setSelectedFile(null);
-          }}
-          className={styles.cancelBtn}
+          onClick={() => setIsConfirmModalOpen(false)}
+          className={styles.reactivatecancelButton}
         >
           Cancel
+        </button>
+        <button
+          onClick={confirmSave}
+          className={styles.confirmButton}
+        >
+          Yes, Save
         </button>
       </div>
     </div>
@@ -458,27 +494,8 @@ export default function ProfileSettings() {
 )}
 
 
-        {/* ✅ Success Modal */}
-        {isSuccessModalOpen && (
-                  <div className={styles.successmodalOverlay}>
-                    <div className={styles.modal}>
-                      <h3 className={styles.successmodalTitle}>Upload Successful!</h3>
-                      <p>Your profile picture has been updated.</p>
-                      <div className={styles.successModalActions}>
-                        <button
-                          onClick={() => {
-                  setIsSuccessModalOpen(false);
-                  window.location.reload();
-                }}
-                          className={styles.closeButtonx}
-                        >
-                          OK
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-      </div>
+
+      
     </div>
   );
 }
