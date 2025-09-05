@@ -36,6 +36,9 @@ const SignatureModal = ({
     null
   );
 
+  const [modalMessage, setModalMessage] = useState("");
+  const [showModal, setShowModal] = useState(false);
+
   const [imgDims, setImgDims] = useState<{
     width: number;
     height: number;
@@ -77,7 +80,8 @@ const SignatureModal = ({
 
       setUploadedSignature(base64);
       setSignatureImage(base64);
-      alert("Signature image uploaded!");
+      setModalMessage("Signature image uploaded!");
+      setShowModal(true);
     };
     reader.readAsDataURL(file);
   };
@@ -128,6 +132,24 @@ const SignatureModal = ({
           </svg>
         </span>
       </div>
+
+      {showModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.deletemodalContent}>
+            <p>{modalMessage}</p>
+            <div className={styles.modalActions}>
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                }}
+                className={styles.OKButton}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className={styles.userSignaturePlaceholder}>
         {/* Conditional UI */}
@@ -229,7 +251,7 @@ const SignatureModal = ({
         className={styles.applySignature}
         onClick={async () => {
           if (!signatureImage) {
-            alert("Please provide a signature first.");
+            setModalMessage("Please provide a signature first.");
             return;
           }
           setIsApplying(true);
@@ -241,7 +263,7 @@ const SignatureModal = ({
             }
           } catch (error) {
             console.error("Error applying signature:", error);
-            alert("Failed to apply signature. Please try again.");
+            setModalMessage("Failed to apply signature. Please try again.");
           } finally {
             setIsApplying(false);
           }
